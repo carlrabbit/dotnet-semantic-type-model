@@ -1,4 +1,4 @@
-﻿#pragma warning disable CA1720
+#pragma warning disable CA1720
 namespace SemanticTypeModel.PowerBI;
 
 /// <summary>

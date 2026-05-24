@@ -1,4 +1,4 @@
-﻿#pragma warning disable IDE0046
+#pragma warning disable IDE0046
 #pragma warning disable IDE0072
 #pragma warning disable IDE0305
 #pragma warning disable CA1822
@@ -11,7 +11,11 @@ namespace SemanticTypeModel.PowerBI;
 /// <summary>
 /// Projects canonical hardened type models to a TOM-like tabular metadata model.
 /// </summary>
-public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDefinition>
+/// <remarks>
+/// Initializes a new instance of the <see cref="PowerBiTabularProjection"/> class.
+/// </remarks>
+/// <param name="options">Projection options.</param>
+public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options = null) : ISchemaProjection<TabularModelDefinition>
 {
     private static readonly HashSet<EntityRole> TableRoles =
     [
@@ -21,16 +25,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
         EntityRole.Entity,
     ];
 
-    private readonly PowerBiProjectionOptions _options;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PowerBiTabularProjection"/> class.
-    /// </summary>
-    /// <param name="options">Projection options.</param>
-    public PowerBiTabularProjection(PowerBiProjectionOptions? options = null)
-    {
-        _options = options ?? PowerBiProjectionOptions.Default;
-    }
+    private readonly PowerBiProjectionOptions _options = options ?? PowerBiProjectionOptions.Default;
 
     /// <summary>
     /// Projects a canonical hardened model into TOM-like metadata.
@@ -60,7 +55,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
                 continue;
             }
 
-            string desiredName = ResolveName(
+            var desiredName = ResolveName(
                 objectType.Annotations,
                 objectType.DisplayName,
                 objectType.Name,
@@ -69,7 +64,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
                 "tom.tableName",
                 "powerBi.tableName");
 
-            string? resolvedTableName = ResolveUniqueName(
+            var resolvedTableName = ResolveUniqueName(
                 desiredName,
                 tableNameSet,
                 "table",
@@ -117,8 +112,8 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
 
     private bool ShouldProjectAsTable(ObjectTypeDefinition objectType)
     {
-        bool hasExplicitTableRole = TryGetStringAnnotation(objectType.Annotations, "powerBi.tableRole", out _);
-        bool isValueObject = objectType.Semantics.IsValueObject || objectType.Semantics.Role == EntityRole.ValueObject;
+        var hasExplicitTableRole = TryGetStringAnnotation(objectType.Annotations, "powerBi.tableRole", out _);
+        var isValueObject = objectType.Semantics.IsValueObject || objectType.Semantics.Role == EntityRole.ValueObject;
         if (hasExplicitTableRole)
         {
             return true;
@@ -143,7 +138,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
         string tableName,
         IList<SchemaDiagnostic> diagnostics)
     {
-        string tablePath = ModelPath.ForType(objectType.Id);
+        var tablePath = ModelPath.ForType(objectType.Id);
         var keyPropertyIds = objectType.Keys.SelectMany(static key => key.Properties).Select(static property => property.Id).ToHashSet();
         var columns = new List<TabularColumnDefinition>();
         var columnNameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -153,7 +148,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
         {
             foreach (TabularColumnDefinition projectedColumn in ProjectProperty(model, objectType, property, keyPropertyIds, diagnostics))
             {
-                string? resolvedColumnName = ResolveUniqueName(
+                var resolvedColumnName = ResolveUniqueName(
                     projectedColumn.Name,
                     columnNameSet,
                     "column",
@@ -174,7 +169,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
         }
 
         IReadOnlyList<TabularMeasureDefinition> measures = ProjectMeasures(objectType, diagnostics);
-        string? displayFolder = ResolveStringAnnotation(
+        var displayFolder = ResolveStringAnnotation(
             objectType.Annotations,
             tablePath,
             diagnostics,
@@ -205,7 +200,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
         IReadOnlySet<PropertyId> keyPropertyIds,
         IList<SchemaDiagnostic> diagnostics)
     {
-        string propertyPath = ModelPath.ForProperty(owner.Id, property.Name);
+        var propertyPath = ModelPath.ForProperty(owner.Id, property.Name);
         if (model.TryGetType(property.Type.Id) is not TypeDefinition propertyType)
         {
             Report(
@@ -217,7 +212,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
             return [];
         }
 
-        string columnName = ResolveName(
+        var columnName = ResolveName(
             property.Annotations,
             property.DisplayName,
             property.Name,
@@ -226,16 +221,16 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
             "tom.columnName",
             "powerBi.columnName");
 
-        bool isHidden = ResolveBooleanAnnotation(property.Annotations, propertyPath, diagnostics, "powerBi.isHidden") ?? false;
+        var isHidden = ResolveBooleanAnnotation(property.Annotations, propertyPath, diagnostics, "powerBi.isHidden") ?? false;
         if (isHidden && !_options.IncludeHiddenColumns)
         {
             return [];
         }
 
-        bool isNullable = property.Cardinality.AllowsNull || propertyType.Nullability.AllowsNull;
-        bool isKey = keyPropertyIds.Contains(property.Id);
-        string? dataCategory = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, "powerBi.dataCategory");
-        string? formatString = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, "powerBi.formatString");
+        var isNullable = property.Cardinality.AllowsNull || propertyType.Nullability.AllowsNull;
+        var isKey = keyPropertyIds.Contains(property.Id);
+        var dataCategory = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, "powerBi.dataCategory");
+        var formatString = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, "powerBi.formatString");
 
         if (propertyType is ScalarTypeDefinition scalar)
         {
@@ -289,7 +284,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
         bool isHidden,
         IList<SchemaDiagnostic> diagnostics)
     {
-        string propertyPath = ModelPath.ForProperty(owner.Id, property.Name);
+        var propertyPath = ModelPath.ForProperty(owner.Id, property.Name);
         if (_options.ValueObjectProjectionMode == ValueObjectProjectionMode.Diagnose)
         {
             Report(
@@ -328,8 +323,8 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
         var flattened = new List<TabularColumnDefinition>();
         foreach (PropertyDefinition nestedProperty in valueObjectType.Properties)
         {
-            string nestedPath = ModelPath.ForProperty(valueObjectType.Id, nestedProperty.Name);
-            string flattenedName = $"{property.Name}_{nestedProperty.Name}";
+            var nestedPath = ModelPath.ForProperty(valueObjectType.Id, nestedProperty.Name);
+            var flattenedName = $"{property.Name}_{nestedProperty.Name}";
             if (nestedProperty.Type.Id == valueObjectType.Id)
             {
                 Report(
@@ -379,7 +374,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
         PropertyDefinition nestedProperty,
         IList<SchemaDiagnostic> diagnostics)
     {
-        string nestedPath = nestedProperty.Id.Value;
+        var nestedPath = nestedProperty.Id.Value;
         if (nestedProperty.Type.Id == default)
         {
             return [];
@@ -518,14 +513,14 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
 
     private IReadOnlyList<TabularMeasureDefinition> ProjectMeasures(ObjectTypeDefinition objectType, IList<SchemaDiagnostic> diagnostics)
     {
-        string typePath = ModelPath.ForType(objectType.Id);
+        var typePath = ModelPath.ForType(objectType.Id);
         var measures = new List<TabularMeasureDefinition>();
         var measureNameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (ComputedMemberDefinition member in objectType.ComputedMembers)
         {
-            string memberPath = ModelPath.ForComputedMember(objectType.Id, member.Name);
-            bool isDax = string.Equals(member.Expression.Language, "DAX", StringComparison.OrdinalIgnoreCase);
+            var memberPath = ModelPath.ForComputedMember(objectType.Id, member.Name);
+            var isDax = string.Equals(member.Expression.Language, "DAX", StringComparison.OrdinalIgnoreCase);
             if (!isDax && !_options.PreserveUnsupportedMeasureExpressions)
             {
                 Report(
@@ -537,10 +532,10 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
                 continue;
             }
 
-            string? expressionOverride = ResolveStringAnnotation(member.Annotations, memberPath, diagnostics, "tom.measureExpression");
-            string expression = string.IsNullOrWhiteSpace(expressionOverride) ? member.Expression.Body : expressionOverride;
-            string desiredName = member.Name;
-            string? resolvedName = ResolveUniqueName(desiredName, measureNameSet, "measure", memberPath, diagnostics);
+            var expressionOverride = ResolveStringAnnotation(member.Annotations, memberPath, diagnostics, "tom.measureExpression");
+            var expression = string.IsNullOrWhiteSpace(expressionOverride) ? member.Expression.Body : expressionOverride;
+            var desiredName = member.Name;
+            var resolvedName = ResolveUniqueName(desiredName, measureNameSet, "measure", memberPath, diagnostics);
             if (resolvedName is null)
             {
                 continue;
@@ -574,7 +569,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
         {
             foreach (RelationshipDefinition relationship in objectType.Relationships)
             {
-                string relationshipPath = ModelPath.ForRelationship(objectType.Id, relationship.Id);
+                var relationshipPath = ModelPath.ForRelationship(objectType.Id, relationship.Id);
                 if (!dedupe.Add(relationship.Id.Value))
                 {
                     continue;
@@ -627,7 +622,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
                 PropertyId fromPropertyId = relationship.DependentProperties[0].Id;
                 PropertyId toPropertyId = relationship.PrincipalProperties[0].Id;
 
-                if (!fromTable.ColumnNameByProperty.TryGetValue(fromPropertyId, out string? fromColumn))
+                if (!fromTable.ColumnNameByProperty.TryGetValue(fromPropertyId, out var fromColumn))
                 {
                     Report(
                         diagnostics,
@@ -638,7 +633,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
                     continue;
                 }
 
-                if (!toTable.ColumnNameByProperty.TryGetValue(toPropertyId, out string? toColumn))
+                if (!toTable.ColumnNameByProperty.TryGetValue(toPropertyId, out var toColumn))
                 {
                     Report(
                         diagnostics,
@@ -659,20 +654,20 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
                         relationshipPath);
                 }
 
-                string desiredName = ResolveName(
+                var desiredName = ResolveName(
                     relationship.Annotations,
                     null,
                     relationship.Id.Value,
                     relationshipPath,
                     diagnostics,
                     "tom.relationshipName");
-                string? resolvedName = ResolveUniqueName(desiredName, relationshipNameSet, "relationship", relationshipPath, diagnostics);
+                var resolvedName = ResolveUniqueName(desiredName, relationshipNameSet, "relationship", relationshipPath, diagnostics);
                 if (resolvedName is null)
                 {
                     continue;
                 }
 
-                bool isActive = ResolveBooleanAnnotation(relationship.Annotations, relationshipPath, diagnostics, "powerBi.isActive") ?? true;
+                var isActive = ResolveBooleanAnnotation(relationship.Annotations, relationshipPath, diagnostics, "powerBi.isActive") ?? true;
                 projectedRelationships.Add(new TabularRelationshipDefinition
                 {
                     Name = resolvedName,
@@ -709,9 +704,9 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
         IList<SchemaDiagnostic> diagnostics,
         params string[] annotationKeys)
     {
-        foreach (string key in annotationKeys)
+        foreach (var key in annotationKeys)
         {
-            if (!TryGetAnnotationValue(annotations, key, out object? value))
+            if (!TryGetAnnotationValue(annotations, key, out var value))
             {
                 continue;
             }
@@ -751,8 +746,8 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
 
         if (_options.NameCollisionBehavior == NameCollisionBehavior.Suffix)
         {
-            int suffix = 2;
-            string candidate = desiredName;
+            var suffix = 2;
+            var candidate = desiredName;
             while (!usedNames.Add(candidate))
             {
                 candidate = $"{desiredName}_{suffix}";
@@ -792,7 +787,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
 
     private static bool TryGetStringAnnotation(AnnotationBag annotations, string key, out string value)
     {
-        if (TryGetAnnotationValue(annotations, key, out object? raw) && raw is string text && !string.IsNullOrWhiteSpace(text))
+        if (TryGetAnnotationValue(annotations, key, out var raw) && raw is string text && !string.IsNullOrWhiteSpace(text))
         {
             value = text.Trim();
             return true;
@@ -808,9 +803,9 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
         IList<SchemaDiagnostic> diagnostics,
         params string[] keys)
     {
-        foreach (string key in keys)
+        foreach (var key in keys)
         {
-            if (!TryGetAnnotationValue(annotations, key, out object? raw))
+            if (!TryGetAnnotationValue(annotations, key, out var raw))
             {
                 continue;
             }
@@ -833,7 +828,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
 
     private static bool? ResolveBooleanAnnotation(AnnotationBag annotations, string modelPath, IList<SchemaDiagnostic> diagnostics, string key)
     {
-        if (!TryGetAnnotationValue(annotations, key, out object? raw))
+        if (!TryGetAnnotationValue(annotations, key, out var raw))
         {
             return null;
         }
@@ -843,7 +838,7 @@ public sealed class PowerBiTabularProjection : ISchemaProjection<TabularModelDef
             return flag;
         }
 
-        if (raw is string text && bool.TryParse(text, out bool parsed))
+        if (raw is string text && bool.TryParse(text, out var parsed))
         {
             return parsed;
         }
