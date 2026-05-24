@@ -825,6 +825,18 @@ public sealed class JsonSchemaImporter : ISchemaModelSource
                     continue;
                 }
 
+                if (TryMapUiEditorKeyword(property.Name, out var mappedAnnotationKey))
+                {
+                    annotations.Add(new SchemaAnnotation(mappedAnnotationKey, property.Value.GetRawText()));
+                    diagnostics.Add(Diagnostic(
+                        SchemaDiagnosticSeverity.Info,
+                        "JSONSCHEMA_UI_HINT_IMPORTED",
+                        $"UI/editor keyword '{property.Name}' was mapped to annotation '{mappedAnnotationKey}'.",
+                        $"{pointer}/{EscapePointer(property.Name)}",
+                        ProjectionTarget.JsonSchema));
+                    continue;
+                }
+
                 var annotationKey = ToUnsupportedAnnotationKey(property.Name);
                 switch (options.UnsupportedKeywordBehavior)
                 {
@@ -868,6 +880,32 @@ public sealed class JsonSchemaImporter : ISchemaModelSource
             return keyword.StartsWith("ui:", StringComparison.Ordinal)
                 ? $"ui.{keyword["ui:".Length..]}"
                 : $"jsonSchema.keyword.{keyword.Replace(':', '.')}";
+        }
+
+        private static bool TryMapUiEditorKeyword(string keyword, out string annotationKey)
+        {
+            if (keyword.StartsWith("ui:", StringComparison.Ordinal))
+            {
+                annotationKey = $"ui.{keyword["ui:".Length..]}";
+                return true;
+            }
+
+            if (keyword.StartsWith("jsonEditor:", StringComparison.Ordinal))
+            {
+                annotationKey = $"jsonEditor.{keyword["jsonEditor:".Length..]}";
+                return true;
+            }
+
+            annotationKey = keyword switch
+            {
+                "propertyOrder" => "jsonEditor.propertyOrder",
+                "options" => "jsonEditor.options",
+                "watch" => "jsonEditor.watch",
+                "template" => "jsonEditor.template",
+                _ => string.Empty,
+            };
+
+            return annotationKey.Length > 0;
         }
 
         private static string EscapePointer(string value)

@@ -109,7 +109,14 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
         List<SchemaDiagnostic> diagnostics,
         string pointer)
     {
-        WriteAnnotations(writer, shape.Annotations, options, diagnostics, pointer);
+        IReadOnlyList<SchemaAnnotation> normalizedAnnotations = UiHintAnnotationProcessor.Normalize(
+            shape.Annotations,
+            options.UiHintOptions,
+            diagnostics,
+            pointer,
+            shape,
+            shape is EnumShape enumHintShape ? enumHintShape.Values : null);
+        WriteAnnotations(writer, normalizedAnnotations, options, diagnostics, pointer);
         WriteConstraints(writer, shape.Constraints);
 
         switch (shape)
@@ -173,7 +180,20 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
             writer.WritePropertyName("properties");
             writer.WriteStartObject();
 
-            foreach (PropertyShape property in obj.Properties)
+            var orderedProperties = obj.Properties
+                .Select((property, index) => new
+                {
+                    Property = property,
+                    Index = index,
+                    Order = ResolvePropertyOrder(property.Annotations, diagnostics, $"{pointer}/properties/{property.Name}"),
+                })
+                .OrderBy(static item => item.Order ?? int.MaxValue)
+                .ThenBy(static item => item.Index)
+                .ThenBy(static item => item.Property.Name, StringComparer.Ordinal)
+                .Select(static item => item.Property)
+                .ToList();
+
+            foreach (PropertyShape property in orderedProperties)
             {
                 writer.WritePropertyName(property.Name);
                 writer.WriteStartObject();
@@ -210,7 +230,22 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
         List<SchemaDiagnostic> diagnostics,
         string pointer)
     {
-        WriteAnnotations(writer, property.Annotations, options, diagnostics, pointer);
+        TypeShape? resolvedType = property.Type?.Inline;
+        IReadOnlyList<SchemaAnnotation> normalizedAnnotations = UiHintAnnotationProcessor.Normalize(
+            property.Annotations,
+            options.UiHintOptions,
+            diagnostics,
+            pointer,
+            resolvedType);
+        WriteAnnotations(writer, normalizedAnnotations, options, diagnostics, pointer);
+
+        if (options.UiExport.UiMode == JsonSchemaUiMode.JsonEditorCompatible &&
+            options.UiExport.IncludeJsonEditorCompatibilityAnnotations &&
+            !normalizedAnnotations.Any(static annotation => annotation.Key == "jsonEditor.propertyOrder") &&
+            ResolvePropertyOrder(normalizedAnnotations, diagnostics, pointer) is { } propertyOrder)
+        {
+            writer.WriteNumber("propertyOrder", propertyOrder);
+        }
 
         if (property.Type is null)
         {
@@ -379,17 +414,28 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
         List<SchemaDiagnostic> diagnostics,
         string pointer)
     {
+        var title = ResolveDisplayText(annotations, options.UiHintOptions.PreferUiTitleOverDisplayName, "title");
+        if (title is not null)
+        {
+            writer.WriteString("title", title);
+        }
+
+        var description = ResolveDisplayText(annotations, true, "description");
+        if (description is not null)
+        {
+            writer.WriteString("description", description);
+        }
+
         foreach (SchemaAnnotation annotation in annotations)
         {
             switch (annotation.Key)
             {
+                case "ui.title":
+                case "ui.description":
                 case "title":
                 case "schema.title":
-                    writer.WriteString("title", annotation.Value);
-                    break;
                 case "description":
                 case "schema.description":
-                    writer.WriteString("description", annotation.Value);
                     break;
                 case "default":
                 case "schema.default":
@@ -430,14 +476,63 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
                         using var document = JsonDocument.Parse(annotation.Value);
                         document.RootElement.WriteTo(writer);
                     }
-                    else if (annotation.Key.StartsWith("ui.", StringComparison.Ordinal) && options.IncludeProjectionAnnotations)
+                    else if (annotation.Key.StartsWith("ui.", StringComparison.Ordinal))
                     {
-                        writer.WritePropertyName($"ui:{annotation.Key["ui.".Length..]}");
-                        using var document = JsonDocument.Parse(annotation.Value);
-                        document.RootElement.WriteTo(writer);
+                        if (ShouldEmitGenericUiAnnotations(options))
+                        {
+                            writer.WritePropertyName($"ui:{annotation.Key["ui.".Length..]}");
+                            using var document = JsonDocument.Parse(annotation.Value);
+                            document.RootElement.WriteTo(writer);
+                        }
+                        else
+                        {
+                            diagnostics.Add(new SchemaDiagnostic
+                            {
+                                Severity = SchemaDiagnosticSeverity.Info,
+                                Code = "JSONSCHEMA_UI_HINT_NOT_REPRESENTABLE",
+                                Message = $"UI annotation '{annotation.Key}' was not emitted in the selected UI mode.",
+                                Stage = SchemaDiagnosticStage.Export,
+                                ModelPath = pointer,
+                                Source = pointer,
+                                ProjectionTarget = ProjectionTarget.JsonSchema,
+                            });
+                        }
                     }
-                    else if (annotation.Key.StartsWith("jsonSchema.keyword.", StringComparison.Ordinal) ||
-                             annotation.Key.StartsWith("ui.", StringComparison.Ordinal))
+                    else if (annotation.Key.StartsWith("jsonEditor.", StringComparison.Ordinal))
+                    {
+                        if (ShouldEmitJsonEditorAnnotations(options))
+                        {
+                            WriteJsonEditorAnnotation(writer, annotation);
+                        }
+                        else
+                        {
+                            diagnostics.Add(new SchemaDiagnostic
+                            {
+                                Severity = SchemaDiagnosticSeverity.Info,
+                                Code = "JSONSCHEMA_UI_DOWNSTREAM_MODE_REQUIRED",
+                                Message = $"Downstream annotation '{annotation.Key}' was not emitted because JSON-editor-compatible mode is disabled.",
+                                Stage = SchemaDiagnosticStage.Export,
+                                ModelPath = pointer,
+                                Source = pointer,
+                                ProjectionTarget = ProjectionTarget.JsonSchema,
+                            });
+                        }
+                    }
+                    else if (annotation.Key.StartsWith("jsonSchema.keyword.", StringComparison.Ordinal))
+                    {
+                        diagnostics.Add(new SchemaDiagnostic
+                        {
+                            Severity = SchemaDiagnosticSeverity.Info,
+                            Code = "JSONSCHEMA_EXPORT_ANNOTATION_SKIPPED",
+                            Message = $"Annotation '{annotation.Key}' was not emitted due to export options.",
+                            Stage = SchemaDiagnosticStage.Export,
+                            ModelPath = pointer,
+                            Source = pointer,
+                            ProjectionTarget = ProjectionTarget.JsonSchema,
+                        });
+                    }
+                    else if (annotation.Key.StartsWith("ui.", StringComparison.Ordinal) ||
+                             annotation.Key.StartsWith("jsonEditor.", StringComparison.Ordinal))
                     {
                         diagnostics.Add(new SchemaDiagnostic
                         {
@@ -454,6 +549,93 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
                     break;
             }
         }
+    }
+
+    private static string? ResolveDisplayText(IReadOnlyList<SchemaAnnotation> annotations, bool preferUiText, string field)
+    {
+        var uiKey = $"ui.{field}";
+        var schemaKey = $"schema.{field}";
+
+        return preferUiText &&
+               annotations.LastOrDefault(annotation => annotation.Key == uiKey) is { } ui &&
+               UiHintAnnotationProcessor.TryReadString(ui.Value, out var uiValue)
+            ? uiValue
+            : (annotations.LastOrDefault(annotation => annotation.Key == schemaKey || annotation.Key == field) is { } schema &&
+               UiHintAnnotationProcessor.TryReadString(schema.Value, out var schemaValue)
+                ? schemaValue
+                : (!preferUiText &&
+                   annotations.LastOrDefault(annotation => annotation.Key == uiKey) is { } fallbackUi &&
+                   UiHintAnnotationProcessor.TryReadString(fallbackUi.Value, out var fallbackUiValue)
+                    ? fallbackUiValue
+                    : null));
+    }
+
+    private static int? ResolvePropertyOrder(
+        IReadOnlyList<SchemaAnnotation> annotations,
+        List<SchemaDiagnostic> diagnostics,
+        string pointer)
+    {
+        int? uiOrder = null;
+        int? jsonEditorOrder = null;
+
+        foreach (SchemaAnnotation annotation in annotations)
+        {
+            if (annotation.Key == "ui.order" && UiHintAnnotationProcessor.TryReadInt32(annotation.Value, out var parsedUiOrder))
+            {
+                uiOrder = parsedUiOrder;
+            }
+            else if (annotation.Key == "jsonEditor.propertyOrder" && UiHintAnnotationProcessor.TryReadInt32(annotation.Value, out var parsedJsonEditorOrder))
+            {
+                jsonEditorOrder = parsedJsonEditorOrder;
+            }
+        }
+
+        if (uiOrder.HasValue && jsonEditorOrder.HasValue && uiOrder.Value != jsonEditorOrder.Value)
+        {
+            diagnostics.Add(new SchemaDiagnostic
+            {
+                Severity = SchemaDiagnosticSeverity.Warning,
+                Code = "JSONSCHEMA_UI_PROPERTY_ORDER_CONFLICT",
+                Message = $"Conflicting order hints detected: ui.order={uiOrder.Value} and jsonEditor.propertyOrder={jsonEditorOrder.Value}.",
+                Stage = SchemaDiagnosticStage.Export,
+                ModelPath = pointer,
+                Source = pointer,
+                ProjectionTarget = ProjectionTarget.JsonSchema,
+            });
+        }
+
+        return jsonEditorOrder ?? uiOrder;
+    }
+
+    private static bool ShouldEmitGenericUiAnnotations(JsonSchemaExportOptions options)
+    {
+        return options.IncludeProjectionAnnotations &&
+               options.UiExport.IncludeGenericUiAnnotations &&
+               options.UiExport.UiMode is JsonSchemaUiMode.GenericExtensions or JsonSchemaUiMode.JsonEditorCompatible;
+    }
+
+    private static bool ShouldEmitJsonEditorAnnotations(JsonSchemaExportOptions options)
+    {
+        return options.IncludeProjectionAnnotations &&
+               options.UiExport.IncludeJsonEditorCompatibilityAnnotations &&
+               options.UiExport.UiMode == JsonSchemaUiMode.JsonEditorCompatible;
+    }
+
+    private static void WriteJsonEditorAnnotation(Utf8JsonWriter writer, SchemaAnnotation annotation)
+    {
+        var keyword = annotation.Key["jsonEditor.".Length..] switch
+        {
+            "propertyOrder" => "propertyOrder",
+            "format" => "format",
+            "options" => "options",
+            "watch" => "watch",
+            "template" => "template",
+            _ => annotation.Key["jsonEditor.".Length..],
+        };
+
+        writer.WritePropertyName(keyword);
+        using var document = JsonDocument.Parse(annotation.Value);
+        document.RootElement.WriteTo(writer);
     }
 
     private static void WriteConstraints(Utf8JsonWriter writer, ConstraintSet constraints)

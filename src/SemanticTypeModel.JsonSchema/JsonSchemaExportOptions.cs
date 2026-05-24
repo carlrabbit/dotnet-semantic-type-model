@@ -24,4 +24,14 @@ public sealed class JsonSchemaExportOptions
     /// Gets a value indicating whether projection and unsupported keyword annotations should be emitted.
     /// </summary>
     public bool IncludeProjectionAnnotations { get; init; } = true;
+
+    /// <summary>
+    /// Gets UI hint normalization and validation options.
+    /// </summary>
+    public UiHintOptions UiHintOptions { get; init; } = UiHintOptions.Default;
+
+    /// <summary>
+    /// Gets JSON Schema export options for UI/editor projection keywords.
+    /// </summary>
+    public JsonSchemaUiExportOptions UiExport { get; init; } = JsonSchemaUiExportOptions.Default;
 }

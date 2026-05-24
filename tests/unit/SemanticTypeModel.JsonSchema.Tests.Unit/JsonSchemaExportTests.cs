@@ -14,6 +14,170 @@ namespace SemanticTypeModel.JsonSchema.Tests.Unit;
 public sealed class JsonSchemaExportTests
 {
     /// <summary>
+    /// Fixture 1: display metadata and UI title/description precedence are deterministic.
+    /// </summary>
+    [Test]
+    public async Task Fixture_1_ui_title_and_description_should_override_schema_text_when_enabled()
+    {
+        TypeSchemaModel model = new TypeSchemaModelBuilder()
+            .AddShape(
+                "Root",
+                new ObjectShape
+                {
+                    Annotations =
+                    [
+                        new SchemaAnnotation("schema.title", "Canonical"),
+                        new SchemaAnnotation("schema.description", "Canonical description"),
+                        new SchemaAnnotation("ui.title", "\"UI Title\""),
+                        new SchemaAnnotation("ui.description", "\"UI Description\""),
+                    ],
+                    Properties =
+                    [
+                        new PropertyShape
+                        {
+                            Name = "name",
+                            Type = ShapeRef.FromInline(new ScalarShape { Kind = ScalarKind.String }),
+                        },
+                    ],
+                })
+            .SetRoot("Root")
+            .Build();
+
+        JsonSchemaExportResult result = JsonSchemaExporter.Export(model, new JsonSchemaExportOptions
+        {
+            UiHintOptions = new UiHintOptions { PreferUiTitleOverDisplayName = true },
+        });
+
+        _ = await Assert.That(result.Document.RootElement.GetProperty("title").GetString()).IsEqualTo("UI Title");
+        _ = await Assert.That(result.Document.RootElement.GetProperty("description").GetString()).IsEqualTo("UI Description");
+    }
+
+    /// <summary>
+    /// Fixture 2: ordered properties are deterministic and conflicting values are diagnosable.
+    /// </summary>
+    [Test]
+    public async Task Fixture_2_property_order_should_be_deterministic_and_conflicts_diagnosed()
+    {
+        TypeSchemaModel model = new TypeSchemaModelBuilder()
+            .AddShape(
+                "Root",
+                new ObjectShape
+                {
+                    Properties =
+                    [
+                        new PropertyShape
+                        {
+                            Name = "b",
+                            Type = ShapeRef.FromInline(new ScalarShape { Kind = ScalarKind.String }),
+                            Annotations = [new SchemaAnnotation("ui.order", "2")],
+                        },
+                        new PropertyShape
+                        {
+                            Name = "a",
+                            Type = ShapeRef.FromInline(new ScalarShape { Kind = ScalarKind.String }),
+                            Annotations = [new SchemaAnnotation("jsonEditor.propertyOrder", "1"), new SchemaAnnotation("ui.order", "3")],
+                        },
+                    ],
+                })
+            .SetRoot("Root")
+            .Build();
+
+        JsonSchemaExportResult result = JsonSchemaExporter.Export(model, new JsonSchemaExportOptions
+        {
+            UiExport = new JsonSchemaUiExportOptions
+            {
+                UiMode = JsonSchemaUiMode.JsonEditorCompatible,
+                IncludeJsonEditorCompatibilityAnnotations = true,
+            },
+        });
+
+        JsonElement properties = result.Document.RootElement.GetProperty("properties");
+        string[] names = [.. properties.EnumerateObject().Select(static property => property.Name)];
+
+        _ = await Assert.That(names[0]).IsEqualTo("a");
+        _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Code == "JSONSCHEMA_UI_PROPERTY_ORDER_CONFLICT")).IsTrue();
+    }
+
+    /// <summary>
+    /// Fixture 3: enum label mismatch emits diagnostics.
+    /// </summary>
+    [Test]
+    public async Task Fixture_3_enum_labels_should_emit_diagnostic_when_mismatched()
+    {
+        TypeSchemaModel model = new TypeSchemaModelBuilder()
+            .AddShape(
+                "Status",
+                new EnumShape
+                {
+                    Values = ["\"new\"", "\"done\""],
+                    Annotations = [new SchemaAnnotation("ui.enumLabels", """["New"]""")],
+                })
+            .SetRoot("Status")
+            .Build();
+
+        JsonSchemaExportResult result = JsonSchemaExporter.Export(model, new JsonSchemaExportOptions
+        {
+            UiExport = new JsonSchemaUiExportOptions
+            {
+                UiMode = JsonSchemaUiMode.GenericExtensions,
+                IncludeGenericUiAnnotations = true,
+            },
+        });
+
+        _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Code == "JSONSCHEMA_UI_ENUM_LABEL_MISMATCH")).IsTrue();
+    }
+
+    /// <summary>
+    /// Fixture 4: JSON-editor-compatible mode is opt-in.
+    /// </summary>
+    [Test]
+    public async Task Fixture_4_json_editor_keywords_should_only_emit_in_compatibility_mode()
+    {
+        TypeSchemaModel model = new TypeSchemaModelBuilder()
+            .AddShape(
+                "Root",
+                new ObjectShape
+                {
+                    Properties =
+                    [
+                        new PropertyShape
+                        {
+                            Name = "name",
+                            Type = ShapeRef.FromInline(new ScalarShape { Kind = ScalarKind.String }),
+                            Annotations = [new SchemaAnnotation("jsonEditor.options", /*lang=json,strict*/ """{"grid_columns":6}"""), new SchemaAnnotation("ui.order", "1")],
+                        },
+                    ],
+                })
+            .SetRoot("Root")
+            .Build();
+
+        JsonSchemaExportResult generic = JsonSchemaExporter.Export(model, new JsonSchemaExportOptions
+        {
+            UiExport = new JsonSchemaUiExportOptions
+            {
+                UiMode = JsonSchemaUiMode.GenericExtensions,
+                IncludeGenericUiAnnotations = true,
+            },
+        });
+
+        JsonSchemaExportResult compatible = JsonSchemaExporter.Export(model, new JsonSchemaExportOptions
+        {
+            UiExport = new JsonSchemaUiExportOptions
+            {
+                UiMode = JsonSchemaUiMode.JsonEditorCompatible,
+                IncludeGenericUiAnnotations = true,
+                IncludeJsonEditorCompatibilityAnnotations = true,
+            },
+        });
+
+        JsonElement genericProperty = generic.Document.RootElement.GetProperty("properties").GetProperty("name");
+        JsonElement compatibleProperty = compatible.Document.RootElement.GetProperty("properties").GetProperty("name");
+
+        _ = await Assert.That(genericProperty.TryGetProperty("options", out _)).IsFalse();
+        _ = await Assert.That(compatibleProperty.TryGetProperty("options", out _)).IsTrue();
+    }
+
+    /// <summary>
     /// Fixture 4: composition support for oneOf and anyOf, plus deferred allOf preservation.
     /// </summary>
     [Test]
