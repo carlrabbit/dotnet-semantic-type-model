@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SemanticTypeModel.PowerBI</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

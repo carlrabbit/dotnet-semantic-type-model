@@ -30,3 +30,4 @@ Specs are authoritative for:
 | specs/type-model-json-schema-mapping.md | JSON Schema Draft 2020-12 mapping baseline for the hardened canonical model |
 | specs/type-model-ui-hints.md | Generic UI hint vocabulary, normalization, and JSON-editor compatibility mapping |
 | specs/type-model-projection-capabilities.md | Projection capability matrix and diagnostic expectations across targets |
+| specs/type-model-powerbi-tom-projection.md | Deterministic Power BI / TOM-like projection behavior over the hardened canonical model |
