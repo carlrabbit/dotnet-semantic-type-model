@@ -14,3 +14,4 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 
 - [M0001 - Project and Engineering Setup](milestones/m0001-project-and-engineering-setup.md)
 - [M0002 - Baseline Semantic Type Model](milestones/m0002-baseline-semantic-type-model.md)
+- [M0003 - Type Model Hardening](milestones/m0003-type-model-hardening.md)
