@@ -17,3 +17,4 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - [M0003 - Type Model Hardening](milestones/m0003-type-model-hardening.md)
 - [M0004 - JSON Schema Runtime Import and Export Baseline](milestones/m0004-json-schema-runtime-import-export-baseline.md)
 - [M0005 - Transformation Pipeline and Diagnostics Hardening](milestones/m0005-transformation-pipeline-and-diagnostics-hardening.md)
+- [M0006 - JSON Editor and UI Projection Hints](milestones/m0006-json-editor-and-ui-projection-hints.md)

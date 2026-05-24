@@ -57,3 +57,10 @@ Projection work may assume the M0005 baseline pipeline is available beforehand f
 - model validation before lossy or target-specific transforms run.
 
 Projection diagnostics remain projection-specific, but they may coexist with earlier import, transformation, or validation diagnostics in a single accumulated result set.
+
+## JSON Editor Capability Notes (M0006)
+
+- JSON editor projection remains annotation-driven and optional.
+- Generic `ui.*` hint projection is available through extension keywords when enabled.
+- JSON-editor-compatible keyword emission is opt-in and does not run by default.
+- Unsupported/deferred downstream hints remain annotation-preserved with diagnostics.

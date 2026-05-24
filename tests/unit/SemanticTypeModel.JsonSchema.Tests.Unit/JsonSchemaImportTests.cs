@@ -120,6 +120,38 @@ public sealed class JsonSchemaImportTests
     }
 
     /// <summary>
+    /// Fixture 5: known UI/editor keywords import as canonical annotations.
+    /// </summary>
+    [Test]
+    public async Task Fixture_5_import_should_map_known_ui_and_json_editor_keywords_to_annotations()
+    {
+        var json = /*lang=json,strict*/ """
+            {
+              "$id": "Root",
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "propertyOrder": 3,
+                  "options": { "grid_columns": 6 },
+                  "ui:group": "Identity",
+                  "ui:unknownHint": "preserve"
+                }
+              }
+            }
+            """;
+
+        JsonSchemaImportResult result = JsonSchemaImporter.Import(json);
+        var root = (ObjectShape)result.Model.Root!;
+        PropertyShape name = root.Properties.Single(static p => p.Name == "name");
+
+        _ = await Assert.That(name.Annotations.Any(static annotation => annotation.Key == "jsonEditor.propertyOrder")).IsTrue();
+        _ = await Assert.That(name.Annotations.Any(static annotation => annotation.Key == "jsonEditor.options")).IsTrue();
+        _ = await Assert.That(name.Annotations.Any(static annotation => annotation.Key == "ui.group")).IsTrue();
+        _ = await Assert.That(name.Annotations.Any(static annotation => annotation.Key == "ui.unknownHint")).IsTrue();
+    }
+
+    /// <summary>
     /// Fixture 6: unsupported keyword behavior can preserve annotations with diagnostics.
     /// </summary>
     [Test]

@@ -60,6 +60,15 @@ Runtime import must support configurable behavior:
 
 When preserved, unsupported keyword annotations use reserved namespaces such as `jsonSchema.*` and `ui.*`.
 
+## UI and JSON-Editor Hint Mapping (M0006)
+
+- `ui.*` annotation keys may be emitted as JSON Schema extension keywords using `ui:*` names.
+- known JSON-editor keywords (`propertyOrder`, `options`, `watch`, `template`) map to `jsonEditor.*` annotations on import.
+- downstream-specific keywords are emitted only when explicit JSON-editor compatibility mode is enabled.
+- export defaults to standard JSON Schema semantics without downstream keyword emission.
+- display text export precedence is `ui.title` -> `schema.title`/`title` and `ui.description` -> `schema.description`/`description`.
+- UI hints are non-semantic projection hints and must not alter canonical requiredness/nullability semantics.
+
 ## Composition and Reference Behavior
 
 - `$defs`/`$ref` must preserve stable identifier-based references.
