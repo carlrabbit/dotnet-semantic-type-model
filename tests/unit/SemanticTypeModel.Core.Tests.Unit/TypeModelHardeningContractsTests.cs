@@ -159,6 +159,7 @@ public sealed class TypeModelHardeningContractsTests
         ScalarTypeDefinition intType = Scalar("Int32", ScalarKind.Integer);
         ScalarTypeDefinition decimalType = Scalar("Decimal", ScalarKind.Decimal);
         ScalarTypeDefinition dateType = Scalar("Date", ScalarKind.Date);
+        ScalarTypeDefinition stringType = Scalar("String", ScalarKind.String);
 
         var dimension = new ObjectTypeDefinition
         {
@@ -171,7 +172,7 @@ public sealed class TypeModelHardeningContractsTests
             Properties =
             [
                 Property("customerKey", "DimCustomerKeyProperty", intType.Id, true, false),
-                Property("name", "DimCustomerNameProperty", Scalar("String", ScalarKind.String).Id, true, false),
+                Property("name", "DimCustomerNameProperty", stringType.Id, true, false),
             ],
             Keys =
             [
@@ -227,7 +228,7 @@ public sealed class TypeModelHardeningContractsTests
             ],
         };
 
-        TypeSchemaModel model = BuildModel(fact, dimension, intType, decimalType, dateType, Scalar("String", ScalarKind.String));
+        TypeSchemaModel model = BuildModel(fact, dimension, intType, decimalType, dateType, stringType);
 
         var resolvedFact = (ObjectTypeDefinition)model.GetType(fact.Id);
         _ = await Assert.That(resolvedFact.ComputedMembers.Count).IsEqualTo(1);
