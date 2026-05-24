@@ -1,142 +1,175 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.JsonSchema.Import;
+using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticSeverity;
 
 namespace SemanticTypeModel.JsonSchema.Tests.Unit;
 
 /// <summary>
-/// Verifies JSON Schema import behavior.
+/// Verifies JSON Schema runtime import fixture coverage.
 /// </summary>
 [SuppressMessage("Naming", "CA1707:Remove the underscores from member name", Justification = "Test names may use underscores for readability.")]
 public sealed class JsonSchemaImportTests
 {
     /// <summary>
-    /// Verifies import of objects, definitions, annotations, constraints, and nullable properties.
+    /// Fixture 1: simple object schema with required, nullable, and annotations.
     /// </summary>
     [Test]
-    public async Task Load_should_import_object_schema_with_defs_annotations_constraints_and_nullable_property()
+    public async Task Fixture_1_simple_object_should_preserve_requiredness_and_nullability()
     {
         var json = /*lang=json,strict*/ """
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "$id": "Root",
+              "$id": "Customer",
               "title": "Customer",
               "description": "Customer record",
               "type": "object",
               "required": ["id"],
               "properties": {
-                "id": {
-                  "$ref": "#/$defs/Identifier",
-                  "description": "Business identifier"
-                },
-                "nickname": {
-                  "oneOf": [
-                    { "type": "string", "minLength": 2 },
-                    { "type": "null" }
-                  ]
-                }
-              },
-              "additionalProperties": false,
-              "$defs": {
-                "Identifier": {
-                  "type": "string",
-                  "minLength": 3,
-                  "title": "Identifier"
-                }
+                "id": { "type": "string" },
+                "age": { "type": "integer" },
+                "active": { "type": "boolean" },
+                "nickname": { "type": ["string", "null"] }
               }
             }
             """;
 
-        TypeSchemaModel model = new JsonSchemaImporter(json).Load();
+        JsonSchemaImportResult result = JsonSchemaImporter.Import(json);
+        var root = result.Model.Root as ObjectShape;
 
-        var root = model.Root as ObjectShape;
-        var identifier = model.GetShape("Identifier") as ScalarShape;
-        PropertyShape idProperty = root.Properties.Single(static property => property.Name == "id");
-        PropertyShape nickname = root.Properties.Single(static property => property.Name == "nickname");
-
-        _ = await Assert.That(model.RootIdentifier).IsEqualTo("Root");
+        _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error)).IsFalse();
         _ = await Assert.That(root).IsNotNull();
-        _ = await Assert.That(identifier).IsNotNull();
-        _ = await Assert.That(root!.AdditionalPropertiesAllowed).IsFalse();
-        _ = await Assert.That(root.Annotations.Count).IsEqualTo(2);
-        _ = await Assert.That(idProperty.IsRequired).IsTrue();
-        _ = await Assert.That(idProperty.Type?.Identifier).IsEqualTo("Identifier");
-        _ = await Assert.That(idProperty.Annotations.Single(static annotation => annotation.Key == "description").Value).IsEqualTo("Business identifier");
-        _ = await Assert.That(nickname.IsNullable).IsTrue();
-        _ = await Assert.That(identifier!.Kind).IsEqualTo(ScalarKind.String);
-        _ = await Assert.That(identifier.Constraints.Entries.Single(static entry => entry.Key == "minLength").Value).IsEqualTo("3");
+        _ = await Assert.That(root!.Properties.Single(static p => p.Name == "id").IsRequired).IsTrue();
+        _ = await Assert.That(root.Properties.Single(static p => p.Name == "nickname").IsNullable).IsTrue();
+        _ = await Assert.That(root.Annotations.Any(static annotation => annotation.Key == "schema.title")).IsTrue();
+        _ = await Assert.That(root.Annotations.Any(static annotation => annotation.Key == "schema.description")).IsTrue();
     }
 
     /// <summary>
-    /// Verifies schema-valued additional properties import as a dictionary shape.
+    /// Fixture 2: form/editor metadata via ui annotations survives import.
     /// </summary>
     [Test]
-    public async Task Load_should_import_dictionary_shape_from_schema_valued_additionalProperties()
+    public async Task Fixture_2_form_editor_schema_should_preserve_ui_metadata_annotations()
     {
         var json = /*lang=json,strict*/ """
             {
-              "$id": "Root",
+              "$id": "Profile",
               "type": "object",
-              "additionalProperties": {
-                "type": "integer"
+              "properties": {
+                "contact": {
+                  "type": "string",
+                  "format": "email",
+                  "ui:category": "Contact",
+                  "ui:order": 2
+                },
+                "website": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "birthDate": {
+                  "type": "string",
+                  "format": "date"
+                }
               }
             }
             """;
 
-        TypeSchemaModel model = new JsonSchemaImporter(json).Load();
-        var root = model.Root as DictionaryShape;
-        var value = root?.Values?.Resolve(model) as ScalarShape;
+        JsonSchemaImportResult result = JsonSchemaImporter.Import(json);
+        var root = result.Model.Root as ObjectShape;
+        PropertyShape contact = root!.Properties.Single(static p => p.Name == "contact");
+        var contactScalar = contact.Type?.Resolve(result.Model) as ScalarShape;
 
-        _ = await Assert.That(root).IsNotNull();
-        _ = await Assert.That(value).IsNotNull();
-        _ = await Assert.That(value!.Kind).IsEqualTo(ScalarKind.Integer);
+        _ = await Assert.That(contactScalar).IsNotNull();
+        _ = await Assert.That(contactScalar!.Constraints.Entries.Any(static entry => entry.Key == "format" && entry.Value == "email")).IsTrue();
+        _ = await Assert.That(contact.Annotations.Any(static annotation => annotation.Key == "ui.category")).IsTrue();
+        _ = await Assert.That(contact.Annotations.Any(static annotation => annotation.Key == "ui.order")).IsTrue();
     }
 
     /// <summary>
-    /// Verifies multi-branch oneOf imports as a union shape.
+    /// Fixture 3: defs and refs preserve stable named references.
     /// </summary>
     [Test]
-    public async Task Load_should_import_union_when_oneOf_has_multiple_non_null_options()
-    {
-        var json = /*lang=json,strict*/ """
-            {
-              "$id": "Root",
-              "oneOf": [
-                { "type": "string" },
-                { "type": "integer" }
-              ]
-            }
-            """;
-
-        TypeSchemaModel model = new JsonSchemaImporter(json).Load();
-        var root = model.Root as UnionShape;
-
-        _ = await Assert.That(root).IsNotNull();
-        _ = await Assert.That(root!.Options.Count).IsEqualTo(2);
-        _ = await Assert.That(root.Options.All(static option => option.Inline is ScalarShape)).IsTrue();
-    }
-
-    /// <summary>
-    /// Verifies import fails when a named JSON Schema reference cannot be resolved.
-    /// </summary>
-    [Test]
-    public async Task Load_should_throw_when_ref_cannot_be_resolved()
+    public async Task Fixture_3_defs_and_refs_should_resolve_reusable_references()
     {
         var json = /*lang=json,strict*/ """
             {
               "$id": "Root",
               "type": "object",
               "properties": {
-                "child": {
-                  "$ref": "#/$defs/Missing"
+                "node": { "$ref": "#/$defs/Node" }
+              },
+              "$defs": {
+                "Node": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string" },
+                    "next": { "$ref": "#/$defs/Node" }
+                  }
                 }
               }
             }
             """;
 
-        InvalidOperationException? exception = await Assert.ThrowsAsync<InvalidOperationException>(() => Task.FromResult(new JsonSchemaImporter(json).Load()));
+        JsonSchemaImportResult result = JsonSchemaImporter.Import(json);
+        var node = result.Model.GetShape("Node") as ObjectShape;
+        ShapeRef? next = node!.Properties.Single(static p => p.Name == "next").Type;
 
-        _ = await Assert.That(exception).IsNotNull();
-        _ = await Assert.That(exception!.Message).IsEqualTo("Shape reference 'Missing' cannot be resolved in this model.");
+        _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Code == "JSONSCHEMA_UNRESOLVED_LOCAL_REF")).IsFalse();
+        _ = await Assert.That(next!.Identifier).IsEqualTo("Node");
+    }
+
+    /// <summary>
+    /// Fixture 6: unsupported keyword behavior can preserve annotations with diagnostics.
+    /// </summary>
+    [Test]
+    public async Task Fixture_6_unsupported_keywords_should_follow_configured_behavior()
+    {
+        var json = /*lang=json,strict*/ """
+            {
+              "$id": "Root",
+              "type": "object",
+              "x-note": "custom",
+              "properties": {
+                "name": { "type": "string", "x-extra": { "display": "Name" } }
+              }
+            }
+            """;
+
+        JsonSchemaImportResult preserve = JsonSchemaImporter.Import(
+            json,
+            new JsonSchemaImportOptions
+            {
+                UnsupportedKeywordBehavior = UnsupportedKeywordBehavior.PreserveAsAnnotation,
+                PreserveUnsupportedKeywordsAsAnnotations = true,
+            });
+
+        JsonSchemaImportResult reject = JsonSchemaImporter.Import(
+            json,
+            new JsonSchemaImportOptions
+            {
+                UnsupportedKeywordBehavior = UnsupportedKeywordBehavior.RejectWithError,
+                PreserveUnsupportedKeywordsAsAnnotations = false,
+            });
+
+        var root = preserve.Model.Root as ObjectShape;
+
+        _ = await Assert.That(root!.Annotations.Any(static annotation => annotation.Key == "jsonSchema.keyword.x-note")).IsTrue();
+        _ = await Assert.That(preserve.Diagnostics.Any(static diagnostic => diagnostic.Code == "JSONSCHEMA_UNSUPPORTED_KEYWORD_PRESERVED")).IsTrue();
+        _ = await Assert.That(reject.Diagnostics.Any(static diagnostic => diagnostic.Code == "JSONSCHEMA_UNSUPPORTED_KEYWORD_REJECTED" && diagnostic.Severity == SchemaDiagnosticSeverity.Error)).IsTrue();
+    }
+
+    /// <summary>
+    /// Verifies stream-based runtime import entrypoint.
+    /// </summary>
+    [Test]
+    public async Task Import_should_support_stream_entrypoint()
+    {
+        var json = /*lang=json,strict*/ """{"$id":"Root","type":"string"}""";
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+        JsonSchemaImportResult result = JsonSchemaImporter.Import(stream);
+
+        _ = await Assert.That(result.Model.Root).IsTypeOf<ScalarShape>();
     }
 }
