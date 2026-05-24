@@ -96,7 +96,7 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
         writer.WriteEndObject();
         writer.Flush();
 
-        JsonDocument document = JsonDocument.Parse(stream.ToArray());
+        var document = JsonDocument.Parse(stream.ToArray());
         return new JsonSchemaExportResult(document, diagnostics);
     }
 

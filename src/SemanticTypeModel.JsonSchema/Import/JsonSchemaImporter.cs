@@ -313,7 +313,7 @@ public sealed class JsonSchemaImporter : ISchemaModelSource
         private static List<ShapeRef> BuildUnionOptions(List<string?> nonNullTypes, bool hasNull)
         {
             var options = new List<ShapeRef>(nonNullTypes.Count + (hasNull ? 1 : 0));
-            foreach (string? typeName in nonNullTypes)
+            foreach (var typeName in nonNullTypes)
             {
                 options.Add(ShapeRef.FromInline(CreateShapeForType(typeName)));
             }

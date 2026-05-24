@@ -29,13 +29,17 @@ public sealed class JsonSchemaExportTests
                         ShapeRef.FromInline(new ScalarShape { Kind = ScalarKind.String }),
                         ShapeRef.FromInline(new ScalarShape { Kind = ScalarKind.Integer }),
                     ],
-                    Annotations = [new SchemaAnnotation("jsonSchema.unionSemantics", "anyOf"), new SchemaAnnotation("jsonSchema.allOf", "[{\"type\":\"object\"}]")],
+                    Annotations =
+                    [
+                        new SchemaAnnotation("jsonSchema.unionSemantics", "anyOf"),
+                        new SchemaAnnotation("jsonSchema.allOf", /*lang=json,strict*/ """[{"type":"object"}]"""),
+                    ],
                 })
             .SetRoot("Root")
             .Build();
 
         JsonSchemaExportResult result = JsonSchemaExporter.Export(model);
-        var root = result.Document.RootElement;
+        JsonElement root = result.Document.RootElement;
 
         _ = await Assert.That(root.GetProperty("anyOf").GetArrayLength()).IsEqualTo(2);
         _ = await Assert.That(root.GetProperty("allOf").GetArrayLength()).IsEqualTo(1);
@@ -107,7 +111,7 @@ public sealed class JsonSchemaExportTests
             .Build();
 
         JsonSchemaExportResult result = JsonSchemaExporter.Export(model);
-        var root = result.Document.RootElement;
+        JsonElement root = result.Document.RootElement;
         JsonElement name = root.GetProperty("properties").GetProperty("name");
         JsonElement score = root.GetProperty("properties").GetProperty("score");
         JsonElement tags = root.GetProperty("properties").GetProperty("tags");

@@ -165,7 +165,7 @@ public sealed class JsonSchemaImportTests
     [Test]
     public async Task Import_should_support_stream_entrypoint()
     {
-        var json = "{\"$id\":\"Root\",\"type\":\"string\"}";
+        var json = /*lang=json,strict*/ """{"$id":"Root","type":"string"}""";
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
 
         JsonSchemaImportResult result = JsonSchemaImporter.Import(stream);
