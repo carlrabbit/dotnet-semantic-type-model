@@ -4,8 +4,8 @@ using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Building;
 using ProjectionTarget = SemanticTypeModel.Abstractions.Hardening.ProjectionTarget;
 using SchemaDiagnostic = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnostic;
-using SchemaDiagnosticStage = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticStage;
 using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticSeverity;
+using SchemaDiagnosticStage = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticStage;
 
 namespace SemanticTypeModel.JsonSchema.Import;
 

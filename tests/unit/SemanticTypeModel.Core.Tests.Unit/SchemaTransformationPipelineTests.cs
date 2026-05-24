@@ -120,7 +120,7 @@ public sealed class SchemaTransformationPipelineTests
             .Use(new NormalizeAnnotationsTransformation())
             .RunAsync(BuildModel(annotated));
 
-        ObjectTypeDefinition transformed = (ObjectTypeDefinition)result.Model.GetType(annotated.Id);
+        var transformed = (ObjectTypeDefinition)result.Model.GetType(annotated.Id);
         _ = await Assert.That(transformed.Annotations.Items.Count).IsEqualTo(1);
         _ = await Assert.That(transformed.Annotations.Items[0].Key.Value).IsEqualTo("ui.order");
         _ = await Assert.That(transformed.Annotations.Items[0].Value).IsEqualTo(2);

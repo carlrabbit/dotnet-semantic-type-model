@@ -26,7 +26,7 @@ public sealed class NormalizeAnnotationsTransformation : ISchemaTransformation
             foreach (Annotation annotation in bag.Items)
             {
                 AnnotationKeyValidationResult validation = AnnotationKeyRules.Validate(annotation.Key);
-                string diagnosticPath = ModelPath.ForAnnotation(parentPath, annotation.Key);
+                var diagnosticPath = ModelPath.ForAnnotation(parentPath, annotation.Key);
 
                 if (!validation.IsValid)
                 {
@@ -49,8 +49,8 @@ public sealed class NormalizeAnnotationsTransformation : ISchemaTransformation
                 }
 
                 Annotation normalized = annotation with { Key = validation.NormalizedKey };
-                string normalizedKey = normalized.Key.Value;
-                string normalizedPath = ModelPath.ForAnnotation(parentPath, normalized.Key);
+                var normalizedKey = normalized.Key.Value;
+                var normalizedPath = ModelPath.ForAnnotation(parentPath, normalized.Key);
 
                 if (validation.NamespaceCaseChanged)
                 {
@@ -65,7 +65,7 @@ public sealed class NormalizeAnnotationsTransformation : ISchemaTransformation
                     });
                 }
 
-                if (!indicesByKey.TryGetValue(normalizedKey, out int existingIndex))
+                if (!indicesByKey.TryGetValue(normalizedKey, out var existingIndex))
                 {
                     indicesByKey[normalizedKey] = normalizedItems.Count;
                     normalizedItems.Add(normalized);
@@ -115,7 +115,7 @@ public sealed class NormalizeAnnotationsTransformation : ISchemaTransformation
         TypeDefinition NormalizeType(TypeDefinition type)
         {
             TypeDefinition clone = TypeSchemaModelCloner.CloneTypeDefinition(type);
-            string typePath = ModelPath.ForType(type.Id);
+            var typePath = ModelPath.ForType(type.Id);
 
             return clone switch
             {

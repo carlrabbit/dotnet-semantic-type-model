@@ -43,7 +43,7 @@ internal static class AnnotationKeyRules
             return AnnotationKeyValidationResult.Invalid(key, $"Annotation local name '{localName}' is malformed.");
         }
 
-        if (ReservedNamespaces.TryGetValue(namespacePart, out string? canonicalNamespace))
+        if (ReservedNamespaces.TryGetValue(namespacePart, out var canonicalNamespace))
         {
             AnnotationKey normalizedKey = new($"{canonicalNamespace}.{localName}");
             return new AnnotationKeyValidationResult(true, normalizedKey, namespacePart != canonicalNamespace, namespacePart, localName, null);

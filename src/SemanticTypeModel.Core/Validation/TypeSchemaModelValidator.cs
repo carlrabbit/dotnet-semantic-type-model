@@ -54,7 +54,7 @@ public sealed class TypeSchemaModelValidator
     {
         foreach (TypeDefinition type in model.Types)
         {
-            foreach ((TypeRef typeRef, string refPath) in CollectNonRelationshipTypeRefs(type))
+            foreach ((TypeRef typeRef, var refPath) in CollectNonRelationshipTypeRefs(type))
             {
                 if (!model.TypesById.ContainsKey(typeRef.Id))
                 {
@@ -69,7 +69,7 @@ public sealed class TypeSchemaModelValidator
 
     private static IEnumerable<(TypeRef Ref, string Path)> CollectNonRelationshipTypeRefs(TypeDefinition type)
     {
-        string typePath = ModelPath.ForType(type.Id);
+        var typePath = ModelPath.ForType(type.Id);
 
         switch (type)
         {
@@ -105,7 +105,7 @@ public sealed class TypeSchemaModelValidator
 
                 if (unionType.Discriminator is not null)
                 {
-                    foreach ((string key, TypeRef mapping) in unionType.Discriminator.Mapping)
+                    foreach ((var key, TypeRef mapping) in unionType.Discriminator.Mapping)
                     {
                         yield return (mapping, $"{typePath}/discriminator/mapping/{key}");
                     }
@@ -173,7 +173,7 @@ public sealed class TypeSchemaModelValidator
 
             foreach (KeyDefinition key in objectType.Keys)
             {
-                string keyPath = ModelPath.ForKey(objectType.Id, key.Name);
+                var keyPath = ModelPath.ForKey(objectType.Id, key.Name);
 
                 foreach (PropertyRef propertyRef in key.Properties)
                 {
@@ -195,9 +195,9 @@ public sealed class TypeSchemaModelValidator
         {
             foreach (RelationshipDefinition relationship in objectType.Relationships)
             {
-                string relationshipPath = ModelPath.ForRelationship(objectType.Id, relationship.Id);
-                bool principalResolved = TryGetObjectType(model, relationship.PrincipalType, out ObjectTypeDefinition? principalType);
-                bool dependentResolved = TryGetObjectType(model, relationship.DependentType, out ObjectTypeDefinition? dependentType);
+                var relationshipPath = ModelPath.ForRelationship(objectType.Id, relationship.Id);
+                var principalResolved = TryGetObjectType(model, relationship.PrincipalType, out ObjectTypeDefinition? principalType);
+                var dependentResolved = TryGetObjectType(model, relationship.DependentType, out ObjectTypeDefinition? dependentType);
 
                 if (!principalResolved)
                 {
@@ -294,7 +294,7 @@ public sealed class TypeSchemaModelValidator
         {
             foreach (PropertyDefinition property in objectType.Properties)
             {
-                string propertyPath = ModelPath.ForProperty(objectType.Id, property.Name);
+                var propertyPath = ModelPath.ForProperty(objectType.Id, property.Name);
                 StringConstraints? stringConstraints = property.Constraints.String;
                 NumericConstraints? numericConstraints = property.Constraints.Numeric;
 
@@ -327,7 +327,7 @@ public sealed class TypeSchemaModelValidator
 
         foreach (TypeDefinition type in model.Types)
         {
-            string typePath = ModelPath.ForType(type.Id);
+            var typePath = ModelPath.ForType(type.Id);
             CheckAnnotationBag(type.Annotations, typePath, diagnostics);
 
             if (type is ObjectTypeDefinition objectType)
@@ -397,7 +397,7 @@ public sealed class TypeSchemaModelValidator
                         ModelPath.ForEnumValue(enumType.Id, value.Name)));
                 }
 
-                string canonicalValue = JsonSerializer.Serialize(value.Value);
+                var canonicalValue = JsonSerializer.Serialize(value.Value);
                 if (!seenValues.Add(canonicalValue))
                 {
                     diagnostics.Add(Error(

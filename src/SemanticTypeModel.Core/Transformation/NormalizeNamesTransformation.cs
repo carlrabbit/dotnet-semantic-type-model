@@ -26,11 +26,11 @@ public sealed class NormalizeNamesTransformation(bool renameExplicitNames = fals
         foreach (TypeDefinition original in model.Model.Types)
         {
             TypeDefinition clone = TypeSchemaModelCloner.CloneTypeDefinition(original);
-            string sourceName = string.IsNullOrWhiteSpace(clone.Name)
+            var sourceName = string.IsNullOrWhiteSpace(clone.Name)
                 ? (!string.IsNullOrWhiteSpace(clone.DisplayName) ? clone.DisplayName : clone.Id.Value)
                 : clone.Name;
 
-            string normalizedName = ShouldNormalize(clone.Name)
+            var normalizedName = ShouldNormalize(clone.Name)
                 ? NormalizeName(sourceName)
                 : clone.Name;
 
@@ -88,8 +88,8 @@ public sealed class NormalizeNamesTransformation(bool renameExplicitNames = fals
 
     private static string Disambiguate(string candidate, TypeId typeId, Dictionary<string, TypeId> usedNames)
     {
-        string typeSuffix = NormalizeName(typeId.Value);
-        string disambiguated = $"{candidate}_{typeSuffix}";
+        var typeSuffix = NormalizeName(typeId.Value);
+        var disambiguated = $"{candidate}_{typeSuffix}";
         var suffix = 2;
 
         while (usedNames.ContainsKey(disambiguated))
@@ -111,9 +111,9 @@ public sealed class NormalizeNamesTransformation(bool renameExplicitNames = fals
     private static string NormalizeName(string value)
     {
         StringBuilder builder = new();
-        bool previousUnderscore = false;
+        var previousUnderscore = false;
 
-        foreach (char character in value)
+        foreach (var character in value)
         {
             if (char.IsLetterOrDigit(character) || character == '_')
             {
@@ -129,7 +129,7 @@ public sealed class NormalizeNamesTransformation(bool renameExplicitNames = fals
             }
         }
 
-        string normalized = builder.ToString().Trim('_');
+        var normalized = builder.ToString().Trim('_');
 
         if (string.IsNullOrEmpty(normalized))
         {

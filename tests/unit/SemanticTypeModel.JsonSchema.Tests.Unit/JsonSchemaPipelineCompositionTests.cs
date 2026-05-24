@@ -56,7 +56,7 @@ public sealed class JsonSchemaPipelineCompositionTests
         Legacy.TypeSchemaModel bridgedBack = LegacyJsonSchemaBridge.ToLegacy(pipeline.Model);
         JsonSchemaExportResult exported = JsonSchemaExporter.Export(bridgedBack);
         JsonSchemaImportResult roundtripped = JsonSchemaImporter.Import(exported.Document);
-        Legacy.ObjectShape root = (Legacy.ObjectShape)roundtripped.Model.Root!;
+        var root = (Legacy.ObjectShape)roundtripped.Model.Root!;
 
         _ = await Assert.That(imported.Diagnostics.Any(static diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error)).IsFalse();
         _ = await Assert.That(pipeline.Diagnostics.Any(static diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error)).IsFalse();
@@ -72,7 +72,7 @@ public sealed class JsonSchemaPipelineCompositionTests
         {
             Legacy.ObjectShape root = legacyModel.Root as Legacy.ObjectShape
                 ?? throw new InvalidOperationException("The composition test bridge currently expects an object root.");
-            string rootId = legacyModel.RootIdentifier ?? "Root";
+            var rootId = legacyModel.RootIdentifier ?? "Root";
             List<Hardening.TypeDefinition> types = [];
 
             foreach (Legacy.PropertyShape property in root.Properties)
@@ -82,7 +82,7 @@ public sealed class JsonSchemaPipelineCompositionTests
                     throw new InvalidOperationException("The composition test bridge currently expects scalar properties.");
                 }
 
-                string scalarIdValue = $"{rootId}_{property.Name}_Scalar";
+                var scalarIdValue = $"{rootId}_{property.Name}_Scalar";
                 types.Add(new Hardening.ScalarTypeDefinition
                 {
                     Id = new Hardening.TypeId(scalarIdValue),
@@ -205,11 +205,11 @@ public sealed class JsonSchemaPipelineCompositionTests
         {
             try
             {
-                using JsonDocument document = JsonDocument.Parse(value);
+                using var document = JsonDocument.Parse(value);
                 return document.RootElement.ValueKind switch
                 {
                     JsonValueKind.String => document.RootElement.GetString(),
-                    JsonValueKind.Number when document.RootElement.TryGetInt32(out int number) => number,
+                    JsonValueKind.Number when document.RootElement.TryGetInt32(out var number) => number,
                     JsonValueKind.Number => document.RootElement.GetDouble(),
                     JsonValueKind.True => true,
                     JsonValueKind.False => false,
