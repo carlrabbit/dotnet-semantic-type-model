@@ -4,6 +4,7 @@ using SemanticTypeModel.Abstractions.Contracts;
 using SemanticTypeModel.Abstractions.Model;
 using ProjectionTarget = SemanticTypeModel.Abstractions.Hardening.ProjectionTarget;
 using SchemaDiagnostic = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnostic;
+using SchemaDiagnosticStage = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticStage;
 using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticSeverity;
 
 namespace SemanticTypeModel.JsonSchema.Export;
@@ -45,8 +46,9 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
                 Severity = SchemaDiagnosticSeverity.Error,
                 Code = "JSONSCHEMA_EXPORT_UNSUPPORTED_DIALECT",
                 Message = $"Dialect '{options.Dialect}' is not supported. Exporting Draft 2020-12.",
+                Stage = SchemaDiagnosticStage.Export,
                 ModelPath = "/",
-                Source = "export",
+                Source = "/",
                 ProjectionTarget = ProjectionTarget.JsonSchema,
             });
         }
@@ -352,8 +354,9 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
                     Severity = SchemaDiagnosticSeverity.Warning,
                     Code = "JSONSCHEMA_EXPORT_REMOTE_REF_REEMITTED",
                     Message = $"Remote reference '{externalRef}' was re-emitted.",
+                    Stage = SchemaDiagnosticStage.Export,
                     ModelPath = pointer,
-                    Source = "export",
+                    Source = pointer,
                     ProjectionTarget = ProjectionTarget.JsonSchema,
                 });
                 return;
@@ -414,8 +417,9 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
                         Severity = SchemaDiagnosticSeverity.Warning,
                         Code = "JSONSCHEMA_EXPORT_ALLOF_PRESERVED",
                         Message = "allOf annotation was re-emitted as-is.",
+                        Stage = SchemaDiagnosticStage.Export,
                         ModelPath = pointer,
-                        Source = "export",
+                        Source = pointer,
                         ProjectionTarget = ProjectionTarget.JsonSchema,
                     });
                     break;
@@ -440,8 +444,9 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
                             Severity = SchemaDiagnosticSeverity.Info,
                             Code = "JSONSCHEMA_EXPORT_ANNOTATION_SKIPPED",
                             Message = $"Annotation '{annotation.Key}' was not emitted due to export options.",
+                            Stage = SchemaDiagnosticStage.Export,
                             ModelPath = pointer,
-                            Source = "export",
+                            Source = pointer,
                             ProjectionTarget = ProjectionTarget.JsonSchema,
                         });
                     }

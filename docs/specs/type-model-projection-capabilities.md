@@ -49,3 +49,11 @@ Diagnostic codes should identify unsupported/lossy cases, including:
 - unsupported keyword handling during JSON Schema import/export;
 - missing keys for relationship inference where required;
 - invalid annotation value/type for a projection namespace.
+
+Projection work may assume the M0005 baseline pipeline is available beforehand for:
+
+- naming normalization when target definition names must be legal and deterministic;
+- annotation normalization when projection namespaces must be canonicalized before projection;
+- model validation before lossy or target-specific transforms run.
+
+Projection diagnostics remain projection-specific, but they may coexist with earlier import, transformation, or validation diagnostics in a single accumulated result set.

@@ -380,9 +380,12 @@ public sealed record SchemaDiagnostic
     public required SchemaDiagnosticSeverity Severity { get; init; }
     public required string Code { get; init; }
     public required string Message { get; init; }
+    public required SchemaDiagnosticStage Stage { get; init; }
     public string? ModelPath { get; init; }
     public string? Source { get; init; }
+    public string? PipelineStage { get; init; }
     public ProjectionTarget? ProjectionTarget { get; init; }
+    public IReadOnlyList<string> RelatedModelPaths { get; init; } = [];
 }
 
 public enum SchemaDiagnosticSeverity
@@ -390,6 +393,15 @@ public enum SchemaDiagnosticSeverity
     Info,
     Warning,
     Error,
+}
+
+public enum SchemaDiagnosticStage
+{
+    Import,
+    Transformation,
+    Validation,
+    Export,
+    Projection,
 }
 
 public enum ProjectionTarget
@@ -404,13 +416,111 @@ public enum ProjectionTarget
 
 public sealed class TypeSchemaModelBuilder
 {
-    public IList<TypeDefinition> Types { get; } = [];
-    public IList<SchemaDiagnostic> Diagnostics { get; } = [];
+    public TypeSchemaModelBuilder(TypeSchemaModel model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        Model = model;
+    }
+
+    public TypeSchemaModel Model { get; private set; }
+
+    public void Replace(TypeSchemaModel model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        Model = model;
+    }
+
+    public TypeSchemaModel Build()
+    {
+        return Model;
+    }
+}
+
+public sealed record AnnotationPolicy
+{
+    public static AnnotationPolicy Default { get; } = new();
+
+    public AnnotationMergeBehavior MergeBehavior { get; init; } = AnnotationMergeBehavior.LastWins;
+    public bool PreserveUnknownAnnotations { get; init; } = true;
+    public bool RemoveMalformedAnnotations { get; init; } = true;
+    public bool DiagnoseReservedNamespaceConflicts { get; init; } = true;
+}
+
+public enum AnnotationMergeBehavior
+{
+    LastWins,
+    FirstWins,
+    Error,
+}
+
+public sealed class SchemaDiagnosticSink
+{
+    private readonly List<SchemaDiagnostic> _diagnostics;
+
+    public SchemaDiagnosticSink()
+        : this([], false)
+    {
+    }
+
+    public SchemaDiagnosticSink(IEnumerable<SchemaDiagnostic> diagnostics, bool promoteWarningsToErrors = false)
+    {
+        ArgumentNullException.ThrowIfNull(diagnostics);
+        _diagnostics = [.. diagnostics];
+        PromoteWarningsToErrors = promoteWarningsToErrors;
+    }
+
+    public bool PromoteWarningsToErrors { get; }
+
+    public IReadOnlyList<SchemaDiagnostic> Diagnostics => _diagnostics;
+
+    public bool HasErrors => _diagnostics.Any(static diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error);
+
+    public void Report(SchemaDiagnostic diagnostic)
+    {
+        ArgumentNullException.ThrowIfNull(diagnostic);
+
+        _diagnostics.Add(
+            PromoteWarningsToErrors && diagnostic.Severity == SchemaDiagnosticSeverity.Warning
+                ? diagnostic with { Severity = SchemaDiagnosticSeverity.Error }
+                : diagnostic);
+    }
+
+    public void ReportRange(IEnumerable<SchemaDiagnostic> diagnostics)
+    {
+        ArgumentNullException.ThrowIfNull(diagnostics);
+
+        foreach (SchemaDiagnostic diagnostic in diagnostics)
+        {
+            Report(diagnostic);
+        }
+    }
 }
 
 public sealed record SchemaTransformContext
 {
-    public IList<SchemaDiagnostic> Diagnostics { get; init; } = [];
+    public required SchemaDiagnosticSink Diagnostics { get; init; }
+    public AnnotationPolicy AnnotationPolicy { get; init; } = AnnotationPolicy.Default;
+    public string? PipelineStage { get; init; }
+    public IServiceProvider? Services { get; init; }
+}
+
+public sealed record SchemaPipelineOptions
+{
+    public static SchemaPipelineOptions Default { get; } = new();
+
+    public bool ContinueOnError { get; init; }
+    public bool PromoteWarningsToErrors { get; init; }
+    public AnnotationPolicy AnnotationPolicy { get; init; } = AnnotationPolicy.Default;
+    public IServiceProvider? Services { get; init; }
+    public IReadOnlyList<SchemaDiagnostic> InitialDiagnostics { get; init; } = [];
+}
+
+public sealed record SchemaPipelineResult
+{
+    public required TypeSchemaModel Model { get; init; }
+    public required IReadOnlyList<SchemaDiagnostic> Diagnostics { get; init; }
+
+    public bool HasErrors => Diagnostics.Any(static diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error);
 }
 
 public sealed record SchemaProjectionContext

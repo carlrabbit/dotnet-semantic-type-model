@@ -4,6 +4,7 @@ using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Building;
 using ProjectionTarget = SemanticTypeModel.Abstractions.Hardening.ProjectionTarget;
 using SchemaDiagnostic = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnostic;
+using SchemaDiagnosticStage = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticStage;
 using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticSeverity;
 
 namespace SemanticTypeModel.JsonSchema.Import;
@@ -137,9 +138,10 @@ public sealed class JsonSchemaImporter : ISchemaModelSource
             Severity = severity,
             Code = code,
             Message = message,
+            Stage = SchemaDiagnosticStage.Import,
             ModelPath = modelPath,
             ProjectionTarget = target,
-            Source = "import",
+            Source = modelPath,
         };
     }
 
