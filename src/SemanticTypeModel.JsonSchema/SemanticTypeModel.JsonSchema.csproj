@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SemanticTypeModel.JsonSchema</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
+    <ProjectReference Include="../SemanticTypeModel.Core/SemanticTypeModel.Core.csproj" />
+  </ItemGroup>
+</Project>

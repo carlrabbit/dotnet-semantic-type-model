@@ -1,0 +1,31 @@
+# .NET
+bin/
+obj/
+TestResults/
+*.user
+*.suo
+*.rsuser
+
+# BenchmarkDotNet
+BenchmarkDotNet.Artifacts/
+
+# Local artifacts
+artifacts/*
+!artifacts/.gitkeep
+
+# Packages
+packages/*
+!packages/.gitkeep
+
+# Bun / JS / TS
+node_modules/
+bun.lockb
+
+# IDE
+.vs/
+.vscode/.ropeproject
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

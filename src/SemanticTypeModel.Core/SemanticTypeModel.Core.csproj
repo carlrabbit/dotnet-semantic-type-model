@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SemanticTypeModel.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
+  </ItemGroup>
+</Project>
