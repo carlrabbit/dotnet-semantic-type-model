@@ -23,5 +23,5 @@ Specs are authoritative for:
 
 | Spec | Purpose |
 |---|---|
-
-(No specs defined yet. Specs will be added in subsequent milestones.)
+| specs/type-schema-model.md | Canonical semantic type model contracts, invariants, and traversal behavior |
+| specs/json-schema-adapter.md | Supported JSON Schema import and export baseline behavior |

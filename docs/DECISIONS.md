@@ -17,5 +17,4 @@ Decision records are not authoritative for:
 
 | Decision | Purpose |
 |---|---|
-
-(No decision records defined yet. Decisions will be added in subsequent milestones.)
+| decisions/json-schema-as-primary-dialect.md | Rationale for choosing JSON Schema Draft 2020-12 as the first adapter dialect |

@@ -18,5 +18,5 @@ Architecture documents are not authoritative for:
 
 | Document | Purpose |
 |---|---|
-
-(No architecture documents defined yet. Architecture documents will be added in subsequent milestones.)
+| architecture/canonical-schema-model.md | Canonical model project boundaries and dependency rules |
+| architecture/transformation-pipeline.md | Acquisition, transformation, and projection pipeline structure |
