@@ -3,7 +3,7 @@ namespace SemanticTypeModel.Abstractions.Hardening;
 #pragma warning disable CS1591
 public interface ISchemaTransformation
 {
-    ValueTask TransformAsync(TypeSchemaModelBuilder model, SchemaTransformContext context);
+    ValueTask TransformAsync(TypeSchemaModelBuilder model, SchemaTransformContext context, CancellationToken cancellationToken = default);
 }
 
 public interface ISchemaProjection<T>

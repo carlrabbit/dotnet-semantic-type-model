@@ -5,8 +5,7 @@ using SemanticTypeModel.Core.Validation;
 namespace SemanticTypeModel.Core.Tests.Unit;
 
 /// <summary>
-/// Verifies that <see cref="TypeSchemaModelValidator"/> emits the correct diagnostics for each
-/// class of model invariant violation.
+/// Verifies that <see cref="TypeSchemaModelValidator"/> emits the correct diagnostics for canonical invariant violations.
 /// </summary>
 #pragma warning disable CS1591
 [SuppressMessage("Naming", "CA1707:Remove the underscores from member name", Justification = "Test names may use underscores for readability.")]
@@ -14,17 +13,12 @@ public sealed class TypeModelValidationTests
 {
     private static readonly AnnotationBag EmptyAnnotations = new();
 
-    // -------------------------------------------------------------------------
-    // 1. Duplicate TypeId
-    // -------------------------------------------------------------------------
-
     [Test]
     public async Task Validator_should_report_duplicate_type_id()
     {
         ScalarTypeDefinition a = Scalar("Duplicate");
         ScalarTypeDefinition b = Scalar("Duplicate");
 
-        // Manually construct a model that bypasses the dictionary de-duplication.
         TypeSchemaModel model = new()
         {
             Id = new SchemaModelId("Test"),
@@ -35,16 +29,8 @@ public sealed class TypeModelValidationTests
 
         IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(model);
 
-        _ = await Assert.That(diagnostics.Any(d => d.Code == "MODEL_DUPLICATE_TYPE_ID")).IsTrue();
-        _ = await Assert.That(diagnostics.First(d => d.Code == "MODEL_DUPLICATE_TYPE_ID").Severity)
-            .IsEqualTo(SchemaDiagnosticSeverity.Error);
-        _ = await Assert.That(diagnostics.First(d => d.Code == "MODEL_DUPLICATE_TYPE_ID").ModelPath)
-            .IsEqualTo(ModelPath.ForType(a.Id));
+        await AssertDiagnostic(diagnostics, "STM0001", SchemaDiagnosticSeverity.Error, ModelPath.ForType(a.Id), SchemaDiagnosticStage.Validation);
     }
-
-    // -------------------------------------------------------------------------
-    // 2. Unresolved TypeRef
-    // -------------------------------------------------------------------------
 
     [Test]
     public async Task Validator_should_report_unresolved_type_ref_on_property()
@@ -73,12 +59,9 @@ public sealed class TypeModelValidationTests
             Relationships = [],
         };
 
-        TypeSchemaModel model = BuildModel(obj);
-        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(model);
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj));
 
-        _ = await Assert.That(diagnostics.Any(d => d.Code == "MODEL_UNRESOLVED_TYPE_REF")).IsTrue();
-        _ = await Assert.That(diagnostics.First(d => d.Code == "MODEL_UNRESOLVED_TYPE_REF").ModelPath)
-            .IsEqualTo(ModelPath.ForProperty(obj.Id, "id"));
+        await AssertDiagnostic(diagnostics, "STM0002", SchemaDiagnosticSeverity.Error, ModelPath.ForProperty(obj.Id, "id"), SchemaDiagnosticStage.Validation);
     }
 
     [Test]
@@ -109,15 +92,10 @@ public sealed class TypeModelValidationTests
             Relationships = [],
         };
 
-        TypeSchemaModel model = BuildModel(obj, stringType);
-        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(model);
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj, stringType));
 
-        _ = await Assert.That(diagnostics.Where(d => d.Severity == SchemaDiagnosticSeverity.Error)).IsEmpty();
+        _ = await Assert.That(diagnostics.Where(static diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error)).IsEmpty();
     }
-
-    // -------------------------------------------------------------------------
-    // 3. Duplicate property names
-    // -------------------------------------------------------------------------
 
     [Test]
     public async Task Validator_should_report_duplicate_property_name()
@@ -132,49 +110,110 @@ public sealed class TypeModelValidationTests
             Annotations = EmptyAnnotations,
             Properties =
             [
-                new PropertyDefinition
-                {
-                    Id = new PropertyId("Prop1"),
-                    Name = "email",
-                    Type = new TypeRef(stringType.Id),
-                    Cardinality = new Cardinality { IsRequired = true },
-                    Mutability = Mutability.Mutable,
-                    Constraints = new ConstraintSet(),
-                    Annotations = EmptyAnnotations,
-                },
-                new PropertyDefinition
-                {
-                    Id = new PropertyId("Prop2"),
-                    Name = "email",
-                    Type = new TypeRef(stringType.Id),
-                    Cardinality = new Cardinality { IsRequired = false },
-                    Mutability = Mutability.Mutable,
-                    Constraints = new ConstraintSet(),
-                    Annotations = EmptyAnnotations,
-                },
+                Property("email", "Prop1", stringType.Id, true, false),
+                Property("email", "Prop2", stringType.Id, false, false),
             ],
             Keys = [],
             Relationships = [],
         };
 
-        TypeSchemaModel model = BuildModel(obj, stringType);
-        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(model);
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj, stringType));
 
-        _ = await Assert.That(diagnostics.Any(d => d.Code == "MODEL_DUPLICATE_PROPERTY_NAME")).IsTrue();
-        _ = await Assert.That(diagnostics.First(d => d.Code == "MODEL_DUPLICATE_PROPERTY_NAME").Severity)
-            .IsEqualTo(SchemaDiagnosticSeverity.Error);
-        _ = await Assert.That(diagnostics.First(d => d.Code == "MODEL_DUPLICATE_PROPERTY_NAME").ModelPath)
-            .IsEqualTo(ModelPath.ForProperty(obj.Id, "email"));
+        await AssertDiagnostic(diagnostics, "STM0003", SchemaDiagnosticSeverity.Error, ModelPath.ForProperty(obj.Id, "email"), SchemaDiagnosticStage.Validation);
     }
 
-    // -------------------------------------------------------------------------
-    // 4. Relationship references to missing properties
-    // -------------------------------------------------------------------------
+    [Test]
+    public async Task Validator_should_report_duplicate_key_name()
+    {
+        ScalarTypeDefinition stringType = Scalar("String");
+        var obj = new ObjectTypeDefinition
+        {
+            Id = new TypeId("Keys"),
+            Name = "Keys",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = EmptyAnnotations,
+            Properties = [Property("id", "IdProperty", stringType.Id, true, false)],
+            Keys =
+            [
+                Key("PK_Keys", "IdProperty"),
+                Key("PK_Keys", "IdProperty"),
+            ],
+            Relationships = [],
+        };
+
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj, stringType));
+
+        await AssertDiagnostic(diagnostics, "STM0004", SchemaDiagnosticSeverity.Error, ModelPath.ForKey(obj.Id, "PK_Keys"), SchemaDiagnosticStage.Validation);
+    }
+
+    [Test]
+    public async Task Validator_should_report_missing_key_property_reference()
+    {
+        ScalarTypeDefinition stringType = Scalar("String");
+        var obj = new ObjectTypeDefinition
+        {
+            Id = new TypeId("Keys"),
+            Name = "Keys",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = EmptyAnnotations,
+            Properties = [Property("id", "IdProperty", stringType.Id, true, false)],
+            Keys =
+            [
+                new KeyDefinition
+                {
+                    Name = "PK_Keys",
+                    Kind = KeyKind.Primary,
+                    Properties = [new PropertyRef(new PropertyId("MissingProperty"))],
+                    Annotations = EmptyAnnotations,
+                },
+            ],
+            Relationships = [],
+        };
+
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj, stringType));
+
+        await AssertDiagnostic(diagnostics, "STM0005", SchemaDiagnosticSeverity.Error, "/types/Keys/keys/PK_Keys/MissingProperty", SchemaDiagnosticStage.Validation);
+    }
+
+    [Test]
+    public async Task Validator_should_report_relationship_with_missing_type()
+    {
+        ScalarTypeDefinition intType = Scalar("Int", ScalarKind.Integer);
+        var obj = new ObjectTypeDefinition
+        {
+            Id = new TypeId("OrderLine"),
+            Name = "OrderLine",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = EmptyAnnotations,
+            Properties = [Property("orderId", "OrderIdProperty", intType.Id, true, false)],
+            Keys = [],
+            Relationships =
+            [
+                new RelationshipDefinition
+                {
+                    Id = new RelationshipId("Order_OrderLine"),
+                    PrincipalType = new TypeRef(new TypeId("MissingOrder")),
+                    DependentType = new TypeRef(new TypeId("OrderLine")),
+                    PrincipalProperties = [new PropertyRef(new PropertyId("OrderIdProperty"))],
+                    DependentProperties = [new PropertyRef(new PropertyId("OrderIdProperty"))],
+                    Cardinality = RelationshipCardinality.OneToMany,
+                    Annotations = EmptyAnnotations,
+                },
+            ],
+        };
+
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj, intType));
+
+        await AssertDiagnostic(diagnostics, "STM0006", SchemaDiagnosticSeverity.Error, "/types/OrderLine/relationships/Order_OrderLine/principalType", SchemaDiagnosticStage.Validation);
+    }
 
     [Test]
     public async Task Validator_should_report_unresolved_property_ref_in_relationship()
     {
-        ScalarTypeDefinition intType = Scalar("Int");
+        ScalarTypeDefinition intType = Scalar("Int", ScalarKind.Integer);
         var principal = new ObjectTypeDefinition
         {
             Id = new TypeId("Order"),
@@ -182,19 +221,7 @@ public sealed class TypeModelValidationTests
             Kind = TypeKind.Object,
             Nullability = Nullability.NonNullable,
             Annotations = EmptyAnnotations,
-            Properties =
-            [
-                new PropertyDefinition
-                {
-                    Id = new PropertyId("OrderIdProp"),
-                    Name = "id",
-                    Type = new TypeRef(intType.Id),
-                    Cardinality = new Cardinality { IsRequired = true },
-                    Mutability = Mutability.Mutable,
-                    Constraints = new ConstraintSet(),
-                    Annotations = EmptyAnnotations,
-                },
-            ],
+            Properties = [Property("id", "OrderIdProp", intType.Id, true, false)],
             Keys = [],
             Relationships = [],
         };
@@ -206,19 +233,7 @@ public sealed class TypeModelValidationTests
             Kind = TypeKind.Object,
             Nullability = Nullability.NonNullable,
             Annotations = EmptyAnnotations,
-            Properties =
-            [
-                new PropertyDefinition
-                {
-                    Id = new PropertyId("OrderLineFkProp"),
-                    Name = "orderId",
-                    Type = new TypeRef(intType.Id),
-                    Cardinality = new Cardinality { IsRequired = true },
-                    Mutability = Mutability.Mutable,
-                    Constraints = new ConstraintSet(),
-                    Annotations = EmptyAnnotations,
-                },
-            ],
+            Properties = [Property("orderId", "OrderLineFkProp", intType.Id, true, false)],
             Keys = [],
             Relationships =
             [
@@ -227,7 +242,6 @@ public sealed class TypeModelValidationTests
                     Id = new RelationshipId("Order_OrderLine"),
                     PrincipalType = new TypeRef(principal.Id),
                     DependentType = new TypeRef(new TypeId("OrderLine")),
-                    // References a property that does NOT exist in principal.
                     PrincipalProperties = [new PropertyRef(new PropertyId("NonExistentProp"))],
                     DependentProperties = [new PropertyRef(new PropertyId("OrderLineFkProp"))],
                     Cardinality = RelationshipCardinality.OneToMany,
@@ -236,15 +250,10 @@ public sealed class TypeModelValidationTests
             ],
         };
 
-        TypeSchemaModel model = BuildModel(principal, dependent, intType);
-        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(model);
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(principal, dependent, intType));
 
-        _ = await Assert.That(diagnostics.Any(d => d.Code == "MODEL_UNRESOLVED_PROPERTY_REF")).IsTrue();
+        await AssertDiagnostic(diagnostics, "STM0007", SchemaDiagnosticSeverity.Error, "/types/OrderLine/relationships/Order_OrderLine/principalProperties/NonExistentProp", SchemaDiagnosticStage.Validation);
     }
-
-    // -------------------------------------------------------------------------
-    // 5. Invalid cardinality
-    // -------------------------------------------------------------------------
 
     [Test]
     public async Task Validator_should_report_invalid_cardinality_when_min_exceeds_max()
@@ -274,43 +283,82 @@ public sealed class TypeModelValidationTests
             Relationships = [],
         };
 
-        TypeSchemaModel model = BuildModel(obj, stringType);
-        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(model);
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj, stringType));
 
-        _ = await Assert.That(diagnostics.Any(d => d.Code == "MODEL_INVALID_CARDINALITY")).IsTrue();
-        _ = await Assert.That(diagnostics.First(d => d.Code == "MODEL_INVALID_CARDINALITY").Severity)
-            .IsEqualTo(SchemaDiagnosticSeverity.Error);
-        _ = await Assert.That(diagnostics.First(d => d.Code == "MODEL_INVALID_CARDINALITY").ModelPath)
-            .IsEqualTo(ModelPath.ForProperty(obj.Id, "tags"));
+        await AssertDiagnostic(diagnostics, "STM0008", SchemaDiagnosticSeverity.Error, ModelPath.ForProperty(obj.Id, "tags"), SchemaDiagnosticStage.Validation);
     }
 
     [Test]
-    public async Task Validator_should_report_invalid_cardinality_on_array_type()
+    public async Task Validator_should_report_invalid_numeric_constraints()
     {
-        ScalarTypeDefinition stringType = Scalar("String");
-        var array = new ArrayTypeDefinition
+        ScalarTypeDefinition decimalType = Scalar("Decimal", ScalarKind.Decimal);
+        var obj = new ObjectTypeDefinition
         {
-            Id = new TypeId("BadArray"),
-            Name = "BadArray",
-            Kind = TypeKind.Array,
+            Id = new TypeId("Product"),
+            Name = "Product",
+            Kind = TypeKind.Object,
             Nullability = Nullability.NonNullable,
             Annotations = EmptyAnnotations,
-            ItemType = new TypeRef(stringType.Id),
-            MinItems = 10,
-            MaxItems = 3,
+            Properties =
+            [
+                new PropertyDefinition
+                {
+                    Id = new PropertyId("PriceProp"),
+                    Name = "price",
+                    Type = new TypeRef(decimalType.Id),
+                    Cardinality = new Cardinality { IsRequired = true },
+                    Mutability = Mutability.Mutable,
+                    Constraints = new ConstraintSet
+                    {
+                        Numeric = new NumericConstraints { Minimum = 10m, Maximum = 2m },
+                    },
+                    Annotations = EmptyAnnotations,
+                },
+            ],
+            Keys = [],
+            Relationships = [],
         };
 
-        TypeSchemaModel model = BuildModel(array, stringType);
-        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(model);
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj, decimalType));
 
-        _ = await Assert.That(diagnostics.Any(d => d.Code == "MODEL_INVALID_CARDINALITY")).IsTrue();
-        _ = await Assert.That(diagnostics.First(d => d.Code == "MODEL_INVALID_CARDINALITY").ModelPath)
-            .IsEqualTo(ModelPath.ForType(array.Id));
+        await AssertDiagnostic(diagnostics, "STM0010", SchemaDiagnosticSeverity.Error, ModelPath.ForProperty(obj.Id, "price"), SchemaDiagnosticStage.Validation);
     }
 
-    // -------------------------------------------------------------------------
-    // 6. Invalid annotation key format
-    // -------------------------------------------------------------------------
+    [Test]
+    public async Task Validator_should_report_invalid_string_constraints()
+    {
+        ScalarTypeDefinition stringType = Scalar("String");
+        var obj = new ObjectTypeDefinition
+        {
+            Id = new TypeId("Profile"),
+            Name = "Profile",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = EmptyAnnotations,
+            Properties =
+            [
+                new PropertyDefinition
+                {
+                    Id = new PropertyId("NameProp"),
+                    Name = "name",
+                    Type = new TypeRef(stringType.Id),
+                    Cardinality = new Cardinality { IsRequired = true },
+                    Mutability = Mutability.Mutable,
+                    Constraints = new ConstraintSet
+                    {
+                        String = new StringConstraints { MinLength = -1, MaxLength = 10 },
+                    },
+                    Annotations = EmptyAnnotations,
+                },
+            ],
+            Keys = [],
+            Relationships = [],
+        };
+
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj, stringType));
+
+        await AssertDiagnostic(diagnostics, "STM0009", SchemaDiagnosticSeverity.Error, ModelPath.ForProperty(obj.Id, "name"), SchemaDiagnosticStage.Validation);
+    }
 
     [Test]
     public async Task Validator_should_report_annotation_key_without_namespace()
@@ -339,12 +387,41 @@ public sealed class TypeModelValidationTests
             Relationships = [],
         };
 
-        TypeSchemaModel model = BuildModel(obj);
-        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(model);
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj));
 
-        _ = await Assert.That(diagnostics.Any(d => d.Code == "MODEL_INVALID_ANNOTATION_KEY")).IsTrue();
-        _ = await Assert.That(diagnostics.First(d => d.Code == "MODEL_INVALID_ANNOTATION_KEY").Severity)
-            .IsEqualTo(SchemaDiagnosticSeverity.Warning);
+        await AssertDiagnostic(diagnostics, "STM0011", SchemaDiagnosticSeverity.Warning, ModelPath.ForAnnotation(ModelPath.ForType(obj.Id), new AnnotationKey("noDot")), SchemaDiagnosticStage.Validation);
+    }
+
+    [Test]
+    public async Task Validator_should_report_reserved_namespace_with_incorrect_casing()
+    {
+        var obj = new ObjectTypeDefinition
+        {
+            Id = new TypeId("Annotated"),
+            Name = "Annotated",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag
+            {
+                Items =
+                [
+                    new Annotation
+                    {
+                        Key = new AnnotationKey("UI.order"),
+                        Value = 1,
+                        Scope = AnnotationScope.Type,
+                        Source = AnnotationSource.Declared,
+                    },
+                ],
+            },
+            Properties = [],
+            Keys = [],
+            Relationships = [],
+        };
+
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj));
+
+        await AssertDiagnostic(diagnostics, "STM0011", SchemaDiagnosticSeverity.Warning, ModelPath.ForAnnotation(ModelPath.ForType(obj.Id), new AnnotationKey("UI.order")), SchemaDiagnosticStage.Validation);
     }
 
     [Test]
@@ -360,9 +437,9 @@ public sealed class TypeModelValidationTests
             {
                 Items =
                 [
-                    new Annotation { Key = new AnnotationKey("ui.order"), Value = 1, Scope = AnnotationScope.Type, Source = AnnotationSource.Declared },
-                    new Annotation { Key = new AnnotationKey("efCore.tableName"), Value = "t_good", Scope = AnnotationScope.Type, Source = AnnotationSource.Declared },
-                    new Annotation { Key = new AnnotationKey("jsonSchema.$defs"), Value = true, Scope = AnnotationScope.Type, Source = AnnotationSource.Declared },
+                    Annotation("ui.order", 1),
+                    Annotation("efCore.tableName", "t_good"),
+                    Annotation("jsonSchema.$defs", true),
                 ],
             },
             Properties = [],
@@ -370,15 +447,34 @@ public sealed class TypeModelValidationTests
             Relationships = [],
         };
 
-        TypeSchemaModel model = BuildModel(obj);
-        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(model);
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(obj));
 
-        _ = await Assert.That(diagnostics.Any(d => d.Code == "MODEL_INVALID_ANNOTATION_KEY")).IsFalse();
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Code == "STM0011")).IsFalse();
     }
 
-    // -------------------------------------------------------------------------
-    // ModelPath helper tests
-    // -------------------------------------------------------------------------
+    [Test]
+    public async Task Validator_should_report_duplicate_enum_names_and_values()
+    {
+        var enumType = new EnumTypeDefinition
+        {
+            Id = new TypeId("Status"),
+            Name = "Status",
+            Kind = TypeKind.Enum,
+            Nullability = Nullability.NonNullable,
+            Annotations = EmptyAnnotations,
+            StorageKind = EnumStorageKind.String,
+            Values =
+            [
+                new EnumValueDefinition { Name = "Open", Value = "open", Annotations = EmptyAnnotations },
+                new EnumValueDefinition { Name = "open", Value = "open", Annotations = EmptyAnnotations },
+            ],
+        };
+
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(enumType));
+
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Code == "STM0012")).IsTrue();
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Code == "STM0013")).IsTrue();
+    }
 
     [Test]
     public async Task ModelPath_should_produce_canonical_format()
@@ -391,19 +487,20 @@ public sealed class TypeModelValidationTests
         _ = await Assert.That(ModelPath.ForProperty(typeId, "email")).IsEqualTo("/types/Customer/properties/email");
         _ = await Assert.That(ModelPath.ForRelationship(typeId, relId)).IsEqualTo("/types/Customer/relationships/Order_Customer");
         _ = await Assert.That(ModelPath.ForKey(typeId, "PK_Customer")).IsEqualTo("/types/Customer/keys/PK_Customer");
-        _ = await Assert.That(ModelPath.ForComputedMember(typeId, "FullName")).IsEqualTo("/types/Customer/computed/FullName");
+        _ = await Assert.That(ModelPath.ForComputedMember(typeId, "FullName")).IsEqualTo("/types/Customer/computedMembers/FullName");
         _ = await Assert.That(ModelPath.ForAnnotation("/types/Customer", annotationKey)).IsEqualTo("/types/Customer/annotations/ui.order");
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
-
     private static TypeSchemaModel BuildModel(params TypeDefinition[] types)
     {
-        var byId = types
-            .GroupBy(t => t.Id)
-            .ToDictionary(g => g.Key, g => g.First());
+        Dictionary<TypeId, TypeDefinition> byId = [];
+        foreach (TypeDefinition type in types)
+        {
+            if (!byId.ContainsKey(type.Id))
+            {
+                byId[type.Id] = type;
+            }
+        }
 
         return new TypeSchemaModel
         {
@@ -414,7 +511,32 @@ public sealed class TypeModelValidationTests
         };
     }
 
-    private static ScalarTypeDefinition Scalar(string name)
+    private static PropertyDefinition Property(string name, string propertyId, TypeId typeId, bool isRequired, bool allowsNull)
+    {
+        return new PropertyDefinition
+        {
+            Id = new PropertyId(propertyId),
+            Name = name,
+            Type = new TypeRef(typeId),
+            Cardinality = new Cardinality { IsRequired = isRequired, AllowsNull = allowsNull },
+            Mutability = Mutability.Mutable,
+            Constraints = new ConstraintSet(),
+            Annotations = EmptyAnnotations,
+        };
+    }
+
+    private static KeyDefinition Key(string keyName, string propertyId)
+    {
+        return new KeyDefinition
+        {
+            Name = keyName,
+            Kind = KeyKind.Primary,
+            Properties = [new PropertyRef(new PropertyId(propertyId))],
+            Annotations = EmptyAnnotations,
+        };
+    }
+
+    private static ScalarTypeDefinition Scalar(string name, ScalarKind scalarKind = ScalarKind.String)
     {
         return new ScalarTypeDefinition
         {
@@ -423,8 +545,32 @@ public sealed class TypeModelValidationTests
             Kind = TypeKind.Scalar,
             Nullability = Nullability.NonNullable,
             Annotations = EmptyAnnotations,
-            ScalarKind = ScalarKind.String,
+            ScalarKind = scalarKind,
         };
+    }
+
+    private static Annotation Annotation(string key, object? value)
+    {
+        return new Annotation
+        {
+            Key = new AnnotationKey(key),
+            Value = value,
+            Scope = AnnotationScope.Type,
+            Source = AnnotationSource.Declared,
+        };
+    }
+
+    private static async Task AssertDiagnostic(
+        IReadOnlyList<SchemaDiagnostic> diagnostics,
+        string code,
+        SchemaDiagnosticSeverity severity,
+        string path,
+        SchemaDiagnosticStage stage)
+    {
+        SchemaDiagnostic diagnostic = diagnostics.First(diagnostic => diagnostic.Code == code);
+        _ = await Assert.That(diagnostic.Severity).IsEqualTo(severity);
+        _ = await Assert.That(diagnostic.ModelPath).IsEqualTo(path);
+        _ = await Assert.That(diagnostic.Stage).IsEqualTo(stage);
     }
 }
 #pragma warning restore CS1591

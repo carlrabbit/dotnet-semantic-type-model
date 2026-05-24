@@ -35,7 +35,7 @@ The hardened model surface includes:
 - composition model: `UnionTypeDefinition` (`OneOf`/`AnyOf`) and `IntersectionTypeDefinition`;
 - reference model: stable `TypeRef(TypeId)` for recursive/reference graphs;
 - semantics model: `EntitySemantics`, `KeyDefinition`, `RelationshipDefinition`, computed members;
-- diagnostics model: `SchemaDiagnostic` with severity, code, message, model path, source, projection target.
+- diagnostics model: `SchemaDiagnostic` with severity, code, message, stage, model path, source, projection target, and related model paths.
 
 ## Invariants
 
@@ -50,10 +50,67 @@ The hardened model surface includes:
 
 Canonical contracts support runtime and compile-time usage through:
 
-- `ISchemaTransformation.TransformAsync(TypeSchemaModelBuilder, SchemaTransformContext)`
+- `ISchemaTransformation.TransformAsync(TypeSchemaModelBuilder, SchemaTransformContext, CancellationToken)`
 - `ISchemaProjection<T>.Project(TypeSchemaModel, SchemaProjectionContext)`
 
 These contracts must preserve projection independence and diagnostic emission capability.
+
+## Transformation Pipeline Contract
+
+The hardened runtime pipeline is represented by `SchemaTransformationPipeline` plus:
+
+- `SchemaPipelineOptions` for execution policy and initial diagnostics;
+- `SchemaPipelineResult` for the transformed model and accumulated diagnostics;
+- `SchemaTransformContext` for per-transform execution state;
+- `SchemaDiagnosticSink` for structured diagnostic emission;
+- `AnnotationPolicy` for duplicate-key and malformed-key behavior.
+
+Pipeline rules:
+
+- transformations run sequentially in configured order;
+- the pipeline clones the input model before execution and returns a fresh output snapshot;
+- diagnostics accumulate across executed transforms;
+- by default, execution stops before the next transform after an error diagnostic is recorded;
+- `ContinueOnError` allows later transforms to run after errors;
+- warning promotion happens through the diagnostic sink, not by mutating previously emitted diagnostics;
+- M0005 does not introduce parallel transform execution.
+
+## Diagnostic Model
+
+Structured diagnostics must be machine-queryable by code, severity, stage, and path.
+
+`SchemaDiagnostic` carries:
+
+- `Code`;
+- `Severity`;
+- `Message`;
+- `Stage`;
+- `ModelPath`;
+- `Source` when a source-format path/span is known;
+- `PipelineStage` when emitted from a named transform stage;
+- `ProjectionTarget` when target-specific;
+- `RelatedModelPaths` when a diagnostic refers to multiple model locations.
+
+`SchemaDiagnosticStage` values are:
+
+- `Import`
+- `Transformation`
+- `Validation`
+- `Export`
+- `Projection`
+
+## Model Path Format
+
+Model paths use stable slash-separated segments rooted at `/types`.
+
+- Paths are human-readable and machine-comparable.
+- Path segments escape `~` as `~0` and `/` as `~1`.
+- Canonical examples:
+  - `/types/Customer`
+  - `/types/Customer/properties/email`
+  - `/types/Customer/keys/Primary`
+  - `/types/Order/relationships/Customer`
+  - `/types/SalesFact/computedMembers/TotalAmount`
 
 ## Examples
 
