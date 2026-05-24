@@ -1,105 +1,100 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.JsonSchema.Import;
+using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticSeverity;
 
 namespace SemanticTypeModel.JsonSchema.Tests.Unit;
 
 /// <summary>
-/// Verifies JSON Schema roundtrip behavior.
+/// Verifies JSON Schema import/export roundtrip behavior.
 /// </summary>
 [SuppressMessage("Naming", "CA1707:Remove the underscores from member name", Justification = "Test names may use underscores for readability.")]
 public sealed class JsonSchemaRoundtripTests
 {
     /// <summary>
-    /// Verifies the supported JSON Schema baseline can roundtrip through the canonical model.
+    /// Roundtrips a schema containing defs, refs, unions, and constraints.
     /// </summary>
     [Test]
-    public async Task Import_then_export_should_preserve_supported_baseline_shape_information()
+    public async Task Roundtrip_should_preserve_supported_semantic_shape_information()
     {
-        var json = /*lang=json,strict*/ """
+        var input = /*lang=json,strict*/ """
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "$id": "Root",
-              "title": "Order",
+              "$id": "Order",
               "type": "object",
               "required": ["status", "items"],
               "properties": {
-                "status": {
-                  "$ref": "#/$defs/Status"
-                },
+                "status": { "$ref": "#/$defs/Status" },
                 "items": {
                   "type": "array",
-                  "items": {
-                    "$ref": "#/$defs/Item"
-                  }
+                  "items": { "$ref": "#/$defs/Item" },
+                  "minItems": 1
                 },
                 "notes": {
                   "oneOf": [
                     { "type": "string", "maxLength": 50 },
                     { "type": "null" }
                   ]
+                },
+                "mode": {
+                  "anyOf": [
+                    { "type": "string" },
+                    { "type": "integer" }
+                  ]
                 }
               },
               "$defs": {
-                "Status": {
-                  "enum": ["new", "processing", "done"]
-                },
+                "Status": { "enum": ["new", "processing", "done"] },
                 "Item": {
                   "type": "object",
                   "properties": {
-                    "sku": { "type": "string" }
+                    "sku": { "type": "string" },
+                    "quantity": { "type": "integer", "minimum": 1 }
                   }
                 }
               }
             }
             """;
 
-        TypeSchemaModel imported = new JsonSchemaImporter(json).Load();
-        var exported = new JsonSchemaExporter().Project(imported);
-        TypeSchemaModel roundTripped = new JsonSchemaImporter(exported).Load();
+        JsonSchemaImportResult imported = JsonSchemaImporter.Import(input);
+        JsonSchemaExportResult exported = JsonSchemaExporter.Export(imported.Model);
+        JsonSchemaImportResult roundtripped = JsonSchemaImporter.Import(exported.Document);
 
-        var root = roundTripped.Root as ObjectShape;
-        var status = roundTripped.GetShape("Status") as EnumShape;
-        var item = roundTripped.GetShape("Item") as ObjectShape;
-
-        _ = await Assert.That(root).IsNotNull();
-        _ = await Assert.That(status).IsNotNull();
-        _ = await Assert.That(item).IsNotNull();
-
+        var root = roundtripped.Model.Root as ObjectShape;
         PropertyShape notes = root!.Properties.Single(static property => property.Name == "notes");
         PropertyShape items = root.Properties.Single(static property => property.Name == "items");
-        var itemArray = items.Type?.Resolve(roundTripped) as ArrayShape;
+        var itemArray = items.Type?.Resolve(roundtripped.Model) as ArrayShape;
+        var status = roundtripped.Model.GetShape("Status") as EnumShape;
 
-        _ = await Assert.That(itemArray).IsNotNull();
-        var skuShape = item!.Properties.Single(static property => property.Name == "sku").Type?.Resolve(roundTripped) as ScalarShape;
-
-        _ = await Assert.That(skuShape).IsNotNull();
-        _ = await Assert.That(root.Properties.Count).IsEqualTo(3);
-        _ = await Assert.That(status!.Values.Count).IsEqualTo(3);
-        _ = await Assert.That(skuShape!.Kind).IsEqualTo(ScalarKind.String);
+        _ = await Assert.That(imported.Diagnostics.Any(static diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error)).IsFalse();
+        _ = await Assert.That(root.Properties.Single(static property => property.Name == "status").IsRequired).IsTrue();
         _ = await Assert.That(notes.IsNullable).IsTrue();
-        _ = await Assert.That(itemArray!.Items?.Identifier).IsEqualTo("Item");
+        _ = await Assert.That(itemArray!.Constraints.Entries.Any(static entry => entry.Key == "minItems" && entry.Value == "1")).IsTrue();
+        _ = await Assert.That(status!.Values.Count).IsEqualTo(3);
+        _ = await Assert.That(exported.Document.RootElement.GetProperty("$schema").GetString()).IsEqualTo(JsonSchemaDialectUris.Draft202012);
     }
 
     /// <summary>
-    /// Verifies exported schema text is valid JSON.
+    /// Ensures unresolved and remote refs produce diagnostics instead of hard failures.
     /// </summary>
     [Test]
-    public async Task Exported_schema_should_remain_valid_json()
+    public async Task Import_should_emit_diagnostics_for_unresolved_and_remote_refs()
     {
-        TypeSchemaModel model = new JsonSchemaImporter(/*lang=json,strict*/ """
+        var schema = /*lang=json,strict*/ """
             {
               "$id": "Root",
-              "type": "string",
-              "default": "sample"
+              "type": "object",
+              "properties": {
+                "missing": { "$ref": "#/$defs/NotFound" },
+                "remote": { "$ref": "https://example.com/schemas/value.json" }
+              }
             }
-            """).Load();
+            """;
 
-        var exported = new JsonSchemaExporter().Project(model);
-        using var document = JsonDocument.Parse(exported);
+        JsonSchemaImportResult result = JsonSchemaImporter.Import(schema);
 
-        _ = await Assert.That(document.RootElement.GetProperty("default").GetString()).IsEqualTo("sample");
+        _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Code == "JSONSCHEMA_UNRESOLVED_LOCAL_REF" && diagnostic.Severity == SchemaDiagnosticSeverity.Error)).IsTrue();
+        _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Code == "JSONSCHEMA_REMOTE_REF_UNSUPPORTED" && diagnostic.Severity == SchemaDiagnosticSeverity.Warning)).IsTrue();
     }
 }

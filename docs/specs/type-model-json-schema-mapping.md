@@ -26,7 +26,7 @@ This spec is authoritative for canonical-to-JSON-Schema and JSON-Schema-to-canon
 | string constraints | `StringConstraints` |
 | numeric constraints | `NumericConstraints` |
 | `enum` | `EnumTypeDefinition` |
-| `const` | explicit defer in this milestone (or preserved annotation) |
+| `const` | canonical constraint entry (`const`) and re-export as JSON literal |
 | `oneOf` | `UnionTypeDefinition` with `UnionSemantics.OneOf` |
 | `anyOf` | `UnionTypeDefinition` with `UnionSemantics.AnyOf` |
 | `allOf` | `IntersectionTypeDefinition` and/or `ObjectComposition.AllOf` |
@@ -52,8 +52,21 @@ Unsupported or not-yet-modeled keywords must follow one of these strategies:
 - diagnosed as ignored;
 - explicitly deferred by this specification.
 
+Runtime import must support configurable behavior:
+
+- preserve as annotation + informational diagnostic;
+- ignore + warning diagnostic;
+- reject + error diagnostic.
+
+When preserved, unsupported keyword annotations use reserved namespaces such as `jsonSchema.*` and `ui.*`.
+
 ## Composition and Reference Behavior
 
 - `$defs`/`$ref` must preserve stable identifier-based references.
 - Recursive references are represented through `TypeRef(TypeId)`.
 - `allOf` object composition may be represented as composition metadata even when full intersection reduction is deferred.
+
+For the M0004 runtime baseline:
+
+- `oneOf` and `anyOf` map to canonical union shape semantics.
+- `allOf` intersection reduction is deferred and is preserved as annotation with diagnostics unless reduced by a future transform.
