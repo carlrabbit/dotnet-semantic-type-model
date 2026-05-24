@@ -144,7 +144,7 @@ public sealed class JsonSchemaExportTests
                         {
                             Name = "name",
                             Type = ShapeRef.FromInline(new ScalarShape { Kind = ScalarKind.String }),
-                            Annotations = [new SchemaAnnotation("jsonEditor.options", """{"grid_columns":6}"""), new SchemaAnnotation("ui.order", "1")],
+                            Annotations = [new SchemaAnnotation("jsonEditor.options", /*lang=json,strict*/ """{"grid_columns":6}"""), new SchemaAnnotation("ui.order", "1")],
                         },
                     ],
                 })

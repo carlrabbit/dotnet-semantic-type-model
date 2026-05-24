@@ -141,7 +141,7 @@ internal static class UiHintAnnotationProcessor
 
                         break;
                     case "ui.enumLabels":
-                        if (TryReadStringArray(annotation.Value, out var labels))
+                        if (TryReadStringArray(annotation.Value, out IReadOnlyList<string> labels))
                         {
                             if (enumValues is not null && labels.Count != enumValues.Count)
                             {
@@ -242,9 +242,15 @@ internal static class UiHintAnnotationProcessor
         return normalized;
     }
 
-    internal static bool IsKnownUiHint(string key) => KnownUiHints.Contains(key);
+    internal static bool IsKnownUiHint(string key)
+    {
+        return KnownUiHints.Contains(key);
+    }
 
-    internal static bool IsKnownJsonEditorHint(string key) => KnownJsonEditorHints.Contains(key);
+    internal static bool IsKnownJsonEditorHint(string key)
+    {
+        return KnownJsonEditorHints.Contains(key);
+    }
 
     internal static bool TryReadInt32(string value, out int result)
     {

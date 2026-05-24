@@ -553,8 +553,8 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
 
     private static string? ResolveDisplayText(IReadOnlyList<SchemaAnnotation> annotations, bool preferUiText, string field)
     {
-        string uiKey = $"ui.{field}";
-        string schemaKey = $"schema.{field}";
+        var uiKey = $"ui.{field}";
+        var schemaKey = $"schema.{field}";
 
         return preferUiText &&
                annotations.LastOrDefault(annotation => annotation.Key == uiKey) is { } ui &&
@@ -604,7 +604,7 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
             });
         }
 
-        return jsonEditorOrder.HasValue ? jsonEditorOrder.Value : uiOrder;
+        return jsonEditorOrder ?? uiOrder;
     }
 
     private static bool ShouldEmitGenericUiAnnotations(JsonSchemaExportOptions options)
