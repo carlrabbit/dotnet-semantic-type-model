@@ -81,6 +81,7 @@ internal static class Program
 
     private static void AddReference(Dictionary<string, PortableExecutableReference> references, Assembly assembly)
     {
+        // Single-file or in-memory load contexts may not provide a physical assembly location.
         if (string.IsNullOrWhiteSpace(assembly.Location))
         {
             return;
