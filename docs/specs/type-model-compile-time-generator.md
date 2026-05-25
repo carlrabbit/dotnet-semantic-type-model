@@ -58,6 +58,23 @@ M0009 supports configuration via attributes:
 
 Additional configuration mechanisms (MSBuild/additional files/analyzer config) are deferred.
 
+M0010 adds analyzer/MSBuild `build_property` options with `SemanticTypeModel*` prefix:
+
+- `SemanticTypeModelGeneratedNamespace`
+- `SemanticTypeModelGeneratedProviderName`
+- `SemanticTypeModelDiscoveryMode`
+- `SemanticTypeModelIncludedNamespaces`
+- `SemanticTypeModelExcludedNamespaces`
+- `SemanticTypeModelIncludeInternalTypes`
+- `SemanticTypeModelIncludeInternalMembers`
+- `SemanticTypeModelNamingPolicy`
+- `SemanticTypeModelInferKeys`
+- `SemanticTypeModelInferRelationships`
+- `SemanticTypeModelIncludeXmlDocumentation`
+- `SemanticTypeModelRequireXmlDocumentation`
+
+When both attribute and analyzer/MSBuild options are present, extraction still merges assembly attribute options and resolved analyzer options deterministically.
+
 ## Diagnostics
 
 Generator diagnostics use stable `STM5xxx` codes surfaced from extraction and include:

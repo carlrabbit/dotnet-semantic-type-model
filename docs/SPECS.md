@@ -29,6 +29,8 @@ Specs are authoritative for:
 | specs/type-model-annotations.md | Annotation namespace policy, preservation rules, and projection separation |
 | specs/type-model-json-schema-mapping.md | JSON Schema Draft 2020-12 mapping baseline for the hardened canonical model |
 | specs/type-model-dotnet-extraction.md | Roslyn-based .NET type-system discovery and extraction baseline into canonical model contracts |
+| specs/type-model-dotnet-attributes.md | Stable attribute vocabulary, precedence, and diagnostics for .NET extraction |
+| specs/type-model-dotnet-conventions.md | Deterministic discovery, naming, inference, and configuration conventions for .NET extraction |
 | specs/type-model-compile-time-generator.md | Incremental generator baseline for deterministic compile-time model-provider generation |
 | specs/type-model-ui-hints.md | Generic UI hint vocabulary, normalization, and JSON-editor compatibility mapping |
 | specs/type-model-projection-capabilities.md | Projection capability matrix and diagnostic expectations across targets |

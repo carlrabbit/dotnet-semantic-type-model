@@ -4,6 +4,11 @@
 
 Define Roslyn-based .NET type-system extraction into canonical semantic type model contracts.
 
+M0010 extends this baseline with explicit attribute and convention sub-specifications:
+
+- `docs/specs/type-model-dotnet-attributes.md`
+- `docs/specs/type-model-dotnet-conventions.md`
+
 ## Authority
 
 This specification is authoritative for:
@@ -24,6 +29,7 @@ This specification is authoritative for:
 ## Discovery Rules
 
 - Baseline discovery is explicit opt-in via `[SemanticType]`.
+- M0010 discovery modes are configured by `DotNetTypeDiscoveryMode` and default to `ExplicitAttributes`.
 - Reachable type expansion from discovered roots is enabled for referenced property types.
 - Default behavior remains conservative and does not scan full compilations without explicit roots.
 - Baseline exclusions:

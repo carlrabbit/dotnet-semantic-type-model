@@ -3,12 +3,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Emit;
 using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.Generators;
 using SemanticTypeModel.JsonSchema;
 using SemanticTypeModel.JsonSchema.Export;
+using Hardening = SemanticTypeModel.Abstractions.Hardening;
 
 namespace SemanticTypeModel.Generators.Tests.Unit;
 
@@ -272,12 +274,260 @@ public sealed class GeneratorBaselineTests
         _ = await Assert.That(diagnostics.Count).IsEqualTo(0);
     }
 
-    private static (TypeSchemaModel Model, IReadOnlyList<Diagnostic> Diagnostics) GenerateModel(string source)
+    [Test]
+    public async Task Fixture_9_namespace_discovery_should_respect_includes_excludes_and_ignore()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+
+            namespace MyApp.Contracts
+            {
+                public sealed class IncludedType
+                {
+                    public string Name { get; init; } = string.Empty;
+                }
+            }
+
+            namespace MyApp.Domain.Internal
+            {
+                public sealed class ExcludedType
+                {
+                    public string Value { get; init; } = string.Empty;
+                }
+            }
+
+            namespace MyApp.Domain
+            {
+                [SemanticIgnore]
+                public sealed class IgnoredType
+                {
+                    public string Secret { get; init; } = string.Empty;
+                }
+            }
+            """;
+
+        var options = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["SemanticTypeModelDiscoveryMode"] = "Namespace",
+            ["SemanticTypeModelIncludedNamespaces"] = "MyApp.Contracts;MyApp.Domain",
+            ["SemanticTypeModelExcludedNamespaces"] = "MyApp.Domain.Internal",
+        };
+
+        (TypeSchemaModel model, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(source, options);
+
+        _ = await Assert.That(model.TryGetShape("global::MyApp.Contracts.IncludedType")).IsNotNull();
+        _ = await Assert.That(model.TryGetShape("global::MyApp.Domain.Internal.ExcludedType")).IsNull();
+        _ = await Assert.That(model.TryGetShape("global::MyApp.Domain.IgnoredType")).IsNull();
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "STM5010")).IsTrue();
+    }
+
+    [Test]
+    public async Task Fixture_10_naming_policy_should_apply_and_diagnose_collisions()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType]
+            public sealed class NamingRoot
+            {
+                public string CustomerName { get; init; } = string.Empty;
+                public string customerName { get; init; } = string.Empty;
+            }
+            """;
+
+        var options = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["SemanticTypeModelNamingPolicy"] = "CamelCase",
+        };
+
+        (TypeSchemaModel model, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(source, options);
+        ObjectShape root = (ObjectShape)model.GetShape("global::NamingRoot");
+
+        _ = await Assert.That(root.Properties.Any(static property => property.Name == "customerName")).IsTrue();
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "STM5006")).IsTrue();
+    }
+
+    [Test]
+    public async Task Fixture_11_key_inference_and_composite_keys_should_be_deterministic()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType]
+            public sealed class Customer
+            {
+                public int Id { get; init; }
+                public int CustomerId { get; init; }
+                [SemanticKey(Name = "tenantCustomer", Order = 0)]
+                public string TenantId { get; init; } = string.Empty;
+                [SemanticKey(Name = "tenantCustomer", Order = 1)]
+                public string ExternalId { get; init; } = string.Empty;
+            }
+
+            [SemanticType]
+            public sealed class AmbiguousEntity
+            {
+                public int Id { get; init; }
+                public int AmbiguousEntityId { get; init; }
+            }
+            """;
+
+        var options = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["SemanticTypeModelInferKeys"] = "true",
+        };
+
+        (TypeSchemaModel model, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(source, options);
+        ObjectShape customer = (ObjectShape)model.GetShape("global::Customer");
+        PropertyShape tenantId = customer.Properties.Single(static property => property.Name == "TenantId");
+        PropertyShape externalId = customer.Properties.Single(static property => property.Name == "ExternalId");
+
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "STM5013")).IsTrue();
+        _ = await Assert.That(tenantId.Annotations.Any(static annotation => annotation.Key == "schema.key.name" && annotation.Value == "tenantCustomer")).IsTrue();
+        _ = await Assert.That(externalId.Annotations.Any(static annotation => annotation.Key == "schema.key.order" && annotation.Value == "1")).IsTrue();
+    }
+
+    [Test]
+    public async Task Fixture_12_relationship_inference_should_be_conservative_and_diagnose_missing_targets()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType]
+            public sealed class Order
+            {
+                public Customer Customer { get; init; } = new();
+                public List<OrderItem> Items { get; init; } = [];
+                [SemanticRelationship("global::MissingTarget")]
+                public string LegacyForeignKey { get; init; } = string.Empty;
+            }
+
+            public sealed class Customer
+            {
+                public int Id { get; init; }
+            }
+
+            public sealed class OrderItem
+            {
+                public string Sku { get; init; } = string.Empty;
+            }
+            """;
+
+        var options = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["SemanticTypeModelInferRelationships"] = "true",
+        };
+
+        (TypeSchemaModel model, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(source, options);
+        ObjectShape order = (ObjectShape)model.GetShape("global::Order");
+        PropertyShape customer = order.Properties.Single(static property => property.Name == "Customer");
+
+        _ = await Assert.That(customer.Annotations.Any(static annotation => annotation.Key == "schema.relationship" && annotation.Value == "inferred")).IsTrue();
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "STM5015")).IsTrue();
+    }
+
+    [Test]
+    public async Task Fixture_13_generator_configuration_should_apply_provider_options_and_validate_invalid_values()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType]
+            public sealed class ConfiguredRoot
+            {
+                public string Name { get; init; } = string.Empty;
+            }
+            """;
+
+        var options = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["SemanticTypeModelGeneratedNamespace"] = "MyApp.Generated",
+            ["SemanticTypeModelGeneratedProviderName"] = "MySemanticModel",
+            ["SemanticTypeModelDiscoveryMode"] = "NotARealMode",
+        };
+
+        (TypeSchemaModel model, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(
+            source,
+            options,
+            "MyApp.Generated.MySemanticModel");
+
+        _ = await Assert.That(model.TryGetShape("global::ConfiguredRoot")).IsNotNull();
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "STM5008")).IsTrue();
+    }
+
+    [Test]
+    public async Task Fixture_14_xml_documentation_should_map_description_when_enabled_and_not_override_explicit_description()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+
+            /// <summary>Customer summary from XML.</summary>
+            [SemanticType]
+            [SemanticDescription("Explicit customer description.")]
+            public sealed class Customer
+            {
+                /// <summary>Identifier from XML.</summary>
+                public int Id { get; init; }
+            }
+            """;
+
+        var options = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["SemanticTypeModelIncludeXmlDocumentation"] = "true",
+        };
+
+        (TypeSchemaModel model, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(source, options);
+        ObjectShape customer = (ObjectShape)model.GetShape("global::Customer");
+        PropertyShape id = customer.Properties.Single(static property => property.Name == "Id");
+
+        _ = await Assert.That(customer.Annotations.Any(static annotation => annotation.Key == "schema.description" && annotation.Value == "Explicit customer description.")).IsTrue();
+        _ = await Assert.That(id.Annotations.Any(static annotation => annotation.Key == "schema.description" && annotation.Value == "Identifier from XML.")).IsTrue();
+        _ = await Assert.That(diagnostics.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Fixture_15_generated_model_should_compose_with_transformation_pipeline_and_json_schema_export()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType]
+            public sealed class Product
+            {
+                public int Id { get; init; }
+                public required string Name { get; init; }
+            }
+            """;
+
+        (TypeSchemaModel model, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(
+            source,
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["SemanticTypeModelInferKeys"] = "true",
+            });
+
+        JsonSchemaExportResult export = JsonSchemaExporter.Export(model);
+        string json = export.Document.RootElement.GetRawText();
+
+        _ = await Assert.That(diagnostics.Count).IsEqualTo(0);
+        _ = await Assert.That(export.Diagnostics.Any(static diagnostic => diagnostic.Severity == Hardening.SchemaDiagnosticSeverity.Error)).IsFalse();
+        _ = await Assert.That(json.Contains("\"properties\"", StringComparison.Ordinal)).IsTrue();
+    }
+
+    private static (TypeSchemaModel Model, IReadOnlyList<Diagnostic> Diagnostics) GenerateModel(
+        string source,
+        IReadOnlyDictionary<string, string>? globalOptions = null,
+        string generatedProviderTypeName = "SemanticTypeModel.Generated.AppSemanticTypeModel")
     {
         CSharpCompilation compilation = CreateCompilation(source);
         IIncrementalGenerator generator = new SemanticTypeModelSourceGenerator();
         CSharpParseOptions parseOptions = (CSharpParseOptions)compilation.SyntaxTrees.First().Options;
-        GeneratorDriver driver = CSharpGeneratorDriver.Create([generator.AsSourceGenerator()], parseOptions: parseOptions);
+        AnalyzerConfigOptionsProvider optionsProvider = new TestAnalyzerConfigOptionsProvider(globalOptions);
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [generator.AsSourceGenerator()],
+            parseOptions: parseOptions,
+            optionsProvider: optionsProvider);
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out Compilation outputCompilation, out ImmutableArray<Diagnostic> _);
         GeneratorDriverRunResult runResult = driver.GetRunResult();
         IReadOnlyList<Diagnostic> diagnostics = runResult.Results.SelectMany(static result => result.Diagnostics).ToArray();
@@ -292,7 +542,7 @@ public sealed class GeneratorBaselineTests
 
         stream.Position = 0;
         System.Reflection.Assembly generatedAssembly = System.Reflection.Assembly.Load(stream.ToArray());
-        Type? providerType = generatedAssembly.GetType("SemanticTypeModel.Generated.AppSemanticTypeModel", throwOnError: false, ignoreCase: false);
+        Type? providerType = generatedAssembly.GetType(generatedProviderTypeName, throwOnError: false, ignoreCase: false);
         if (providerType is null)
         {
             throw new InvalidOperationException("Generated provider type was not found.");
@@ -355,5 +605,45 @@ public sealed class GeneratorBaselineTests
         }
 
         references[assembly.Location] = MetadataReference.CreateFromFile(assembly.Location);
+    }
+
+    private sealed class TestAnalyzerConfigOptionsProvider(IReadOnlyDictionary<string, string>? values) : AnalyzerConfigOptionsProvider
+    {
+        private readonly AnalyzerConfigOptions _global = new TestAnalyzerConfigOptions(values ?? new Dictionary<string, string>(StringComparer.Ordinal));
+
+        public override AnalyzerConfigOptions GlobalOptions => _global;
+
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree)
+        {
+            return _global;
+        }
+
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile)
+        {
+            return _global;
+        }
+    }
+
+    private sealed class TestAnalyzerConfigOptions(IReadOnlyDictionary<string, string> values) : AnalyzerConfigOptions
+    {
+        public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
+        {
+            if (values.TryGetValue(key, out string? configured))
+            {
+                value = configured;
+                return true;
+            }
+
+            const string buildPropertyPrefix = "build_property.";
+            if (key.StartsWith(buildPropertyPrefix, StringComparison.Ordinal)
+                && values.TryGetValue(key[buildPropertyPrefix.Length..], out configured))
+            {
+                value = configured;
+                return true;
+            }
+
+            value = null;
+            return false;
+        }
     }
 }

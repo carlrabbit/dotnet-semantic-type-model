@@ -44,6 +44,14 @@ public sealed class RoslynDotNetTypeExtractor
         _diagnostics.Clear();
         _inProgress.Clear();
 
+        if (!Enum.IsDefined(options.NamingPolicy))
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5018",
+                $"Naming policy '{options.NamingPolicy}' is not supported.",
+                compilation.Assembly.Locations.FirstOrDefault()));
+        }
+
         INamedTypeSymbol? semanticTypeAttribute = compilation.GetTypeByMetadataName(SemanticTypeAttributeMetadataName);
         INamedTypeSymbol? semanticIgnoreAttribute = compilation.GetTypeByMetadataName(SemanticIgnoreAttributeMetadataName);
 
@@ -55,6 +63,14 @@ public sealed class RoslynDotNetTypeExtractor
                 Diagnostics = _diagnostics,
                 Options = options,
             };
+        }
+
+        if (options.DiscoveryMode == DotNetTypeDiscoveryMode.Namespace && options.IncludedNamespaces.Count == 0)
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5009",
+                "Namespace discovery mode requires at least one included namespace.",
+                compilation.Assembly.Locations.FirstOrDefault()));
         }
 
         List<INamedTypeSymbol> roots = FindRootTypes(compilation.Assembly.GlobalNamespace, semanticTypeAttribute, semanticIgnoreAttribute, options, cancellationToken);
@@ -101,7 +117,15 @@ public sealed class RoslynDotNetTypeExtractor
         string? providerName = assemblyOptions.ConstructorArguments.Length > 1 ? assemblyOptions.ConstructorArguments[1].Value as string : null;
 
         bool includeInternal = fallback.IncludeInternalTypes;
+        bool includeInternalMembers = fallback.IncludeInternalMembers;
         bool requireXml = fallback.RequireXmlDocumentation;
+        bool includeXml = fallback.IncludeXmlDocumentation;
+        bool inferKeys = fallback.InferKeys;
+        bool inferRelationships = fallback.InferRelationships;
+        DotNetTypeDiscoveryMode discoveryMode = fallback.DiscoveryMode;
+        DotNetNamingPolicy namingPolicy = fallback.NamingPolicy;
+        IReadOnlyList<string> includedNamespaces = fallback.IncludedNamespaces;
+        IReadOnlyList<string> excludedNamespaces = fallback.ExcludedNamespaces;
 
         foreach ((string? key, TypedConstant value) in assemblyOptions.NamedArguments)
         {
@@ -113,6 +137,44 @@ public sealed class RoslynDotNetTypeExtractor
             {
                 requireXml = value.Value is bool boolValue && boolValue;
             }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.IncludeXmlDocumentation), StringComparison.Ordinal))
+            {
+                includeXml = value.Value is bool boolValue && boolValue;
+            }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.InferKeys), StringComparison.Ordinal))
+            {
+                inferKeys = value.Value is bool boolValue && boolValue;
+            }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.InferRelationships), StringComparison.Ordinal))
+            {
+                inferRelationships = value.Value is bool boolValue && boolValue;
+            }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.IncludeInternalMembers), StringComparison.Ordinal))
+            {
+                includeInternalMembers = value.Value is bool boolValue && boolValue;
+            }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.DiscoveryMode), StringComparison.Ordinal)
+                && value.Value is int discoveryModeValue
+                && Enum.IsDefined(typeof(DotNetTypeDiscoveryMode), discoveryModeValue))
+            {
+                discoveryMode = (DotNetTypeDiscoveryMode)discoveryModeValue;
+            }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.NamingPolicy), StringComparison.Ordinal)
+                && value.Value is int namingPolicyValue
+                && Enum.IsDefined(typeof(DotNetNamingPolicy), namingPolicyValue))
+            {
+                namingPolicy = (DotNetNamingPolicy)namingPolicyValue;
+            }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.IncludedNamespaces), StringComparison.Ordinal)
+                && value.Value is string includeText)
+            {
+                includedNamespaces = ParseDelimitedList(includeText);
+            }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.ExcludedNamespaces), StringComparison.Ordinal)
+                && value.Value is string excludeText)
+            {
+                excludedNamespaces = ParseDelimitedList(excludeText);
+            }
         }
 
         return fallback with
@@ -120,7 +182,15 @@ public sealed class RoslynDotNetTypeExtractor
             GeneratedNamespace = string.IsNullOrWhiteSpace(generatedNamespace) ? fallback.GeneratedNamespace : generatedNamespace!,
             ProviderName = string.IsNullOrWhiteSpace(providerName) ? fallback.ProviderName : providerName!,
             IncludeInternalTypes = includeInternal,
+            IncludeInternalMembers = includeInternalMembers,
             RequireXmlDocumentation = requireXml,
+            IncludeXmlDocumentation = includeXml,
+            InferKeys = inferKeys,
+            InferRelationships = inferRelationships,
+            DiscoveryMode = discoveryMode,
+            NamingPolicy = namingPolicy,
+            IncludedNamespaces = includedNamespaces,
+            ExcludedNamespaces = excludedNamespaces,
         };
     }
 
@@ -132,13 +202,41 @@ public sealed class RoslynDotNetTypeExtractor
         CancellationToken cancellationToken)
     {
         var roots = new List<INamedTypeSymbol>();
-        CollectTypes(scope, roots, semanticTypeAttribute, semanticIgnoreAttribute, options, cancellationToken);
+        switch (options.DiscoveryMode)
+        {
+            case DotNetTypeDiscoveryMode.ExplicitAttributes:
+            case DotNetTypeDiscoveryMode.ReachableFromRoots:
+                CollectTypes(scope, roots, semanticTypeAttribute, semanticIgnoreAttribute, options, cancellationToken);
+                break;
+            case DotNetTypeDiscoveryMode.Namespace:
+                CollectConventionTypes(scope, roots, semanticIgnoreAttribute, options, cancellationToken);
+                break;
+            case DotNetTypeDiscoveryMode.AssemblyPublicTypes:
+                CollectAssemblyPublicTypes(scope, roots, semanticIgnoreAttribute, options, cancellationToken);
+                break;
+            default:
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5008",
+                    $"Discovery mode '{options.DiscoveryMode}' is not supported.",
+                    scope.Locations.FirstOrDefault()));
+                break;
+        }
 
         roots.Sort(static (left, right) => string.CompareOrdinal(
             left.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             right.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
 
         return roots;
+    }
+
+    private static string[] ParseDelimitedList(string value)
+    {
+        return
+        [
+            .. value
+                .Split([';', ','], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Distinct(StringComparer.Ordinal),
+        ];
     }
 
     private static void CollectTypes(
@@ -190,6 +288,135 @@ public sealed class RoslynDotNetTypeExtractor
 
             CollectNestedTypes(nested, roots, semanticTypeAttribute, semanticIgnoreAttribute, options, cancellationToken);
         }
+    }
+
+    private void CollectConventionTypes(
+        INamespaceSymbol scope,
+        List<INamedTypeSymbol> roots,
+        INamedTypeSymbol? semanticIgnoreAttribute,
+        DotNetExtractionOptions options,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        foreach (INamedTypeSymbol type in scope.GetTypeMembers())
+        {
+            TryCollectConventionType(type, roots, semanticIgnoreAttribute, options, cancellationToken);
+        }
+
+        foreach (INamespaceSymbol child in scope.GetNamespaceMembers())
+        {
+            CollectConventionTypes(child, roots, semanticIgnoreAttribute, options, cancellationToken);
+        }
+    }
+
+    private void CollectAssemblyPublicTypes(
+        INamespaceSymbol scope,
+        List<INamedTypeSymbol> roots,
+        INamedTypeSymbol? semanticIgnoreAttribute,
+        DotNetExtractionOptions options,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        foreach (INamedTypeSymbol type in scope.GetTypeMembers())
+        {
+            if (!IsSupportedRootType(type))
+            {
+                continue;
+            }
+
+            if (HasAttribute(type, semanticIgnoreAttribute))
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5010",
+                    $"Type '{type.ToDisplayString()}' was discovered by convention but ignored by [SemanticIgnore].",
+                    type.Locations.FirstOrDefault()));
+                continue;
+            }
+
+            if (type.DeclaredAccessibility == Accessibility.Public || (options.IncludeInternalTypes && type.DeclaredAccessibility == Accessibility.Internal))
+            {
+                roots.Add(type);
+            }
+        }
+
+        foreach (INamespaceSymbol child in scope.GetNamespaceMembers())
+        {
+            CollectAssemblyPublicTypes(child, roots, semanticIgnoreAttribute, options, cancellationToken);
+        }
+    }
+
+    private void TryCollectConventionType(
+        INamedTypeSymbol type,
+        List<INamedTypeSymbol> roots,
+        INamedTypeSymbol? semanticIgnoreAttribute,
+        DotNetExtractionOptions options,
+        CancellationToken cancellationToken)
+    {
+        if (!IsSupportedRootType(type))
+        {
+            foreach (INamedTypeSymbol nested in type.GetTypeMembers())
+            {
+                TryCollectConventionType(nested, roots, semanticIgnoreAttribute, options, cancellationToken);
+            }
+
+            return;
+        }
+
+        if (!IsNamespaceIncluded(type.ContainingNamespace, options))
+        {
+            foreach (INamedTypeSymbol nested in type.GetTypeMembers())
+            {
+                TryCollectConventionType(nested, roots, semanticIgnoreAttribute, options, cancellationToken);
+            }
+
+            return;
+        }
+
+        if (HasAttribute(type, semanticIgnoreAttribute))
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5010",
+                $"Type '{type.ToDisplayString()}' was discovered by convention but ignored by [SemanticIgnore].",
+                type.Locations.FirstOrDefault()));
+            return;
+        }
+
+        if (type.DeclaredAccessibility == Accessibility.Public || (options.IncludeInternalTypes && type.DeclaredAccessibility == Accessibility.Internal))
+        {
+            roots.Add(type);
+        }
+
+        foreach (INamedTypeSymbol nested in type.GetTypeMembers())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            TryCollectConventionType(nested, roots, semanticIgnoreAttribute, options, cancellationToken);
+        }
+    }
+
+    private static bool IsSupportedRootType(INamedTypeSymbol type)
+    {
+        return type.TypeKind is TypeKind.Class or TypeKind.Struct or TypeKind.Enum;
+    }
+
+    private static bool IsNamespaceIncluded(INamespaceSymbol? namespaceSymbol, DotNetExtractionOptions options)
+    {
+        string namespaceName = namespaceSymbol?.ToDisplayString() ?? string.Empty;
+        bool included = options.IncludedNamespaces.Any(prefix =>
+            string.Equals(namespaceName, prefix, StringComparison.Ordinal)
+            || namespaceName.StartsWith(prefix + ".", StringComparison.Ordinal));
+
+        if (!included)
+        {
+            return false;
+        }
+
+        bool excluded = options.ExcludedNamespaces.Any(prefix =>
+            string.Equals(namespaceName, prefix, StringComparison.Ordinal)
+            || namespaceName.StartsWith(prefix + ".", StringComparison.Ordinal));
+
+        return !excluded;
     }
 
     private void ExtractType(ITypeSymbol symbol, CancellationToken cancellationToken)
@@ -279,16 +506,24 @@ public sealed class RoslynDotNetTypeExtractor
         var annotations = new Dictionary<string, string>(StringComparer.Ordinal);
         ImmutableArray<AttributeData> typeAttributes = type.GetAttributes();
 
-        TryAddNameAndDescriptionAnnotations(typeAttributes, annotations);
+        TryAddNameAndDescriptionAnnotations(typeAttributes, annotations, type);
+        TryAddXmlDescriptionAnnotation(type, typeAttributes, annotations);
+        TryAddSemanticTypeOverrides(typeAttributes, annotations);
         TryAddRoleAnnotation(typeAttributes, annotations, type.Locations.FirstOrDefault());
         ValidateTypeAttributeUsage(typeAttributes, type);
         AddInheritanceAnnotations(type, annotations, cancellationToken);
         DiagnoseMissingXmlDocumentationIfRequired(type, type.Locations.FirstOrDefault());
 
+        string expectedPrimaryKeyName = type.Name + "Id";
+        var conventionPrimaryKeyCandidates = new List<string>();
+        var relationshipCandidates = new List<(string PropertyName, string TargetTypeId)>();
+        var seenMemberNames = new Dictionary<string, string>(StringComparer.Ordinal);
+        var compositeKeyGroups = new Dictionary<string, List<(string PropertyName, int? Order)>>(StringComparer.Ordinal);
+
         foreach (ISymbol member in type.GetMembers())
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (member is not IPropertySymbol property || !ShouldIncludeProperty(property))
+            if (member is not IPropertySymbol property || !ShouldIncludeProperty(property, _options))
             {
                 continue;
             }
@@ -299,23 +534,43 @@ public sealed class RoslynDotNetTypeExtractor
 
             var memberAnnotations = new Dictionary<string, string>(StringComparer.Ordinal);
             ImmutableArray<AttributeData> memberAttributes = property.GetAttributes();
-            TryAddNameAndDescriptionAnnotations(memberAttributes, memberAnnotations);
+            string propertyName = GetPropertyName(property);
+            TryAddNameAndDescriptionAnnotations(memberAttributes, memberAnnotations, property);
+            TryAddXmlDescriptionAnnotation(property, memberAttributes, memberAnnotations);
             ValidateMemberAttributeUsage(memberAttributes, property);
             DiagnoseMissingXmlDocumentationIfRequired(property, property.Locations.FirstOrDefault());
 
-            if (HasAttribute(memberAttributes, SemanticKeyAttributeMetadataName))
+            if (!TryAddKeyAnnotations(memberAttributes, property, memberAnnotations, compositeKeyGroups))
             {
-                memberAnnotations["schema.key"] = "true";
+                if (_options.InferKeys
+                    && (string.Equals(property.Name, "Id", StringComparison.Ordinal)
+                        || string.Equals(property.Name, expectedPrimaryKeyName, StringComparison.Ordinal)))
+                {
+                    conventionPrimaryKeyCandidates.Add(propertyName);
+                }
             }
 
-            if (HasAttribute(memberAttributes, SemanticRelationshipAttributeMetadataName))
+            if (!TryAddRelationshipAnnotations(memberAttributes, memberType, memberAnnotations))
             {
-                memberAnnotations["schema.relationship"] = "true";
+                string? targetTypeId = null;
+                bool inferredRelationship = _options.InferRelationships && TryInferRelationship(property, memberType, memberAnnotations, out targetTypeId);
+                if (inferredRelationship && targetTypeId is not null)
+                {
+                    relationshipCandidates.Add((property.Name, targetTypeId));
+                }
+            }
+
+            if (!seenMemberNames.TryAdd(propertyName, property.Name))
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5006",
+                    $"Duplicate semantic property name '{propertyName}' detected on type '{type.ToDisplayString()}'.",
+                    property.Locations.FirstOrDefault()));
             }
 
             properties.Add(new DotNetPropertyDescriptor
             {
-                Name = GetPropertyName(property),
+                Name = propertyName,
                 TypeId = typeId,
                 IsRequired = property.IsRequired,
                 IsNullable = allowsNull,
@@ -323,12 +578,65 @@ public sealed class RoslynDotNetTypeExtractor
             });
         }
 
+        if (_options.InferKeys && !properties.Any(static property => property.Annotations.ContainsKey("schema.key")))
+        {
+            if (conventionPrimaryKeyCandidates.Count == 1)
+            {
+                DotNetPropertyDescriptor property = properties.Single(candidate => string.Equals(candidate.Name, conventionPrimaryKeyCandidates[0], StringComparison.Ordinal));
+                if (property.Annotations is Dictionary<string, string> dictionary)
+                {
+                    dictionary["schema.key"] = "true";
+                    dictionary["schema.key.kind"] = KeyKind.Primary.ToString();
+                }
+            }
+            else if (conventionPrimaryKeyCandidates.Count > 1)
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5013",
+                    $"Type '{type.ToDisplayString()}' has ambiguous key inference candidates: {string.Join(", ", conventionPrimaryKeyCandidates.OrderBy(static value => value, StringComparer.Ordinal))}.",
+                    type.Locations.FirstOrDefault()));
+            }
+        }
+
+        if (_options.InferRelationships && relationshipCandidates.Count > 1)
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5014",
+                $"Type '{type.ToDisplayString()}' has ambiguous relationship inference candidates: {string.Join(", ", relationshipCandidates.Select(static candidate => candidate.PropertyName).OrderBy(static value => value, StringComparer.Ordinal))}.",
+                type.Locations.FirstOrDefault()));
+        }
+
+        foreach ((string _, string targetTypeId) in relationshipCandidates)
+        {
+            if (!_types.ContainsKey(targetTypeId))
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5015",
+                    $"Relationship target '{targetTypeId}' is not included in the extracted model.",
+                    type.Locations.FirstOrDefault()));
+            }
+        }
+
+        foreach (DotNetPropertyDescriptor property in properties)
+        {
+            if (property.Annotations.TryGetValue("schema.relationship.target", out string? explicitTarget)
+                    && !_types.ContainsKey(explicitTarget))
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5015",
+                    $"Relationship target '{explicitTarget}' is not included in the extracted model.",
+                    type.Locations.FirstOrDefault()));
+            }
+        }
+
+        ValidateCompositeKeyGroups(type, compositeKeyGroups);
+
         properties.Sort(static (left, right) => string.CompareOrdinal(left.Name, right.Name));
 
         return new DotNetObjectTypeDescriptor
         {
             Id = id,
-            Name = type.Name,
+            Name = GetTypeDisplayName(type),
             Properties = properties,
             Annotations = annotations,
         };
@@ -366,8 +674,10 @@ public sealed class RoslynDotNetTypeExtractor
         var values = new List<DotNetEnumValueDescriptor>();
         var seenNumeric = new Dictionary<long, string>();
         var annotations = new Dictionary<string, string>(StringComparer.Ordinal);
-        TryAddNameAndDescriptionAnnotations(enumType.GetAttributes(), annotations);
-        ValidateTypeAttributeUsage(enumType.GetAttributes(), enumType);
+        ImmutableArray<AttributeData> typeAttributes = enumType.GetAttributes();
+        TryAddNameAndDescriptionAnnotations(typeAttributes, annotations, enumType);
+        TryAddXmlDescriptionAnnotation(enumType, typeAttributes, annotations);
+        ValidateTypeAttributeUsage(typeAttributes, enumType);
         DiagnoseMissingXmlDocumentationIfRequired(enumType, enumType.Locations.FirstOrDefault());
 
         foreach (IFieldSymbol field in enumType.GetMembers().OfType<IFieldSymbol>().Where(static f => f.HasConstantValue))
@@ -378,18 +688,19 @@ public sealed class RoslynDotNetTypeExtractor
             }
 
             long numericValue = Convert.ToInt64(field.ConstantValue, CultureInfo.InvariantCulture);
-            values.Add(new DotNetEnumValueDescriptor { Name = field.Name, NumericValue = numericValue });
+            string valueName = GetEnumValueName(field);
+            values.Add(new DotNetEnumValueDescriptor { Name = valueName, NumericValue = numericValue });
 
             if (seenNumeric.TryGetValue(numericValue, out string? firstName))
             {
                 _diagnostics.Add(new DotNetExtractionDiagnostic(
                     "STM5011",
-                    $"Enum '{enumType.Name}' has duplicate numeric value '{numericValue}' for '{firstName}' and '{field.Name}'.",
+                    $"Enum '{enumType.Name}' has duplicate numeric value '{numericValue}' for '{firstName}' and '{valueName}'.",
                     field.Locations.FirstOrDefault()));
             }
             else
             {
-                seenNumeric[numericValue] = field.Name;
+                seenNumeric[numericValue] = valueName;
             }
         }
 
@@ -398,7 +709,7 @@ public sealed class RoslynDotNetTypeExtractor
         return new DotNetEnumTypeDescriptor
         {
             Id = id,
-            Name = enumType.Name,
+            Name = GetTypeDisplayName(enumType),
             Values = values,
             Annotations = annotations,
         };
@@ -511,21 +822,33 @@ public sealed class RoslynDotNetTypeExtractor
 
     private void ValidateMemberAttributeUsage(ImmutableArray<AttributeData> attributes, IPropertySymbol property)
     {
+        var roleCount = 0;
         foreach (AttributeData attribute in attributes)
         {
             string? metadataName = attribute.AttributeClass?.ToDisplayString();
             if (string.Equals(metadataName, SemanticRoleAttributeMetadataName, StringComparison.Ordinal))
             {
+                roleCount++;
                 _diagnostics.Add(new DotNetExtractionDiagnostic(
                     "STM5001",
                     $"[SemanticRole] is not valid on property '{property.Name}'.",
                     attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? property.Locations.FirstOrDefault()));
             }
         }
+
+        if (roleCount > 1)
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5002",
+                $"Property '{property.ToDisplayString()}' has conflicting semantic role attributes.",
+                property.Locations.FirstOrDefault()));
+        }
     }
 
     private void ValidateTypeAttributeUsage(ImmutableArray<AttributeData> attributes, INamedTypeSymbol type)
     {
+        var semanticTypeCount = 0;
+        var semanticRoleCount = 0;
         foreach (AttributeData attribute in attributes)
         {
             string? metadataName = attribute.AttributeClass?.ToDisplayString();
@@ -537,6 +860,22 @@ public sealed class RoslynDotNetTypeExtractor
                     $"Attribute '{attribute.AttributeClass?.Name}' is not valid on type '{type.Name}'.",
                     attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? type.Locations.FirstOrDefault()));
             }
+            else if (string.Equals(metadataName, SemanticTypeAttributeMetadataName, StringComparison.Ordinal))
+            {
+                semanticTypeCount++;
+            }
+            else if (string.Equals(metadataName, SemanticRoleAttributeMetadataName, StringComparison.Ordinal))
+            {
+                semanticRoleCount++;
+            }
+        }
+
+        if (semanticTypeCount > 1 || semanticRoleCount > 1)
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5002",
+                $"Type '{type.ToDisplayString()}' has conflicting semantic attributes.",
+                type.Locations.FirstOrDefault()));
         }
     }
 
@@ -565,30 +904,105 @@ public sealed class RoslynDotNetTypeExtractor
         }
     }
 
-    private static void TryAddNameAndDescriptionAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
+    private void TryAddNameAndDescriptionAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations, ISymbol symbol)
     {
+        var nameCount = 0;
+        var descriptionCount = 0;
+
         foreach (AttributeData attribute in attributes)
         {
             string? metadataName = attribute.AttributeClass?.ToDisplayString();
             if (string.Equals(metadataName, SemanticNameAttributeMetadataName, StringComparison.Ordinal)
-                && attribute.ConstructorArguments.Length == 1
-                && attribute.ConstructorArguments[0].Value is string title
-                && !string.IsNullOrWhiteSpace(title))
+                && attribute.ConstructorArguments.Length == 1)
             {
-                annotations["schema.title"] = title;
+                nameCount++;
+                if (attribute.ConstructorArguments[0].Value is string title && !string.IsNullOrWhiteSpace(title))
+                {
+                    annotations["schema.title"] = title;
+                }
+                else
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        "STM5017",
+                        $"[SemanticName] on '{symbol.ToDisplayString()}' requires a non-empty string argument.",
+                        attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+                }
             }
 
             if (string.Equals(metadataName, SemanticDescriptionAttributeMetadataName, StringComparison.Ordinal)
-                && attribute.ConstructorArguments.Length == 1
-                && attribute.ConstructorArguments[0].Value is string description
-                && !string.IsNullOrWhiteSpace(description))
+                && attribute.ConstructorArguments.Length == 1)
             {
-                annotations["schema.description"] = description;
+                descriptionCount++;
+                if (attribute.ConstructorArguments[0].Value is string description && !string.IsNullOrWhiteSpace(description))
+                {
+                    annotations["schema.description"] = description;
+                }
+                else
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        "STM5017",
+                        $"[SemanticDescription] on '{symbol.ToDisplayString()}' requires a non-empty string argument.",
+                        attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+                }
+            }
+        }
+
+        if (nameCount > 1 || descriptionCount > 1)
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5002",
+                $"Symbol '{symbol.ToDisplayString()}' has conflicting semantic name/description attributes.",
+                symbol.Locations.FirstOrDefault()));
+        }
+    }
+
+    private void TryAddSemanticTypeOverrides(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
+    {
+        foreach (AttributeData attribute in attributes)
+        {
+            if (!string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticTypeAttributeMetadataName, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+            {
+                if (string.Equals(key, nameof(SemanticTypeAttribute.Name), StringComparison.Ordinal)
+                    && value.Value is string name
+                    && !string.IsNullOrWhiteSpace(name))
+                {
+                    _ = annotations.TryAdd("schema.title", name);
+                }
+                else if (string.Equals(key, nameof(SemanticTypeAttribute.Role), StringComparison.Ordinal)
+                    && value.Value is string role
+                    && !string.IsNullOrWhiteSpace(role))
+                {
+                    _ = annotations.TryAdd("schema.role", role);
+                }
             }
         }
     }
 
-    private static string GetPropertyName(IPropertySymbol property)
+    private void TryAddXmlDescriptionAnnotation(ISymbol symbol, ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
+    {
+        if (HasAttribute(attributes, SemanticDescriptionAttributeMetadataName))
+        {
+            return;
+        }
+
+        if (!_options.IncludeXmlDocumentation)
+        {
+            return;
+        }
+
+        string? summary = GetXmlSummary(symbol.GetDocumentationCommentXml());
+        if (!string.IsNullOrWhiteSpace(summary))
+        {
+            annotations["schema.description"] = summary!;
+        }
+    }
+
+    private string GetPropertyName(IPropertySymbol property)
     {
         foreach (AttributeData attribute in property.GetAttributes())
         {
@@ -601,7 +1015,327 @@ public sealed class RoslynDotNetTypeExtractor
             }
         }
 
-        return property.Name;
+        return ApplyNamingPolicy(property.Name);
+    }
+
+    private bool TryAddKeyAnnotations(
+        ImmutableArray<AttributeData> attributes,
+        IPropertySymbol property,
+        Dictionary<string, string> annotations,
+        Dictionary<string, List<(string PropertyName, int? Order)>> compositeKeyGroups)
+    {
+        bool hasKey = false;
+        foreach (AttributeData attribute in attributes)
+        {
+            if (!string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticKeyAttributeMetadataName, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            hasKey = true;
+            annotations["schema.key"] = "true";
+            annotations["schema.key.kind"] = KeyKind.Primary.ToString();
+
+            string? keyGroupName = null;
+            int? order = null;
+            foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+            {
+                if (string.Equals(key, nameof(SemanticKeyAttribute.Name), StringComparison.Ordinal))
+                {
+                    keyGroupName = value.Value as string;
+                }
+                else if (string.Equals(key, nameof(SemanticKeyAttribute.Kind), StringComparison.Ordinal) && value.Value is int keyKindValue && Enum.IsDefined(typeof(KeyKind), keyKindValue))
+                {
+                    annotations["schema.key.kind"] = ((KeyKind)keyKindValue).ToString();
+                }
+                else if (string.Equals(key, nameof(SemanticKeyAttribute.Order), StringComparison.Ordinal) && value.Value is int orderValue)
+                {
+                    order = orderValue;
+                    annotations["schema.key.order"] = orderValue.ToString(CultureInfo.InvariantCulture);
+                }
+                else if (string.Equals(key, nameof(SemanticKeyAttribute.IsGenerated), StringComparison.Ordinal) && value.Value is bool isGenerated)
+                {
+                    annotations["schema.key.generated"] = isGenerated ? "true" : "false";
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(keyGroupName))
+            {
+                annotations["schema.key.name"] = keyGroupName!;
+                if (!compositeKeyGroups.TryGetValue(keyGroupName!, out List<(string PropertyName, int? Order)>? group))
+                {
+                    group = [];
+                    compositeKeyGroups[keyGroupName!] = group;
+                }
+
+                group.Add((property.Name, order));
+            }
+        }
+
+        return hasKey;
+    }
+
+    private void ValidateCompositeKeyGroups(INamedTypeSymbol type, Dictionary<string, List<(string PropertyName, int? Order)>> groups)
+    {
+        foreach ((string keyGroupName, List<(string PropertyName, int? Order)> members) in groups)
+        {
+            HashSet<int> seenOrders = [];
+            bool hasMissingOrder = members.Any(static member => member.Order is null);
+            foreach ((string _, int? order) in members)
+            {
+                if (order is null)
+                {
+                    continue;
+                }
+
+                if (!seenOrders.Add(order.Value))
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        "STM5016",
+                        $"Composite key '{keyGroupName}' on '{type.ToDisplayString()}' has duplicate order '{order.Value}'.",
+                        type.Locations.FirstOrDefault()));
+                }
+            }
+
+            if (hasMissingOrder)
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5016",
+                    $"Composite key '{keyGroupName}' on '{type.ToDisplayString()}' requires explicit order on all members.",
+                    type.Locations.FirstOrDefault()));
+            }
+        }
+    }
+
+    private bool TryAddRelationshipAnnotations(
+        ImmutableArray<AttributeData> attributes,
+        ITypeSymbol memberType,
+        Dictionary<string, string> annotations)
+    {
+        bool hasRelationship = false;
+        foreach (AttributeData attribute in attributes)
+        {
+            if (!string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticRelationshipAttributeMetadataName, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            hasRelationship = true;
+            annotations["schema.relationship"] = "explicit";
+            annotations["schema.relationship.target"] = GetTypeId(memberType);
+
+            if (attribute.ConstructorArguments.Length > 0
+                && attribute.ConstructorArguments[0].Value is string principalTypeName
+                && !string.IsNullOrWhiteSpace(principalTypeName))
+            {
+                annotations["schema.relationship.principalType"] = principalTypeName;
+                annotations["schema.relationship.target"] = principalTypeName;
+            }
+
+            foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+            {
+                if (string.Equals(key, nameof(SemanticRelationshipAttribute.PrincipalKey), StringComparison.Ordinal)
+                    && value.Value is string principalKey
+                    && !string.IsNullOrWhiteSpace(principalKey))
+                {
+                    annotations["schema.relationship.principalKey"] = principalKey;
+                }
+                else if (string.Equals(key, nameof(SemanticRelationshipAttribute.ForeignKey), StringComparison.Ordinal)
+                    && value.Value is string foreignKey
+                    && !string.IsNullOrWhiteSpace(foreignKey))
+                {
+                    annotations["schema.relationship.foreignKey"] = foreignKey;
+                }
+                else if (string.Equals(key, nameof(SemanticRelationshipAttribute.Cardinality), StringComparison.Ordinal)
+                    && value.Value is int cardinalityValue
+                    && Enum.IsDefined(typeof(RelationshipCardinality), cardinalityValue))
+                {
+                    annotations["schema.relationship.cardinality"] = ((RelationshipCardinality)cardinalityValue).ToString();
+                }
+            }
+        }
+
+        return hasRelationship;
+    }
+
+    private bool TryInferRelationship(IPropertySymbol property, ITypeSymbol memberType, Dictionary<string, string> annotations, out string? targetTypeId)
+    {
+        targetTypeId = null;
+        if (TryGetCollectionItemType(memberType, out ITypeSymbol? itemType))
+        {
+            (ITypeSymbol normalizedItemType, _) = NormalizeNullability(itemType!);
+            if (normalizedItemType.TypeKind is TypeKind.Class or TypeKind.Struct)
+            {
+                targetTypeId = GetTypeId(normalizedItemType);
+                annotations["schema.relationship"] = "inferred";
+                annotations["schema.relationship.cardinality"] = RelationshipCardinality.OneToMany.ToString();
+                annotations["schema.relationship.target"] = targetTypeId;
+                return true;
+            }
+        }
+
+        (ITypeSymbol normalizedType, _) = NormalizeNullability(memberType);
+        if (normalizedType is INamedTypeSymbol namedType && namedType.TypeKind is TypeKind.Class or TypeKind.Struct)
+        {
+            targetTypeId = GetTypeId(namedType);
+            annotations["schema.relationship"] = "inferred";
+            annotations["schema.relationship.cardinality"] = RelationshipCardinality.ManyToOne.ToString();
+            annotations["schema.relationship.target"] = targetTypeId;
+            if (property.Name.EndsWith("Id", StringComparison.Ordinal))
+            {
+                annotations["schema.relationship.foreignKey"] = property.Name;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryGetCollectionItemType(ITypeSymbol memberType, out ITypeSymbol? itemType)
+    {
+        itemType = null;
+        if (memberType is IArrayTypeSymbol arrayType)
+        {
+            itemType = arrayType.ElementType;
+            return true;
+        }
+
+        if (memberType is INamedTypeSymbol namedType && namedType.IsGenericType && namedType.TypeArguments.Length == 1)
+        {
+            if (ImplementsAny(
+                    namedType,
+                    "System.Collections.Generic.IEnumerable<T>",
+                    "System.Collections.Generic.IReadOnlyCollection<T>",
+                    "System.Collections.Generic.IReadOnlyList<T>",
+                    "System.Collections.Generic.ICollection<T>",
+                    "System.Collections.Generic.IList<T>",
+                    "System.Collections.Generic.List<T>",
+                    "System.Collections.Generic.HashSet<T>"))
+            {
+                itemType = namedType.TypeArguments[0];
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string? GetXmlSummary(string? xmlDocumentation)
+    {
+        if (string.IsNullOrWhiteSpace(xmlDocumentation))
+        {
+            return null;
+        }
+
+        const string startTag = "<summary>";
+        const string endTag = "</summary>";
+        int start = xmlDocumentation.IndexOf(startTag, StringComparison.Ordinal);
+        int end = xmlDocumentation.IndexOf(endTag, StringComparison.Ordinal);
+        if (start < 0 || end <= start)
+        {
+            return null;
+        }
+
+        string content = xmlDocumentation[(start + startTag.Length)..end];
+        return content.Trim().Replace("\n", " ", StringComparison.Ordinal).Replace("\r", string.Empty, StringComparison.Ordinal);
+    }
+
+    private string GetTypeDisplayName(INamedTypeSymbol type)
+    {
+        foreach (AttributeData attribute in type.GetAttributes())
+        {
+            if (string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticNameAttributeMetadataName, StringComparison.Ordinal)
+                && attribute.ConstructorArguments.Length == 1
+                && attribute.ConstructorArguments[0].Value is string title
+                && !string.IsNullOrWhiteSpace(title))
+            {
+                return title;
+            }
+
+            if (string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticTypeAttributeMetadataName, StringComparison.Ordinal))
+            {
+                foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+                {
+                    if (string.Equals(key, nameof(SemanticTypeAttribute.Name), StringComparison.Ordinal)
+                        && value.Value is string semanticTypeName
+                        && !string.IsNullOrWhiteSpace(semanticTypeName))
+                    {
+                        return semanticTypeName;
+                    }
+                }
+            }
+        }
+
+        return ApplyNamingPolicy(type.Name);
+    }
+
+    private string GetEnumValueName(IFieldSymbol field)
+    {
+        foreach (AttributeData attribute in field.GetAttributes())
+        {
+            if (string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticNameAttributeMetadataName, StringComparison.Ordinal)
+                && attribute.ConstructorArguments.Length == 1
+                && attribute.ConstructorArguments[0].Value is string name
+                && !string.IsNullOrWhiteSpace(name))
+            {
+                return name;
+            }
+        }
+
+        return ApplyNamingPolicy(field.Name);
+    }
+
+    private string ApplyNamingPolicy(string value)
+    {
+        return _options.NamingPolicy switch
+        {
+            DotNetNamingPolicy.Preserve => value,
+            DotNetNamingPolicy.CamelCase => ToCamelCase(value),
+            DotNetNamingPolicy.SnakeCase => ToSeparatedCase(value, "_"),
+            DotNetNamingPolicy.KebabCase => ToSeparatedCase(value, "-"),
+            _ => value,
+        };
+    }
+
+    private static string ToCamelCase(string value)
+    {
+        if (string.IsNullOrEmpty(value) || char.IsLower(value[0]))
+        {
+            return value;
+        }
+
+        return char.ToLowerInvariant(value[0]) + value[1..];
+    }
+
+    private static string ToSeparatedCase(string value, string separator)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        var result = new System.Text.StringBuilder(value.Length + 8);
+        for (var i = 0; i < value.Length; i++)
+        {
+            char current = value[i];
+            if (char.IsUpper(current))
+            {
+                bool shouldPrefixSeparator = i > 0 && (char.IsLower(value[i - 1]) || (i + 1 < value.Length && char.IsLower(value[i + 1])));
+                if (shouldPrefixSeparator)
+                {
+                    _ = result.Append(separator);
+                }
+
+                _ = result.Append(char.ToLowerInvariant(current));
+            }
+            else
+            {
+                _ = result.Append(current);
+            }
+        }
+
+        return result.ToString();
     }
 
     private static bool ImplementsAny(INamedTypeSymbol symbol, params string[] names)
@@ -649,9 +1383,12 @@ public sealed class RoslynDotNetTypeExtractor
             && string.Equals(normalized.ContainingNamespace?.ToDisplayString(), "System", StringComparison.Ordinal);
     }
 
-    private static bool ShouldIncludeProperty(IPropertySymbol property)
+    private static bool ShouldIncludeProperty(IPropertySymbol property, DotNetExtractionOptions options)
     {
-        if (property.DeclaredAccessibility != Accessibility.Public
+        bool isSupportedAccessibility = property.DeclaredAccessibility == Accessibility.Public
+            || (options.IncludeInternalMembers && property.DeclaredAccessibility == Accessibility.Internal);
+
+        if (!isSupportedAccessibility
             || property.IsStatic
             || property.IsIndexer
             || property.IsImplicitlyDeclared)

@@ -21,3 +21,4 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - [M0007 - Power BI TOM Projection Prototype](milestones/m0007-power-bi-tom-projection-prototype.md)
 - [M0008 - EF Core DbModel Projection Prototype](milestones/m0008-ef-core-dbmodel-projection-prototype.md)
 - [M0009 - .NET Type System Extraction and Compile-Time Generator Baseline](milestones/m0009-dotnet-type-system-extraction-and-compile-time-generator-baseline.md)
+- [M0010 - Attribute and Convention Model for .NET Type Extraction](milestones/m0010-attribute-and-convention-model-for-dotnet-type-extraction.md)
