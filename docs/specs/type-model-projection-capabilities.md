@@ -73,3 +73,12 @@ Projection diagnostics remain projection-specific, but they may coexist with ear
 - Arrays, dictionaries, and unions are diagnosable unless explicit serialization behavior is enabled.
 - Relationship endpoint and key resolution failures are diagnosable.
 - DAX expressions are preserved without DAX validation.
+
+## EF Core Capability Notes (M0008)
+
+- Baseline projection target is an EF-like intermediate metadata model, not a provider-specific runtime integration.
+- Object-to-entity projection is role/annotation/options driven.
+- Requiredness and nullability remain distinct in the intermediate metadata, with diagnostics when exact runtime EF semantics would be ambiguous.
+- Value object projection is option-controlled (diagnose, owned, flatten, serialize).
+- Arrays, dictionaries, and unions are diagnosable unless explicit serialization behavior is enabled.
+- Relationship endpoint, key, and delete-behavior resolution failures are diagnosable.
