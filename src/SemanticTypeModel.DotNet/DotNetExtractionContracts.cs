@@ -18,6 +18,46 @@ public sealed record DotNetExtractionOptions
     public bool IncludeInternalTypes { get; init; }
 
     /// <summary>
+    /// Gets a value indicating whether internal members are included.
+    /// </summary>
+    public bool IncludeInternalMembers { get; init; }
+
+    /// <summary>
+    /// Gets the discovery mode.
+    /// </summary>
+    public DotNetTypeDiscoveryMode DiscoveryMode { get; init; } = DotNetTypeDiscoveryMode.ExplicitAttributes;
+
+    /// <summary>
+    /// Gets included namespace prefixes for namespace discovery.
+    /// </summary>
+    public IReadOnlyList<string> IncludedNamespaces { get; init; } = [];
+
+    /// <summary>
+    /// Gets excluded namespace prefixes for namespace discovery.
+    /// </summary>
+    public IReadOnlyList<string> ExcludedNamespaces { get; init; } = [];
+
+    /// <summary>
+    /// Gets the naming policy used for convention-based names.
+    /// </summary>
+    public DotNetNamingPolicy NamingPolicy { get; init; } = DotNetNamingPolicy.Preserve;
+
+    /// <summary>
+    /// Gets a value indicating whether key inference is enabled.
+    /// </summary>
+    public bool InferKeys { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether relationship inference is enabled.
+    /// </summary>
+    public bool InferRelationships { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether XML documentation summaries are included as descriptions when explicit descriptions are absent.
+    /// </summary>
+    public bool IncludeXmlDocumentation { get; init; }
+
+    /// <summary>
     /// Gets a value indicating whether XML documentation is required.
     /// </summary>
     public bool RequireXmlDocumentation { get; init; }
@@ -31,6 +71,58 @@ public sealed record DotNetExtractionOptions
     /// Gets the generated provider type name.
     /// </summary>
     public string ProviderName { get; init; } = "AppSemanticTypeModel";
+}
+
+/// <summary>
+/// Defines discovery modes for .NET type extraction.
+/// </summary>
+public enum DotNetTypeDiscoveryMode
+{
+    /// <summary>
+    /// Only explicitly attributed roots are discovered.
+    /// </summary>
+    ExplicitAttributes,
+
+    /// <summary>
+    /// Discover roots from configured namespace prefixes.
+    /// </summary>
+    Namespace,
+
+    /// <summary>
+    /// Discover all public top-level types in the compilation assembly.
+    /// </summary>
+    AssemblyPublicTypes,
+
+    /// <summary>
+    /// Discover explicit roots and include reachable graph types.
+    /// </summary>
+    ReachableFromRoots,
+}
+
+/// <summary>
+/// Defines naming policies for convention-derived names.
+/// </summary>
+public enum DotNetNamingPolicy
+{
+    /// <summary>
+    /// Preserve CLR symbol names.
+    /// </summary>
+    Preserve,
+
+    /// <summary>
+    /// Convert names to camelCase.
+    /// </summary>
+    CamelCase,
+
+    /// <summary>
+    /// Convert names to snake_case.
+    /// </summary>
+    SnakeCase,
+
+    /// <summary>
+    /// Convert names to kebab-case.
+    /// </summary>
+    KebabCase,
 }
 
 /// <summary>

@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using SemanticTypeModel.DotNet;
 
 namespace SemanticTypeModel.Generators;
@@ -13,12 +14,17 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterSourceOutput(context.CompilationProvider, static (productionContext, compilation) =>
-        {
-            var extractor = new RoslynDotNetTypeExtractor();
-            DotNetExtractionResult extraction = extractor.Extract(compilation);
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider OptionsProvider)> generationInput =
+            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
-            foreach (DotNetExtractionDiagnostic diagnostic in extraction.Diagnostics)
+        context.RegisterSourceOutput(generationInput, static (productionContext, input) =>
+        {
+            (Compilation compilation, AnalyzerConfigOptionsProvider optionsProvider) = input;
+            DotNetExtractionOptions options = ParseOptions(optionsProvider, compilation.Assembly.Locations.FirstOrDefault(), out IReadOnlyList<DotNetExtractionDiagnostic> optionDiagnostics);
+            var extractor = new RoslynDotNetTypeExtractor();
+            DotNetExtractionResult extraction = extractor.Extract(compilation, options);
+
+            foreach (DotNetExtractionDiagnostic diagnostic in optionDiagnostics.Concat(extraction.Diagnostics))
             {
                 productionContext.ReportDiagnostic(CreateDiagnostic(diagnostic));
             }
@@ -28,9 +34,164 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
                 return;
             }
 
+            if (ProviderNameCollides(compilation, extraction.Options.GeneratedNamespace, extraction.Options.ProviderName))
+            {
+                productionContext.ReportDiagnostic(CreateDiagnostic(new DotNetExtractionDiagnostic(
+                    "STM5019",
+                    $"Generated provider name '{extraction.Options.GeneratedNamespace}.{extraction.Options.ProviderName}' collides with an existing type.",
+                    compilation.Assembly.Locations.FirstOrDefault())));
+                return;
+            }
+
             string source = GenerateProviderSource(extraction);
             productionContext.AddSource("SemanticTypeModel.Generated.g.cs", source);
         });
+    }
+
+    private static DotNetExtractionOptions ParseOptions(
+        AnalyzerConfigOptionsProvider optionsProvider,
+        Location? location,
+        out IReadOnlyList<DotNetExtractionDiagnostic> diagnostics)
+    {
+        var extractedDiagnostics = new List<DotNetExtractionDiagnostic>();
+        DotNetExtractionOptions options = DotNetExtractionOptions.Default;
+        AnalyzerConfigOptions globalOptions = optionsProvider.GlobalOptions;
+
+        if (TryGetOption(globalOptions, "SemanticTypeModelGeneratedNamespace", out string? generatedNamespace))
+        {
+            options = options with { GeneratedNamespace = generatedNamespace! };
+        }
+
+        if (TryGetOption(globalOptions, "SemanticTypeModelGeneratedProviderName", out string? providerName))
+        {
+            options = options with { ProviderName = providerName! };
+        }
+
+        if (TryParseBoolOption(globalOptions, "SemanticTypeModelIncludeInternalTypes", out bool includeInternalTypes))
+        {
+            options = options with { IncludeInternalTypes = includeInternalTypes };
+        }
+
+        if (TryParseBoolOption(globalOptions, "SemanticTypeModelIncludeInternalMembers", out bool includeInternalMembers))
+        {
+            options = options with { IncludeInternalMembers = includeInternalMembers };
+        }
+
+        if (TryParseBoolOption(globalOptions, "SemanticTypeModelInferKeys", out bool inferKeys))
+        {
+            options = options with { InferKeys = inferKeys };
+        }
+
+        if (TryParseBoolOption(globalOptions, "SemanticTypeModelInferRelationships", out bool inferRelationships))
+        {
+            options = options with { InferRelationships = inferRelationships };
+        }
+
+        if (TryParseBoolOption(globalOptions, "SemanticTypeModelIncludeXmlDocumentation", out bool includeXmlDocumentation))
+        {
+            options = options with { IncludeXmlDocumentation = includeXmlDocumentation };
+        }
+
+        if (TryParseBoolOption(globalOptions, "SemanticTypeModelRequireXmlDocumentation", out bool requireXmlDocumentation))
+        {
+            options = options with { RequireXmlDocumentation = requireXmlDocumentation };
+        }
+
+        if (TryGetOption(globalOptions, "SemanticTypeModelIncludedNamespaces", out string? includedNamespaces))
+        {
+            options = options with { IncludedNamespaces = ParseDelimitedList(includedNamespaces!) };
+        }
+
+        if (TryGetOption(globalOptions, "SemanticTypeModelExcludedNamespaces", out string? excludedNamespaces))
+        {
+            options = options with { ExcludedNamespaces = ParseDelimitedList(excludedNamespaces!) };
+        }
+
+        if (TryGetOption(globalOptions, "SemanticTypeModelDiscoveryMode", out string? discoveryModeText))
+        {
+            if (Enum.TryParse(discoveryModeText, ignoreCase: true, out DotNetTypeDiscoveryMode discoveryMode))
+            {
+                options = options with { DiscoveryMode = discoveryMode };
+            }
+            else
+            {
+                extractedDiagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5008",
+                    $"Discovery mode '{discoveryModeText}' is not supported.",
+                    location));
+            }
+        }
+
+        if (TryGetOption(globalOptions, "SemanticTypeModelNamingPolicy", out string? namingPolicyText))
+        {
+            if (Enum.TryParse(namingPolicyText, ignoreCase: true, out DotNetNamingPolicy namingPolicy))
+            {
+                options = options with { NamingPolicy = namingPolicy };
+            }
+            else
+            {
+                extractedDiagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5018",
+                    $"Naming policy '{namingPolicyText}' is not supported.",
+                    location));
+            }
+        }
+
+        diagnostics = extractedDiagnostics;
+        return options;
+    }
+
+    private static bool TryGetOption(AnalyzerConfigOptions options, string optionName, out string? value)
+    {
+        if (options.TryGetValue("build_property." + optionName, out string? configuredValue)
+            && !string.IsNullOrWhiteSpace(configuredValue))
+        {
+            value = configuredValue;
+            return true;
+        }
+
+        value = null;
+        return false;
+    }
+
+    private static bool TryParseBoolOption(AnalyzerConfigOptions options, string optionName, out bool value)
+    {
+        return TryGetOption(options, optionName, out string? configuredValue)
+            ? bool.TryParse(configuredValue, out value)
+            : SetFalse(out value);
+    }
+
+    private static bool SetFalse(out bool value)
+    {
+        value = false;
+        return false;
+    }
+
+    private static string[] ParseDelimitedList(string value)
+    {
+        return
+        [
+            .. value
+                .Split([';', ','], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Distinct(StringComparer.Ordinal),
+        ];
+    }
+
+    private static bool ProviderNameCollides(Compilation compilation, string generatedNamespace, string providerName)
+    {
+        INamespaceSymbol scope = compilation.Assembly.GlobalNamespace;
+        foreach (string segment in generatedNamespace.Split('.', StringSplitOptions.RemoveEmptyEntries))
+        {
+            INamespaceSymbol? next = scope.GetNamespaceMembers().FirstOrDefault(candidate => string.Equals(candidate.Name, segment, StringComparison.Ordinal));
+            if (next is null)
+            {
+                return false;
+            }
+
+            scope = next;
+        }
+
+        return scope.GetTypeMembers(providerName).Length > 0;
     }
 
     private static Diagnostic CreateDiagnostic(DotNetExtractionDiagnostic diagnostic)
