@@ -125,7 +125,7 @@ internal sealed class TypeSchemaModelService : ITypeSchemaModelService, IDisposa
 
         try
         {
-            SchemaTransformationPipeline pipeline = SchemaTransformationPipeline.Create();
+            var pipeline = SchemaTransformationPipeline.Create();
             foreach (ISchemaTransformation transformation in _transformations)
             {
                 _ = pipeline.Use(transformation);

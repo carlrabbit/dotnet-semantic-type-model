@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
+using SemanticTypeModel.JsonSchema.Export;
 using Hardening = SemanticTypeModel.Abstractions.Hardening;
 using Legacy = SemanticTypeModel.Abstractions.Model;
-using SemanticTypeModel.JsonSchema.Export;
 
 namespace SemanticTypeModel.JsonSchema.Runtime;
 
@@ -31,7 +31,7 @@ public sealed class JsonSchemaRuntimeProjection : Hardening.ISchemaProjection<Js
     {
         public static Legacy.TypeSchemaModel ToLegacy(Hardening.TypeSchemaModel model, Hardening.SchemaProjectionContext context)
         {
-            string? rootIdentifier = ResolveRootIdentifier(model, context);
+            var rootIdentifier = ResolveRootIdentifier(model, context);
             Dictionary<string, Legacy.TypeShape> shapes = new(StringComparer.Ordinal);
 
             foreach (Hardening.TypeDefinition type in model.Types.OrderBy(static type => type.Id.Value, StringComparer.Ordinal))
@@ -49,7 +49,7 @@ public sealed class JsonSchemaRuntimeProjection : Hardening.ISchemaProjection<Js
                 return model.Id.Value;
             }
 
-            string? fallback = model.Types.Count > 0 ? model.Types[0].Id.Value : null;
+            var fallback = model.Types.Count > 0 ? model.Types[0].Id.Value : null;
             if (fallback is not null)
             {
                 context.Diagnostics.Add(new Hardening.SchemaDiagnostic
@@ -317,7 +317,7 @@ public sealed class JsonSchemaRuntimeProjection : Hardening.ISchemaProjection<Js
 
                     break;
                 case Hardening.ObjectTypeDefinition obj:
-                    bool? additionalPropertiesAllowed = TryGetAdditionalPropertiesAllowed(obj.Annotations);
+                    var additionalPropertiesAllowed = TryGetAdditionalPropertiesAllowed(obj.Annotations);
                     if (additionalPropertiesAllowed is not null)
                     {
                         entries.Add(new Legacy.ConstraintEntry("additionalProperties", additionalPropertiesAllowed.Value ? "true" : "false"));

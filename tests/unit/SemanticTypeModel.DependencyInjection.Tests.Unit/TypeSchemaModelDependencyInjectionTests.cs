@@ -86,7 +86,7 @@ public sealed class TypeSchemaModelDependencyInjectionTests
             .BuildServiceProvider();
 
         TypeSchemaModelResult result = await serviceProvider.GetRequiredService<ITypeSchemaModelService>().GetModelAsync();
-        ScalarTypeDefinition scalar = (ScalarTypeDefinition)result.Model!.GetType(new TypeId("Customer"));
+        var scalar = (ScalarTypeDefinition)result.Model!.GetType(new TypeId("Customer"));
 
         _ = await Assert.That(scalar.Name).IsEqualTo("Customer_A_B");
         _ = await Assert.That(result.Diagnostics.Select(static diagnostic => diagnostic.Code).ToArray()).IsEquivalentTo(["STM3901", "STM3902"]);
@@ -142,7 +142,7 @@ public sealed class TypeSchemaModelDependencyInjectionTests
         _ = await Assert.That(result.HasProjection).IsTrue();
         _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error)).IsFalse();
         _ = await Assert.That(GeneratedLegacySemanticTypeModelFactory.InvocationCount).IsEqualTo(1);
-        string json = result.Projection!.Document.RootElement.GetRawText();
+        var json = result.Projection!.Document.RootElement.GetRawText();
         _ = await Assert.That(json.Contains("\"properties\"", StringComparison.Ordinal)).IsTrue();
         _ = await Assert.That(json.Contains("\"id\"", StringComparison.Ordinal)).IsTrue();
         _ = await Assert.That(json.Contains("\"string\"", StringComparison.Ordinal)).IsTrue();
@@ -169,7 +169,7 @@ public sealed class TypeSchemaModelDependencyInjectionTests
     [Test]
     public async Task Caching_behavior_should_follow_runtime_options()
     {
-        int invocationCount = 0;
+        var invocationCount = 0;
 
         using ServiceProvider serviceProvider = new ServiceCollection()
             .AddSemanticTypeModelRuntime(new TypeSchemaRuntimeOptions { CacheModelResult = false })

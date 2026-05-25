@@ -32,7 +32,7 @@ public static class LegacyTypeSchemaModelAdapter
 
         public TypeSchemaModelResult Convert(Legacy.TypeSchemaModel model)
         {
-            foreach ((string identifier, Legacy.TypeShape shape) in model.Shapes.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
+            foreach ((var identifier, Legacy.TypeShape shape) in model.Shapes.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
             {
                 Enqueue(identifier, shape, $"/shapes/{Escape(identifier)}");
             }
@@ -48,7 +48,7 @@ public static class LegacyTypeSchemaModelAdapter
                 _typesById[pending.Identifier] = ConvertShape(pending.Identifier, pending.Shape, pending.Path);
             }
 
-            string modelId = ResolveModelId(model.RootIdentifier);
+            var modelId = ResolveModelId(model.RootIdentifier);
             List<TypeDefinition> types = [.. _typesById.OrderBy(static pair => pair.Key, StringComparer.Ordinal).Select(static pair => pair.Value)];
 
             return new TypeSchemaModelResult
@@ -220,7 +220,7 @@ public static class LegacyTypeSchemaModelAdapter
 
             if (shapeRef?.Inline is not null)
             {
-                string inlineIdentifier = $"__inline_{++_inlineCounter}";
+                var inlineIdentifier = $"__inline_{++_inlineCounter}";
                 Enqueue(inlineIdentifier, shapeRef.Inline, path);
                 return new TypeRef(new TypeId(inlineIdentifier));
             }
@@ -416,11 +416,11 @@ public static class LegacyTypeSchemaModelAdapter
 
             try
             {
-                using JsonDocument document = JsonDocument.Parse(value);
+                using var document = JsonDocument.Parse(value);
                 return document.RootElement.ValueKind switch
                 {
                     JsonValueKind.String => document.RootElement.GetString(),
-                    JsonValueKind.Number when document.RootElement.TryGetInt64(out long integer) => integer,
+                    JsonValueKind.Number when document.RootElement.TryGetInt64(out var integer) => integer,
                     JsonValueKind.Number => document.RootElement.GetDecimal(),
                     JsonValueKind.True => true,
                     JsonValueKind.False => false,
@@ -439,21 +439,21 @@ public static class LegacyTypeSchemaModelAdapter
 
         private static int? ParseNullableInt(string value)
         {
-            return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
+            return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
                 ? parsed
                 : null;
         }
 
         private static decimal? ParseNullableDecimal(string value)
         {
-            return decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal parsed)
+            return decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed)
                 ? parsed
                 : null;
         }
 
         private static bool? ParseNullableBoolean(string value)
         {
-            return bool.TryParse(value, out bool parsed)
+            return bool.TryParse(value, out var parsed)
                 ? parsed
                 : null;
         }
