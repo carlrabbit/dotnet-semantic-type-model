@@ -11,6 +11,14 @@ Define projection support expectations for the hardened canonical model.
 3. EF Core 10 DbModel
 4. Power BI TOM model
 
+## Compile-Time Extraction and Generator Baseline (M0009)
+
+- C#/.NET extraction and source generation are canonical-model producers, not projection targets.
+- Required architecture path is:
+  - C#/.NET symbols -> canonical model -> projection targets.
+- Direct Roslyn/C# to projection generation remains out of scope.
+- Projection capability expectations continue to apply to generated canonical models in the same way as runtime-imported canonical models.
+
 ## Capability Matrix
 
 Legend:

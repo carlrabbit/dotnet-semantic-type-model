@@ -5,6 +5,8 @@
   <Folder Name="/src/">
     <Project Path="src/SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
     <Project Path="src/SemanticTypeModel.Core/SemanticTypeModel.Core.csproj" />
+    <Project Path="src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
+    <Project Path="src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj" />
     <Project Path="src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj" />
     <Project Path="src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj" />
     <Project Path="src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj" />
@@ -12,6 +14,7 @@
   <Folder Name="/tests/" />
   <Folder Name="/tests/unit/">
     <Project Path="tests/unit/SemanticTypeModel.Core.Tests.Unit/SemanticTypeModel.Core.Tests.Unit.csproj" />
+    <Project Path="tests/unit/SemanticTypeModel.Generators.Tests.Unit/SemanticTypeModel.Generators.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.JsonSchema.Tests.Unit/SemanticTypeModel.JsonSchema.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.EFCore.Tests.Unit/SemanticTypeModel.EFCore.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.PowerBI.Tests.Unit/SemanticTypeModel.PowerBI.Tests.Unit.csproj" />
