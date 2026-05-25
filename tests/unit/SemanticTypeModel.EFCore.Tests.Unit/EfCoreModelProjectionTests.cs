@@ -219,7 +219,7 @@ public sealed class EfCoreModelProjectionTests
             ],
         };
 
-        var numericEnumType = enumType with { Id = new TypeId("NumericStatus"), Name = "NumericStatus", StorageKind = EnumStorageKind.Integer };
+        EnumTypeDefinition numericEnumType = enumType with { Id = new TypeId("NumericStatus"), Name = "NumericStatus", StorageKind = EnumStorageKind.Integer };
         var entity = new ObjectTypeDefinition
         {
             Id = new TypeId("Order"),

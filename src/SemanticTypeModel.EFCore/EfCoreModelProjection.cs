@@ -148,7 +148,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
                     continue;
                 }
 
-                var finalProperty = projected with
+                EfPropertyDefinition finalProperty = projected with
                 {
                     Name = resolvedPropertyName,
                     ColumnName = string.IsNullOrWhiteSpace(projected.ColumnName) ? resolvedPropertyName : projected.ColumnName,
@@ -162,7 +162,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
             }
         }
 
-        var keys = ProjectKeys(objectType, keyNames, projectedPropertyNamesById, diagnostics);
+        IReadOnlyList<EfKeyDefinition> keys = ProjectKeys(objectType, keyNames, projectedPropertyNamesById, diagnostics);
         if (!isOwned && !_options.AllowKeylessEntities && !keys.Any(static key => key.Kind == EfKeyKind.Primary))
         {
             Report(
@@ -385,8 +385,8 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
                     continue;
                 }
 
-                var principalProperties = ResolveRelationshipProperties(relationship.PrincipalProperties, principalEntity, relationshipPath, diagnostics, "principal");
-                var dependentProperties = ResolveRelationshipProperties(relationship.DependentProperties, dependentEntity, relationshipPath, diagnostics, "dependent");
+                IReadOnlyList<string> principalProperties = ResolveRelationshipProperties(relationship.PrincipalProperties, principalEntity, relationshipPath, diagnostics, "principal");
+                IReadOnlyList<string> dependentProperties = ResolveRelationshipProperties(relationship.DependentProperties, dependentEntity, relationshipPath, diagnostics, "dependent");
                 if (principalProperties.Count == 0 || dependentProperties.Count == 0)
                 {
                     continue;
@@ -683,7 +683,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
 
     private Type ResolveClrType(ScalarTypeDefinition scalar, AnnotationBag annotations, string modelPath, IList<SchemaDiagnostic> diagnostics)
     {
-        if (TryResolveClrTypeAnnotation(annotations, modelPath, diagnostics, out var annotatedType))
+        if (TryResolveClrTypeAnnotation(annotations, modelPath, diagnostics, out Type annotatedType))
         {
             return annotatedType;
         }
@@ -709,7 +709,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
 
     private Type ResolveEnumClrType(EnumTypeDefinition enumType, PropertyDefinition property, string propertyPath, IList<SchemaDiagnostic> diagnostics)
     {
-        var storage = ResolveEnumStorage(property, propertyPath, diagnostics);
+        EnumEfProjectionMode storage = ResolveEnumStorage(property, propertyPath, diagnostics);
         if (storage == EnumEfProjectionMode.Numeric)
         {
             return enumType.StorageKind switch
@@ -735,7 +735,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
             return explicitConversion;
         }
 
-        var storage = ResolveEnumStorage(property, propertyPath, diagnostics);
+        EnumEfProjectionMode storage = ResolveEnumStorage(property, propertyPath, diagnostics);
         if (storage == EnumEfProjectionMode.Numeric && enumType.StorageKind is not EnumStorageKind.Integer and not EnumStorageKind.Number)
         {
             return "EnumToString";
