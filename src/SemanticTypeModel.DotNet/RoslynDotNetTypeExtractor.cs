@@ -63,9 +63,16 @@ public sealed class RoslynDotNetTypeExtractor
             ExtractType(root, cancellationToken);
         }
 
-        string? rootTypeId = roots
-            .Select(GetTypeId)
-            .FirstOrDefault(_types.ContainsKey);
+        string? rootTypeId = null;
+        foreach (INamedTypeSymbol root in roots)
+        {
+            string candidateId = GetTypeId(root);
+            if (_types.ContainsKey(candidateId))
+            {
+                rootTypeId = candidateId;
+                break;
+            }
+        }
 
         return new DotNetExtractionResult
         {

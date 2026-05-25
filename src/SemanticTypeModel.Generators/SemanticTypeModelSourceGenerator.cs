@@ -240,6 +240,11 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             builder.Append('_');
         }
 
+        if (builder.Length == 0)
+        {
+            return "AppSemanticTypeModel";
+        }
+
         if (!char.IsLetter(builder[0]) && builder[0] != '_')
         {
             builder.Insert(0, '_');
