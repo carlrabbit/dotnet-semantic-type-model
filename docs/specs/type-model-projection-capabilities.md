@@ -64,3 +64,12 @@ Projection diagnostics remain projection-specific, but they may coexist with ear
 - Generic `ui.*` hint projection is available through extension keywords when enabled.
 - JSON-editor-compatible keyword emission is opt-in and does not run by default.
 - Unsupported/deferred downstream hints remain annotation-preserved with diagnostics.
+
+## Power BI / TOM Capability Notes (M0007)
+
+- Baseline projection target is a TOM-like intermediate metadata model, not service deployment.
+- Object-to-table projection is role/annotation/options driven.
+- Value object projection is option-controlled (diagnose, flatten, serialize).
+- Arrays, dictionaries, and unions are diagnosable unless explicit serialization behavior is enabled.
+- Relationship endpoint and key resolution failures are diagnosable.
+- DAX expressions are preserved without DAX validation.
