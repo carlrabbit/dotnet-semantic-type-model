@@ -18,6 +18,9 @@ Building blocks define incremental engineering capabilities.
 | BB07 | GitHub Actions CI | Applied |
 | BB08 | Agent Instructions | Applied |
 | BB13 | Documentation Skeleton | Applied |
+| BB15 | Samples | Applied |
+| BB19 | Public Documentation | Applied |
+| BB20 | Release Readiness | Applied |
 
 ## Available but Not Applied
 
@@ -28,6 +31,5 @@ Building blocks define incremental engineering capabilities.
 | BB11 | Playwright E2E Module | Not applicable |
 | BB12 | TypeScript Runtime Tools | Not applicable |
 | BB14 | NuGet Packaging | Deferred to later milestone |
-| BB15 | Samples | Deferred to later milestone |
 | BB16 | GitHub Copilot | Applied via .github/copilot-instructions.md |
 | BB18 | GitHub Pages Website | Not applicable |

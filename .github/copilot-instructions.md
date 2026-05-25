@@ -21,3 +21,4 @@ Rules:
 - Use short-running tests by default.
 - Do not run long-running tests unless explicitly requested.
 - Document public API intent, not implementation mechanics.
+- Keep public documentation surfaces (`README.md`, `docs/PUBLIC-DOCS.md`, `public-docs/`) synchronized with consumer-facing changes.

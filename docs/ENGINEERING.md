@@ -6,7 +6,7 @@ Engineering documents define repository commands, toolchain setup, validation co
 
 Engineering documents are authoritative for:
 - command contracts;
-- build, restore, test, format, benchmark, package, and release commands;
+- build, restore, test, format, benchmark, package, samples, and release-readiness commands;
 - toolchain setup;
 - stack-specific building blocks;
 - optional engineering modules.
@@ -24,6 +24,10 @@ Engineering documents are not authoritative for:
 | engineering/dotnet.md | .NET 10 + MTP + TUnit + BenchmarkDotNet engineering profile |
 | engineering/command-contract.md | Canonical repository command contract |
 | engineering/building-blocks.md | Building block summary and selection rules |
+| engineering/public-documentation.md | Public documentation validation and synchronization rules |
+| engineering/release-readiness.md | Release gate command and release checklist rules |
+| engineering/packaging.md | Packaging and package smoke validation policy |
+| engineering/samples.md | Runnable sample engineering policy |
 
 ## Rules
 
@@ -36,6 +40,7 @@ Engineering documents are not authoritative for:
 ## Related Documents
 
 - docs/GUARDRAILS.md
+- docs/PUBLIC-DOCS.md
 - docs/guardrails/testing.md
 - docs/guardrails/implementation.md
 - docs/WORKFLOWS.md

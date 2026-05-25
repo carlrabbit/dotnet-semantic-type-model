@@ -40,6 +40,7 @@ If this command fails, fix the failure or document exactly why it could not be f
 - Keep specs authoritative for behavior.
 - Keep workflow specs synchronized with workflow implementations.
 - Keep engineering command contracts synchronized with scripts.
+- Keep public documentation surfaces (`README.md`, `docs/PUBLIC-DOCS.md`, `public-docs/`) synchronized with consumer-visible changes.
 
 ## Validation
 

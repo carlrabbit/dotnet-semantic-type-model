@@ -25,5 +25,4 @@ TBPs do not define:
 
 | TBP | Purpose |
 |---|---|
-
-(No TBPs defined yet. TBPs will be added as operational patterns emerge.)
+| tbps/public-documentation-update.md | Keep public documentation surfaces synchronized with product and release changes |
