@@ -1,3 +1,5 @@
+// These warnings are disabled for this prototype file to keep deterministic projection logic explicit and
+// readable while preserving stable contracts and analyzer-clean builds under repository-wide warning-as-error policy.
 #pragma warning disable IDE0046
 #pragma warning disable IDE0072
 #pragma warning disable IDE0305

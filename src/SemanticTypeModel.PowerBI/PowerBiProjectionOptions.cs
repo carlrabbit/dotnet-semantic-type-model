@@ -1,3 +1,5 @@
+// CA1720 is disabled because projection option enum values intentionally use canonical type terms
+// (for example Double/Decimal) that match documented mapping language in the Power BI/TOM spec.
 #pragma warning disable CA1720
 namespace SemanticTypeModel.PowerBI;
 

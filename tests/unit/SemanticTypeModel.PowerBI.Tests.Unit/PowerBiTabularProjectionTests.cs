@@ -3,6 +3,8 @@ using SemanticTypeModel.Abstractions.Hardening;
 
 namespace SemanticTypeModel.PowerBI.Tests.Unit;
 
+// CS1591 and IDE0305 are disabled in this test fixture to avoid repetitive XML docs and collection-style
+// churn while keeping test intent concise and consistent with existing repository test patterns.
 #pragma warning disable CS1591
 #pragma warning disable IDE0305
 /// <summary>
