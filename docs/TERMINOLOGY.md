@@ -48,3 +48,21 @@ The canonical representation of a type in the semantic type model.
 
 ### Schema Projection
 A derived representation of the canonical type model targeted at a specific output format or system.
+
+### Public Documentation
+Consumer-facing documentation that defines supported usage for external adopters.
+
+### Consumer
+A user or system integrating SemanticTypeModel packages or outputs.
+
+### Public Documentation Surface
+A repository file or folder treated as externally visible consumer documentation.
+
+### Package README
+The consumer-facing package documentation source used for NuGet README content.
+
+### Diagnostics Reference
+Consumer-facing documentation describing diagnostics, severity, cause, and corrective action.
+
+### Public API Baseline
+A documented comparison point used to detect breaking changes in consumer-visible API contracts.

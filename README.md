@@ -1,42 +1,84 @@
 # SemanticTypeModel
 
-## Goal
+SemanticTypeModel is a .NET 10 library set for canonical semantic type models, JSON Schema import/export, transformations, runtime DI composition, and projection targets such as Power BI-like and EF Core-like metadata.
 
-A .NET 10 library for building, querying, and projecting canonical semantic type models.
+## Install
 
-## Documentation Entry Points
+Add the package(s) your scenario needs:
+
+```sh
+dotnet add package SemanticTypeModel.JsonSchema
+dotnet add package SemanticTypeModel.DependencyInjection
+dotnet add package SemanticTypeModel.DotNet
+```
+
+See full package guidance in [public-docs/packages.md](public-docs/packages.md).
+
+## Quick Start
+
+```csharp
+using SemanticTypeModel.JsonSchema.Import;
+using SemanticTypeModel.JsonSchema.Export;
+
+const string schema = """
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "Customer",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" }
+  },
+  "required": ["id"]
+}
+""";
+
+var imported = JsonSchemaImporter.Import(schema);
+var exported = JsonSchemaExporter.Export(imported.Model);
+Console.WriteLine(exported.Document.RootElement.GetRawText());
+```
+
+## Package List
+
+- `SemanticTypeModel.Abstractions`
+- `SemanticTypeModel.Core`
+- `SemanticTypeModel.JsonSchema`
+- `SemanticTypeModel.DotNet`
+- `SemanticTypeModel.Generators`
+- `SemanticTypeModel.DependencyInjection`
+- `SemanticTypeModel.PowerBI`
+- `SemanticTypeModel.EFCore`
+
+## Core Concepts
+
+- Canonical semantic type model
+- Deterministic transformation pipeline
+- Runtime model service and projection service
+- JSON Schema Draft 2020-12 import/export
+
+## Samples
+
+Runnable samples live under `samples/` and are documented in [public-docs/samples.md](public-docs/samples.md).
+
+Run all samples:
+
+```sh
+./eng/samples.sh
+```
+
+## Public Docs
+
+- [public-docs/getting-started.md](public-docs/getting-started.md)
+- [public-docs/installation.md](public-docs/installation.md)
+- [public-docs/concepts.md](public-docs/concepts.md)
+- [public-docs/packages.md](public-docs/packages.md)
+- [public-docs/api/public-api.md](public-docs/api/public-api.md)
+- [public-docs/diagnostics.md](public-docs/diagnostics.md)
+- [public-docs/release-notes.md](public-docs/release-notes.md)
+
+## Contributor Docs
 
 - [docs/TERMINOLOGY.md](docs/TERMINOLOGY.md)
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- [docs/SPECS.md](docs/SPECS.md)
-- [docs/MILESTONES.md](docs/MILESTONES.md)
-- [docs/TBPS.md](docs/TBPS.md)
 - [docs/GUARDRAILS.md](docs/GUARDRAILS.md)
 - [docs/ENGINEERING.md](docs/ENGINEERING.md)
-- [docs/WORKFLOWS.md](docs/WORKFLOWS.md)
-
-## Engineering Commands
-
-See [docs/ENGINEERING.md](docs/ENGINEERING.md).
-
-```sh
-./eng/restore.sh   # Restore dependencies
-./eng/build.sh     # Build the solution
-./eng/test.sh      # Run short-running tests
-./eng/format.sh    # Format code
-./eng/check.sh     # Full validation (restore + build + test + format check)
-./eng/benchmark.sh # Run benchmarks (Release mode)
-```
-
-## Development
-
-Requirements:
-- .NET 10 SDK
-
-```sh
-git clone https://github.com/carlrabbit/dotnet-semantic-type-model
-cd dotnet-semantic-type-model
-./eng/restore.sh
-./eng/build.sh
-./eng/test.sh
-```
+- [docs/MILESTONES.md](docs/MILESTONES.md)
+- [docs/PUBLIC-DOCS.md](docs/PUBLIC-DOCS.md)

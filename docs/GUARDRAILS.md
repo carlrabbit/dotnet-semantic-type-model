@@ -13,7 +13,7 @@ Guardrails constrain how implementation, testing, and documentation are performe
 | Guardrail | Purpose |
 |---|---|
 | guardrails/testing.md | Test classification and execution rules |
-| guardrails/implementation.md | General implementation rules |
+| guardrails/implementation.md | General implementation and documentation synchronization rules |
 | guardrails/languages/dotnet.md | .NET-specific rules |
 
 ## Rules
@@ -22,8 +22,11 @@ Guardrails constrain how implementation, testing, and documentation are performe
 - Language guardrails apply when touching that language or runtime.
 - More specific guardrails may refine general guardrails.
 - More specific guardrails must not silently contradict general guardrails.
+- Public documentation surfaces must remain synchronized with behavior and release readiness commands.
 
 ## Related Engineering Documents
 
 - docs/ENGINEERING.md
 - docs/engineering/dotnet.md
+- docs/engineering/public-documentation.md
+- docs/engineering/release-readiness.md

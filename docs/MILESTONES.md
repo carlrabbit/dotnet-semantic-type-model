@@ -23,3 +23,4 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - [M0009 - .NET Type System Extraction and Compile-Time Generator Baseline](milestones/m0009-dotnet-type-system-extraction-and-compile-time-generator-baseline.md)
 - [M0010 - Attribute and Convention Model for .NET Type Extraction](milestones/m0010-attribute-and-convention-model-for-dotnet-type-extraction.md)
 - [M0011 - Runtime API Surface and DI Integration](milestones/m0011-runtime-api-surface-and-di-integration.md)
+- [M0012 - Documentation, Samples, Release Readiness, and First End-to-End Scenarios](milestones/m0012-documentation-samples-release-readiness-and-first-end-to-end-scenarios.md)

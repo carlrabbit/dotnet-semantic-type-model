@@ -16,5 +16,5 @@ Use research documents to inform decisions, not to define them.
 
 | Document | Purpose |
 |---|---|
-| research/engineering-guide-v3.md | Authoritative engineering setup guide for .NET repositories |
-| research/project-setup-guide-v4.md | Authoritative project setup and documentation governance guide |
+| research/project-setup-guide-v5.md | Project Setup Guide V5 research copy |
+| research/engineering-guide-v4.md | Engineering Guide V4 research copy |

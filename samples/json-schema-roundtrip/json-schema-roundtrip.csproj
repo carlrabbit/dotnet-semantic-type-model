@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>SemanticTypeModel.Samples.JsonSchemaRoundtrip</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj" />
+    <ProjectReference Include="../../src/SemanticTypeModel.Core/SemanticTypeModel.Core.csproj" />
+  </ItemGroup>
+</Project>
