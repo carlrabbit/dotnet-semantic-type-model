@@ -32,6 +32,8 @@ Specs are authoritative for:
 | specs/type-model-dotnet-attributes.md | Stable attribute vocabulary, precedence, and diagnostics for .NET extraction |
 | specs/type-model-dotnet-conventions.md | Deterministic discovery, naming, inference, and configuration conventions for .NET extraction |
 | specs/type-model-compile-time-generator.md | Incremental generator baseline for deterministic compile-time model-provider generation |
+| specs/type-model-runtime-api.md | Hardened runtime model provider, service, result, caching, and diagnostics contracts |
+| specs/type-model-di-integration.md | Dependency-injection registration, lifetime, and projection integration pattern for runtime model services |
 | specs/type-model-ui-hints.md | Generic UI hint vocabulary, normalization, and JSON-editor compatibility mapping |
 | specs/type-model-projection-capabilities.md | Projection capability matrix and diagnostic expectations across targets |
 | specs/type-model-powerbi-tom-projection.md | Deterministic Power BI / TOM-like projection behavior over the hardened canonical model |

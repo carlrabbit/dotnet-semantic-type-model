@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SemanticTypeModel.DependencyInjection.Tests.Unit</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Assertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/SemanticTypeModel.DependencyInjection/SemanticTypeModel.DependencyInjection.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.Core/SemanticTypeModel.Core.csproj" />
+  </ItemGroup>
+</Project>
