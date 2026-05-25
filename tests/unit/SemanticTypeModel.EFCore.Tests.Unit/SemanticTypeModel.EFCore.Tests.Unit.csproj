@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SemanticTypeModel.EFCore.Tests.Unit</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Assertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj" />
+  </ItemGroup>
+</Project>

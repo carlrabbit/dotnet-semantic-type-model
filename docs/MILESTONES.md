@@ -19,3 +19,4 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - [M0005 - Transformation Pipeline and Diagnostics Hardening](milestones/m0005-transformation-pipeline-and-diagnostics-hardening.md)
 - [M0006 - JSON Editor and UI Projection Hints](milestones/m0006-json-editor-and-ui-projection-hints.md)
 - [M0007 - Power BI TOM Projection Prototype](milestones/m0007-power-bi-tom-projection-prototype.md)
+- [M0008 - EF Core DbModel Projection Prototype](milestones/m0008-ef-core-dbmodel-projection-prototype.md)
