@@ -1,11 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>SemanticTypeModel.JsonSchema</RootNamespace>
+    <PackageId>SemanticTypeModel.JsonSchema</PackageId>
+    <Title>SemanticTypeModel.JsonSchema</Title>
+    <Description>JSON Schema import/export adapters for SemanticTypeModel.</Description>
+    <Authors>SemanticTypeModel Contributors</Authors>
+    <RepositoryUrl>https://github.com/carlrabbit/dotnet-semantic-type-model</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>semantic-type-model;json-schema;projection</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
     <ProjectReference Include="../SemanticTypeModel.Core/SemanticTypeModel.Core.csproj" />
     <ProjectReference Include="../SemanticTypeModel.DependencyInjection/SemanticTypeModel.DependencyInjection.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../public-docs/nuget/SemanticTypeModel.JsonSchema.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 </Project>

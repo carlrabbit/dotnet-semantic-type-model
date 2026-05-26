@@ -1,15 +1,15 @@
 # SemanticTypeModel
 
-SemanticTypeModel is a .NET 10 library set for canonical semantic type models, JSON Schema import/export, transformations, runtime DI composition, and projection targets such as Power BI-like and EF Core-like metadata.
+SemanticTypeModel is a .NET 10 library set for canonical semantic type models, JSON Schema import/export, transformations, runtime composition, and projection targets such as Power BI-like and EF Core-like metadata.
 
 ## Install
 
 Add the package(s) your scenario needs:
 
 ```sh
-dotnet add package SemanticTypeModel.JsonSchema
-dotnet add package SemanticTypeModel.DependencyInjection
-dotnet add package SemanticTypeModel.DotNet
+dotnet add package SemanticTypeModel.JsonSchema --version 0.1.0-alpha
+dotnet add package SemanticTypeModel.JsonEditor --version 0.1.0-alpha
+dotnet add package SemanticTypeModel.DotNet --version 0.1.0-alpha
 ```
 
 See full package guidance in [public-docs/packages.md](public-docs/packages.md).
@@ -33,27 +33,24 @@ const string schema = """
 """;
 
 var imported = JsonSchemaImporter.Import(schema);
-var exported = JsonSchemaExporter.Export(imported.Model);
+var exported = JsonSchemaExporter.Export(imported.Model!);
 Console.WriteLine(exported.Document.RootElement.GetRawText());
 ```
 
-## Package List
+## Package List (0.1.0-alpha)
 
 - `SemanticTypeModel.Abstractions`
 - `SemanticTypeModel.Core`
 - `SemanticTypeModel.JsonSchema`
 - `SemanticTypeModel.DotNet`
 - `SemanticTypeModel.Generators`
-- `SemanticTypeModel.DependencyInjection`
+- `SemanticTypeModel.JsonEditor`
 - `SemanticTypeModel.PowerBI`
 - `SemanticTypeModel.EFCore`
 
-## Core Concepts
+## Prerelease Notice
 
-- Canonical semantic type model
-- Deterministic transformation pipeline
-- Runtime model service and projection service
-- JSON Schema Draft 2020-12 import/export
+`0.1.0-alpha` is the first prerelease. APIs, package split, and known limitations may change before 1.0.
 
 ## Samples
 
@@ -73,6 +70,7 @@ Run all samples:
 - [public-docs/packages.md](public-docs/packages.md)
 - [public-docs/api/public-api.md](public-docs/api/public-api.md)
 - [public-docs/diagnostics.md](public-docs/diagnostics.md)
+- [public-docs/versioning.md](public-docs/versioning.md)
 - [public-docs/release-notes.md](public-docs/release-notes.md)
 
 ## Contributor Docs

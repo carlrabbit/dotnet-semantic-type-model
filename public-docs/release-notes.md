@@ -1,9 +1,23 @@
 # Release Notes
 
-## Unreleased
+## 0.1.0-alpha
 
-### M0012
+Initial prerelease package publication milestone.
 
-- Added public documentation authority and initial consumer docs under `public-docs/`.
-- Added runnable samples for JSON Schema, generator, runtime DI, Power BI projection, and EF Core projection.
-- Added release-readiness commands for public docs validation, package smoke, public API checks, and release gate orchestration.
+- Added release automation scripts: `./eng/package.sh`, `./eng/publish.sh`, `./eng/release-check.sh`.
+- Added manual release workflows: `release-check.yml`, `pack.yml`, and `publish-nuget.yml`.
+- Added package smoke tests that consume local `artifacts/nuget` packages.
+- Added package metadata and per-package NuGet README sources for:
+  - `SemanticTypeModel.Abstractions`
+  - `SemanticTypeModel.Core`
+  - `SemanticTypeModel.JsonSchema`
+  - `SemanticTypeModel.DotNet`
+  - `SemanticTypeModel.Generators`
+  - `SemanticTypeModel.JsonEditor`
+  - `SemanticTypeModel.PowerBI`
+  - `SemanticTypeModel.EFCore`
+- Added public API baseline files and release-gate validation.
+
+## Known Limitations
+
+- Public API surface and package split are still prerelease and may change before 1.0.

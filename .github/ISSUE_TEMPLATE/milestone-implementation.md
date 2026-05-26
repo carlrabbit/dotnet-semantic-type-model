@@ -6,35 +6,20 @@ labels: milestone
 
 ## Milestone
 
-<!-- Reference the milestone document, e.g., docs/milestones/m0012-documentation-samples-release-readiness-and-first-end-to-end-scenarios.md -->
-
-## Goal
-
-<!-- Short summary of the milestone goal -->
+<!-- Reference milestone document -->
 
 ## Deliverables Checklist
 
-<!-- List key deliverables from the milestone document -->
-
-- [ ]
-
-## Public Documentation Impact
-
-- [ ] README.md updated for consumer-facing changes
-- [ ] docs/PUBLIC-DOCS.md mapping reviewed
-- [ ] relevant `public-docs/` pages updated
-- [ ] package README source reviewed (`public-docs/nuget/package-readme.md`)
+- [ ] Workflows updated
+- [ ] eng scripts updated
+- [ ] package metadata/readme mapping updated
+- [ ] package smoke coverage updated
+- [ ] public API validation updated
+- [ ] public documentation updated
 
 ## Validation
 
 ```sh
 ./eng/check.sh
-./eng/public-docs.sh
+./eng/release-check.sh <version>
 ```
-
-## Related Documents
-
-- [ ] docs/MILESTONES.md
-- [ ] docs/TBPS.md
-- [ ] docs/guardrails/implementation.md
-- [ ] docs/PUBLIC-DOCS.md

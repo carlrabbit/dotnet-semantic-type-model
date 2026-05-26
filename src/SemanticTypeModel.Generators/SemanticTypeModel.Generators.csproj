@@ -3,7 +3,20 @@
     <RootNamespace>SemanticTypeModel.Generators</RootNamespace>
     <OutputItemType>Analyzer</OutputItemType>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <NoWarn>$(NoWarn);RS1036;RS1041;CA1305;IDE0007;IDE0010;IDE0058;IDE0072</NoWarn>
+    <NoWarn>$(NoWarn);RS1036;RS1041;CA1305;IDE0007;IDE0010;IDE0058;IDE0072;NU5128</NoWarn>
+    <PackageId>SemanticTypeModel.Generators</PackageId>
+    <Title>SemanticTypeModel.Generators</Title>
+    <Description>Incremental source generator package for SemanticTypeModel compile-time extraction.</Description>
+    <Authors>SemanticTypeModel Contributors</Authors>
+    <RepositoryUrl>https://github.com/carlrabbit/dotnet-semantic-type-model</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>semantic-type-model;source-generator;roslyn</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,5 +27,14 @@
     <ProjectReference Include="../SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
     <ProjectReference Include="../SemanticTypeModel.Core/SemanticTypeModel.Core.csproj" />
     <ProjectReference Include="../SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)$(AssemblyName).pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)$(AssemblyName).pdb')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../public-docs/nuget/SemanticTypeModel.Generators.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 </Project>

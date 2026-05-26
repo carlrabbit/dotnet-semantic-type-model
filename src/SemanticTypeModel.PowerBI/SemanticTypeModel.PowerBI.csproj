@@ -1,9 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>SemanticTypeModel.PowerBI</RootNamespace>
+    <PackageId>SemanticTypeModel.PowerBI</PackageId>
+    <Title>SemanticTypeModel.PowerBI</Title>
+    <Description>Power BI tabular projection support for SemanticTypeModel.</Description>
+    <Authors>SemanticTypeModel Contributors</Authors>
+    <RepositoryUrl>https://github.com/carlrabbit/dotnet-semantic-type-model</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>semantic-type-model;powerbi;projection</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../public-docs/nuget/SemanticTypeModel.PowerBI.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 </Project>

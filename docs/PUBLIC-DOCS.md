@@ -27,7 +27,7 @@ This document is authoritative for:
 - `public-docs/release-notes.md`
 - `public-docs/api/public-api.md`
 - `public-docs/api/compatibility.md`
-- `public-docs/nuget/package-readme.md`
+- `public-docs/nuget/*.md`
 - `public-docs/samples/*.md`
 - `public-docs/diagnostics/*.md`
 
@@ -37,11 +37,22 @@ This document is authoritative for:
 - `README.md` remains the repository entry page; `public-docs/` remains the detailed source set.
 - Public API and compatibility statements must align with current shipped assemblies.
 - Diagnostics references must avoid claiming stable IDs unless stability is explicitly guaranteed.
+- Prerelease docs must state that APIs and package split may change before 1.0.
 
 ## Package README Source Mapping
 
-- NuGet package README source: `public-docs/nuget/package-readme.md`.
-- Package README-related release validation is performed by `./eng/public-docs.sh`.
+NuGet package README sources are mapped per package:
+
+- `SemanticTypeModel.Abstractions` -> `public-docs/nuget/SemanticTypeModel.Abstractions.md`
+- `SemanticTypeModel.Core` -> `public-docs/nuget/SemanticTypeModel.Core.md`
+- `SemanticTypeModel.JsonSchema` -> `public-docs/nuget/SemanticTypeModel.JsonSchema.md`
+- `SemanticTypeModel.DotNet` -> `public-docs/nuget/SemanticTypeModel.DotNet.md`
+- `SemanticTypeModel.Generators` -> `public-docs/nuget/SemanticTypeModel.Generators.md`
+- `SemanticTypeModel.JsonEditor` -> `public-docs/nuget/SemanticTypeModel.JsonEditor.md`
+- `SemanticTypeModel.PowerBI` -> `public-docs/nuget/SemanticTypeModel.PowerBI.md`
+- `SemanticTypeModel.EFCore` -> `public-docs/nuget/SemanticTypeModel.EFCore.md`
+
+Package README-related release validation is performed by `./eng/public-docs.sh`.
 
 ## Diagnostics Reference Mapping
 
@@ -59,15 +70,6 @@ This document is authoritative for:
 For each release candidate and release:
 - update `public-docs/release-notes.md`;
 - verify `README.md` and `public-docs/getting-started.md` are current;
-- verify package README source;
+- verify per-package README sources;
 - verify API/compatibility and diagnostics pages;
 - verify sample documentation links and command snippets.
-
-## Document Contract
-
-When public documentation policy changes, review and update:
-- `README.md`
-- `docs/ENGINEERING.md`
-- `docs/engineering/public-documentation.md`
-- `docs/workflows/public-docs.md`
-- `eng/public-docs.sh`

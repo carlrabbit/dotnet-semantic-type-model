@@ -1,0 +1,31 @@
+name: release-check
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Prerelease version to validate (for example 0.1.0-alpha)
+        required: true
+        type: string
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Setup Bun
+        if: hashFiles('package.json') != ''
+        uses: oven-sh/setup-bun@v2
+
+      - name: Release check
+        run: ./eng/release-check.sh "${{ inputs.version }}"

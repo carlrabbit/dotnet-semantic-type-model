@@ -1,22 +1,20 @@
 # Packages
 
-## Core Packages
+## Initial Prerelease Package Set (0.1.0-alpha)
 
 - `SemanticTypeModel.Abstractions`
 - `SemanticTypeModel.Core`
-
-## Runtime and Projection Packages
-
 - `SemanticTypeModel.JsonSchema`
-- `SemanticTypeModel.DependencyInjection`
+- `SemanticTypeModel.DotNet`
+- `SemanticTypeModel.Generators`
+- `SemanticTypeModel.JsonEditor`
 - `SemanticTypeModel.PowerBI`
 - `SemanticTypeModel.EFCore`
 
-## Compile-Time Extraction Packages
+## Prerelease Notes
 
-- `SemanticTypeModel.DotNet`
-- `SemanticTypeModel.Generators`
-
-## Package README Source
-
-`public-docs/nuget/package-readme.md` is the package README source baseline.
+- This is the first prerelease package set.
+- Public APIs may change before 1.0.
+- Package boundaries may be refined before 1.0.
+- Known limitations are documented in release notes.
+- `SemanticTypeModel.JsonEditor` is currently produced from the `src/SemanticTypeModel.DependencyInjection` project.

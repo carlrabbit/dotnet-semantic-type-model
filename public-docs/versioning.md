@@ -2,8 +2,11 @@
 
 ## Policy
 
-- Use semantic versioning with pre-release tags for milestone previews.
-- Treat diagnostics and generated surface details as preview unless explicitly stabilized.
+- Semantic versioning is used.
+- `0.1.0-alpha` is the first prerelease.
+- Public APIs may change before 1.0.
+- Package split may change before 1.0.
+- Diagnostics and generated output are preview unless explicitly stabilized.
 
 ## Compatibility
 

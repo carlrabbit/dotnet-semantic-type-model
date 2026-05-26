@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SemanticTypeModel.PackageSmoke.Tests</RootNamespace>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <PackageSmokeVersion Condition="'$(PackageSmokeVersion)' == ''">0.1.0-alpha</PackageSmokeVersion>
+    <RestoreAdditionalProjectSources Condition="'$(PackageSmokeSource)' != ''">$(PackageSmokeSource);https://api.nuget.org/v3/index.json</RestoreAdditionalProjectSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" Version="1.45.29" />
+    <PackageReference Include="TUnit.Assertions" Version="1.45.29" />
+    <PackageReference Include="SemanticTypeModel.Abstractions" Version="$(PackageSmokeVersion)" />
+    <PackageReference Include="SemanticTypeModel.Core" Version="$(PackageSmokeVersion)" />
+    <PackageReference Include="SemanticTypeModel.JsonSchema" Version="$(PackageSmokeVersion)" />
+    <PackageReference Include="SemanticTypeModel.DotNet" Version="$(PackageSmokeVersion)" />
+    <PackageReference Include="SemanticTypeModel.JsonEditor" Version="$(PackageSmokeVersion)" />
+    <PackageReference Include="SemanticTypeModel.PowerBI" Version="$(PackageSmokeVersion)" />
+    <PackageReference Include="SemanticTypeModel.EFCore" Version="$(PackageSmokeVersion)" />
+    <PackageReference Include="SemanticTypeModel.Generators" Version="$(PackageSmokeVersion)" />
+  </ItemGroup>
+</Project>
