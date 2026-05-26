@@ -41,10 +41,35 @@ public sealed class TypeSchemaModelDependencyInjectionTests
     [Test]
     public async Task Register_generated_factory_should_cache_factory_result_and_preserve_adapter_diagnostics()
     {
-        GeneratedLegacySemanticTypeModelFactory.Reset();
+        var invocationCount = 0;
+        Legacy.TypeSchemaModel CreateLegacyModel()
+        {
+            invocationCount++;
+            LegacyTypeSchemaModelBuilder builder = new();
+            _ = builder.AddShape("Customer", new Legacy.ObjectShape
+            {
+                Properties =
+                [
+                    new Legacy.PropertyShape
+                    {
+                        Name = "value",
+                        IsRequired = true,
+                        IsNullable = true,
+                        Type = Legacy.ShapeRef.FromIdentifier("NullValue"),
+                    },
+                ],
+            });
+            _ = builder.AddShape("NullValue", new Legacy.ScalarShape
+            {
+                Kind = Legacy.ScalarKind.Null,
+                IsNullable = true,
+            });
+            _ = builder.SetRoot("Customer");
+            return builder.Build();
+        }
 
         using ServiceProvider serviceProvider = new ServiceCollection()
-            .AddSemanticTypeModel(GeneratedLegacySemanticTypeModelFactory.Create)
+            .AddSemanticTypeModel(CreateLegacyModel)
             .BuildServiceProvider();
 
         ITypeSchemaModelService service = serviceProvider.GetRequiredService<ITypeSchemaModelService>();
@@ -52,7 +77,7 @@ public sealed class TypeSchemaModelDependencyInjectionTests
         TypeSchemaModelResult first = await service.GetModelAsync();
         TypeSchemaModelResult second = await service.GetModelAsync();
 
-        _ = await Assert.That(GeneratedLegacySemanticTypeModelFactory.InvocationCount).IsEqualTo(1);
+        _ = await Assert.That(invocationCount).IsEqualTo(1);
         _ = await Assert.That(first.Model).IsNotNull();
         _ = await Assert.That(first.Diagnostics.Any(static diagnostic => diagnostic.Code == "STM3103")).IsTrue();
         _ = await Assert.That(second.Diagnostics.Count).IsEqualTo(first.Diagnostics.Count);
@@ -129,10 +154,33 @@ public sealed class TypeSchemaModelDependencyInjectionTests
     [Test]
     public async Task Json_schema_projection_should_compose_with_runtime_model_service()
     {
-        GeneratedLegacySemanticTypeModelFactory.Reset();
+        var invocationCount = 0;
+        Legacy.TypeSchemaModel CreateCustomerModel()
+        {
+            invocationCount++;
+            LegacyTypeSchemaModelBuilder builder = new();
+            _ = builder.AddShape("Customer", new Legacy.ObjectShape
+            {
+                Properties =
+                [
+                    new Legacy.PropertyShape
+                    {
+                        Name = "id",
+                        IsRequired = true,
+                        Type = Legacy.ShapeRef.FromIdentifier("CustomerId"),
+                    },
+                ],
+            });
+            _ = builder.AddShape("CustomerId", new Legacy.ScalarShape
+            {
+                Kind = Legacy.ScalarKind.String,
+            });
+            _ = builder.SetRoot("Customer");
+            return builder.Build();
+        }
 
         using ServiceProvider serviceProvider = new ServiceCollection()
-            .AddSemanticTypeModel(GeneratedLegacySemanticTypeModelFactory.CreateCustomer)
+            .AddSemanticTypeModel(CreateCustomerModel)
             .AddSemanticTypeModelTransformation<ValidateModelTransformation>()
             .AddSemanticTypeModelJsonSchema()
             .BuildServiceProvider();
@@ -141,7 +189,7 @@ public sealed class TypeSchemaModelDependencyInjectionTests
 
         _ = await Assert.That(result.HasProjection).IsTrue();
         _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error)).IsFalse();
-        _ = await Assert.That(GeneratedLegacySemanticTypeModelFactory.InvocationCount).IsEqualTo(1);
+        _ = await Assert.That(invocationCount).IsEqualTo(1);
         var json = result.Projection!.Document.RootElement.GetRawText();
         _ = await Assert.That(json.Contains("\"properties\"", StringComparison.Ordinal)).IsTrue();
         _ = await Assert.That(json.Contains("\"id\"", StringComparison.Ordinal)).IsTrue();
@@ -232,66 +280,6 @@ public sealed class TypeSchemaModelDependencyInjectionTests
             Constraints = new ConstraintSet(),
             Annotations = EmptyAnnotations,
         };
-    }
-
-    private sealed class GeneratedLegacySemanticTypeModelFactory
-    {
-        public static int InvocationCount { get; private set; }
-
-        public static void Reset()
-        {
-            InvocationCount = 0;
-        }
-
-        public static Legacy.TypeSchemaModel Create()
-        {
-            InvocationCount++;
-            LegacyTypeSchemaModelBuilder builder = new();
-            _ = builder.AddShape("Customer", new Legacy.ObjectShape
-            {
-                Properties =
-                [
-                    new Legacy.PropertyShape
-                    {
-                        Name = "value",
-                        IsRequired = true,
-                        IsNullable = true,
-                        Type = Legacy.ShapeRef.FromIdentifier("NullValue"),
-                    },
-                ],
-            });
-            _ = builder.AddShape("NullValue", new Legacy.ScalarShape
-            {
-                Kind = Legacy.ScalarKind.Null,
-                IsNullable = true,
-            });
-            _ = builder.SetRoot("Customer");
-            return builder.Build();
-        }
-
-        public static Legacy.TypeSchemaModel CreateCustomer()
-        {
-            InvocationCount++;
-            LegacyTypeSchemaModelBuilder builder = new();
-            _ = builder.AddShape("Customer", new Legacy.ObjectShape
-            {
-                Properties =
-                [
-                    new Legacy.PropertyShape
-                    {
-                        Name = "id",
-                        IsRequired = true,
-                        Type = Legacy.ShapeRef.FromIdentifier("CustomerId"),
-                    },
-                ],
-            });
-            _ = builder.AddShape("CustomerId", new Legacy.ScalarShape
-            {
-                Kind = Legacy.ScalarKind.String,
-            });
-            _ = builder.SetRoot("Customer");
-            return builder.Build();
-        }
     }
 
     private sealed class AsyncTestModelProvider : ITypeSchemaModelProvider
