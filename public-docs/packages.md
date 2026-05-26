@@ -17,3 +17,4 @@
 - Public APIs may change before 1.0.
 - Package boundaries may be refined before 1.0.
 - Known limitations are documented in release notes.
+- `SemanticTypeModel.JsonEditor` is currently produced from the `src/SemanticTypeModel.DependencyInjection` project.
