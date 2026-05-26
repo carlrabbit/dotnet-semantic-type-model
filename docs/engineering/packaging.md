@@ -2,29 +2,25 @@
 
 ## Purpose
 
-Define package validation behavior for local package artifacts and consumer smoke testing.
+Define package production, smoke validation, and publish behavior.
 
-## Package Smoke Command
+## Package Commands
 
 ```sh
+./eng/package.sh <version>
 ./eng/package-smoke.sh <version>
+./eng/publish.sh <version>
 ```
 
 ## Behavior
 
-- The command validates local package artifacts in `artifacts/packages/<version>/`.
-- When no local package artifacts are present, the command exits successfully with an explicit skip message.
-- When packages exist, the command creates a clean consumer project, adds packages from the local package source, and builds the consumer project.
+- `./eng/package.sh <version>` packs Release packages into `artifacts/nuget`.
+- `./eng/package-smoke.sh <version>` validates package consumption from `artifacts/nuget` using a clean consumer and `tests/package-smoke/`.
+- `./eng/publish.sh <version>` publishes only existing package artifacts from `artifacts/nuget`.
 
 ## Constraints
 
-- Package smoke testing must not publish packages.
-- Package smoke testing must not require external secrets.
-- Package smoke testing must verify consumer restore/build from local package output.
-
-## Document Contract
-
-When packaging validation behavior changes, review and update:
-- `eng/package-smoke.sh`
-- `docs/engineering/release-readiness.md`
-- `docs/workflows/release-check.md`
+- Publishing is manual-only and never part of normal CI.
+- Publishing requires `NUGET_API_KEY`.
+- `dotnet nuget push` must use duplicate-safe publishing (`--skip-duplicate`).
+- Every published package must define package metadata and a package README source mapping.

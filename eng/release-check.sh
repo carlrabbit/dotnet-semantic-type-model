@@ -15,11 +15,7 @@ script_dir="$(dirname "$0")"
 
 "$script_dir/check.sh"
 dotnet build --configuration Release
-
-if [ -x "$script_dir/package.sh" ]; then
-  "$script_dir/package.sh" "$version"
-fi
-
+"$script_dir/package.sh" "$version"
 "$script_dir/package-smoke.sh" "$version"
 
 if [ -x "$script_dir/samples.sh" ]; then

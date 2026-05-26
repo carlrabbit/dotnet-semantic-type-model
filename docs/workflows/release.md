@@ -2,31 +2,15 @@
 
 ## Goal
 
-Define the high-level release workflow and required pre-publish gates.
+Define the manual prerelease publish workflow.
 
 ## Constraints
 
-- Publishing remains explicit and separate from release checks.
-- Release execution must reference release-readiness command outputs.
+- Publishing is manual-only (`workflow_dispatch`).
+- Publishing must never run on pull requests or normal pushes.
+- Publish must run release validation first.
+- Publishing requires NuGet API key secret.
 
-## Required Pre-Publish Gate
+## Required Gate
 
-- `./eng/release-check.sh <version>` must pass.
-
-## Required Public Documentation Gate
-
-- `README.md` and public documentation surfaces must be current.
-- Package README source and release notes must be current.
-
-## Authority
-
-This document is authoritative for:
-- release workflow intent;
-- release pre-publish gating requirements.
-
-## Document Contract
-
-When this workflow changes, review and update:
-- `docs/engineering/release-readiness.md`
-- `docs/PUBLIC-DOCS.md`
-- `.github/ISSUE_TEMPLATE/release.md`
+- `./eng/release-check.sh <version>` must pass before `./eng/publish.sh <version>`.

@@ -1,0 +1,40 @@
+name: pack
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Prerelease version to package (for example 0.1.0-alpha)
+        required: true
+        type: string
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Setup Bun
+        if: hashFiles('package.json') != ''
+        uses: oven-sh/setup-bun@v2
+
+      - name: Create packages
+        run: ./eng/package.sh "${{ inputs.version }}"
+
+      - name: Upload NuGet artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-${{ inputs.version }}
+          path: |
+            artifacts/nuget/*.nupkg
+            artifacts/nuget/*.snupkg
+          if-no-files-found: error

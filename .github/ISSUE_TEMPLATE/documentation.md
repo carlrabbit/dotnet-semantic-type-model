@@ -22,7 +22,7 @@ labels: documentation
 - [ ] public-docs/release-notes.md
 - [ ] public-docs/api/public-api.md
 - [ ] public-docs/api/compatibility.md
-- [ ] public-docs/nuget/package-readme.md
+- [ ] public-docs/nuget/*.md
 
 ## Affected Documents
 

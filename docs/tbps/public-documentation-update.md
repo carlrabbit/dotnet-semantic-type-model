@@ -16,7 +16,7 @@ Provide repeatable steps for keeping consumer-facing public documentation synchr
 1. Identify the consumer-visible change.
 2. Update relevant `public-docs/` pages.
 3. Update `README.md` summary sections for install/quick start/packages/samples as needed.
-4. Update package README source (`public-docs/nuget/package-readme.md`) when package usage changes.
+4. Update package README source (`public-docs/nuget/*.md`) when package usage changes.
 5. Update diagnostics and compatibility pages when applicable.
 6. Run `./eng/public-docs.sh`.
 

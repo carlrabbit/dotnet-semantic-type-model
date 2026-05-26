@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the pre-release validation gate that must pass before publishing actions are considered.
+Define the prerelease validation gate that must pass before publishing.
 
 ## Release Gate Command
 
@@ -16,8 +16,8 @@ Define the pre-release validation gate that must pass before publishing actions 
 
 1. `./eng/check.sh`
 2. `dotnet build --configuration Release`
-3. `./eng/package.sh <version>` when available and packages are produced
-4. `./eng/package-smoke.sh <version>` when local packages exist
+3. `./eng/package.sh <version>`
+4. `./eng/package-smoke.sh <version>`
 5. `./eng/samples.sh` when the samples command exists
 6. `./eng/public-api.sh`
 7. `./eng/public-docs.sh`
@@ -27,17 +27,9 @@ Define the pre-release validation gate that must pass before publishing actions 
 Before release, ensure:
 
 - user-first `README.md` is current;
-- package README source is current;
+- per-package README sources are current;
 - getting started and installation docs are current;
 - public API and compatibility docs are current;
 - diagnostics documentation is current;
 - sample docs are current;
 - versioning policy and release notes are current.
-
-## Document Contract
-
-When release-readiness policy changes, review and update:
-- `docs/workflows/release-check.md`
-- `docs/workflows/release.md`
-- `eng/release-check.sh`
-- `.github/ISSUE_TEMPLATE/release.md`

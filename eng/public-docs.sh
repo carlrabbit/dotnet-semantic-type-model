@@ -14,7 +14,14 @@ public-docs/versioning.md
 public-docs/release-notes.md
 public-docs/api/public-api.md
 public-docs/api/compatibility.md
-public-docs/nuget/package-readme.md
+public-docs/nuget/SemanticTypeModel.Abstractions.md
+public-docs/nuget/SemanticTypeModel.Core.md
+public-docs/nuget/SemanticTypeModel.JsonSchema.md
+public-docs/nuget/SemanticTypeModel.DotNet.md
+public-docs/nuget/SemanticTypeModel.Generators.md
+public-docs/nuget/SemanticTypeModel.JsonEditor.md
+public-docs/nuget/SemanticTypeModel.PowerBI.md
+public-docs/nuget/SemanticTypeModel.EFCore.md
 public-docs/samples/getting-started.md
 public-docs/samples/dotnet-generator.md
 public-docs/samples/json-schema-roundtrip.md
@@ -28,6 +35,7 @@ for file in $required_files; do
     echo "Missing public documentation file: $file" >&2
     exit 1
   fi
+
 done
 
 if find public-docs -type f -name 'README.md' | grep -q .; then

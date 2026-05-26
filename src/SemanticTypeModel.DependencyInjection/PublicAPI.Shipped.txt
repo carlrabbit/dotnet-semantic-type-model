@@ -1,0 +1,2 @@
+# Public API baseline for SemanticTypeModel.DependencyInjection
+SemanticTypeModel.DependencyInjection

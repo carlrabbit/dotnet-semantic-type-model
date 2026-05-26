@@ -16,9 +16,11 @@ Define the stable set of repository commands used by humans, CI, and agents.
 | `./eng/benchmark.sh` | Run benchmarks in Release mode |
 | `./eng/samples.sh` | Build and run runnable samples |
 | `./eng/public-docs.sh` | Validate required public documentation surfaces |
-| `./eng/public-api.sh` | Validate public API documentation baseline artifacts |
-| `./eng/package-smoke.sh <version>` | Validate locally packed packages from a clean consumer project |
+| `./eng/public-api.sh` | Validate public API baseline files |
+| `./eng/package.sh <version>` | Pack prerelease NuGet packages into `artifacts/nuget` |
+| `./eng/package-smoke.sh <version>` | Validate local package consumption from `artifacts/nuget` |
 | `./eng/release-check.sh <version>` | Run release-readiness gate without publishing |
+| `./eng/publish.sh <version>` | Publish local `artifacts/nuget` packages to NuGet.org |
 
 ## Rules
 
@@ -26,22 +28,5 @@ Define the stable set of repository commands used by humans, CI, and agents.
 - Do not invent alternative commands.
 - CI must call `./eng/check.sh` instead of duplicating logic.
 - `./eng/release-check.sh <version>` must not publish artifacts.
+- `./eng/publish.sh <version>` requires `NUGET_API_KEY`.
 - All required commands for the relevant task must succeed before work is considered complete.
-
-## Authority
-
-This document is authoritative for:
-- canonical command names;
-- command semantics;
-- command ordering.
-
-## Document Contract
-
-When commands change, review and update:
-- docs/ENGINEERING.md
-- AGENTS.md
-- .github/copilot-instructions.md
-- docs/engineering/public-documentation.md
-- docs/engineering/release-readiness.md
-- docs/engineering/packaging.md
-- docs/workflows/ci.md
