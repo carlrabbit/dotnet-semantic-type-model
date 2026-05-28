@@ -211,10 +211,43 @@ public sealed class JsonSchemaExportTests
     }
 
     /// <summary>
-    /// Fixture 5: string, numeric, array, and object constraints are exported.
+    /// Fixture 5: unsupported union semantics are diagnosed and fall back to oneOf.
     /// </summary>
     [Test]
-    public async Task Fixture_5_constraints_should_export_back_to_json_schema_keywords()
+    public async Task Fixture_5_unsupported_union_semantics_should_fall_back_to_oneOf_with_diagnostic()
+    {
+        TypeSchemaModel model = new TypeSchemaModelBuilder()
+            .AddShape(
+                "Root",
+                new UnionShape
+                {
+                    Options =
+                    [
+                        ShapeRef.FromInline(new ScalarShape { Kind = ScalarKind.String }),
+                        ShapeRef.FromInline(new ScalarShape { Kind = ScalarKind.Integer }),
+                    ],
+                    Annotations = [new SchemaAnnotation("jsonSchema.unionSemantics", "allOf")],
+                })
+            .SetRoot("Root")
+            .Build();
+
+        JsonSchemaExportResult result = JsonSchemaExporter.Export(model);
+        JsonElement root = result.Document.RootElement;
+        bool hasUnsupportedUnionDiagnostic = result.Diagnostics.Any(
+            static diagnostic =>
+                diagnostic.Code == "JSONSCHEMA_EXPORT_UNSUPPORTED_UNION_SEMANTICS" &&
+                diagnostic.Severity == SchemaDiagnosticSeverity.Warning);
+
+        _ = await Assert.That(root.TryGetProperty("oneOf", out _)).IsTrue();
+        _ = await Assert.That(root.TryGetProperty("anyOf", out _)).IsFalse();
+        _ = await Assert.That(hasUnsupportedUnionDiagnostic).IsTrue();
+    }
+
+    /// <summary>
+    /// Fixture 6: string, numeric, array, and object constraints are exported.
+    /// </summary>
+    [Test]
+    public async Task Fixture_6_constraints_should_export_back_to_json_schema_keywords()
     {
         TypeSchemaModel model = new TypeSchemaModelBuilder()
             .AddShape(
@@ -286,6 +319,43 @@ public sealed class JsonSchemaExportTests
         _ = await Assert.That(score.GetProperty("exclusiveMaximum").GetInt32()).IsEqualTo(100);
         _ = await Assert.That(tags.GetProperty("maxItems").GetInt32()).IsEqualTo(5);
         _ = await Assert.That(tags.GetProperty("uniqueItems").GetBoolean()).IsTrue();
+    }
+
+    /// <summary>
+    /// Fixture 7: $defs are emitted in deterministic ordinal name order.
+    /// </summary>
+    [Test]
+    public async Task Fixture_7_defs_should_be_ordered_deterministically()
+    {
+        TypeSchemaModel model = new TypeSchemaModelBuilder()
+            .AddShape(
+                "Root",
+                new ObjectShape
+                {
+                    Properties =
+                    [
+                        new PropertyShape
+                        {
+                            Name = "z",
+                            Type = ShapeRef.FromIdentifier("ZType"),
+                        },
+                        new PropertyShape
+                        {
+                            Name = "a",
+                            Type = ShapeRef.FromIdentifier("AType"),
+                        },
+                    ],
+                })
+            .AddShape("ZType", new ScalarShape { Kind = ScalarKind.String })
+            .AddShape("AType", new ScalarShape { Kind = ScalarKind.Integer })
+            .SetRoot("Root")
+            .Build();
+
+        JsonSchemaExportResult result = JsonSchemaExporter.Export(model);
+        JsonProperty[] defs = [.. result.Document.RootElement.GetProperty("$defs").EnumerateObject()];
+
+        _ = await Assert.That(defs[0].Name).IsEqualTo("AType");
+        _ = await Assert.That(defs[1].Name).IsEqualTo("ZType");
     }
 
     /// <summary>

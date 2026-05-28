@@ -72,6 +72,7 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
         var definitions = model.Shapes
             .Where(static pair => pair.Key != "#")
             .Where(pair => pair.Key != model.RootIdentifier)
+            .OrderBy(static pair => pair.Key, StringComparer.Ordinal)
             .ToList();
 
         if (definitions.Count > 0)
@@ -364,8 +365,30 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
         string pointer)
     {
         SchemaAnnotation? semantics = union.Annotations.FirstOrDefault(static annotation => annotation.Key == "jsonSchema.unionSemantics");
-        var keyword = semantics?.Value;
-        var unionKeyword = string.Equals(keyword, "anyOf", StringComparison.Ordinal) ? "anyOf" : "oneOf";
+        string unionKeyword;
+
+        if (semantics is null || string.Equals(semantics.Value, "oneOf", StringComparison.Ordinal))
+        {
+            unionKeyword = "oneOf";
+        }
+        else if (string.Equals(semantics.Value, "anyOf", StringComparison.Ordinal))
+        {
+            unionKeyword = "anyOf";
+        }
+        else
+        {
+            diagnostics.Add(new SchemaDiagnostic
+            {
+                Severity = SchemaDiagnosticSeverity.Warning,
+                Code = "JSONSCHEMA_EXPORT_UNSUPPORTED_UNION_SEMANTICS",
+                Message = $"Union semantics '{semantics.Value}' is not supported. Falling back to oneOf.",
+                Stage = SchemaDiagnosticStage.Export,
+                ModelPath = pointer,
+                Source = pointer,
+                ProjectionTarget = ProjectionTarget.JsonSchema,
+            });
+            unionKeyword = "oneOf";
+        }
 
         writer.WritePropertyName(unionKeyword);
         writer.WriteStartArray();
