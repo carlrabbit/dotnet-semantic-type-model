@@ -238,6 +238,7 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
             pointer,
             resolvedType);
         WriteAnnotations(writer, normalizedAnnotations, options, diagnostics, pointer);
+        WriteSchemaKeywordAnnotations(writer, normalizedAnnotations);
 
         if (options.UiExport.UiMode == JsonSchemaUiMode.JsonEditorCompatible &&
             options.UiExport.IncludeJsonEditorCompatibilityAnnotations &&
@@ -300,8 +301,15 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
         writer.WriteStartArray();
         foreach (var value in enumShape.Values)
         {
-            using var document = JsonDocument.Parse(value);
-            document.RootElement.WriteTo(writer);
+            try
+            {
+                using var document = JsonDocument.Parse(value);
+                document.RootElement.WriteTo(writer);
+            }
+            catch (JsonException)
+            {
+                writer.WriteStringValue(value);
+            }
         }
 
         writer.WriteEndArray();
@@ -680,6 +688,52 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
                     {
                         document.RootElement.WriteTo(writer);
                     }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    private static void WriteSchemaKeywordAnnotations(Utf8JsonWriter writer, IReadOnlyList<SchemaAnnotation> annotations)
+    {
+        foreach (SchemaAnnotation annotation in annotations)
+        {
+            string key = annotation.Key.StartsWith("schema.", StringComparison.Ordinal)
+                ? annotation.Key["schema.".Length..]
+                : annotation.Key;
+
+            switch (key)
+            {
+                case "minLength":
+                case "maxLength":
+                case "minimum":
+                case "maximum":
+                case "exclusiveMinimum":
+                case "exclusiveMaximum":
+                case "multipleOf":
+                case "minItems":
+                case "maxItems":
+                    if (long.TryParse(annotation.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out long longValue))
+                    {
+                        writer.WriteNumber(key, longValue);
+                    }
+                    else if (double.TryParse(annotation.Value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out double doubleValue))
+                    {
+                        writer.WriteNumber(key, doubleValue);
+                    }
+
+                    break;
+                case "pattern":
+                case "format":
+                    writer.WriteString(key, annotation.Value);
+                    break;
+                case "uniqueItems":
+                    if (bool.TryParse(annotation.Value, out bool boolValue))
+                    {
+                        writer.WriteBoolean(key, boolValue);
+                    }
+
                     break;
                 default:
                     break;

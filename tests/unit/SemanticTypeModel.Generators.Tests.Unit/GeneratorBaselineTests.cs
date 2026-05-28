@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -513,6 +514,110 @@ public sealed class GeneratorBaselineTests
         _ = await Assert.That(diagnostics.Count).IsEqualTo(0);
         _ = await Assert.That(export.Diagnostics.Any(static diagnostic => diagnostic.Severity == Hardening.SchemaDiagnosticSeverity.Error)).IsFalse();
         _ = await Assert.That(json.Contains("\"properties\"", StringComparison.Ordinal)).IsTrue();
+    }
+
+    [Test]
+    public async Task Fixture_16_usability_attributes_should_map_to_annotations_and_exported_schema_keywords()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using SemanticTypeModel.DotNet;
+
+            public enum CustomerStatus
+            {
+                [SemanticEnumValue(DisplayName = "Active customer", Description = "Can place orders.")]
+                Active = 1,
+                Suspended = 2,
+            }
+
+            [SemanticType(SemanticTypeRole.Entity)]
+            [SemanticDisplayName("Customer account")]
+            [SemanticCategory("CRM")]
+            [SemanticAnnotation("ui.placeholder", "Create a customer")]
+            public sealed class Customer
+            {
+                [SemanticDisplayName("Email address")]
+                [SemanticCategory("Contact")]
+                [SemanticOrder(10)]
+                [SemanticFormat(SemanticScalarFormat.Email)]
+                [SemanticStringConstraints(MinLength = 5, MaxLength = 200, Pattern = ".+@.+")]
+                [SemanticAnnotation("ui.placeholder", "name@example.com")]
+                public required string Email { get; init; }
+
+                [SemanticOrder(20)]
+                [SemanticNumericConstraints(Minimum = 0, Maximum = 100, MultipleOf = 0.5)]
+                public decimal Percent { get; init; }
+
+                [SemanticCollectionConstraints(MinItems = 1, MaxItems = 3, UniqueItems = true)]
+                public List<string> Tags { get; init; } = [];
+
+                public CustomerStatus Status { get; init; }
+            }
+            """;
+
+        (TypeSchemaModel model, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(source);
+        ObjectShape customer = (ObjectShape)model.GetShape("global::Customer");
+        PropertyShape email = customer.Properties.Single(static property => property.Name == "Email");
+        PropertyShape percent = customer.Properties.Single(static property => property.Name == "Percent");
+        PropertyShape tags = customer.Properties.Single(static property => property.Name == "Tags");
+        EnumShape status = (EnumShape)model.GetShape("global::CustomerStatus");
+
+        JsonSchemaExportResult export = JsonSchemaExporter.Export(model);
+        JsonElement properties = export.Document.RootElement.GetProperty("properties");
+        JsonElement emailJson = properties.GetProperty("Email");
+        JsonElement percentJson = properties.GetProperty("Percent");
+        JsonElement tagsJson = properties.GetProperty("Tags");
+
+        _ = await Assert.That(customer.Annotations.Any(static annotation => annotation.Key == "schema.role" && annotation.Value == "Entity")).IsTrue();
+        _ = await Assert.That(customer.Annotations.Any(static annotation => annotation.Key == "ui.title" && annotation.Value == "Customer account")).IsTrue();
+        _ = await Assert.That(customer.Annotations.Any(static annotation => annotation.Key == "ui.category" && annotation.Value == "CRM")).IsTrue();
+        _ = await Assert.That(email.Annotations.Any(static annotation => annotation.Key == "ui.order" && annotation.Value == "10")).IsTrue();
+        _ = await Assert.That(email.Annotations.Any(static annotation => annotation.Key == "schema.format" && annotation.Value == "email")).IsTrue();
+        _ = await Assert.That(email.Annotations.Any(static annotation => annotation.Key == "schema.minLength" && annotation.Value == "5")).IsTrue();
+        _ = await Assert.That(percent.Annotations.Any(static annotation => annotation.Key == "schema.multipleOf" && annotation.Value == "0.5")).IsTrue();
+        _ = await Assert.That(tags.Annotations.Any(static annotation => annotation.Key == "schema.uniqueItems" && annotation.Value == "true")).IsTrue();
+        _ = await Assert.That(status.Annotations.Any(static annotation => annotation.Key == "dotnet.enumDisplayNames")).IsTrue();
+        _ = await Assert.That(emailJson.GetProperty("format").GetString()).IsEqualTo("email");
+        _ = await Assert.That(emailJson.GetProperty("minLength").GetInt32()).IsEqualTo(5);
+        _ = await Assert.That(percentJson.GetProperty("multipleOf").GetDouble()).IsEqualTo(0.5d);
+        _ = await Assert.That(tagsJson.GetProperty("minItems").GetInt32()).IsEqualTo(1);
+        _ = await Assert.That(tagsJson.GetProperty("uniqueItems").GetBoolean()).IsTrue();
+        _ = await Assert.That(diagnostics.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Fixture_17_invalid_usability_attributes_should_report_stable_diagnostics()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType]
+            public sealed class InvalidAttributes
+            {
+                [SemanticAnnotation("invalid key", "value")]
+                [SemanticStringConstraints(MinLength = 10, MaxLength = 2)]
+                [SemanticFormat("email")]
+                public string Code { get; init; } = string.Empty;
+
+                [SemanticNumericConstraints(Minimum = 10, Maximum = 2)]
+                public int Quantity { get; init; }
+
+                [SemanticCollectionConstraints(MinItems = 3, MaxItems = 1)]
+                public List<string> Tags { get; init; } = [];
+
+                [SemanticFormat("uuid")]
+                public List<int> Values { get; init; } = [];
+            }
+            """;
+
+        (_, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(source);
+
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "STM5020")).IsTrue();
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "STM5022")).IsTrue();
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "STM5023")).IsTrue();
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "STM5024")).IsTrue();
+        _ = await Assert.That(diagnostics.Count(static diagnostic => diagnostic.Id == "STM5025")).IsEqualTo(1);
     }
 
     private static (TypeSchemaModel Model, IReadOnlyList<Diagnostic> Diagnostics) GenerateModel(
