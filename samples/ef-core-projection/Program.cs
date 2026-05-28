@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using SemanticTypeModel.Abstractions.Hardening;
 using SemanticTypeModel.Core.Runtime;
 using SemanticTypeModel.EFCore;
@@ -21,6 +23,15 @@ var adapted = LegacyTypeSchemaModelAdapter.Adapt(imported.Model);
 var projection = new EfCoreModelProjection(new EfCoreProjectionOptions { ProjectUnannotatedObjectsAsEntities = true });
 var context = new SchemaProjectionContext { Target = ProjectionTarget.EfCore };
 EfModelDefinition model = projection.Project(adapted.Model!, context);
+var modelBuilder = new ModelBuilder(new ConventionSet());
+EfCoreModelBuilderProjectionResult applied = modelBuilder.ApplySemanticTypeModel(
+    adapted.Model!,
+    options =>
+    {
+        options.ProjectUnannotatedObjectsAsEntities = true;
+        options.DefaultSchema = "app";
+    });
 
 Console.WriteLine($"entities: {model.EntityTypes.Count}");
 Console.WriteLine($"diagnostics: {model.Diagnostics.Count}");
+Console.WriteLine($"modelBuilder entities: {applied.Model.EntityTypes.Count}");

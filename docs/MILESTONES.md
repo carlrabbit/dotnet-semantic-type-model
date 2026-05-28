@@ -25,3 +25,4 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - [M0011 - Runtime API Surface and DI Integration](milestones/m0011-runtime-api-surface-and-di-integration.md)
 - [M0012 - Documentation, Samples, Release Readiness, and First End-to-End Scenarios](milestones/m0012-documentation-samples-release-readiness-and-first-end-to-end-scenarios.md)
 - [M0014 - Semantic Type Annotation Usability](milestones/m0014-semantic-type-annotation-usability.md)
+- [M0015 - EF Core Projection Hardening](milestones/m0015-ef-core-projection-hardening.md)
