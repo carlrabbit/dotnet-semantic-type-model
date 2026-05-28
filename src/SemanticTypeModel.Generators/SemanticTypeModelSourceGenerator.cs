@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using SemanticTypeModel.DotNet;
+using SemanticTypeModel.DotNet.Diagnostics;
 
 namespace SemanticTypeModel.Generators;
 
@@ -36,10 +37,10 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
 
             if (ProviderNameCollides(compilation, extraction.Options.GeneratedNamespace, extraction.Options.ProviderName))
             {
-                productionContext.ReportDiagnostic(CreateDiagnostic(new DotNetExtractionDiagnostic(
-                    "STM5019",
-                    $"Generated provider name '{extraction.Options.GeneratedNamespace}.{extraction.Options.ProviderName}' collides with an existing type.",
-                    compilation.Assembly.Locations.FirstOrDefault())));
+                productionContext.ReportDiagnostic(Diagnostic.Create(
+                    GeneratorDiagnosticDescriptors.GeneratedProviderNameCollision,
+                    compilation.Assembly.Locations.FirstOrDefault(),
+                    $"Generated provider name '{extraction.Options.GeneratedNamespace}.{extraction.Options.ProviderName}' collides with an existing type."));
                 return;
             }
 
@@ -116,7 +117,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             else
             {
                 extractedDiagnostics.Add(new DotNetExtractionDiagnostic(
-                    "STM5008",
+                    DotNetExtractionDiagnosticIds.UnsupportedDiscoveryMode,
                     $"Discovery mode '{discoveryModeText}' is not supported.",
                     location));
             }
@@ -131,7 +132,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             else
             {
                 extractedDiagnostics.Add(new DotNetExtractionDiagnostic(
-                    "STM5018",
+                    DotNetExtractionDiagnosticIds.UnsupportedNamingPolicy,
                     $"Naming policy '{namingPolicyText}' is not supported.",
                     location));
             }
@@ -196,15 +197,15 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
 
     private static Diagnostic CreateDiagnostic(DotNetExtractionDiagnostic diagnostic)
     {
-        var descriptor = new DiagnosticDescriptor(
-            diagnostic.Code,
-            "SemanticTypeModel .NET extraction",
-            diagnostic.Message,
-            "SemanticTypeModel.Generators",
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
+        DiagnosticDescriptor descriptor = diagnostic.Code switch
+        {
+            DotNetExtractionDiagnosticIds.UnsupportedDiscoveryMode => GeneratorDiagnosticDescriptors.UnsupportedDiscoveryMode,
+            DotNetExtractionDiagnosticIds.UnsupportedNamingPolicy => GeneratorDiagnosticDescriptors.UnsupportedNamingPolicy,
+            DotNetExtractionDiagnosticIds.GeneratedProviderNameCollision => GeneratorDiagnosticDescriptors.GeneratedProviderNameCollision,
+            _ => GeneratorDiagnosticDescriptors.ExtractionFallback(diagnostic.Code),
+        };
 
-        return Diagnostic.Create(descriptor, diagnostic.Location);
+        return Diagnostic.Create(descriptor, diagnostic.Location, diagnostic.Message);
     }
 
     private static string GenerateProviderSource(DotNetExtractionResult extraction)

@@ -59,6 +59,18 @@ Implementation is valid when:
 - documentation synchronization obligations are satisfied;
 - public documentation validation passes when consumer-facing docs changed.
 
+## Diagnostics
+
+When adding or modifying diagnostics:
+
+- Reserve a new ID in the appropriate STM range; never reuse a retired ID.
+- Add a `public const string` to `StmDiagnosticIds` (STM0xxx/STM3xxx) or `DotNetExtractionDiagnosticIds` (STM5xxx).
+- For compile-time (source-generator) diagnostics, add a static `DiagnosticDescriptor` field to `GeneratorDiagnosticDescriptors`; do not create descriptors inline.
+- Add a reference entry to the relevant `public-docs/diagnostics/stm{range}.md` page.
+- Run diagnostic stability tests to confirm uniqueness.
+
+See `docs/specs/diagnostics.md` for the full diagnostic specification.
+
 ## Authority
 
 This document is authoritative for:
