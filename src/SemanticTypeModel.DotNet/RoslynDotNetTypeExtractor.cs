@@ -1051,6 +1051,8 @@ public sealed class RoslynDotNetTypeExtractor
 
         if ((!double.IsNaN(minimum) && !double.IsNaN(maximum) && minimum > maximum)
             || (!double.IsNaN(exclusiveMinimum) && !double.IsNaN(exclusiveMaximum) && exclusiveMinimum >= exclusiveMaximum)
+            || (!double.IsNaN(exclusiveMinimum) && !double.IsNaN(maximum) && exclusiveMinimum >= maximum)
+            || (!double.IsNaN(minimum) && !double.IsNaN(exclusiveMaximum) && minimum >= exclusiveMaximum)
             || (!double.IsNaN(multipleOf) && multipleOf <= 0))
         {
             _diagnostics.Add(new DotNetExtractionDiagnostic(

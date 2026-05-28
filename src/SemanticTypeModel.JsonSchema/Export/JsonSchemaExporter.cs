@@ -301,6 +301,7 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
         writer.WriteStartArray();
         foreach (var value in enumShape.Values)
         {
+            // Runtime/imported models may preserve enum values as JSON literals, while generated/.NET-extracted models use raw strings.
             try
             {
                 using var document = JsonDocument.Parse(value);
