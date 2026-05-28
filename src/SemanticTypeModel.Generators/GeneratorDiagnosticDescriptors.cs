@@ -16,6 +16,7 @@ namespace SemanticTypeModel.Generators;
 internal static class GeneratorDiagnosticDescriptors
 {
     private const string Category = "SemanticTypeModel";
+    // Points to the main branch because no versioned release tag exists yet; update to a tag reference on first stable release.
     private const string HelpUriBase = "https://github.com/carlrabbit/dotnet-semantic-type-model/blob/main/public-docs/diagnostics/stm5xxx.md";
 
     /// <summary>

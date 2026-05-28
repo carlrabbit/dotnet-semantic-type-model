@@ -160,6 +160,8 @@ public sealed class DiagnosticIdStabilityTests
             parseOptions: parseOptions,
             optionsProvider: optionsProvider);
 
+        // Diagnostics are collected via GetRunResult() below; the updated compilation and
+        // per-run diagnostic array from RunGeneratorsAndUpdateCompilation are intentionally discarded.
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out ImmutableArray<Diagnostic> _);
         GeneratorDriverRunResult runResult = driver.GetRunResult();
         return runResult.Results.SelectMany(static result => result.Diagnostics).ToArray();
