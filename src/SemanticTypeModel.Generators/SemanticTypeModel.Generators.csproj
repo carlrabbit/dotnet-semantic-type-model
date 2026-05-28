@@ -3,6 +3,25 @@
     <RootNamespace>SemanticTypeModel.Generators</RootNamespace>
     <OutputItemType>Analyzer</OutputItemType>
     <IncludeBuildOutput>false</IncludeBuildOutput>
+    <!--
+      RS1036: "A non-null value for property 'customTags' must be provided for a DiagnosticDescriptor" —
+              applies to general analyzer packages; source generators ship descriptors without custom tags.
+      RS1041: "Compiler extensions and many language features are not available in source generators" —
+              informational; all Roslyn API usage here is intentional for an IIncrementalGenerator.
+      RS2008: "Enable analyzer release tracking for the analyzer project" — not applicable because this
+              project is a source generator, not a shipped rule-analysis tool.
+      CA1305: "Specify IFormatProvider" — source generators produce C# text using culture-invariant
+              formatting; an explicit IFormatProvider adds noise without benefit here.
+      IDE0007: "Use 'var' instead of explicit type" — explicit types are preferred in generator code for
+              clarity when the inferred type is not obvious.
+      IDE0010: "Add missing cases to switch statement" — switches over Roslyn symbol kinds are
+              intentionally non-exhaustive; only relevant cases are handled.
+      IDE0058: "Expression value is never used" — several Roslyn API calls return values that are
+              intentionally discarded (e.g. builder Add calls).
+      IDE0072: "Add missing cases to switch expression" — same rationale as IDE0010 for switch expressions.
+      NU5128: "Some target frameworks in the dependencies group don't have corresponding lib/ref assemblies"
+              — expected for analyzer/source-generator NuGet packages that use analyzers/dotnet/cs packaging.
+    -->
     <NoWarn>$(NoWarn);RS1036;RS1041;RS2008;CA1305;IDE0007;IDE0010;IDE0058;IDE0072;NU5128</NoWarn>
     <PackageId>SemanticTypeModel.Generators</PackageId>
     <Title>SemanticTypeModel.Generators</Title>
