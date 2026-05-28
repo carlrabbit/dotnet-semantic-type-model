@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft milestone.
+Active preview milestone.
 
 ## Goal
 
@@ -25,6 +25,8 @@ JSON Schema / JSON Editor / Power BI / EF Core projections
 ```
 
 Attributes must primarily describe semantic intent. Projection-specific attributes are allowed only as explicit escape hatches owned by the corresponding projection package.
+
+For the current prerelease repository layout, neutral authoring attributes remain in `SemanticTypeModel.DotNet` so the existing extraction and generator package split stays intact while the public vocabulary matures.
 
 ## Background
 
@@ -191,9 +193,9 @@ Invalid or ambiguous annotation usage must produce diagnostics. Silent fallbacks
 
 ## Package Ownership
 
-### `SemanticTypeModel.Abstractions`
+### `SemanticTypeModel.DotNet`
 
-Owns projection-neutral authoring attributes and shared public enums.
+Owns the current prerelease neutral authoring attributes, extraction logic, and shared public enums used by source-generation/extraction scenarios.
 
 Expected neutral attributes:
 
@@ -218,12 +220,9 @@ SemanticAnnotationAttribute
 
 The exact names may differ if repository naming conventions already define alternatives, but the resulting public API must be consistent, documented, and stable enough for prerelease use.
 
-### `SemanticTypeModel.DotNet`
-
-Owns extraction logic that maps attributes and conventions to the canonical model.
-
 Responsibilities:
 
+- projection-neutral authoring attributes for the current prerelease package split;
 - Roslyn symbol reading;
 - attribute reading;
 - nullable metadata interpretation;
@@ -231,6 +230,10 @@ Responsibilities:
 - convention application;
 - diagnostic production;
 - canonical model construction.
+
+### `SemanticTypeModel.Abstractions`
+
+Owns the canonical semantic model, annotations, constraints, and shared runtime contracts consumed by extraction and projections.
 
 ### `SemanticTypeModel.Generators`
 

@@ -65,6 +65,10 @@ internal sealed class PackageSmokeTests
         _ = await Assert.That(modelResult.Model).IsNotNull();
 
         _ = typeof(SemanticTypeAttribute);
+        _ = typeof(SemanticDisplayNameAttribute);
+        _ = typeof(SemanticFormatAttribute);
+        _ = typeof(SemanticStringConstraintsAttribute);
+        _ = typeof(SemanticAnnotationAttribute);
 
         _ = await Assert.That(nameof(SmokeCustomer)).IsEqualTo("SmokeCustomer");
     }

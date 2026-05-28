@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Microsoft.CodeAnalysis;
 
 namespace SemanticTypeModel.DotNet;
@@ -14,7 +15,16 @@ public sealed class RoslynDotNetTypeExtractor
     private const string SemanticIgnoreAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticIgnoreAttribute";
     private const string SemanticNameAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticNameAttribute";
     private const string SemanticDescriptionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticDescriptionAttribute";
+    private const string SemanticDisplayNameAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticDisplayNameAttribute";
+    private const string SemanticCategoryAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticCategoryAttribute";
+    private const string SemanticOrderAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticOrderAttribute";
     private const string SemanticRoleAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticRoleAttribute";
+    private const string SemanticFormatAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticFormatAttribute";
+    private const string SemanticStringConstraintsAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticStringConstraintsAttribute";
+    private const string SemanticNumericConstraintsAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticNumericConstraintsAttribute";
+    private const string SemanticCollectionConstraintsAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticCollectionConstraintsAttribute";
+    private const string SemanticEnumValueAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticEnumValueAttribute";
+    private const string SemanticAnnotationAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticAnnotationAttribute";
     private const string SemanticKeyAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticKeyAttribute";
     private const string SemanticRelationshipAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticRelationshipAttribute";
     private const string GeneratorOptionsAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticTypeModelGeneratorOptionsAttribute";
@@ -507,6 +517,8 @@ public sealed class RoslynDotNetTypeExtractor
         ImmutableArray<AttributeData> typeAttributes = type.GetAttributes();
 
         TryAddNameAndDescriptionAnnotations(typeAttributes, annotations, type);
+        TryAddDisplayCategoryOrderAnnotations(typeAttributes, annotations, type);
+        TryAddCustomAnnotations(typeAttributes, annotations, type);
         TryAddXmlDescriptionAnnotation(type, typeAttributes, annotations);
         TryAddSemanticTypeOverrides(typeAttributes, annotations);
         TryAddRoleAnnotation(typeAttributes, annotations, type.Locations.FirstOrDefault());
@@ -536,6 +548,9 @@ public sealed class RoslynDotNetTypeExtractor
             ImmutableArray<AttributeData> memberAttributes = property.GetAttributes();
             string propertyName = GetPropertyName(property);
             TryAddNameAndDescriptionAnnotations(memberAttributes, memberAnnotations, property);
+            TryAddDisplayCategoryOrderAnnotations(memberAttributes, memberAnnotations, property);
+            TryAddCustomAnnotations(memberAttributes, memberAnnotations, property);
+            TryAddFormatAndConstraintAnnotations(memberAttributes, memberType, memberAnnotations, property);
             TryAddXmlDescriptionAnnotation(property, memberAttributes, memberAnnotations);
             ValidateMemberAttributeUsage(memberAttributes, property);
             DiagnoseMissingXmlDocumentationIfRequired(property, property.Locations.FirstOrDefault());
@@ -676,9 +691,14 @@ public sealed class RoslynDotNetTypeExtractor
         var annotations = new Dictionary<string, string>(StringComparer.Ordinal);
         ImmutableArray<AttributeData> typeAttributes = enumType.GetAttributes();
         TryAddNameAndDescriptionAnnotations(typeAttributes, annotations, enumType);
+        TryAddDisplayCategoryOrderAnnotations(typeAttributes, annotations, enumType);
+        TryAddCustomAnnotations(typeAttributes, annotations, enumType);
         TryAddXmlDescriptionAnnotation(enumType, typeAttributes, annotations);
         ValidateTypeAttributeUsage(typeAttributes, enumType);
         DiagnoseMissingXmlDocumentationIfRequired(enumType, enumType.Locations.FirstOrDefault());
+
+        var enumDisplayNames = new Dictionary<string, string>(StringComparer.Ordinal);
+        var enumDescriptions = new Dictionary<string, string>(StringComparer.Ordinal);
 
         foreach (IFieldSymbol field in enumType.GetMembers().OfType<IFieldSymbol>().Where(static f => f.HasConstantValue))
         {
@@ -689,6 +709,7 @@ public sealed class RoslynDotNetTypeExtractor
 
             long numericValue = Convert.ToInt64(field.ConstantValue, CultureInfo.InvariantCulture);
             string valueName = GetEnumValueName(field);
+            TryAddEnumValueMetadata(field, valueName, enumDisplayNames, enumDescriptions);
             values.Add(new DotNetEnumValueDescriptor { Name = valueName, NumericValue = numericValue });
 
             if (seenNumeric.TryGetValue(numericValue, out string? firstName))
@@ -705,6 +726,7 @@ public sealed class RoslynDotNetTypeExtractor
         }
 
         values.Sort(static (left, right) => string.CompareOrdinal(left.Name, right.Name));
+        AddEnumValueMetadataAnnotations(annotations, enumDisplayNames, enumDescriptions);
 
         return new DotNetEnumTypeDescriptor
         {
@@ -860,6 +882,17 @@ public sealed class RoslynDotNetTypeExtractor
                     $"Attribute '{attribute.AttributeClass?.Name}' is not valid on type '{type.Name}'.",
                     attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? type.Locations.FirstOrDefault()));
             }
+            else if (string.Equals(metadataName, SemanticFormatAttributeMetadataName, StringComparison.Ordinal)
+                     || string.Equals(metadataName, SemanticStringConstraintsAttributeMetadataName, StringComparison.Ordinal)
+                     || string.Equals(metadataName, SemanticNumericConstraintsAttributeMetadataName, StringComparison.Ordinal)
+                     || string.Equals(metadataName, SemanticCollectionConstraintsAttributeMetadataName, StringComparison.Ordinal)
+                     || string.Equals(metadataName, SemanticEnumValueAttributeMetadataName, StringComparison.Ordinal))
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5001",
+                    $"Attribute '{attribute.AttributeClass?.Name}' is not valid on type '{type.Name}'.",
+                    attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? type.Locations.FirstOrDefault()));
+            }
             else if (string.Equals(metadataName, SemanticTypeAttributeMetadataName, StringComparison.Ordinal))
             {
                 semanticTypeCount++;
@@ -879,6 +912,352 @@ public sealed class RoslynDotNetTypeExtractor
         }
     }
 
+    private void TryAddFormatAnnotation(
+        AttributeData attribute,
+        ITypeSymbol memberType,
+        Dictionary<string, string> annotations,
+        ISymbol symbol)
+    {
+        string? format = attribute.ConstructorArguments.Length == 1
+            ? GetSemanticFormatValue(attribute.ConstructorArguments[0].Value)
+            : null;
+
+        if (string.IsNullOrWhiteSpace(format))
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5017",
+                $"[SemanticFormat] on '{symbol.ToDisplayString()}' requires a non-empty format argument.",
+                attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+            return;
+        }
+
+        (ITypeSymbol normalizedType, _) = NormalizeNullability(memberType);
+        if (!IsFormatCompatibleType(normalizedType))
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5025",
+                $"[SemanticFormat] is not supported on '{symbol.ToDisplayString()}'. Apply it to string-like scalar members only.",
+                attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+            return;
+        }
+
+        annotations["schema.format"] = format;
+    }
+
+    private void TryAddStringConstraintAnnotations(
+        AttributeData attribute,
+        ITypeSymbol memberType,
+        Dictionary<string, string> annotations,
+        ISymbol symbol)
+    {
+        (ITypeSymbol normalizedType, _) = NormalizeNullability(memberType);
+        if (normalizedType.SpecialType != SpecialType.System_String)
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5021",
+                $"[SemanticStringConstraints] is only supported on string members such as '{symbol.ToDisplayString()}'.",
+                attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+            return;
+        }
+
+        int minLength = -1;
+        int maxLength = -1;
+        string? pattern = null;
+        foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+        {
+            if (string.Equals(key, nameof(SemanticStringConstraintsAttribute.MinLength), StringComparison.Ordinal) && value.Value is int min)
+            {
+                minLength = min;
+            }
+            else if (string.Equals(key, nameof(SemanticStringConstraintsAttribute.MaxLength), StringComparison.Ordinal) && value.Value is int max)
+            {
+                maxLength = max;
+            }
+            else if (string.Equals(key, nameof(SemanticStringConstraintsAttribute.Pattern), StringComparison.Ordinal))
+            {
+                pattern = value.Value as string;
+            }
+        }
+
+        if (minLength < -1 || maxLength < -1 || (minLength >= 0 && maxLength >= 0 && minLength > maxLength))
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5022",
+                $"[SemanticStringConstraints] on '{symbol.ToDisplayString()}' has an invalid range.",
+                attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+            return;
+        }
+
+        if (minLength >= 0)
+        {
+            annotations["schema.minLength"] = minLength.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (maxLength >= 0)
+        {
+            annotations["schema.maxLength"] = maxLength.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (!string.IsNullOrWhiteSpace(pattern))
+        {
+            annotations["schema.pattern"] = pattern!;
+        }
+    }
+
+    private void TryAddNumericConstraintAnnotations(
+        AttributeData attribute,
+        ITypeSymbol memberType,
+        Dictionary<string, string> annotations,
+        ISymbol symbol)
+    {
+        (ITypeSymbol normalizedType, _) = NormalizeNullability(memberType);
+        if (!IsNumericType(normalizedType))
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5021",
+                $"[SemanticNumericConstraints] is only supported on numeric members such as '{symbol.ToDisplayString()}'.",
+                attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+            return;
+        }
+
+        double minimum = double.NaN;
+        double maximum = double.NaN;
+        double exclusiveMinimum = double.NaN;
+        double exclusiveMaximum = double.NaN;
+        double multipleOf = double.NaN;
+        foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+        {
+            if (string.Equals(key, nameof(SemanticNumericConstraintsAttribute.Minimum), StringComparison.Ordinal) && value.Value is double min)
+            {
+                minimum = min;
+            }
+            else if (string.Equals(key, nameof(SemanticNumericConstraintsAttribute.Maximum), StringComparison.Ordinal) && value.Value is double max)
+            {
+                maximum = max;
+            }
+            else if (string.Equals(key, nameof(SemanticNumericConstraintsAttribute.ExclusiveMinimum), StringComparison.Ordinal) && value.Value is double exclusiveMin)
+            {
+                exclusiveMinimum = exclusiveMin;
+            }
+            else if (string.Equals(key, nameof(SemanticNumericConstraintsAttribute.ExclusiveMaximum), StringComparison.Ordinal) && value.Value is double exclusiveMax)
+            {
+                exclusiveMaximum = exclusiveMax;
+            }
+            else if (string.Equals(key, nameof(SemanticNumericConstraintsAttribute.MultipleOf), StringComparison.Ordinal) && value.Value is double multiple)
+            {
+                multipleOf = multiple;
+            }
+        }
+
+        if ((!double.IsNaN(minimum) && !double.IsNaN(maximum) && minimum > maximum)
+            || (!double.IsNaN(exclusiveMinimum) && !double.IsNaN(exclusiveMaximum) && exclusiveMinimum >= exclusiveMaximum)
+            || (!double.IsNaN(exclusiveMinimum) && !double.IsNaN(maximum) && exclusiveMinimum >= maximum)
+            || (!double.IsNaN(minimum) && !double.IsNaN(exclusiveMaximum) && minimum >= exclusiveMaximum)
+            || (!double.IsNaN(multipleOf) && multipleOf <= 0))
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5023",
+                $"[SemanticNumericConstraints] on '{symbol.ToDisplayString()}' has an invalid range.",
+                attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+            return;
+        }
+
+        AddDoubleAnnotation(annotations, "schema.minimum", minimum);
+        AddDoubleAnnotation(annotations, "schema.maximum", maximum);
+        AddDoubleAnnotation(annotations, "schema.exclusiveMinimum", exclusiveMinimum);
+        AddDoubleAnnotation(annotations, "schema.exclusiveMaximum", exclusiveMaximum);
+        AddDoubleAnnotation(annotations, "schema.multipleOf", multipleOf);
+    }
+
+    private void TryAddCollectionConstraintAnnotations(
+        AttributeData attribute,
+        ITypeSymbol memberType,
+        Dictionary<string, string> annotations,
+        ISymbol symbol)
+    {
+        if (!TryGetCollectionItemType(memberType, out _))
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5021",
+                $"[SemanticCollectionConstraints] is only supported on collection members such as '{symbol.ToDisplayString()}'.",
+                attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+            return;
+        }
+
+        int minItems = -1;
+        int maxItems = -1;
+        bool uniqueItems = false;
+        foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+        {
+            if (string.Equals(key, nameof(SemanticCollectionConstraintsAttribute.MinItems), StringComparison.Ordinal) && value.Value is int min)
+            {
+                minItems = min;
+            }
+            else if (string.Equals(key, nameof(SemanticCollectionConstraintsAttribute.MaxItems), StringComparison.Ordinal) && value.Value is int max)
+            {
+                maxItems = max;
+            }
+            else if (string.Equals(key, nameof(SemanticCollectionConstraintsAttribute.UniqueItems), StringComparison.Ordinal) && value.Value is bool unique)
+            {
+                uniqueItems = unique;
+            }
+        }
+
+        if (minItems < -1 || maxItems < -1 || (minItems >= 0 && maxItems >= 0 && minItems > maxItems))
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5024",
+                $"[SemanticCollectionConstraints] on '{symbol.ToDisplayString()}' has an invalid range.",
+                attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+            return;
+        }
+
+        if (minItems >= 0)
+        {
+            annotations["schema.minItems"] = minItems.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (maxItems >= 0)
+        {
+            annotations["schema.maxItems"] = maxItems.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (uniqueItems)
+        {
+            annotations["schema.uniqueItems"] = "true";
+        }
+    }
+
+    private static void AddDoubleAnnotation(Dictionary<string, string> annotations, string key, double value)
+    {
+        if (!double.IsNaN(value))
+        {
+            annotations[key] = value.ToString("G", CultureInfo.InvariantCulture);
+        }
+    }
+
+    private void TryAddEnumValueMetadata(
+        IFieldSymbol field,
+        string valueName,
+        Dictionary<string, string> displayNames,
+        Dictionary<string, string> descriptions)
+    {
+        foreach (AttributeData attribute in field.GetAttributes())
+        {
+            if (!string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticEnumValueAttributeMetadataName, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+            {
+                if (string.Equals(key, nameof(SemanticEnumValueAttribute.DisplayName), StringComparison.Ordinal)
+                    && value.Value is string displayName
+                    && !string.IsNullOrWhiteSpace(displayName))
+                {
+                    displayNames[valueName] = displayName;
+                }
+                else if (string.Equals(key, nameof(SemanticEnumValueAttribute.Description), StringComparison.Ordinal)
+                         && value.Value is string description
+                         && !string.IsNullOrWhiteSpace(description))
+                {
+                    descriptions[valueName] = description;
+                }
+            }
+        }
+    }
+
+    private static void AddEnumValueMetadataAnnotations(
+        Dictionary<string, string> annotations,
+        Dictionary<string, string> displayNames,
+        Dictionary<string, string> descriptions)
+    {
+        if (displayNames.Count > 0)
+        {
+            annotations["dotnet.enumDisplayNames"] = JsonSerializer.Serialize(displayNames);
+        }
+
+        if (descriptions.Count > 0)
+        {
+            annotations["dotnet.enumDescriptions"] = JsonSerializer.Serialize(descriptions);
+        }
+    }
+
+    private static bool IsValidAnnotationKey(string value)
+    {
+        int separatorIndex = value.IndexOf('.', StringComparison.Ordinal);
+        if (separatorIndex <= 0 || separatorIndex == value.Length - 1)
+        {
+            return false;
+        }
+
+        string namespacePart = value[..separatorIndex];
+        string localName = value[(separatorIndex + 1)..];
+        return char.IsLetter(namespacePart[0])
+            && namespacePart.All(static character => char.IsLetterOrDigit(character))
+            && !string.IsNullOrWhiteSpace(localName)
+            && !localName.Any(char.IsWhiteSpace);
+    }
+
+    private static bool IsNumericType(ITypeSymbol type)
+    {
+        return type.SpecialType is SpecialType.System_Byte
+            or SpecialType.System_SByte
+            or SpecialType.System_Int16
+            or SpecialType.System_UInt16
+            or SpecialType.System_Int32
+            or SpecialType.System_UInt32
+            or SpecialType.System_Int64
+            or SpecialType.System_UInt64
+            or SpecialType.System_Single
+            or SpecialType.System_Double
+            or SpecialType.System_Decimal;
+    }
+
+    private static bool IsFormatCompatibleType(ITypeSymbol type)
+    {
+        if (type.SpecialType == SpecialType.System_String)
+        {
+            return true;
+        }
+
+        string containingNamespace = type.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+        if (!string.Equals(containingNamespace, "System", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return type.Name is "Guid" or "DateOnly" or "TimeOnly" or "DateTime" or "DateTimeOffset" or "TimeSpan";
+    }
+
+    private static string? GetSemanticFormatValue(object? value)
+    {
+        if (value is string text)
+        {
+            return text;
+        }
+
+        if (value is int enumValue && Enum.IsDefined(typeof(SemanticScalarFormat), enumValue))
+        {
+            return (SemanticScalarFormat)enumValue switch
+            {
+                SemanticScalarFormat.Email => "email",
+                SemanticScalarFormat.Uri => "uri",
+                SemanticScalarFormat.Hostname => "hostname",
+                SemanticScalarFormat.Ipv4 => "ipv4",
+                SemanticScalarFormat.Ipv6 => "ipv6",
+                SemanticScalarFormat.Date => "date",
+                SemanticScalarFormat.Time => "time",
+                SemanticScalarFormat.DateTime => "date-time",
+                SemanticScalarFormat.Duration => "duration",
+                SemanticScalarFormat.Uuid => "uuid",
+                _ => null,
+            };
+        }
+
+        return null;
+    }
+
     private void TryAddRoleAnnotation(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations, Location? location)
     {
         foreach (AttributeData attribute in attributes)
@@ -893,6 +1272,12 @@ public sealed class RoslynDotNetTypeExtractor
                 && !string.IsNullOrWhiteSpace(role))
             {
                 annotations["schema.role"] = role;
+            }
+            else if (attribute.ConstructorArguments.Length == 1
+                     && attribute.ConstructorArguments[0].Value is int roleValue
+                     && Enum.IsDefined(typeof(SemanticTypeRole), roleValue))
+            {
+                annotations["schema.role"] = ((SemanticTypeRole)roleValue).ToString();
             }
             else
             {
@@ -956,6 +1341,151 @@ public sealed class RoslynDotNetTypeExtractor
         }
     }
 
+    private void TryAddDisplayCategoryOrderAnnotations(
+        ImmutableArray<AttributeData> attributes,
+        Dictionary<string, string> annotations,
+        ISymbol symbol)
+    {
+        var displayNameCount = 0;
+        var categoryCount = 0;
+        var orderCount = 0;
+
+        foreach (AttributeData attribute in attributes)
+        {
+            string? metadataName = attribute.AttributeClass?.ToDisplayString();
+            if (string.Equals(metadataName, SemanticDisplayNameAttributeMetadataName, StringComparison.Ordinal)
+                && attribute.ConstructorArguments.Length == 1)
+            {
+                displayNameCount++;
+                if (attribute.ConstructorArguments[0].Value is string displayName && !string.IsNullOrWhiteSpace(displayName))
+                {
+                    annotations["ui.title"] = displayName;
+                }
+                else
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        "STM5017",
+                        $"[SemanticDisplayName] on '{symbol.ToDisplayString()}' requires a non-empty string argument.",
+                        attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+                }
+            }
+            else if (string.Equals(metadataName, SemanticCategoryAttributeMetadataName, StringComparison.Ordinal)
+                     && attribute.ConstructorArguments.Length == 1)
+            {
+                categoryCount++;
+                if (attribute.ConstructorArguments[0].Value is string category && !string.IsNullOrWhiteSpace(category))
+                {
+                    annotations["ui.category"] = category;
+                }
+                else
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        "STM5017",
+                        $"[SemanticCategory] on '{symbol.ToDisplayString()}' requires a non-empty string argument.",
+                        attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+                }
+            }
+            else if (string.Equals(metadataName, SemanticOrderAttributeMetadataName, StringComparison.Ordinal)
+                     && attribute.ConstructorArguments.Length == 1)
+            {
+                orderCount++;
+                if (attribute.ConstructorArguments[0].Value is int order)
+                {
+                    annotations["ui.order"] = order.ToString(CultureInfo.InvariantCulture);
+                }
+                else
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        "STM5021",
+                        $"[SemanticOrder] on '{symbol.ToDisplayString()}' requires an integer order argument.",
+                        attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+                }
+            }
+        }
+
+        if (displayNameCount > 1 || categoryCount > 1 || orderCount > 1)
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                "STM5002",
+                $"Symbol '{symbol.ToDisplayString()}' has conflicting semantic display/category/order attributes.",
+                symbol.Locations.FirstOrDefault()));
+        }
+    }
+
+    private void TryAddCustomAnnotations(
+        ImmutableArray<AttributeData> attributes,
+        Dictionary<string, string> annotations,
+        ISymbol symbol)
+    {
+        foreach (AttributeData attribute in attributes)
+        {
+            if (!string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticAnnotationAttributeMetadataName, StringComparison.Ordinal)
+                || attribute.ConstructorArguments.Length != 2)
+            {
+                continue;
+            }
+
+            if (attribute.ConstructorArguments[0].Value is not string key
+                || string.IsNullOrWhiteSpace(key)
+                || !IsValidAnnotationKey(key))
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5020",
+                    $"[SemanticAnnotation] on '{symbol.ToDisplayString()}' requires a namespaced key in the form 'namespace.name'.",
+                    attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+                continue;
+            }
+
+            if (attribute.ConstructorArguments[1].Value is not string value || string.IsNullOrWhiteSpace(value))
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5017",
+                    $"[SemanticAnnotation] on '{symbol.ToDisplayString()}' requires a non-empty string value.",
+                    attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+                continue;
+            }
+
+            if (annotations.TryGetValue(key, out string? existingValue) && !string.Equals(existingValue, value, StringComparison.Ordinal))
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5002",
+                    $"Symbol '{symbol.ToDisplayString()}' has conflicting values for semantic annotation '{key}'.",
+                    attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
+                continue;
+            }
+
+            annotations[key] = value;
+        }
+    }
+
+    private void TryAddFormatAndConstraintAnnotations(
+        ImmutableArray<AttributeData> attributes,
+        ITypeSymbol memberType,
+        Dictionary<string, string> annotations,
+        ISymbol symbol)
+    {
+        foreach (AttributeData attribute in attributes)
+        {
+            string? metadataName = attribute.AttributeClass?.ToDisplayString();
+            if (string.Equals(metadataName, SemanticFormatAttributeMetadataName, StringComparison.Ordinal))
+            {
+                TryAddFormatAnnotation(attribute, memberType, annotations, symbol);
+            }
+            else if (string.Equals(metadataName, SemanticStringConstraintsAttributeMetadataName, StringComparison.Ordinal))
+            {
+                TryAddStringConstraintAnnotations(attribute, memberType, annotations, symbol);
+            }
+            else if (string.Equals(metadataName, SemanticNumericConstraintsAttributeMetadataName, StringComparison.Ordinal))
+            {
+                TryAddNumericConstraintAnnotations(attribute, memberType, annotations, symbol);
+            }
+            else if (string.Equals(metadataName, SemanticCollectionConstraintsAttributeMetadataName, StringComparison.Ordinal))
+            {
+                TryAddCollectionConstraintAnnotations(attribute, memberType, annotations, symbol);
+            }
+        }
+    }
+
     private void TryAddSemanticTypeOverrides(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
     {
         foreach (AttributeData attribute in attributes)
@@ -979,6 +1509,14 @@ public sealed class RoslynDotNetTypeExtractor
                 {
                     _ = annotations.TryAdd("schema.role", role);
                 }
+            }
+
+            if (!annotations.ContainsKey("schema.role")
+                && attribute.ConstructorArguments.Length == 1
+                && attribute.ConstructorArguments[0].Value is int roleValue
+                && Enum.IsDefined(typeof(SemanticTypeRole), roleValue))
+            {
+                _ = annotations.TryAdd("schema.role", ((SemanticTypeRole)roleValue).ToString());
             }
         }
     }

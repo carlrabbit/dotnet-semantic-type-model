@@ -36,6 +36,25 @@ Define the stable attribute vocabulary for compile-time .NET extraction into the
   - maps to `schema.description`;
   - overrides XML documentation summaries.
 
+### `SemanticDisplayNameAttribute`
+
+- Targets: class, struct, enum, property, field.
+- Semantics:
+  - maps to user-facing display metadata (`ui.title`);
+  - does not replace canonical member naming.
+
+### `SemanticCategoryAttribute`
+
+- Targets: class, struct, enum, property, field.
+- Semantics:
+  - maps to generic UI categorization metadata (`ui.category`).
+
+### `SemanticOrderAttribute`
+
+- Targets: class, struct, enum, property, field.
+- Semantics:
+  - maps to deterministic UI/property ordering metadata (`ui.order`).
+
 ### `SemanticRoleAttribute`
 
 - Targets: class, struct, enum.
@@ -58,6 +77,48 @@ Define the stable attribute vocabulary for compile-time .NET extraction into the
   - marks explicit relationships (`schema.relationship=explicit`);
   - constructor accepts optional principal type metadata name string;
   - `PrincipalKey`, `ForeignKey`, and `Cardinality` map to relationship annotations.
+
+### `SemanticFormatAttribute`
+
+- Targets: property, field.
+- Semantics:
+  - maps to `schema.format`;
+  - supports common predefined `SemanticScalarFormat` values and custom strings;
+  - invalid target usage is diagnosable.
+
+### `SemanticStringConstraintsAttribute`
+
+- Targets: property, field.
+- Semantics:
+  - maps to `schema.minLength`, `schema.maxLength`, and `schema.pattern`;
+  - invalid ranges are diagnosable.
+
+### `SemanticNumericConstraintsAttribute`
+
+- Targets: property, field.
+- Semantics:
+  - maps to `schema.minimum`, `schema.maximum`, `schema.exclusiveMinimum`, `schema.exclusiveMaximum`, and `schema.multipleOf`;
+  - invalid ranges are diagnosable.
+
+### `SemanticCollectionConstraintsAttribute`
+
+- Targets: property, field.
+- Semantics:
+  - maps to `schema.minItems`, `schema.maxItems`, and `schema.uniqueItems`;
+  - invalid ranges are diagnosable.
+
+### `SemanticEnumValueAttribute`
+
+- Targets: enum fields.
+- Semantics:
+  - preserves enum display/description metadata as deterministic annotations on the owning enum shape.
+
+### `SemanticAnnotationAttribute`
+
+- Targets: class, struct, enum, property, field.
+- Semantics:
+  - preserves custom namespaced annotations;
+  - invalid keys and conflicting duplicate values are diagnosable.
 
 ## Precedence Rules
 
@@ -82,16 +143,11 @@ Extraction/generator diagnostics in `STM5xxx` include:
 - `STM5002` conflicting duplicate semantic attributes;
 - `STM5016` invalid composite key ordering;
 - `STM5017` unsupported/invalid semantic attribute argument values.
+- `STM5020` invalid semantic annotation key;
+- `STM5021` invalid constraint target or order value;
+- `STM5022` invalid string constraint range;
+- `STM5023` invalid numeric constraint range;
+- `STM5024` invalid collection constraint range;
+- `STM5025` invalid scalar format usage.
 
 Diagnostics are contractually stable by code; message text is non-authoritative.
-
-## Deferred Attributes
-
-The following are explicitly deferred in M0010:
-
-- `SemanticFormatAttribute`
-- `SemanticUnitAttribute`
-- `SemanticConstraintAttribute`
-- `SemanticAnnotationAttribute`
-
-These remain non-goals until concrete cross-projection requirements are validated.
