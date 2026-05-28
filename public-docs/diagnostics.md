@@ -3,6 +3,7 @@
 Diagnostics describe conditions detected during model extraction, validation, and projection. This page is the public reference for all stable STM-prefixed diagnostic codes.
 
 Preview projection codes (EF Core, Power BI, JSON Schema import/export) are documented separately in [diagnostics/preview-status.md](diagnostics/preview-status.md).
+Projection capability and compatibility guidance: [guides/projection-capabilities.md](guides/projection-capabilities.md)
 
 API compatibility expectations: [api/compatibility.md](api/compatibility.md)
 
@@ -96,4 +97,3 @@ Full reference: [diagnostics/stm3xxx.md](diagnostics/stm3xxx.md)
 | STM5025 | Warning  | Member shape unsupported           |
 
 Full reference: [diagnostics/stm5xxx.md](diagnostics/stm5xxx.md)
-

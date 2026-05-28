@@ -35,6 +35,6 @@ Specs are authoritative for:
 | specs/type-model-runtime-api.md | Hardened runtime model provider, service, result, caching, and diagnostics contracts |
 | specs/type-model-di-integration.md | Dependency-injection registration, lifetime, and projection integration pattern for runtime model services |
 | specs/type-model-ui-hints.md | Generic UI hint vocabulary, normalization, and JSON-editor compatibility mapping |
-| specs/type-model-projection-capabilities.md | Projection capability matrix and diagnostic expectations across targets |
+| specs/type-model-projection-capabilities.md | Projection capability matrix, compatibility contracts, and capability metadata API across targets |
 | specs/type-model-powerbi-tom-projection.md | Deterministic Power BI / TOM-like projection behavior over the hardened canonical model |
 | specs/type-model-ef-core-projection.md | Deterministic EF Core-like projection behavior over the hardened canonical model |

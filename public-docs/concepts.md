@@ -12,6 +12,9 @@ Transformation pipelines normalize and validate runtime models before projection
 
 Projections produce target-specific output (for example JSON Schema, Power BI-like metadata, or EF Core-like metadata).
 
+Projection capability contracts document which canonical features are directly supported, option-dependent, annotation-preserved, or unsupported per target.
+See [guides/projection-capabilities.md](guides/projection-capabilities.md).
+
 The code-first sample (`samples/code-first-authoring`) shows one canonical model projected to JSON Schema, JSON Editor-compatible UI hints, and EF Core configuration.
 
 ## Prerelease Status

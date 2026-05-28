@@ -16,6 +16,15 @@ public sealed class PowerBiTabularProjectionTests
     private static readonly AnnotationBag EmptyAnnotations = new();
 
     [Test]
+    public async Task Projection_should_expose_capability_metadata()
+    {
+        ProjectionCompatibilityContract capabilities = new PowerBiTabularProjection().GetCapabilities();
+
+        _ = await Assert.That(capabilities.Projection).IsEqualTo(ProjectionTarget.PowerBi);
+        _ = await Assert.That(capabilities.GetSupport(SemanticModelFeature.Relationship).SupportLevel).IsEqualTo(ProjectionFeatureSupportLevel.SupportedWithOptions);
+    }
+
+    [Test]
     public async Task Fixture_1_dimension_table_should_project_columns_keys_and_display_metadata()
     {
         ScalarTypeDefinition stringType = Scalar("String", ScalarKind.String);
