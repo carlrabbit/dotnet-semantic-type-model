@@ -24,3 +24,4 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - [M0010 - Attribute and Convention Model for .NET Type Extraction](milestones/m0010-attribute-and-convention-model-for-dotnet-type-extraction.md)
 - [M0011 - Runtime API Surface and DI Integration](milestones/m0011-runtime-api-surface-and-di-integration.md)
 - [M0012 - Documentation, Samples, Release Readiness, and First End-to-End Scenarios](milestones/m0012-documentation-samples-release-readiness-and-first-end-to-end-scenarios.md)
+- [M0014 - Semantic Type Annotation Usability](milestones/m0014-semantic-type-annotation-usability.md)

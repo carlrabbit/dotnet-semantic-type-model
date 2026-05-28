@@ -699,7 +699,7 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
     {
         foreach (SchemaAnnotation annotation in annotations)
         {
-            string key = annotation.Key.StartsWith("schema.", StringComparison.Ordinal)
+            var key = annotation.Key.StartsWith("schema.", StringComparison.Ordinal)
                 ? annotation.Key["schema.".Length..]
                 : annotation.Key;
 
@@ -714,11 +714,11 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
                 case "multipleOf":
                 case "minItems":
                 case "maxItems":
-                    if (long.TryParse(annotation.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out long longValue))
+                    if (long.TryParse(annotation.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var longValue))
                     {
                         writer.WriteNumber(key, longValue);
                     }
-                    else if (double.TryParse(annotation.Value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out double doubleValue))
+                    else if (double.TryParse(annotation.Value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var doubleValue))
                     {
                         writer.WriteNumber(key, doubleValue);
                     }
@@ -729,7 +729,7 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
                     writer.WriteString(key, annotation.Value);
                     break;
                 case "uniqueItems":
-                    if (bool.TryParse(annotation.Value, out bool boolValue))
+                    if (bool.TryParse(annotation.Value, out var boolValue))
                     {
                         writer.WriteBoolean(key, boolValue);
                     }

@@ -14,14 +14,36 @@ internal static class Program
     private static void Main()
     {
         const string source = """
+            using System.Collections.Generic;
             using SemanticTypeModel.DotNet;
 
-            [SemanticType]
+            public enum CustomerStatus
+            {
+                [SemanticEnumValue(DisplayName = "Active customer", Description = "Can place orders.")]
+                Active = 1,
+                Suspended = 2,
+            }
+
+            [SemanticType(SemanticTypeRole.Entity)]
+            [SemanticDisplayName("Customer account")]
             public sealed class Customer
             {
+                [SemanticKey]
+                [SemanticFormat(SemanticScalarFormat.Uuid)]
                 public required string Id { get; init; }
 
-                public required string Name { get; init; }
+                [SemanticDisplayName("Email address")]
+                [SemanticCategory("Contact")]
+                [SemanticOrder(10)]
+                [SemanticFormat(SemanticScalarFormat.Email)]
+                [SemanticStringConstraints(MinLength = 5, MaxLength = 200, Pattern = ".+@.+")]
+                [SemanticAnnotation("ui.placeholder", "name@example.com")]
+                public required string Email { get; init; }
+
+                [SemanticCollectionConstraints(MinItems = 1, MaxItems = 3, UniqueItems = true)]
+                public List<string> Tags { get; init; } = [];
+
+                public CustomerStatus Status { get; init; }
             }
             """;
 
