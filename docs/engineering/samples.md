@@ -27,6 +27,10 @@ Define constraints and validation for runnable samples used as executable docume
 - Power BI projection
 - EF Core projection
 
+## Required Additions (M0016)
+
+- End-to-end code-first schema authoring sample
+
 ## Document Contract
 
 When sample policy changes, review and update:

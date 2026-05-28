@@ -26,3 +26,4 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - [M0012 - Documentation, Samples, Release Readiness, and First End-to-End Scenarios](milestones/m0012-documentation-samples-release-readiness-and-first-end-to-end-scenarios.md)
 - [M0014 - Semantic Type Annotation Usability](milestones/m0014-semantic-type-annotation-usability.md)
 - [M0015 - EF Core Projection Hardening](milestones/m0015-ef-core-projection-hardening.md)
+- [M0016 - End-to-End Code-First Schema Authoring Samples](milestones/m0016-end-to-end-code-first-schema-authoring-samples.md)

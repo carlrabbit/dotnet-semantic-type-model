@@ -6,6 +6,7 @@ set -eu
 require_command dotnet
 
 projects="
+samples/code-first-authoring/code-first-authoring.csproj
 samples/json-schema-roundtrip/json-schema-roundtrip.csproj
 samples/dotnet-generator-to-json-schema/dotnet-generator-to-json-schema.csproj
 samples/runtime-di-usage/runtime-di-usage.csproj
