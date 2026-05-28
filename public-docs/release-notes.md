@@ -1,5 +1,16 @@
 # Release Notes
 
+## M0018 — Diagnostics Documentation and Analyzer Experience
+
+Stabilized the diagnostic framework across all packages.
+
+- Added `StmDiagnosticIds` in `SemanticTypeModel.Core` with public constants for all STM0xxx (model validation) and STM3xxx (JSON Schema runtime projection) codes.
+- Added `DotNetExtractionDiagnosticIds` in `SemanticTypeModel.DotNet` with public constants for all STM5xxx (.NET extraction and source-generator) codes.
+- Added `GeneratorDiagnosticDescriptors` in `SemanticTypeModel.Generators` with stable static `DiagnosticDescriptor` fields for STM5008, STM5018, and STM5019. The source generator now uses these static descriptors instead of inline construction.
+- Added diagnostic ID stability tests verifying uniqueness and format across all STM packages.
+- Published full diagnostic reference pages under `public-docs/diagnostics/`.
+- Published `docs/specs/diagnostics.md` defining the diagnostic contract: ID scheme, severity policy, source/model location guidance, descriptor requirements, and maintenance rules.
+
 ## 0.1.0-alpha
 
 Initial prerelease package publication milestone.

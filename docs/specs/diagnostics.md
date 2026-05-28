@@ -1,0 +1,112 @@
+# Diagnostics Specification
+
+## Purpose
+
+Define the diagnostic contract for the SemanticTypeModel library: ID scheme, categories, severity policy, descriptor requirements, source and model location guidance, and maintenance rules.
+
+## ID Scheme
+
+All stable diagnostic IDs use the `STM` prefix followed by a four-digit category code:
+
+```text
+STM0xxx  Semantic model validation
+STM3xxx  JSON Schema runtime projection
+STM5xxx  .NET type extraction and compile-time source generator
+```
+
+The numeric sub-ranges are allocated as follows:
+
+| Range     | Package                        | Emitter                              |
+|-----------|--------------------------------|--------------------------------------|
+| STM0001–STM0013 | SemanticTypeModel.Core   | TypeSchemaModelValidator             |
+| STM3201–STM3207 | SemanticTypeModel.JsonSchema | JsonSchemaRuntimeProjection      |
+| STM5001–STM5025 | SemanticTypeModel.DotNet / SemanticTypeModel.Generators | RoslynDotNetTypeExtractor / SemanticTypeModelSourceGenerator |
+
+Gaps within a range are intentional reservations for future use.
+
+## Preview Codes
+
+Projection packages that have not reached a stable diagnostic surface use a descriptive uppercase prefix instead of the STM scheme:
+
+| Prefix          | Package                      |
+|-----------------|------------------------------|
+| `EFCORE_*`      | SemanticTypeModel.EFCore     |
+| `POWERBI_*`     | SemanticTypeModel.PowerBI    |
+| `JSONSCHEMA_*`  | SemanticTypeModel.JsonSchema (import/export) |
+
+Preview codes are subject to change. Their stability expectations are documented in `public-docs/diagnostics/preview-status.md`.
+
+## Diagnostic Model
+
+Each STM-prefixed diagnostic must define:
+
+- **ID** — unique, immutable, registered in `StmDiagnosticIds` or `DotNetExtractionDiagnosticIds`;
+- **Title** — short noun phrase, suitable for IDE tooltips;
+- **Message** — actionable sentence stating what is wrong and what to do;
+- **Category** — `SemanticTypeModel`;
+- **Severity** — see Severity Policy;
+- **Default enabled state** — `true` unless a diagnostic is purely informational;
+- **Source location** — C# symbol when available (source generator/analyzer), model path for runtime and projection diagnostics;
+- **Help URI** — link to the public diagnostic reference page.
+
+Compile-time diagnostics (source generator, Roslyn analyzer) must use a static `DiagnosticDescriptor` field. Do not create `DiagnosticDescriptor` instances inline in hot paths.
+
+## Severity Policy
+
+| Severity  | Use when |
+|-----------|----------|
+| `Error`   | The generator cannot produce valid output; the model is structurally incoherent; a required invariant is violated. |
+| `Warning` | Output is produced but correctness or completeness is degraded; a build option value is invalid and a fallback is used; a semantic feature is approximated. |
+| `Info`    | Informational observation that does not affect output or correctness. |
+| `Hidden`  | Implementation-detail telemetry; never used for actionable user feedback. |
+
+Runtime validation diagnostics (`SchemaDiagnostic`) use `SchemaDiagnosticSeverity` (Error, Warning, Info). Projection diagnostics should not throw exceptions for conditions that can be expressed as a `Warning` and that allow degraded-but-valid output.
+
+## Source and Model Locations
+
+**Compile-time diagnostics** must provide the most specific `Location` available:
+
+- attribute usage site for annotation misuse;
+- type declaration for type-level issues;
+- member declaration for property-level issues.
+
+**Runtime diagnostics** must provide the canonical model path when available:
+
+```text
+/types/{TypeId}
+/types/{TypeId}/properties/{PropertyName}
+/types/{TypeId}/keys/{KeyName}
+/types/{TypeId}/relationships/{RelationshipName}
+```
+
+Use `ModelPath` from `SemanticTypeModel.Abstractions.Hardening` to generate canonical paths. Do not construct path strings inline.
+
+## ID Registration and Maintenance
+
+When adding a new diagnostic:
+
+1. Reserve an ID in the appropriate numeric range.
+2. Add a `public const string` to `StmDiagnosticIds` (for STM0xxx/STM3xxx) or `DotNetExtractionDiagnosticIds` (for STM5xxx) with an XML doc summary.
+3. For compile-time diagnostics, add a static `DiagnosticDescriptor` field to `GeneratorDiagnosticDescriptors`.
+4. Add a reference entry to the relevant `public-docs/diagnostics/stm{range}.md` page.
+5. Run diagnostic ID stability tests to confirm uniqueness.
+
+Do not reuse a retired ID.
+
+## Tests
+
+The following test coverage is required:
+
+- **ID uniqueness** — all constants in `StmDiagnosticIds` and `DotNetExtractionDiagnosticIds` are unique within and across classes.
+- **ID format** — all constants match the expected `STMnnnn` pattern for their class.
+- **Generator diagnostic emission** — source generator emits known codes (e.g., STM5008, STM5018) for known invalid inputs.
+- **Model path stability** — model paths generated by `ModelPath` match documented canonical form.
+
+## Related Documents
+
+- `docs/guardrails/implementation.md`
+- `public-docs/diagnostics.md`
+- `public-docs/diagnostics/stm0xxx.md`
+- `public-docs/diagnostics/stm3xxx.md`
+- `public-docs/diagnostics/stm5xxx.md`
+- `public-docs/diagnostics/preview-status.md`

@@ -3,7 +3,7 @@
     <RootNamespace>SemanticTypeModel.Generators</RootNamespace>
     <OutputItemType>Analyzer</OutputItemType>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <NoWarn>$(NoWarn);RS1036;RS1041;CA1305;IDE0007;IDE0010;IDE0058;IDE0072;NU5128</NoWarn>
+    <NoWarn>$(NoWarn);RS1036;RS1041;RS2008;CA1305;IDE0007;IDE0010;IDE0058;IDE0072;NU5128</NoWarn>
     <PackageId>SemanticTypeModel.Generators</PackageId>
     <Title>SemanticTypeModel.Generators</Title>
     <Description>Incremental source generator package for SemanticTypeModel compile-time extraction.</Description>
