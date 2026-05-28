@@ -5,6 +5,7 @@ Project: `samples/ef-core-projection`
 Demonstrates:
 
 - projection from canonical runtime model to EF Core-like metadata;
+- `ModelBuilder.ApplySemanticTypeModel(...)` configuration with options callback;
 - no real database server connection.
 
 Run:

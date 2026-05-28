@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Hardening = SemanticTypeModel.Abstractions.Hardening;
 using Legacy = SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Abstractions.Runtime;
@@ -54,6 +56,9 @@ internal sealed class PackageSmokeTests
         Hardening.SchemaProjectionContext efCoreContext = new() { Target = Hardening.ProjectionTarget.EfCore };
         EfModelDefinition efCoreProjection = new EfCoreModelProjection().Project(hardeningModel, efCoreContext);
         _ = await Assert.That(efCoreProjection).IsNotNull();
+        var modelBuilder = new ModelBuilder(new ConventionSet());
+        EfCoreModelBuilderProjectionResult efCoreApplyResult = modelBuilder.ApplySemanticTypeModel(hardeningModel, options => options.ProjectUnannotatedObjectsAsEntities = true);
+        _ = await Assert.That(efCoreApplyResult.Model).IsNotNull();
 
         using ServiceProvider provider = new ServiceCollection()
             .AddSemanticTypeModel(hardeningModel)

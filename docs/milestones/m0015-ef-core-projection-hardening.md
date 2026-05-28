@@ -1,5 +1,9 @@
 # M0015: EF Core Projection Hardening
 
+## Status
+
+Active implementation milestone.
+
 ## Goal
 
 Make the EF Core projection useful for real code-first model-building scenarios by projecting a canonical `TypeSchemaModel` into EF Core model configuration through a configurable `ModelBuilder` API.
@@ -85,8 +89,12 @@ The milestone must make EF Core projection consume the canonical model and annot
 - `docs/guardrails/testing.md`
 - `docs/guardrails/implementation.md`
 - `docs/guardrails/languages/dotnet.md`
-- `docs/specs/ef-core-projection.md`, create or update if missing
-- `docs/specs/semantic-type-annotations.md`, create or update if missing
+- `docs/engineering/command-contract.md`
+- `docs/engineering/packaging.md`
+- `docs/tbps/feature-implementation.md`
+- `docs/tbps/public-documentation-update.md`
+- `docs/specs/type-model-ef-core-projection.md`
+- `docs/specs/type-model-annotations.md`
 - `docs/milestones/m0014-semantic-type-annotation-usability.md`
 - `docs/research/project-setup-guide-v5.md`
 - `docs/research/engineering-guide-v4.md`

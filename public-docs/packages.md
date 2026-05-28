@@ -11,6 +11,11 @@
 - `SemanticTypeModel.PowerBI`
 - `SemanticTypeModel.EFCore`
 
+## EF Core projection
+
+- Guide: [guides/ef-core-projection.md](guides/ef-core-projection.md)
+- NuGet README source: [nuget/SemanticTypeModel.EFCore.md](nuget/SemanticTypeModel.EFCore.md)
+
 ## Prerelease Notes
 
 - This is the first prerelease package set.

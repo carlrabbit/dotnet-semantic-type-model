@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Define deterministic projection of hardened canonical `TypeSchemaModel` contracts into an EF Core-like intermediate metadata model.
+Define deterministic projection of hardened canonical `TypeSchemaModel` contracts into an EF Core-oriented intermediate metadata model and `ModelBuilder` configuration surface.
 
 ## Authority
 
 This specification is authoritative for:
 
-- EF Core projection scope in M0008;
+- EF Core projection scope in M0008 and M0015;
 - projection naming and annotation precedence;
 - entity/property/key/relationship/value-object/enum mapping behavior;
 - projection options and unsupported-shape behavior;
@@ -18,7 +18,21 @@ This specification is authoritative for:
 
 - Projection package: `SemanticTypeModel.EFCore`.
 - Core abstraction contracts remain independent from EF Core-specific dependencies.
-- M0008 uses an internal EF-like metadata model and does not require a provider, a database server, migrations, or runtime `DbContext` integration.
+- Projection supports two entry points:
+  - `EfCoreModelProjection` for non-EF runtime consumers and tests.
+  - `ModelBuilder.ApplySemanticTypeModel(...)` for EF Core model configuration.
+- Baseline usage does not require a database provider, database server, or live connection.
+
+## ModelBuilder API Contract
+
+`SemanticTypeModel.EFCore` exposes:
+
+- extension method `ModelBuilder.ApplySemanticTypeModel(...)`;
+- canonical `TypeSchemaModel` input;
+- optional configuration callback;
+- result object with projected model metadata and diagnostics.
+
+The `ModelBuilder` entry point applies provider-neutral baseline configuration for projected entities, scalar properties, keys, and unique indexes while keeping unsupported shape behavior diagnosable.
 
 ## Projection Model Contract
 

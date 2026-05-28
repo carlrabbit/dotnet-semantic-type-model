@@ -17,6 +17,7 @@ Initial prerelease package publication milestone.
   - `SemanticTypeModel.PowerBI`
   - `SemanticTypeModel.EFCore`
 - Added public API baseline files and release-gate validation.
+- Hardened `SemanticTypeModel.EFCore` with `ModelBuilder.ApplySemanticTypeModel(...)` and configurable projection options returning diagnostics.
 
 ## Known Limitations
 
