@@ -17,7 +17,7 @@ namespace SemanticTypeModel.PowerBI;
 /// Initializes a new instance of the <see cref="PowerBiTabularProjection"/> class.
 /// </remarks>
 /// <param name="options">Projection options.</param>
-public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options = null) : ISchemaProjection<TabularModelDefinition>
+public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options = null) : ISchemaProjection<TabularModelDefinition>, IProjectionCapabilityProvider
 {
     private static readonly HashSet<EntityRole> TableRoles =
     [
@@ -90,6 +90,12 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
             Relationships = relationships,
             Diagnostics = diagnostics.ToArray(),
         };
+    }
+
+    /// <inheritdoc />
+    public ProjectionCompatibilityContract GetCapabilities()
+    {
+        return ProjectionCapabilityCatalog.ForTarget(ProjectionTarget.PowerBi);
     }
 
     private static void Report(

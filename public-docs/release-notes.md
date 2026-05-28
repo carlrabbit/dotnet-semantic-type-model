@@ -1,5 +1,15 @@
 # Release Notes
 
+## M0019 — Projection Capability Matrix and Compatibility Contracts
+
+Defined projection capability and compatibility contracts across JSON Schema, JSON Editor mode, EF Core, and Power BI projections.
+
+- Added projection capability metadata contracts in `SemanticTypeModel.Abstractions.Hardening`.
+- Added deterministic `ProjectionCapabilityCatalog` with core feature coverage for each supported projection target.
+- Added `IProjectionCapabilityProvider.GetCapabilities()` to runtime projection implementations.
+- Added capability coverage and determinism tests.
+- Added public guide: `public-docs/guides/projection-capabilities.md`.
+
 ## M0018 — Diagnostics Documentation and Analyzer Experience
 
 Stabilized the diagnostic framework across all packages.

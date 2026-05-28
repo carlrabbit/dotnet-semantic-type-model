@@ -73,6 +73,7 @@ Run all samples:
 - [public-docs/api/public-api.md](public-docs/api/public-api.md)
 - [public-docs/diagnostics.md](public-docs/diagnostics.md)
 - [public-docs/guides/ef-core-projection.md](public-docs/guides/ef-core-projection.md)
+- [public-docs/guides/projection-capabilities.md](public-docs/guides/projection-capabilities.md)
 - [public-docs/versioning.md](public-docs/versioning.md)
 - [public-docs/release-notes.md](public-docs/release-notes.md)
 

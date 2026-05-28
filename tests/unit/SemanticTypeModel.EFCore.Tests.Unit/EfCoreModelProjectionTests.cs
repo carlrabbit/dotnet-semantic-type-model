@@ -20,6 +20,15 @@ public sealed class EfCoreModelProjectionTests
     private static readonly AnnotationBag EmptyAnnotations = new();
 
     [Test]
+    public async Task Projection_should_expose_capability_metadata()
+    {
+        ProjectionCompatibilityContract capabilities = new EfCoreModelProjection().GetCapabilities();
+
+        _ = await Assert.That(capabilities.Projection).IsEqualTo(ProjectionTarget.EfCore);
+        _ = await Assert.That(capabilities.GetSupport(SemanticModelFeature.Relationship).SupportLevel).IsEqualTo(ProjectionFeatureSupportLevel.SupportedWithOptions);
+    }
+
+    [Test]
     public async Task Fixture_1_simple_entity_should_project_properties_key_requiredness_and_table_annotations()
     {
         ScalarTypeDefinition intType = Scalar("Int64", ScalarKind.Integer);

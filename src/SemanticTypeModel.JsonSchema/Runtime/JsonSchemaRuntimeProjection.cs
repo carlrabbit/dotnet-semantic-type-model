@@ -9,7 +9,7 @@ namespace SemanticTypeModel.JsonSchema.Runtime;
 /// <summary>
 /// Projects the hardened canonical runtime model to JSON Schema through the existing JSON Schema exporter.
 /// </summary>
-public sealed class JsonSchemaRuntimeProjection : Hardening.ISchemaProjection<JsonSchemaExportResult>
+public sealed class JsonSchemaRuntimeProjection : Hardening.ISchemaProjection<JsonSchemaExportResult>, Hardening.IProjectionCapabilityProvider
 {
     /// <inheritdoc />
     public JsonSchemaExportResult Project(Hardening.TypeSchemaModel model, Hardening.SchemaProjectionContext context)
@@ -25,6 +25,12 @@ public sealed class JsonSchemaRuntimeProjection : Hardening.ISchemaProjection<Js
         }
 
         return result;
+    }
+
+    /// <inheritdoc />
+    public Hardening.ProjectionCompatibilityContract GetCapabilities()
+    {
+        return Hardening.ProjectionCapabilityCatalog.ForTarget(Hardening.ProjectionTarget.JsonSchema);
     }
 
     private static class LegacyRuntimeBridge

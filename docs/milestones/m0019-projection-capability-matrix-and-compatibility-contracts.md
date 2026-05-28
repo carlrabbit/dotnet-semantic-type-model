@@ -36,12 +36,14 @@ This milestone makes those boundaries explicit and testable.
 - `docs/ENGINEERING.md`
 - `docs/PUBLIC-DOCS.md`
 - `docs/GUARDRAILS.md`
-- `docs/specs/type-model.md`, if present
-- `docs/specs/json-schema-projection.md`, if present
-- `docs/specs/json-editor-projection.md`, if present
-- `docs/specs/ef-core-projection.md`, if present
-- `docs/specs/power-bi-tom-projection.md`, if present
-- `docs/specs/projection-capabilities.md`, create if missing
+- `docs/guardrails/implementation.md`
+- `docs/guardrails/testing.md`
+- `docs/specs/type-model-core.md`
+- `docs/specs/type-model-json-schema-mapping.md`
+- `docs/specs/type-model-ui-hints.md`
+- `docs/specs/type-model-ef-core-projection.md`
+- `docs/specs/type-model-powerbi-tom-projection.md`
+- `docs/specs/type-model-projection-capabilities.md`
 - `docs/research/project-setup-guide-v5.md`
 - `docs/research/engineering-guide-v4.md`
 
@@ -66,6 +68,15 @@ The milestone must cover:
 - compatibility contracts;
 - public documentation;
 - tests for capability consistency.
+
+## Implementation Tracking
+
+- [ ] Update milestone and index documents.
+- [ ] Define capability taxonomy and feature matrix contract types.
+- [ ] Implement projection capability metadata API and per-projection contracts.
+- [ ] Validate unsupported/degraded projection diagnostics against the capability matrix.
+- [ ] Update internal specs and public projection-capability documentation.
+- [ ] Add tests for capability coverage, determinism, and projection metadata access.
 
 ## Non-Goals
 
@@ -273,4 +284,3 @@ When this milestone is added or materially changed, review and update:
 - related public documentation under `public-docs/`;
 - related engineering or workflow documents if validation commands change;
 - release notes when public behavior changes.
-

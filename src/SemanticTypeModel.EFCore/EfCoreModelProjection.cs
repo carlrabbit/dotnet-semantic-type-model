@@ -16,7 +16,7 @@ namespace SemanticTypeModel.EFCore;
 /// Initializes a new instance of the <see cref="EfCoreModelProjection"/> class.
 /// </remarks>
 /// <param name="options">Projection options.</param>
-public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = null) : ISchemaProjection<EfModelDefinition>
+public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = null) : ISchemaProjection<EfModelDefinition>, IProjectionCapabilityProvider
 {
     private readonly EfCoreProjectionOptions _options = options ?? EfCoreProjectionOptions.Default;
 
@@ -61,6 +61,12 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
             EntityTypes = entityInfos.Select(static info => info.ToDefinition()).ToArray(),
             Diagnostics = diagnostics.ToArray(),
         };
+    }
+
+    /// <inheritdoc />
+    public ProjectionCompatibilityContract GetCapabilities()
+    {
+        return ProjectionCapabilityCatalog.ForTarget(ProjectionTarget.EfCore);
     }
 
     private static void Report(
