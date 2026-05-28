@@ -31,7 +31,7 @@ public sealed class DiagnosticIdStabilityTests
     {
         IReadOnlyList<string> ids = CollectStringConstants(typeof(StmDiagnosticIds));
 
-        foreach (string id in ids)
+        foreach (var id in ids)
         {
             var isValid = id.StartsWith("STM", StringComparison.Ordinal)
                 && id.Length > 3

@@ -59,12 +59,15 @@ internal static class GeneratorDiagnosticDescriptors
     /// Fallback descriptor used for STM5xxx codes emitted by the .NET type extractor.
     /// The code and message are supplied at call time.
     /// </summary>
-    internal static DiagnosticDescriptor ExtractionFallback(string code) => new(
-        code,
-        "SemanticTypeModel .NET extraction",
-        "{0}",
-        Category,
-        DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        helpLinkUri: HelpUriBase);
+    internal static DiagnosticDescriptor ExtractionFallback(string code)
+    {
+        return new(
+            code,
+            "SemanticTypeModel .NET extraction",
+            "{0}",
+            Category,
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
+            helpLinkUri: HelpUriBase);
+    }
 }

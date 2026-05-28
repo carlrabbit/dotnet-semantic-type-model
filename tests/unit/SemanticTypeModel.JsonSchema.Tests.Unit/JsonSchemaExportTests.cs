@@ -233,7 +233,7 @@ public sealed class JsonSchemaExportTests
 
         JsonSchemaExportResult result = JsonSchemaExporter.Export(model);
         JsonElement root = result.Document.RootElement;
-        bool hasUnsupportedUnionDiagnostic = result.Diagnostics.Any(
+        var hasUnsupportedUnionDiagnostic = result.Diagnostics.Any(
             static diagnostic =>
                 diagnostic.Code == "JSONSCHEMA_EXPORT_UNSUPPORTED_UNION_SEMANTICS" &&
                 diagnostic.Severity == SchemaDiagnosticSeverity.Warning);

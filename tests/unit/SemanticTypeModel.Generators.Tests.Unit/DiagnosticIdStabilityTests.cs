@@ -52,8 +52,8 @@ public sealed class DiagnosticIdStabilityTests
     public async Task All_stm_diagnostic_ids_across_packages_should_be_unique()
     {
         // Collect all known STM codes from both ID classes.
-        var coreIds = CollectStringConstants(typeof(StmDiagnosticIds));
-        var dotNetIds = CollectStringConstants(typeof(DotNetExtractionDiagnosticIds));
+        IReadOnlyList<string> coreIds = CollectStringConstants(typeof(StmDiagnosticIds));
+        IReadOnlyList<string> dotNetIds = CollectStringConstants(typeof(DotNetExtractionDiagnosticIds));
 
         var all = coreIds.Concat(dotNetIds).ToList();
         var duplicates = all
@@ -87,7 +87,7 @@ public sealed class DiagnosticIdStabilityTests
                 ["build_property.SemanticTypeModelDiscoveryMode"] = "InvalidModeValue",
             });
 
-        var stm5008 = diagnostics.FirstOrDefault(
+        Diagnostic? stm5008 = diagnostics.FirstOrDefault(
             static d => string.Equals(d.Id, DotNetExtractionDiagnosticIds.UnsupportedDiscoveryMode, StringComparison.Ordinal));
 
         _ = await Assert.That(stm5008).IsNotNull()
@@ -115,7 +115,7 @@ public sealed class DiagnosticIdStabilityTests
                 ["build_property.SemanticTypeModelNamingPolicy"] = "InvalidPolicyValue",
             });
 
-        var stm5018 = diagnostics.FirstOrDefault(
+        Diagnostic? stm5018 = diagnostics.FirstOrDefault(
             static d => string.Equals(d.Id, DotNetExtractionDiagnosticIds.UnsupportedNamingPolicy, StringComparison.Ordinal));
 
         _ = await Assert.That(stm5018).IsNotNull()
@@ -193,9 +193,15 @@ public sealed class DiagnosticIdStabilityTests
 
         public override AnalyzerConfigOptions GlobalOptions => _global;
 
-        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => _global;
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree)
+        {
+            return _global;
+        }
 
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => _global;
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile)
+        {
+            return _global;
+        }
     }
 
     private sealed class TestConfigOptions(IReadOnlyDictionary<string, string> values) : AnalyzerConfigOptions
