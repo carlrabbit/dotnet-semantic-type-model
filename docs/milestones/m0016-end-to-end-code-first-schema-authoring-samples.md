@@ -1,5 +1,9 @@
 # M0016: End-to-End Code-First Schema Authoring Samples
 
+## Status
+
+Active implementation milestone.
+
 ## Goal
 
 Create polished, runnable, user-facing samples that prove the intended code-first authoring path from annotated C# types to the canonical semantic type model and the primary projections.
@@ -47,6 +51,18 @@ The sample suite should become the canonical evidence that the current public AP
 - M0015 EF Core Projection Hardening should be complete or sufficiently stable.
 - Existing JSON Schema projection and generator packages should build.
 - Existing release/package work should not be weakened by sample changes.
+
+## Engineering and Release Readiness
+
+Required validation commands:
+
+```sh
+./eng/check.sh
+./eng/samples.sh
+./eng/release-check.sh 0.1.0-alpha
+```
+
+If `release-check` is not appropriate during implementation, run the minimal relevant subset and explain why in the completion report.
 
 ## Scope
 
@@ -317,3 +333,14 @@ When this milestone is added or materially changed, review and update:
 - related engineering or workflow documents if validation commands change;
 - release notes when public behavior changes.
 
+## Completion Report
+
+When closing this milestone, report:
+
+- implemented code-first sample project(s) and what each demonstrates;
+- generated canonical model and projection outputs that were validated;
+- diagnostics behavior shown by samples (or explicit reason omitted);
+- sample validation command updates;
+- public documentation surfaces updated;
+- validation commands run;
+- follow-up issues required.

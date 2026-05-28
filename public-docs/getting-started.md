@@ -16,4 +16,6 @@ Build your first semantic model flow from JSON Schema import to JSON Schema expo
 
 See runnable sample: `samples/json-schema-roundtrip` and [public-docs/samples/json-schema-roundtrip.md](samples/json-schema-roundtrip.md).
 
+For the end-to-end code-first flow, run `samples/code-first-authoring` and see [public-docs/samples/code-first.md](samples/code-first.md).
+
 > This is an initial prerelease (`0.1.0-alpha`). APIs may change before 1.0.

@@ -56,6 +56,8 @@ Console.WriteLine(exported.Document.RootElement.GetRawText());
 
 Runnable samples live under `samples/` and are documented in [public-docs/samples.md](public-docs/samples.md).
 
+For a code-first end-to-end flow, start with `samples/code-first-authoring`.
+
 Run all samples:
 
 ```sh

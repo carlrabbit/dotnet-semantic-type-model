@@ -18,6 +18,7 @@ Initial prerelease package publication milestone.
   - `SemanticTypeModel.EFCore`
 - Added public API baseline files and release-gate validation.
 - Hardened `SemanticTypeModel.EFCore` with `ModelBuilder.ApplySemanticTypeModel(...)` and configurable projection options returning diagnostics.
+- Added end-to-end code-first schema authoring sample at `samples/code-first-authoring` with JSON Schema, JSON Editor-compatible UI-hint, and EF Core outputs.
 
 ## Known Limitations
 

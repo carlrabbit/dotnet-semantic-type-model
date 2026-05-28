@@ -23,6 +23,7 @@ public-docs/nuget/SemanticTypeModel.JsonEditor.md
 public-docs/nuget/SemanticTypeModel.PowerBI.md
 public-docs/nuget/SemanticTypeModel.EFCore.md
 public-docs/samples/getting-started.md
+public-docs/samples/code-first.md
 public-docs/samples/dotnet-generator.md
 public-docs/samples/json-schema-roundtrip.md
 public-docs/samples/runtime-di.md

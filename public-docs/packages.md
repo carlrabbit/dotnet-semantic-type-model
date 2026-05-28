@@ -16,6 +16,11 @@
 - Guide: [guides/ef-core-projection.md](guides/ef-core-projection.md)
 - NuGet README source: [nuget/SemanticTypeModel.EFCore.md](nuget/SemanticTypeModel.EFCore.md)
 
+## Code-first sample path
+
+- End-to-end sample: [samples/code-first.md](samples/code-first.md)
+- Uses `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, `SemanticTypeModel.JsonSchema`, and `SemanticTypeModel.EFCore`.
+
 ## Prerelease Notes
 
 - This is the first prerelease package set.
