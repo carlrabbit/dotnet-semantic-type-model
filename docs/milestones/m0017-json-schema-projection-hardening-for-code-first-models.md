@@ -1,5 +1,9 @@
 # M0017: JSON Schema Projection Hardening for Code-First Models
 
+## Status
+
+Active implementation milestone.
+
 ## Goal
 
 Harden JSON Schema Draft 2020-12 projection for models created from annotated .NET code and source generation.
@@ -40,6 +44,17 @@ This milestone ensures that JSON Schema output remains a high-confidence project
 - M0014 Semantic Type Annotation Usability.
 - M0016 End-to-End Code-First Schema Authoring Samples is useful but not strictly required.
 - Existing JSON Schema projection package must build.
+
+## Engineering and Release Readiness
+
+Required validation commands:
+
+```sh
+./eng/check.sh
+./eng/release-check.sh 0.1.0-alpha
+```
+
+If `release-check` is not appropriate during implementation, run the minimal relevant subset and explain why in the completion report.
 
 ## Scope
 
@@ -327,3 +342,13 @@ When this milestone is added or materially changed, review and update:
 - related engineering or workflow documents if validation commands change;
 - release notes when public behavior changes.
 
+## Completion Report
+
+When closing this milestone, report:
+
+- implemented JSON Schema projection hardening changes for code-first models;
+- diagnostics added or refined and their stability expectations;
+- test coverage added for deterministic behavior and unsupported shapes;
+- documentation surfaces updated under `docs/` and `public-docs/`;
+- validation commands run;
+- follow-up issues required.
