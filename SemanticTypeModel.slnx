@@ -11,6 +11,7 @@
     <Project Path="src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj" />
     <Project Path="src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj" />
     <Project Path="src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj" />
+    <Project Path="src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/unit/">

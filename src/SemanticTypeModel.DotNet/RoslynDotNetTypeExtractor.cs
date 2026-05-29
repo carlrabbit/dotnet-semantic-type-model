@@ -28,6 +28,17 @@ public sealed class RoslynDotNetTypeExtractor
     private const string SemanticKeyAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticKeyAttribute";
     private const string SemanticRelationshipAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticRelationshipAttribute";
     private const string GeneratorOptionsAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticTypeModelGeneratorOptionsAttribute";
+    private const string JsonPropertyNameAttributeMetadataName = "System.Text.Json.Serialization.JsonPropertyNameAttribute";
+    private const string JsonIgnoreAttributeMetadataName = "System.Text.Json.Serialization.JsonIgnoreAttribute";
+    private const string JsonIncludeAttributeMetadataName = "System.Text.Json.Serialization.JsonIncludeAttribute";
+    private const string JsonConverterAttributeMetadataName = "System.Text.Json.Serialization.JsonConverterAttribute";
+    private const string JsonNumberHandlingAttributeMetadataName = "System.Text.Json.Serialization.JsonNumberHandlingAttribute";
+    private const string JsonRequiredAttributeMetadataName = "System.Text.Json.Serialization.JsonRequiredAttribute";
+    private const string JsonExtensionDataAttributeMetadataName = "System.Text.Json.Serialization.JsonExtensionDataAttribute";
+    private const string JsonObjectCreationHandlingAttributeMetadataName = "System.Text.Json.Serialization.JsonObjectCreationHandlingAttribute";
+    private const string JsonUnmappedMemberHandlingAttributeMetadataName = "System.Text.Json.Serialization.JsonUnmappedMemberHandlingAttribute";
+    private const string JsonPolymorphicAttributeMetadataName = "System.Text.Json.Serialization.JsonPolymorphicAttribute";
+    private const string JsonDerivedTypeAttributeMetadataName = "System.Text.Json.Serialization.JsonDerivedTypeAttribute";
 
     private readonly Dictionary<string, DotNetTypeDescriptor> _types = new(StringComparer.Ordinal);
     private readonly List<DotNetExtractionDiagnostic> _diagnostics = [];
@@ -136,6 +147,7 @@ public sealed class RoslynDotNetTypeExtractor
         DotNetNamingPolicy namingPolicy = fallback.NamingPolicy;
         IReadOnlyList<string> includedNamespaces = fallback.IncludedNamespaces;
         IReadOnlyList<string> excludedNamespaces = fallback.ExcludedNamespaces;
+        SystemTextJsonExtractionOptions systemTextJson = fallback.SystemTextJson;
 
         foreach ((string? key, TypedConstant value) in assemblyOptions.NamedArguments)
         {
@@ -162,6 +174,23 @@ public sealed class RoslynDotNetTypeExtractor
             else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.IncludeInternalMembers), StringComparison.Ordinal))
             {
                 includeInternalMembers = value.Value is bool boolValue && boolValue;
+            }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.ImportSystemTextJsonAttributes), StringComparison.Ordinal))
+            {
+                systemTextJson = systemTextJson with { ImportAttributes = value.Value is bool boolValue && boolValue };
+            }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.UseJsonPropertyNameAsSemanticName), StringComparison.Ordinal))
+            {
+                systemTextJson = systemTextJson with { UseJsonPropertyNameAsSemanticName = value.Value is bool boolValue && boolValue };
+            }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.GenerateSystemTextJsonContext), StringComparison.Ordinal))
+            {
+                systemTextJson = systemTextJson with { GenerateJsonSerializerContext = value.Value is bool boolValue && boolValue };
+            }
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.SystemTextJsonContextName), StringComparison.Ordinal)
+                && value.Value is string contextName)
+            {
+                systemTextJson = systemTextJson with { GeneratedContextName = contextName };
             }
             else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.DiscoveryMode), StringComparison.Ordinal)
                 && value.Value is int discoveryModeValue
@@ -201,6 +230,7 @@ public sealed class RoslynDotNetTypeExtractor
             NamingPolicy = namingPolicy,
             IncludedNamespaces = includedNamespaces,
             ExcludedNamespaces = excludedNamespaces,
+            SystemTextJson = systemTextJson,
         };
     }
 
@@ -521,6 +551,7 @@ public sealed class RoslynDotNetTypeExtractor
         TryAddCustomAnnotations(typeAttributes, annotations, type);
         TryAddXmlDescriptionAnnotation(type, typeAttributes, annotations);
         TryAddSemanticTypeOverrides(typeAttributes, annotations);
+        TryAddSystemTextJsonTypeAnnotations(typeAttributes, annotations, type);
         TryAddRoleAnnotation(typeAttributes, annotations, type.Locations.FirstOrDefault());
         ValidateTypeAttributeUsage(typeAttributes, type);
         AddInheritanceAnnotations(type, annotations, cancellationToken);
@@ -547,6 +578,7 @@ public sealed class RoslynDotNetTypeExtractor
             var memberAnnotations = new Dictionary<string, string>(StringComparer.Ordinal);
             ImmutableArray<AttributeData> memberAttributes = property.GetAttributes();
             string propertyName = GetPropertyName(property);
+            TryAddSystemTextJsonAnnotations(memberAttributes, memberAnnotations, property, ref propertyName);
             TryAddNameAndDescriptionAnnotations(memberAttributes, memberAnnotations, property);
             TryAddDisplayCategoryOrderAnnotations(memberAttributes, memberAnnotations, property);
             TryAddCustomAnnotations(memberAttributes, memberAnnotations, property);
@@ -657,6 +689,207 @@ public sealed class RoslynDotNetTypeExtractor
         };
     }
 
+
+    private void TryAddSystemTextJsonTypeAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations, INamedTypeSymbol type)
+    {
+        if (!_options.SystemTextJson.ImportAttributes)
+        {
+            return;
+        }
+
+        foreach (AttributeData attribute in attributes)
+        {
+            string? metadataName = attribute.AttributeClass?.ToDisplayString();
+            if (string.Equals(metadataName, JsonConverterAttributeMetadataName, StringComparison.Ordinal)
+                && _options.SystemTextJson.PreserveUnsupportedConverterMetadata)
+            {
+                annotations["systemTextJson.converter"] = GetAttributeTypeArgument(attribute) ?? attribute.AttributeClass?.ToDisplayString() ?? string.Empty;
+            }
+            else if (string.Equals(metadataName, JsonNumberHandlingAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["systemTextJson.numberHandling"] = GetFirstConstructorArgument(attribute);
+            }
+            else if (string.Equals(metadataName, JsonObjectCreationHandlingAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["systemTextJson.objectCreationHandling"] = GetFirstConstructorArgument(attribute);
+            }
+            else if (string.Equals(metadataName, JsonUnmappedMemberHandlingAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["systemTextJson.unmappedMemberHandling"] = GetFirstConstructorArgument(attribute);
+            }
+            else if (string.Equals(metadataName, JsonPolymorphicAttributeMetadataName, StringComparison.Ordinal)
+                || string.Equals(metadataName, JsonDerivedTypeAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["systemTextJson.polymorphism"] = "true";
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STJ008",
+                    $"System.Text.Json polymorphism metadata on type '{type.ToDisplayString()}' is preserved but cannot be represented in the canonical semantic model.",
+                    attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? type.Locations.FirstOrDefault()));
+            }
+        }
+    }
+
+    private void TryAddSystemTextJsonAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations, IPropertySymbol property, ref string propertyName)
+    {
+        if (!_options.SystemTextJson.ImportAttributes)
+        {
+            return;
+        }
+
+        foreach (AttributeData attribute in attributes)
+        {
+            string? metadataName = attribute.AttributeClass?.ToDisplayString();
+            if (string.Equals(metadataName, JsonPropertyNameAttributeMetadataName, StringComparison.Ordinal))
+            {
+                string jsonName = GetFirstConstructorArgument(attribute);
+                if (_options.SystemTextJson.UseJsonPropertyNameAsSerializationName)
+                {
+                    annotations["systemTextJson.propertyName"] = jsonName;
+                }
+
+                if (_options.SystemTextJson.UseJsonPropertyNameAsSemanticName)
+                {
+                    if (annotations.TryGetValue("schema.title", out string? semanticName)
+                        && !string.Equals(semanticName, jsonName, StringComparison.Ordinal))
+                    {
+                        _diagnostics.Add(new DotNetExtractionDiagnostic(
+                            "STJ001",
+                            $"JsonPropertyName '{jsonName}' conflicts with explicit semantic name '{semanticName}' on member '{property.Name}'.",
+                            attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? property.Locations.FirstOrDefault()));
+                    }
+
+                    propertyName = jsonName;
+                }
+            }
+            else if (string.Equals(metadataName, JsonIgnoreAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["systemTextJson.ignore"] = "true";
+                if (TryGetNamedArgument(attribute, "Condition", out string? condition))
+                {
+                    annotations["systemTextJson.ignoreCondition"] = condition ?? string.Empty;
+                }
+                else if (attribute.ConstructorArguments.Length > 0)
+                {
+                    annotations["systemTextJson.ignoreCondition"] = GetFirstConstructorArgument(attribute);
+                }
+
+                if (property.IsRequired)
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        "STJ003",
+                        $"JsonIgnore conflicts with required semantic member '{property.Name}'.",
+                        attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? property.Locations.FirstOrDefault()));
+                }
+            }
+            else if (string.Equals(metadataName, JsonIncludeAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["systemTextJson.include"] = "true";
+            }
+            else if (string.Equals(metadataName, JsonConverterAttributeMetadataName, StringComparison.Ordinal))
+            {
+                if (_options.SystemTextJson.PreserveUnsupportedConverterMetadata)
+                {
+                    annotations["systemTextJson.converter"] = GetAttributeTypeArgument(attribute) ?? attribute.AttributeClass?.ToDisplayString() ?? string.Empty;
+                }
+                else
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        "STJ002",
+                        $"JsonConverter metadata on member '{property.Name}' cannot be represented without preserving converter metadata.",
+                        attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? property.Locations.FirstOrDefault()));
+                }
+            }
+            else if (string.Equals(metadataName, JsonNumberHandlingAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["systemTextJson.numberHandling"] = GetFirstConstructorArgument(attribute);
+            }
+            else if (string.Equals(metadataName, JsonRequiredAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["systemTextJson.required"] = "true";
+                if (!property.IsRequired || property.NullableAnnotation == NullableAnnotation.Annotated)
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        "STJ006",
+                        $"JsonRequired conflicts with optional or nullable semantic member '{property.Name}'.",
+                        attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? property.Locations.FirstOrDefault()));
+                }
+            }
+            else if (string.Equals(metadataName, JsonExtensionDataAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["systemTextJson.extensionData"] = "true";
+                if (!IsSupportedJsonExtensionDataType(property.Type))
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        "STJ007",
+                        $"JsonExtensionData member '{property.Name}' must be assignable to IDictionary<string, JsonElement> or IDictionary<string, object>.",
+                        attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? property.Locations.FirstOrDefault()));
+                }
+            }
+        }
+    }
+
+    private static bool IsSupportedJsonExtensionDataType(ITypeSymbol type)
+    {
+        if (type is not INamedTypeSymbol namedType)
+        {
+            return false;
+        }
+
+        INamedTypeSymbol? dictionary = FindImplementedDictionary(namedType);
+        if (dictionary is null || dictionary.TypeArguments.Length != 2)
+        {
+            return false;
+        }
+
+        return dictionary.TypeArguments[0].SpecialType == SpecialType.System_String
+            && (dictionary.TypeArguments[1].SpecialType == SpecialType.System_Object
+                || string.Equals(dictionary.TypeArguments[1].ToDisplayString(), "System.Text.Json.JsonElement", StringComparison.Ordinal));
+    }
+
+    private static string GetFirstConstructorArgument(AttributeData attribute)
+    {
+        if (attribute.ConstructorArguments.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        object? value = attribute.ConstructorArguments[0].Value;
+        return value switch
+        {
+            null => string.Empty,
+            ITypeSymbol type => type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            _ => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty,
+        };
+    }
+
+    private static string? GetAttributeTypeArgument(AttributeData attribute)
+    {
+        foreach (TypedConstant argument in attribute.ConstructorArguments)
+        {
+            if (argument.Value is ITypeSymbol type)
+            {
+                return type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryGetNamedArgument(AttributeData attribute, string name, out string? value)
+    {
+        foreach ((string? key, TypedConstant constant) in attribute.NamedArguments)
+        {
+            if (string.Equals(key, name, StringComparison.Ordinal))
+            {
+                value = Convert.ToString(constant.Value, CultureInfo.InvariantCulture);
+                return true;
+            }
+        }
+
+        value = null;
+        return false;
+    }
+
     private void AddInheritanceAnnotations(INamedTypeSymbol type, Dictionary<string, string> annotations, CancellationToken cancellationToken)
     {
         if (type.BaseType is { SpecialType: not SpecialType.System_Object } baseType)
@@ -694,6 +927,7 @@ public sealed class RoslynDotNetTypeExtractor
         TryAddDisplayCategoryOrderAnnotations(typeAttributes, annotations, enumType);
         TryAddCustomAnnotations(typeAttributes, annotations, enumType);
         TryAddXmlDescriptionAnnotation(enumType, typeAttributes, annotations);
+        TryAddSystemTextJsonTypeAnnotations(typeAttributes, annotations, enumType);
         ValidateTypeAttributeUsage(typeAttributes, enumType);
         DiagnoseMissingXmlDocumentationIfRequired(enumType, enumType.Locations.FirstOrDefault());
 

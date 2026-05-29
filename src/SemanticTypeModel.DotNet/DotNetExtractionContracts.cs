@@ -71,6 +71,47 @@ public sealed record DotNetExtractionOptions
     /// Gets the generated provider type name.
     /// </summary>
     public string ProviderName { get; init; } = "AppSemanticTypeModel";
+
+    /// <summary>
+    /// Gets System.Text.Json projection options for extraction and generation.
+    /// </summary>
+    public SystemTextJsonExtractionOptions SystemTextJson { get; init; } = new();
+}
+
+/// <summary>
+/// Defines System.Text.Json-specific extraction and generation options without adding those concepts to the canonical model.
+/// </summary>
+public sealed record SystemTextJsonExtractionOptions
+{
+    /// <summary>
+    /// Gets a value indicating whether System.Text.Json attributes are imported as namespaced annotations.
+    /// </summary>
+    public bool ImportAttributes { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether JsonPropertyName is preserved as serialization-name metadata.
+    /// </summary>
+    public bool UseJsonPropertyNameAsSerializationName { get; init; } = true;
+
+    /// <summary>
+    /// Gets a value indicating whether JsonPropertyName also replaces the semantic property name.
+    /// </summary>
+    public bool UseJsonPropertyNameAsSemanticName { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether unsupported converter metadata is preserved as annotations.
+    /// </summary>
+    public bool PreserveUnsupportedConverterMetadata { get; init; } = true;
+
+    /// <summary>
+    /// Gets a value indicating whether the source generator should emit a JsonSerializerContext.
+    /// </summary>
+    public bool GenerateJsonSerializerContext { get; init; }
+
+    /// <summary>
+    /// Gets the generated JsonSerializerContext type name.
+    /// </summary>
+    public string? GeneratedContextName { get; init; }
 }
 
 /// <summary>

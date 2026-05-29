@@ -10,6 +10,7 @@ using SemanticTypeModel.JsonSchema;
 using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.JsonSchema.Import;
 using SemanticTypeModel.PowerBI;
+using SemanticTypeModel.SystemTextJson;
 using LegacyTypeSchemaModel = SemanticTypeModel.Abstractions.Model.TypeSchemaModel;
 
 namespace SemanticTypeModel.PackageSmoke.Tests;
@@ -74,6 +75,7 @@ internal sealed class PackageSmokeTests
         _ = typeof(SemanticFormatAttribute);
         _ = typeof(SemanticStringConstraintsAttribute);
         _ = typeof(SemanticAnnotationAttribute);
+        _ = SystemTextJsonAnnotationNames.PropertyName;
 
         _ = await Assert.That(nameof(SmokeCustomer)).IsEqualTo("SmokeCustomer");
     }

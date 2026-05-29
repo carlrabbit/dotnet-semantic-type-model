@@ -20,3 +20,7 @@ The code-first sample (`samples/code-first-authoring`) shows one canonical model
 ## Prerelease Status
 
 `0.1.0-alpha` is the initial prerelease. APIs, projection details, and package split may change before 1.0.
+
+## System.Text.Json Names
+
+Semantic member names identify model concepts. `System.Text.Json` property names identify serialization contracts and are preserved as `systemTextJson.propertyName` unless explicitly promoted.

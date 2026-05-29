@@ -97,3 +97,7 @@ Full reference: [diagnostics/stm3xxx.md](diagnostics/stm3xxx.md)
 | STM5025 | Warning  | Member shape unsupported           |
 
 Full reference: [diagnostics/stm5xxx.md](diagnostics/stm5xxx.md)
+
+## System.Text.Json Diagnostics
+
+`STJ001`-`STJ008` report stable System.Text.Json integration issues, including name conflicts, ignored required members, generated-context limitations, unsupported extension-data types, and polymorphism metadata that cannot be represented canonically.

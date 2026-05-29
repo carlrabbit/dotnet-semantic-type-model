@@ -10,6 +10,7 @@ Add the package(s) your scenario needs:
 dotnet add package SemanticTypeModel.JsonSchema --version 0.1.0-alpha
 dotnet add package SemanticTypeModel.JsonEditor --version 0.1.0-alpha
 dotnet add package SemanticTypeModel.DotNet --version 0.1.0-alpha
+dotnet add package SemanticTypeModel.SystemTextJson --version 0.1.0-alpha
 ```
 
 See full package guidance in [public-docs/packages.md](public-docs/packages.md).
@@ -47,6 +48,7 @@ Console.WriteLine(exported.Document.RootElement.GetRawText());
 - `SemanticTypeModel.JsonEditor`
 - `SemanticTypeModel.PowerBI`
 - `SemanticTypeModel.EFCore`
+- `SemanticTypeModel.SystemTextJson`
 
 ## Prerelease Notice
 
@@ -74,6 +76,7 @@ Run all samples:
 - [public-docs/diagnostics.md](public-docs/diagnostics.md)
 - [public-docs/guides/ef-core-projection.md](public-docs/guides/ef-core-projection.md)
 - [public-docs/guides/projection-capabilities.md](public-docs/guides/projection-capabilities.md)
+- [public-docs/guides/system-text-json.md](public-docs/guides/system-text-json.md)
 - [public-docs/versioning.md](public-docs/versioning.md)
 - [public-docs/release-notes.md](public-docs/release-notes.md)
 

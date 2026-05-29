@@ -30,3 +30,4 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - [M0017 - JSON Schema Projection Hardening for Code-First Models](milestones/m0017-json-schema-projection-hardening-for-code-first-models.md)
 - [M0018 - Diagnostics Documentation and Analyzer Experience](milestones/m0018-diagnostics-documentation-and-analyzer-experience.md)
 - [M0019 - Projection Capability Matrix and Compatibility Contracts](milestones/m0019-projection-capability-matrix-and-compatibility-contracts.md)
+- [M0020 - System.Text.Json Contract Integration](milestones/m0020-system-text-json-contract-integration.md)
