@@ -18,5 +18,6 @@
     <PackageReference Include="SemanticTypeModel.PowerBI" Version="$(PackageSmokeVersion)" />
     <PackageReference Include="SemanticTypeModel.EFCore" Version="$(PackageSmokeVersion)" />
     <PackageReference Include="SemanticTypeModel.Generators" Version="$(PackageSmokeVersion)" />
+    <PackageReference Include="SemanticTypeModel.SystemTextJson" Version="$(PackageSmokeVersion)" />
   </ItemGroup>
 </Project>

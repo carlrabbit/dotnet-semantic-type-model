@@ -51,6 +51,7 @@ NuGet package README sources are mapped per package:
 - `SemanticTypeModel.JsonEditor` -> `public-docs/nuget/SemanticTypeModel.JsonEditor.md`
 - `SemanticTypeModel.PowerBI` -> `public-docs/nuget/SemanticTypeModel.PowerBI.md`
 - `SemanticTypeModel.EFCore` -> `public-docs/nuget/SemanticTypeModel.EFCore.md`
+- `SemanticTypeModel.SystemTextJson` -> `public-docs/nuget/SemanticTypeModel.SystemTextJson.md`
 
 Package README-related release validation is performed by `./eng/public-docs.sh`.
 

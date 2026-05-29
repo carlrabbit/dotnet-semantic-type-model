@@ -32,3 +32,4 @@
 - Package boundaries may be refined before 1.0.
 - Known limitations are documented in release notes.
 - `SemanticTypeModel.JsonEditor` is currently produced from the `src/SemanticTypeModel.DependencyInjection` project.
+- `SemanticTypeModel.SystemTextJson` - System.Text.Json annotation import, generated-context opt-in, and runtime helper APIs.

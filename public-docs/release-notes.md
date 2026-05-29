@@ -44,3 +44,7 @@ Initial prerelease package publication milestone.
 ## Known Limitations
 
 - Public API surface and package split are still prerelease and may change before 1.0.
+
+## Unreleased
+
+- Added `SemanticTypeModel.SystemTextJson` package with attribute import annotations, opt-in generated contexts, runtime helper APIs, diagnostics, tests, and sample coverage.

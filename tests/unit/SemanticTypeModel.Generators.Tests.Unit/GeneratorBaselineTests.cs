@@ -620,6 +620,94 @@ public sealed class GeneratorBaselineTests
         _ = await Assert.That(diagnostics.Count(static diagnostic => diagnostic.Id == "STM5025")).IsEqualTo(1);
     }
 
+
+    [Test]
+    public async Task Fixture_18_system_text_json_attributes_should_import_as_annotations()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using System.Text.Json;
+            using System.Text.Json.Serialization;
+            using SemanticTypeModel.DotNet;
+
+            public sealed class CustomerIdConverter : JsonConverter<int>
+            {
+                public override int Read(ref Utf8JsonReader reader, System.Type typeToConvert, JsonSerializerOptions options) => reader.GetInt32();
+                public override void Write(Utf8JsonWriter writer, int value, JsonSerializerOptions options) => writer.WriteNumberValue(value);
+            }
+
+            [SemanticType]
+            public sealed class Customer
+            {
+                [SemanticName("Customer ID")]
+                [JsonPropertyName("customer_id")]
+                [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+                [JsonConverter(typeof(CustomerIdConverter))]
+                public int Id { get; init; }
+
+                [JsonIgnore]
+                public required string Secret { get; init; }
+
+                [JsonExtensionData]
+                public Dictionary<string, JsonElement> Extra { get; init; } = [];
+            }
+            """;
+
+        (TypeSchemaModel model, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(source, new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["SemanticTypeModelImportSystemTextJsonAttributes"] = "true",
+        });
+
+        ObjectShape customer = (ObjectShape)model.GetShape("global::Customer");
+        PropertyShape id = customer.Properties.Single(static property => property.Annotations.Any(static annotation => annotation.Key == "systemTextJson.propertyName" && annotation.Value == "customer_id"));
+        PropertyShape secret = customer.Properties.Single(static property => property.Name == "Secret");
+        PropertyShape extra = customer.Properties.Single(static property => property.Name == "Extra");
+
+        _ = await Assert.That(id.Annotations.Any(static annotation => annotation.Key == "schema.title" && annotation.Value == "Customer ID")).IsTrue();
+        _ = await Assert.That(id.Annotations.Any(static annotation => annotation.Key == "systemTextJson.propertyName" && annotation.Value == "customer_id")).IsTrue();
+        _ = await Assert.That(id.Annotations.Any(static annotation => annotation.Key == "systemTextJson.numberHandling")).IsTrue();
+        _ = await Assert.That(id.Annotations.Any(static annotation => annotation.Key == "systemTextJson.converter")).IsTrue();
+        _ = await Assert.That(secret.Annotations.Any(static annotation => annotation.Key == "systemTextJson.ignore" && annotation.Value == "true")).IsTrue();
+        _ = await Assert.That(extra.Annotations.Any(static annotation => annotation.Key == "systemTextJson.extensionData" && annotation.Value == "true")).IsTrue();
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "STJ003")).IsTrue();
+    }
+
+    [Test]
+    public async Task Fixture_19_system_text_json_name_policy_should_be_opt_in()
+    {
+        const string source = """
+            using System.Text.Json.Serialization;
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType]
+            public sealed class Customer
+            {
+                [SemanticName("Customer ID")]
+                [JsonPropertyName("customer_id")]
+                public int Id { get; init; }
+            }
+            """;
+
+        (TypeSchemaModel defaultModel, IReadOnlyList<Diagnostic> defaultDiagnostics) = GenerateModel(source, new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["SemanticTypeModelImportSystemTextJsonAttributes"] = "true",
+        });
+
+        (TypeSchemaModel promotedModel, IReadOnlyList<Diagnostic> promotedDiagnostics) = GenerateModel(source, new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["SemanticTypeModelImportSystemTextJsonAttributes"] = "true",
+            ["SemanticTypeModelUseJsonPropertyNameAsSemanticName"] = "true",
+        });
+
+        ObjectShape defaultCustomer = (ObjectShape)defaultModel.GetShape("global::Customer");
+        ObjectShape promotedCustomer = (ObjectShape)promotedModel.GetShape("global::Customer");
+
+        _ = await Assert.That(defaultCustomer.Properties.Any(static property => property.Name == "Customer ID")).IsTrue();
+        _ = await Assert.That(promotedCustomer.Properties.Any(static property => property.Name == "customer_id")).IsTrue();
+        _ = await Assert.That(defaultDiagnostics.Any(static diagnostic => diagnostic.Id.StartsWith("STJ", StringComparison.Ordinal))).IsFalse();
+        _ = await Assert.That(promotedCustomer.Properties.Single(static property => property.Name == "customer_id").Annotations.Any(static annotation => annotation.Key == "systemTextJson.propertyName" && annotation.Value == "customer_id")).IsTrue();
+    }
+
     private static (TypeSchemaModel Model, IReadOnlyList<Diagnostic> Diagnostics) GenerateModel(
         string source,
         IReadOnlyDictionary<string, string>? globalOptions = null,

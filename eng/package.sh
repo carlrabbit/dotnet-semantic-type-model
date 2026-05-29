@@ -25,6 +25,7 @@ src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj
 src/SemanticTypeModel.DependencyInjection/SemanticTypeModel.DependencyInjection.csproj
 src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj
 src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj
+src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj
 "
 
 for project in $projects; do

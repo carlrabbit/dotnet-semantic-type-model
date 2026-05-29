@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SemanticTypeModel.SystemTextJson</RootNamespace>
+    <PackageId>SemanticTypeModel.SystemTextJson</PackageId>
+    <Title>SemanticTypeModel.SystemTextJson</Title>
+    <Description>System.Text.Json contract integration, annotations, extraction options, and runtime helpers for SemanticTypeModel.</Description>
+    <Authors>SemanticTypeModel Contributors</Authors>
+    <RepositoryUrl>https://github.com/carlrabbit/dotnet-semantic-type-model</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>semantic-type-model;system-text-json;json;serialization</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
+    <ProjectReference Include="../SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../public-docs/nuget/SemanticTypeModel.SystemTextJson.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+</Project>
