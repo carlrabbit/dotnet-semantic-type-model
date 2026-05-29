@@ -31,3 +31,4 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - [M0018 - Diagnostics Documentation and Analyzer Experience](milestones/m0018-diagnostics-documentation-and-analyzer-experience.md)
 - [M0019 - Projection Capability Matrix and Compatibility Contracts](milestones/m0019-projection-capability-matrix-and-compatibility-contracts.md)
 - [M0020 - System.Text.Json Contract Integration](milestones/m0020-system-text-json-contract-integration.md)
+- [M0021 - Power BI Projection Hardening](milestones/m0021-power-bi-projection-hardening.md)

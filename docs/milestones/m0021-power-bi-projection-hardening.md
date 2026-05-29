@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft milestone content document.
+Implemented in this repository. The milestone is tracked by issue #52 and hardens the Power BI projection package while preserving the package boundary that no Power BI service publishing is performed.
 
 ## Goal
 
@@ -65,8 +65,8 @@ Before implementation, read:
 - `docs/specs/dotnet-type-system-extraction.md`
 - `docs/specs/dotnet-attribute-and-convention-model.md`
 - `docs/specs/runtime-api-and-di-integration.md`
-- `docs/specs/projection-capability-matrix.md`, create if missing
-- `docs/specs/power-bi-projection.md`, create if missing
+- `docs/specs/type-model-projection-capabilities.md`
+- `docs/specs/type-model-powerbi-tom-projection.md`
 - `docs/milestones/m0014-semantic-type-annotation-usability.md`
 - `docs/milestones/m0016-end-to-end-code-first-schema-authoring-samples.md`
 - `docs/milestones/m0018-diagnostics-documentation-and-analyzer-experience.md`

@@ -14,44 +14,88 @@ public sealed record PowerBiProjectionOptions
     public static PowerBiProjectionOptions Default { get; } = new();
 
     /// <summary>
-    /// Gets a value indicating whether unannotated object types can become tabular tables.
+    /// Gets or sets the default naming policy for tables and columns.
     /// </summary>
-    public bool ProjectUnannotatedObjectsAsTables { get; init; }
+    public PowerBiNamingPolicy NamingPolicy { get; set; } = PowerBiNamingPolicy.DisplayName;
 
     /// <summary>
-    /// Gets how value objects are projected when encountered as nested properties.
+    /// Gets or sets the default role for tables without explicit role metadata.
     /// </summary>
-    public ValueObjectProjectionMode ValueObjectProjectionMode { get; init; } = ValueObjectProjectionMode.Diagnose;
+    public PowerBiTableRole DefaultTableRole { get; set; } = PowerBiTableRole.Unknown;
 
     /// <summary>
-    /// Gets how arrays, dictionaries, unions, and unsupported nested objects are handled.
+    /// Gets or sets the default numeric summarization behavior for non-key numeric columns.
     /// </summary>
-    public UnsupportedTabularShapeBehavior UnsupportedShapeBehavior { get; init; } = UnsupportedTabularShapeBehavior.Diagnose;
+    public PowerBiSummarization DefaultNumericSummarization { get; set; } = PowerBiSummarization.Sum;
 
     /// <summary>
-    /// Gets the enum projection behavior.
+    /// Gets or sets a value indicating whether key columns are hidden by default.
     /// </summary>
-    public EnumProjectionMode EnumProjectionMode { get; init; } = EnumProjectionMode.Name;
+    public bool HideTechnicalKeys { get; set; }
 
     /// <summary>
-    /// Gets numeric projection behavior for general number scalars.
+    /// Gets or sets a value indicating whether relationship foreign-key columns are hidden by default.
     /// </summary>
-    public NumericProjectionMode NumericProjectionMode { get; init; } = NumericProjectionMode.DecimalWhenDefined;
+    public bool HideForeignKeys { get; set; }
 
     /// <summary>
-    /// Gets a value indicating whether hidden columns are included in projected output.
+    /// Gets or sets a value indicating whether unsupported annotations remain on projected metadata.
     /// </summary>
-    public bool IncludeHiddenColumns { get; init; } = true;
+    public bool IncludeUnsupportedAnnotations { get; set; } = true;
 
     /// <summary>
-    /// Gets behavior when projected names collide.
+    /// Gets or sets a value indicating whether incomplete relationships produce errors instead of warnings.
     /// </summary>
-    public NameCollisionBehavior NameCollisionBehavior { get; init; } = NameCollisionBehavior.Diagnose;
+    public bool TreatRelationshipsAsRequired { get; set; }
 
     /// <summary>
-    /// Gets a value indicating whether unsupported non-DAX computed expressions are preserved as measures.
+    /// Gets or sets a value indicating whether unannotated object types can become tabular tables.
     /// </summary>
-    public bool PreserveUnsupportedMeasureExpressions { get; init; }
+    public bool ProjectUnannotatedObjectsAsTables { get; set; }
+
+    /// <summary>
+    /// Gets or sets how value objects are projected when encountered as nested properties.
+    /// </summary>
+    public ValueObjectProjectionMode ValueObjectProjectionMode { get; set; } = ValueObjectProjectionMode.Diagnose;
+
+    /// <summary>
+    /// Gets or sets how arrays, dictionaries, unions, and unsupported nested objects are handled.
+    /// </summary>
+    public UnsupportedTabularShapeBehavior UnsupportedShapeBehavior { get; set; } = UnsupportedTabularShapeBehavior.Diagnose;
+
+    /// <summary>
+    /// Gets or sets the enum projection behavior.
+    /// </summary>
+    public EnumProjectionMode EnumProjectionMode { get; set; } = EnumProjectionMode.Name;
+
+    /// <summary>
+    /// Gets or sets numeric projection behavior for general number scalars.
+    /// </summary>
+    public NumericProjectionMode NumericProjectionMode { get; set; } = NumericProjectionMode.DecimalWhenDefined;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether hidden columns are included in projected output.
+    /// </summary>
+    public bool IncludeHiddenColumns { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets behavior when projected names collide.
+    /// </summary>
+    public NameCollisionBehavior NameCollisionBehavior { get; set; } = NameCollisionBehavior.Diagnose;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether unsupported non-DAX computed expressions are preserved as measures.
+    /// </summary>
+    public bool PreserveUnsupportedMeasureExpressions { get; set; }
+
+    /// <summary>
+    /// Configures table and column naming policy.
+    /// </summary>
+    /// <param name="policy">The naming policy.</param>
+    public void UseNamingPolicy(PowerBiNamingPolicy policy)
+    {
+        NamingPolicy = policy;
+    }
 }
 
 /// <summary>
@@ -59,19 +103,13 @@ public sealed record PowerBiProjectionOptions
 /// </summary>
 public enum ValueObjectProjectionMode
 {
-    /// <summary>
-    /// Emit diagnostics and skip projection.
-    /// </summary>
+    /// <summary>Emit diagnostics and skip projection.</summary>
     Diagnose,
 
-    /// <summary>
-    /// Flatten nested scalar and enum properties into parent columns.
-    /// </summary>
+    /// <summary>Flatten nested scalar and enum properties into parent columns.</summary>
     Flatten,
 
-    /// <summary>
-    /// Serialize the nested value object to a JSON/string column.
-    /// </summary>
+    /// <summary>Serialize the nested value object to a JSON/string column.</summary>
     SerializeJson,
 }
 
@@ -80,19 +118,13 @@ public enum ValueObjectProjectionMode
 /// </summary>
 public enum UnsupportedTabularShapeBehavior
 {
-    /// <summary>
-    /// Emit diagnostics and skip projection.
-    /// </summary>
+    /// <summary>Emit diagnostics and skip projection.</summary>
     Diagnose,
 
-    /// <summary>
-    /// Skip projection while emitting a warning diagnostic.
-    /// </summary>
+    /// <summary>Skip projection while emitting a warning diagnostic.</summary>
     IgnoreWithWarning,
 
-    /// <summary>
-    /// Serialize unsupported shapes into JSON/string columns.
-    /// </summary>
+    /// <summary>Serialize unsupported shapes into JSON/string columns.</summary>
     SerializeJson,
 }
 
@@ -101,19 +133,13 @@ public enum UnsupportedTabularShapeBehavior
 /// </summary>
 public enum EnumProjectionMode
 {
-    /// <summary>
-    /// Store enum names.
-    /// </summary>
+    /// <summary>Store enum names.</summary>
     Name,
 
-    /// <summary>
-    /// Prefer enum display names when available.
-    /// </summary>
+    /// <summary>Prefer enum display names when available.</summary>
     DisplayName,
 
-    /// <summary>
-    /// Use numeric storage when enum metadata supports numeric backing.
-    /// </summary>
+    /// <summary>Use numeric storage when enum metadata supports numeric backing.</summary>
     NumericWhenAvailable,
 }
 
@@ -122,14 +148,10 @@ public enum EnumProjectionMode
 /// </summary>
 public enum NumericProjectionMode
 {
-    /// <summary>
-    /// Map number scalars to double.
-    /// </summary>
+    /// <summary>Map number scalars to double.</summary>
     Double,
 
-    /// <summary>
-    /// Map number scalars with precision metadata to decimal; otherwise double.
-    /// </summary>
+    /// <summary>Map number scalars with precision metadata to decimal; otherwise double.</summary>
     DecimalWhenDefined,
 }
 
@@ -138,14 +160,10 @@ public enum NumericProjectionMode
 /// </summary>
 public enum NameCollisionBehavior
 {
-    /// <summary>
-    /// Emit diagnostics and skip duplicates.
-    /// </summary>
+    /// <summary>Emit diagnostics and skip duplicates.</summary>
     Diagnose,
 
-    /// <summary>
-    /// Deterministically append numeric suffixes.
-    /// </summary>
+    /// <summary>Deterministically append numeric suffixes.</summary>
     Suffix,
 }
 #pragma warning restore CA1720

@@ -347,6 +347,102 @@ public sealed class PowerBiTabularProjectionTests
         _ = await Assert.That(suffixed.Tables.Single().Measures.Count(static measure => measure.Name.StartsWith("Revenue", StringComparison.Ordinal))).IsEqualTo(2);
     }
 
+    [Test]
+    public async Task Hardened_entry_point_should_apply_visibility_summarization_and_source_metadata()
+    {
+        ScalarTypeDefinition intType = Scalar("Int64", ScalarKind.Integer);
+        ScalarTypeDefinition decimalType = Scalar("Amount", ScalarKind.Decimal);
+        var fact = new ObjectTypeDefinition
+        {
+            Id = new TypeId("FactSales"),
+            Name = "FactSales",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = Annotation((PowerBiAnnotationNames.TableRole, "Fact")),
+            Semantics = new EntitySemantics { Role = EntityRole.Fact },
+            Properties =
+            [
+                Property("salesKey", "FactSalesKey", intType.Id, true, false),
+                Property("amount", "FactAmount", decimalType.Id, true, false),
+            ],
+            Keys =
+            [
+                new KeyDefinition
+                {
+                    Name = "PK_FactSales",
+                    Kind = KeyKind.Primary,
+                    Properties = [new PropertyRef(new PropertyId("FactSalesKey"))],
+                    Annotations = EmptyAnnotations,
+                },
+            ],
+            Relationships = [],
+        };
+
+        PowerBiProjectionModel projection = BuildModel(fact, intType, decimalType).ToPowerBiModel(options =>
+        {
+            options.HideTechnicalKeys = true;
+            options.DefaultNumericSummarization = PowerBiSummarization.Average;
+        });
+
+        TabularTableDefinition table = projection.Tables.Single();
+        TabularColumnDefinition key = table.Columns.Single(static column => column.Name == "salesKey");
+        TabularColumnDefinition amount = table.Columns.Single(static column => column.Name == "amount");
+
+        _ = await Assert.That(table.Role).IsEqualTo(PowerBiTableRole.Fact);
+        _ = await Assert.That(table.SourceTypeId).IsEqualTo(new TypeId("FactSales"));
+        _ = await Assert.That(key.IsHidden).IsTrue();
+        _ = await Assert.That(key.Summarization).IsEqualTo(PowerBiSummarization.None);
+        _ = await Assert.That(amount.Summarization).IsEqualTo(PowerBiSummarization.Average);
+        _ = await Assert.That(amount.SourcePropertyId).IsEqualTo(new PropertyId("FactAmount"));
+    }
+
+    [Test]
+    public async Task Composite_relationship_should_emit_ambiguity_diagnostic()
+    {
+        ScalarTypeDefinition intType = Scalar("Int64", ScalarKind.Integer);
+        var dimension = new ObjectTypeDefinition
+        {
+            Id = new TypeId("DimCustomer"),
+            Name = "DimCustomer",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = Annotation((PowerBiAnnotationNames.TableRole, "Dimension")),
+            Semantics = new EntitySemantics { Role = EntityRole.Dimension },
+            Properties = [Property("customerKey", "CustomerKey", intType.Id, true, false), Property("tenantKey", "DimTenantKey", intType.Id, true, false)],
+            Keys = [],
+            Relationships = [],
+        };
+        var fact = new ObjectTypeDefinition
+        {
+            Id = new TypeId("FactSales"),
+            Name = "FactSales",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = Annotation((PowerBiAnnotationNames.TableRole, "Fact")),
+            Semantics = new EntitySemantics { Role = EntityRole.Fact },
+            Properties = [Property("customerKey", "FactCustomerKey", intType.Id, true, false), Property("tenantKey", "FactTenantKey", intType.Id, true, false)],
+            Keys = [],
+            Relationships =
+            [
+                new RelationshipDefinition
+                {
+                    Id = new RelationshipId("FactSales_DimCustomer"),
+                    PrincipalType = new TypeRef(dimension.Id),
+                    DependentType = new TypeRef(new TypeId("FactSales")),
+                    PrincipalProperties = [new PropertyRef(new PropertyId("CustomerKey")), new PropertyRef(new PropertyId("DimTenantKey"))],
+                    DependentProperties = [new PropertyRef(new PropertyId("FactCustomerKey")), new PropertyRef(new PropertyId("FactTenantKey"))],
+                    Cardinality = RelationshipCardinality.ManyToOne,
+                    Annotations = EmptyAnnotations,
+                },
+            ],
+        };
+
+        TabularModelDefinition projection = Project(BuildModel(dimension, fact, intType));
+
+        _ = await Assert.That(projection.Relationships).IsEmpty();
+        _ = await Assert.That(projection.Diagnostics.Any(static diagnostic => diagnostic.Code == "POWERBI_AMBIGUOUS_RELATIONSHIP_ENDPOINTS")).IsTrue();
+    }
+
     private static TabularModelDefinition Project(TypeSchemaModel model, PowerBiProjectionOptions? options = null)
     {
         var projection = new PowerBiTabularProjection(options);

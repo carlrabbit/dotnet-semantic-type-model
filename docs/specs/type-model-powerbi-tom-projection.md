@@ -218,3 +218,23 @@ Short-running tests must cover at least:
 4. value object mode fixture;
 5. unsupported shape fixture;
 6. name collision fixture.
+
+## M0021 Hardened Projection Surface
+
+M0021 promotes the Power BI projection from prototype behavior to a supported 1.0-candidate projection surface while preserving the boundary that the package does not publish to the Power BI service.
+
+### Public entry points
+
+Consumers may call `PowerBiProjection.Project(model, options => { ... })` or `model.ToPowerBiModel(options => { ... })` to receive a `PowerBiProjectionModel`. Existing `PowerBiTabularProjection` and `TabularModelDefinition` APIs remain available for preview compatibility.
+
+### Hardened metadata
+
+Projected tables carry role, display name, hidden state, source type id, description, display folder, and annotations. Projected columns carry display name, type, nullability, key metadata, hidden state, summarization, format string, source property id, and annotations. Relationships carry endpoint names, cardinality, active state, direction, and source relationship id. Measures are projected only from explicit computed members or measure annotations; the projection does not invent business measures.
+
+### Options
+
+`PowerBiProjectionOptions` controls naming policy, default table role, enum mode, numeric type mode, default numeric summarization, technical-key hiding, foreign-key hiding, hidden-column inclusion, unsupported annotation preservation, unsupported shape handling, value-object handling, relationship strictness, name collision behavior, and unsupported expression preservation.
+
+### Diagnostics
+
+Ambiguous composite relationship endpoints emit `POWERBI_AMBIGUOUS_RELATIONSHIP_ENDPOINTS`. Invalid table roles, summarization values, relationship directions, and annotation values are diagnosable. Unsupported shapes and lossy scalar mappings continue to emit stable `POWERBI_*` diagnostics.

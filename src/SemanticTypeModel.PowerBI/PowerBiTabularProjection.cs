@@ -59,12 +59,12 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
 
             var desiredName = ResolveName(
                 objectType.Annotations,
-                objectType.DisplayName,
+                _options.NamingPolicy == PowerBiNamingPolicy.DisplayName ? objectType.DisplayName : null,
                 objectType.Name,
                 ModelPath.ForType(objectType.Id),
                 diagnostics,
                 "tom.tableName",
-                "powerBi.tableName");
+                PowerBiAnnotationNames.TableName);
 
             var resolvedTableName = ResolveUniqueName(
                 desiredName,
@@ -77,7 +77,8 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
                 continue;
             }
 
-            projectedTables.Add(ProjectTable(model, objectType, resolvedTableName, diagnostics));
+            IReadOnlySet<PropertyId> foreignKeyPropertyIds = GetForeignKeyPropertyIds(objectType);
+            projectedTables.Add(ProjectTable(model, objectType, resolvedTableName, foreignKeyPropertyIds, diagnostics));
         }
 
         IReadOnlyDictionary<TypeId, ProjectedTableInfo> tablesByTypeId = projectedTables.ToDictionary(static table => table.SourceTypeId);
@@ -120,7 +121,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
 
     private bool ShouldProjectAsTable(ObjectTypeDefinition objectType)
     {
-        var hasExplicitTableRole = TryGetStringAnnotation(objectType.Annotations, "powerBi.tableRole", out _);
+        var hasExplicitTableRole = TryGetStringAnnotation(objectType.Annotations, PowerBiAnnotationNames.TableRole, out _);
         var isValueObject = objectType.Semantics.IsValueObject || objectType.Semantics.Role == EntityRole.ValueObject;
         if (hasExplicitTableRole)
         {
@@ -144,6 +145,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         TypeSchemaModel model,
         ObjectTypeDefinition objectType,
         string tableName,
+        IReadOnlySet<PropertyId> foreignKeyPropertyIds,
         IList<SchemaDiagnostic> diagnostics)
     {
         var tablePath = ModelPath.ForType(objectType.Id);
@@ -154,7 +156,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
 
         foreach (PropertyDefinition property in objectType.Properties)
         {
-            foreach (TabularColumnDefinition projectedColumn in ProjectProperty(model, objectType, property, keyPropertyIds, diagnostics))
+            foreach (TabularColumnDefinition projectedColumn in ProjectProperty(model, objectType, property, keyPropertyIds, foreignKeyPropertyIds, diagnostics))
             {
                 var resolvedColumnName = ResolveUniqueName(
                     projectedColumn.Name,
@@ -181,7 +183,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
             objectType.Annotations,
             tablePath,
             diagnostics,
-            "powerBi.displayFolder",
+            PowerBiAnnotationNames.DisplayFolder,
             "ui.category");
 
         return new ProjectedTableInfo
@@ -192,8 +194,12 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
                 Name = tableName,
                 Columns = columns,
                 Measures = measures,
+                DisplayName = objectType.DisplayName,
                 Description = objectType.Description,
                 DisplayFolder = displayFolder,
+                Role = ResolveTableRole(objectType, tablePath, diagnostics),
+                IsHidden = ResolveBooleanAnnotation(objectType.Annotations, tablePath, diagnostics, PowerBiAnnotationNames.Hidden, "powerBi.isHidden") ?? false,
+                SourceTypeId = objectType.Id,
                 Annotations = objectType.Annotations,
             },
             KeyPropertyIds = keyPropertyIds,
@@ -206,6 +212,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         ObjectTypeDefinition owner,
         PropertyDefinition property,
         IReadOnlySet<PropertyId> keyPropertyIds,
+        IReadOnlySet<PropertyId> foreignKeyPropertyIds,
         IList<SchemaDiagnostic> diagnostics)
     {
         var propertyPath = ModelPath.ForProperty(owner.Id, property.Name);
@@ -222,14 +229,14 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
 
         var columnName = ResolveName(
             property.Annotations,
-            property.DisplayName,
+            _options.NamingPolicy == PowerBiNamingPolicy.DisplayName ? property.DisplayName : null,
             property.Name,
             propertyPath,
             diagnostics,
             "tom.columnName",
-            "powerBi.columnName");
+            PowerBiAnnotationNames.ColumnName);
 
-        var isHidden = ResolveBooleanAnnotation(property.Annotations, propertyPath, diagnostics, "powerBi.isHidden") ?? false;
+        var isHidden = ResolveBooleanAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.Hidden, "powerBi.isHidden") ?? false;
         if (isHidden && !_options.IncludeHiddenColumns)
         {
             return [];
@@ -237,14 +244,22 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
 
         var isNullable = property.Cardinality.AllowsNull || propertyType.Nullability.AllowsNull;
         var isKey = keyPropertyIds.Contains(property.Id);
-        var dataCategory = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, "powerBi.dataCategory");
-        var formatString = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, "powerBi.formatString");
+        var isForeignKey = foreignKeyPropertyIds.Contains(property.Id);
+        isHidden = isHidden || (isKey && _options.HideTechnicalKeys) || (isForeignKey && _options.HideForeignKeys);
+        if (isHidden && !_options.IncludeHiddenColumns)
+        {
+            return [];
+        }
+
+        var dataCategory = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.DataCategory);
+        var formatString = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.FormatString);
+        PowerBiSummarization summarization = ResolveSummarization(property.Annotations, propertyPath, isKey, propertyType, diagnostics);
 
         if (propertyType is ScalarTypeDefinition scalar)
         {
             return
             [
-                CreateColumn(columnName, MapScalarDataType(scalar, propertyPath, diagnostics), isNullable, isKey, isHidden, property.Description, dataCategory, formatString, property.Annotations),
+                CreateColumn(columnName, property.DisplayName, MapScalarDataType(scalar, propertyPath, diagnostics), isNullable, isKey, isHidden, property.Description, summarization, property.Id, dataCategory, formatString, property.Annotations),
             ];
         }
 
@@ -252,7 +267,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         {
             return
             [
-                CreateColumn(columnName, MapEnumDataType(enumType), isNullable, isKey, isHidden, property.Description, dataCategory, formatString, property.Annotations),
+                CreateColumn(columnName, property.DisplayName, MapEnumDataType(enumType), isNullable, isKey, isHidden, property.Description, summarization, property.Id, dataCategory, formatString, property.Annotations),
             ];
         }
 
@@ -317,13 +332,16 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
             [
                 CreateColumn(
                     property.Name,
+                    property.DisplayName,
                     TabularDataType.String,
                     property.Cardinality.AllowsNull || valueObjectType.Nullability.AllowsNull,
                     isKey,
                     isHidden,
                     property.Description,
-                    ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, "powerBi.dataCategory"),
-                    ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, "powerBi.formatString"),
+                    PowerBiSummarization.None,
+                    property.Id,
+                    ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.DataCategory),
+                    ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.FormatString),
                     property.Annotations),
             ];
         }
@@ -392,13 +410,16 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         [
             CreateColumn(
                 flattenedName,
+                nestedProperty.DisplayName,
                 TabularDataType.String,
                 nestedProperty.Cardinality.AllowsNull,
                 false,
                 false,
                 nestedProperty.Description,
-                ResolveStringAnnotation(nestedProperty.Annotations, nestedPath, diagnostics, "powerBi.dataCategory"),
-                ResolveStringAnnotation(nestedProperty.Annotations, nestedPath, diagnostics, "powerBi.formatString"),
+                PowerBiSummarization.None,
+                nestedProperty.Id,
+                ResolveStringAnnotation(nestedProperty.Annotations, nestedPath, diagnostics, PowerBiAnnotationNames.DataCategory),
+                ResolveStringAnnotation(nestedProperty.Annotations, nestedPath, diagnostics, PowerBiAnnotationNames.FormatString),
                 nestedProperty.Annotations),
         ];
     }
@@ -419,7 +440,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
                 propertyPath);
             return
             [
-                CreateColumn(property.Name, TabularDataType.String, true, false, false, property.Description, null, null, property.Annotations),
+                CreateColumn(property.Name, property.DisplayName, TabularDataType.String, true, false, false, property.Description, PowerBiSummarization.None, property.Id, null, null, property.Annotations),
             ];
         }
 
@@ -445,11 +466,14 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
 
     private static TabularColumnDefinition CreateColumn(
         string name,
+        string? displayName,
         TabularDataType dataType,
         bool isNullable,
         bool isKey,
         bool isHidden,
         string? description,
+        PowerBiSummarization summarization,
+        PropertyId? sourcePropertyId,
         string? dataCategory,
         string? formatString,
         AnnotationBag annotations)
@@ -457,11 +481,14 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         return new TabularColumnDefinition
         {
             Name = name,
+            DisplayName = displayName,
             DataType = dataType,
             IsNullable = isNullable,
             IsKey = isKey,
             IsHidden = isHidden,
             Description = description,
+            Summarization = summarization,
+            SourcePropertyId = sourcePropertyId,
             DataCategory = dataCategory,
             FormatString = formatString,
             Annotations = annotations,
@@ -620,9 +647,20 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
                 {
                     Report(
                         diagnostics,
-                        SchemaDiagnosticSeverity.Warning,
+                        RelationshipDiagnosticSeverity(),
                         "POWERBI_RELATIONSHIP_ENDPOINT_PROPERTY_MISSING",
                         $"Relationship '{relationship.Id.Value}' does not include both endpoint properties.",
+                        relationshipPath);
+                    continue;
+                }
+
+                if (relationship.DependentProperties.Count > 1 || relationship.PrincipalProperties.Count > 1)
+                {
+                    Report(
+                        diagnostics,
+                        SchemaDiagnosticSeverity.Warning,
+                        "POWERBI_AMBIGUOUS_RELATIONSHIP_ENDPOINTS",
+                        $"Relationship '{relationship.Id.Value}' has composite or ambiguous endpoints and was not projected.",
                         relationshipPath);
                     continue;
                 }
@@ -668,14 +706,16 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
                     relationship.Id.Value,
                     relationshipPath,
                     diagnostics,
-                    "tom.relationshipName");
+                    "tom.relationshipName",
+                    PowerBiAnnotationNames.RelationshipName);
                 var resolvedName = ResolveUniqueName(desiredName, relationshipNameSet, "relationship", relationshipPath, diagnostics);
                 if (resolvedName is null)
                 {
                     continue;
                 }
 
-                var isActive = ResolveBooleanAnnotation(relationship.Annotations, relationshipPath, diagnostics, "powerBi.isActive") ?? true;
+                var isActive = ResolveBooleanAnnotation(relationship.Annotations, relationshipPath, diagnostics, PowerBiAnnotationNames.RelationshipActive) ?? true;
+                PowerBiRelationshipDirection direction = ResolveRelationshipDirection(relationship.Annotations, relationshipPath, diagnostics);
                 projectedRelationships.Add(new TabularRelationshipDefinition
                 {
                     Name = resolvedName,
@@ -685,6 +725,8 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
                     ToColumn = toColumn,
                     Cardinality = MapCardinality(relationship.Cardinality),
                     IsActive = isActive,
+                    Direction = direction,
+                    SourceRelationshipId = relationship.Id,
                 });
             }
         }
@@ -834,30 +876,116 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         return null;
     }
 
-    private static bool? ResolveBooleanAnnotation(AnnotationBag annotations, string modelPath, IList<SchemaDiagnostic> diagnostics, string key)
+    private static bool? ResolveBooleanAnnotation(AnnotationBag annotations, string modelPath, IList<SchemaDiagnostic> diagnostics, params string[] keys)
     {
-        if (!TryGetAnnotationValue(annotations, key, out var raw))
+        foreach (var key in keys)
         {
-            return null;
+            if (!TryGetAnnotationValue(annotations, key, out var raw))
+            {
+                continue;
+            }
+
+            if (raw is bool flag)
+            {
+                return flag;
+            }
+
+            if (raw is string text && bool.TryParse(text, out var parsed))
+            {
+                return parsed;
+            }
+
+            Report(
+                diagnostics,
+                SchemaDiagnosticSeverity.Warning,
+                "POWERBI_INVALID_ANNOTATION_VALUE",
+                $"Annotation '{key}' must be a boolean value.",
+                modelPath);
         }
 
-        if (raw is bool flag)
-        {
-            return flag;
-        }
-
-        if (raw is string text && bool.TryParse(text, out var parsed))
-        {
-            return parsed;
-        }
-
-        Report(
-            diagnostics,
-            SchemaDiagnosticSeverity.Warning,
-            "POWERBI_INVALID_ANNOTATION_VALUE",
-            $"Annotation '{key}' must be a boolean value.",
-            modelPath);
         return null;
+    }
+
+    private static IReadOnlySet<PropertyId> GetForeignKeyPropertyIds(ObjectTypeDefinition objectType)
+    {
+        return objectType.Relationships
+            .SelectMany(static relationship => relationship.DependentProperties)
+            .Select(static property => property.Id)
+            .ToHashSet();
+    }
+
+    private PowerBiTableRole ResolveTableRole(ObjectTypeDefinition objectType, string modelPath, IList<SchemaDiagnostic> diagnostics)
+    {
+        if (TryGetStringAnnotation(objectType.Annotations, PowerBiAnnotationNames.TableRole, out var roleText) &&
+            Enum.TryParse(roleText, ignoreCase: true, out PowerBiTableRole annotationRole))
+        {
+            return annotationRole;
+        }
+
+        if (!string.IsNullOrWhiteSpace(roleText))
+        {
+            Report(diagnostics, SchemaDiagnosticSeverity.Warning, "POWERBI_INVALID_TABLE_ROLE", $"Annotation '{PowerBiAnnotationNames.TableRole}' has unsupported table role '{roleText}'.", modelPath);
+        }
+
+        return objectType.Semantics.Role switch
+        {
+            EntityRole.Fact => PowerBiTableRole.Fact,
+            EntityRole.Dimension or EntityRole.Lookup => PowerBiTableRole.Dimension,
+            EntityRole.Entity => _options.DefaultTableRole,
+            _ => _options.DefaultTableRole,
+        };
+    }
+
+    private PowerBiSummarization ResolveSummarization(
+        AnnotationBag annotations,
+        string modelPath,
+        bool isKey,
+        TypeDefinition propertyType,
+        IList<SchemaDiagnostic> diagnostics)
+    {
+        if (TryGetStringAnnotation(annotations, PowerBiAnnotationNames.Summarization, out var summarizationText))
+        {
+            if (Enum.TryParse(summarizationText, ignoreCase: true, out PowerBiSummarization parsed))
+            {
+                return parsed;
+            }
+
+            Report(diagnostics, SchemaDiagnosticSeverity.Warning, "POWERBI_INVALID_SUMMARIZATION", $"Annotation '{PowerBiAnnotationNames.Summarization}' has unsupported summarization '{summarizationText}'.", modelPath);
+        }
+
+        if (isKey)
+        {
+            return PowerBiSummarization.None;
+        }
+
+        return IsNumericType(propertyType) ? _options.DefaultNumericSummarization : PowerBiSummarization.None;
+    }
+
+    private static bool IsNumericType(TypeDefinition propertyType)
+    {
+        return propertyType is ScalarTypeDefinition { ScalarKind: ScalarKind.Integer or ScalarKind.Number or ScalarKind.Decimal }
+            or EnumTypeDefinition { StorageKind: EnumStorageKind.Integer or EnumStorageKind.Number };
+    }
+
+    private static PowerBiRelationshipDirection ResolveRelationshipDirection(AnnotationBag annotations, string modelPath, IList<SchemaDiagnostic> diagnostics)
+    {
+        if (!TryGetStringAnnotation(annotations, "powerBi.relationshipDirection", out var directionText))
+        {
+            return PowerBiRelationshipDirection.Single;
+        }
+
+        if (Enum.TryParse(directionText, ignoreCase: true, out PowerBiRelationshipDirection direction))
+        {
+            return direction;
+        }
+
+        Report(diagnostics, SchemaDiagnosticSeverity.Warning, "POWERBI_INVALID_RELATIONSHIP_DIRECTION", $"Annotation 'powerBi.relationshipDirection' has unsupported relationship direction '{directionText}'.", modelPath);
+        return PowerBiRelationshipDirection.Single;
+    }
+
+    private SchemaDiagnosticSeverity RelationshipDiagnosticSeverity()
+    {
+        return _options.TreatRelationshipsAsRequired ? SchemaDiagnosticSeverity.Error : SchemaDiagnosticSeverity.Warning;
     }
 
     private sealed record ProjectedTableInfo
