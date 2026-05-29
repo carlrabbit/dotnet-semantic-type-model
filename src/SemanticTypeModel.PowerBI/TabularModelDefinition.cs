@@ -42,6 +42,26 @@ public sealed record TabularTableDefinition
     public required string Name { get; init; }
 
     /// <summary>
+    /// Gets optional display name.
+    /// </summary>
+    public string? DisplayName { get; init; }
+
+    /// <summary>
+    /// Gets the Power BI table role.
+    /// </summary>
+    public PowerBiTableRole Role { get; init; } = PowerBiTableRole.Unknown;
+
+    /// <summary>
+    /// Gets a value indicating whether the table is hidden.
+    /// </summary>
+    public bool IsHidden { get; init; }
+
+    /// <summary>
+    /// Gets the source semantic type id.
+    /// </summary>
+    public TypeId? SourceTypeId { get; init; }
+
+    /// <summary>
     /// Gets projected columns.
     /// </summary>
     public required IReadOnlyList<TabularColumnDefinition> Columns { get; init; }
@@ -78,6 +98,11 @@ public sealed record TabularColumnDefinition
     public required string Name { get; init; }
 
     /// <summary>
+    /// Gets optional display name.
+    /// </summary>
+    public string? DisplayName { get; init; }
+
+    /// <summary>
     /// Gets tabular data type.
     /// </summary>
     public required TabularDataType DataType { get; init; }
@@ -101,6 +126,16 @@ public sealed record TabularColumnDefinition
     /// Gets optional description.
     /// </summary>
     public string? Description { get; init; }
+
+    /// <summary>
+    /// Gets default summarization behavior.
+    /// </summary>
+    public PowerBiSummarization Summarization { get; init; } = PowerBiSummarization.None;
+
+    /// <summary>
+    /// Gets the source semantic member id.
+    /// </summary>
+    public PropertyId? SourcePropertyId { get; init; }
 
     /// <summary>
     /// Gets optional data category.
@@ -157,6 +192,16 @@ public sealed record TabularRelationshipDefinition
     /// Gets a value indicating whether this relationship is active.
     /// </summary>
     public bool IsActive { get; init; } = true;
+
+    /// <summary>
+    /// Gets the relationship filter direction.
+    /// </summary>
+    public PowerBiRelationshipDirection Direction { get; init; } = PowerBiRelationshipDirection.Single;
+
+    /// <summary>
+    /// Gets the source semantic relationship id.
+    /// </summary>
+    public RelationshipId? SourceRelationshipId { get; init; }
 }
 
 /// <summary>
@@ -168,6 +213,16 @@ public sealed record TabularMeasureDefinition
     /// Gets measure name.
     /// </summary>
     public required string Name { get; init; }
+
+    /// <summary>
+    /// Gets optional display name.
+    /// </summary>
+    public string? DisplayName { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the measure is hidden.
+    /// </summary>
+    public bool IsHidden { get; init; }
 
     /// <summary>
     /// Gets measure expression.
@@ -193,6 +248,113 @@ public sealed record TabularMeasureDefinition
     /// Gets optional description.
     /// </summary>
     public string? Description { get; init; }
+
+    /// <summary>
+    /// Gets carried annotations.
+    /// </summary>
+    public AnnotationBag Annotations { get; init; } = new();
+}
+
+
+/// <summary>
+/// Defines supported Power BI table roles.
+/// </summary>
+public enum PowerBiTableRole
+{
+    /// <summary>Fact table.</summary>
+    Fact,
+
+    /// <summary>Dimension table.</summary>
+    Dimension,
+
+    /// <summary>Bridge table.</summary>
+    Bridge,
+
+    /// <summary>Degenerate dimension table.</summary>
+    DegenerateDimension,
+
+    /// <summary>Unknown table role.</summary>
+    Unknown,
+}
+
+/// <summary>
+/// Defines supported default summarization behaviors.
+/// </summary>
+public enum PowerBiSummarization
+{
+    /// <summary>No summarization.</summary>
+    None,
+
+    /// <summary>Sum values.</summary>
+    Sum,
+
+    /// <summary>Average values.</summary>
+    Average,
+
+    /// <summary>Minimum value.</summary>
+    Min,
+
+    /// <summary>Maximum value.</summary>
+    Max,
+
+    /// <summary>Count values.</summary>
+    Count,
+
+    /// <summary>Count distinct values.</summary>
+    DistinctCount,
+}
+
+/// <summary>
+/// Defines relationship filter direction metadata.
+/// </summary>
+public enum PowerBiRelationshipDirection
+{
+    /// <summary>Single-direction filtering.</summary>
+    Single,
+
+    /// <summary>Bi-directional filtering.</summary>
+    Both,
+}
+
+/// <summary>
+/// Defines table and column naming policy.
+/// </summary>
+public enum PowerBiNamingPolicy
+{
+    /// <summary>Prefer projection annotations, then display name, then canonical name.</summary>
+    DisplayName,
+
+    /// <summary>Prefer projection annotations, then canonical name.</summary>
+    CanonicalName,
+}
+
+/// <summary>
+/// Represents the hardened Power BI projection result.
+/// </summary>
+public sealed record PowerBiProjectionModel
+{
+    /// <summary>Gets projected tables.</summary>
+    public required IReadOnlyList<TabularTableDefinition> Tables { get; init; }
+
+    /// <summary>Gets projected relationships.</summary>
+    public required IReadOnlyList<TabularRelationshipDefinition> Relationships { get; init; }
+
+    /// <summary>Gets projection diagnostics.</summary>
+    public required IReadOnlyList<SchemaDiagnostic> Diagnostics { get; init; }
+
+    /// <summary>Creates a Power BI projection model from tabular metadata.</summary>
+    /// <param name="tabular">The tabular projection.</param>
+    /// <returns>The Power BI projection model.</returns>
+    public static PowerBiProjectionModel FromTabular(TabularModelDefinition tabular)
+    {
+        ArgumentNullException.ThrowIfNull(tabular);
+        return new PowerBiProjectionModel
+        {
+            Tables = tabular.Tables,
+            Relationships = tabular.Relationships,
+            Diagnostics = tabular.Diagnostics,
+        };
+    }
 }
 
 /// <summary>
