@@ -19,8 +19,26 @@ if [ ! -d "$package_dir" ]; then
 fi
 
 package_count="$(find "$package_dir" -maxdepth 1 -type f -name "*.$version.nupkg" ! -name "*.snupkg" | wc -l | tr -d ' ')"
+expected_count="$(semantic_type_model_package_ids | wc -l | tr -d ' ')"
 if [ "$package_count" = "0" ]; then
   echo "No local .nupkg files found for version $version in $package_dir." >&2
+  exit 1
+fi
+if [ "$package_count" != "$expected_count" ]; then
+  echo "Expected $expected_count publishable packages for version $version, found $package_count in $package_dir." >&2
+  find "$package_dir" -maxdepth 1 -type f -name "*.$version.nupkg" ! -name "*.snupkg" -print | sort >&2
+  exit 1
+fi
+
+for package_id in $(semantic_type_model_package_ids); do
+  if [ ! -f "$package_dir/$package_id.$version.nupkg" ]; then
+    echo "Expected package is missing: $package_dir/$package_id.$version.nupkg" >&2
+    exit 1
+  fi
+done
+
+if find "$package_dir" -maxdepth 1 -type f -name "SemanticTypeModel.JsonEditor.$version.nupkg" | grep . >/dev/null; then
+  echo "SemanticTypeModel.JsonEditor is not part of the 1.0 package set." >&2
   exit 1
 fi
 
@@ -46,21 +64,9 @@ cat > "$consumer_dir/NuGet.Config" <<NUGET
 </configuration>
 NUGET
 
-packages="
-SemanticTypeModel.Abstractions
-SemanticTypeModel.Core
-SemanticTypeModel.JsonSchema
-SemanticTypeModel.DotNet
-SemanticTypeModel.Generators
-SemanticTypeModel.SystemTextJson
-SemanticTypeModel.DependencyInjection
-SemanticTypeModel.PowerBI
-SemanticTypeModel.EFCore
-"
-
 dotnet add "$consumer_dir" package Microsoft.EntityFrameworkCore --version "10.0.0" >/dev/null
 
-for package_id in $packages; do
+for package_id in $(semantic_type_model_package_ids); do
   dotnet add "$consumer_dir" package "$package_id" --version "$version" --source "$(pwd)/$package_dir" >/dev/null
 done
 

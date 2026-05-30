@@ -2,7 +2,7 @@
 
 ## Goal
 
-Define the manual prerelease publish workflow.
+Define the manual release publish workflow.
 
 ## Constraints
 

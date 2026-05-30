@@ -2,6 +2,10 @@
 
 System.Text.Json contract integration for SemanticTypeModel.
 
+```sh
+dotnet add package SemanticTypeModel.SystemTextJson --version 1.0.0
+```
+
 ## What it does
 
 - Publishes `systemTextJson.*` annotation constants.

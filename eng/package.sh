@@ -16,19 +16,7 @@ output_dir="artifacts/nuget"
 rm -rf "$output_dir"
 mkdir -p "$output_dir"
 
-projects="
-src/SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj
-src/SemanticTypeModel.Core/SemanticTypeModel.Core.csproj
-src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj
-src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj
-src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj
-src/SemanticTypeModel.DependencyInjection/SemanticTypeModel.DependencyInjection.csproj
-src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj
-src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj
-src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj
-"
-
-for project in $projects; do
+for project in $(semantic_type_model_package_projects); do
   dotnet pack "$project" --configuration Release --output "$output_dir" -p:PackageVersion="$version"
 done
 

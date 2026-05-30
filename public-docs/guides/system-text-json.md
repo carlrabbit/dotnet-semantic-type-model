@@ -5,7 +5,7 @@
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.SystemTextJson --version 0.1.0-alpha
+dotnet add package SemanticTypeModel.SystemTextJson --version 1.0.0
 ```
 
 ## Attribute Import

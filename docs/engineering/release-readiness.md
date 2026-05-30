@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the prerelease validation gate that must pass before publishing.
+Define the release validation gate that must pass before publishing.
 
 ## Release Gate Command
 

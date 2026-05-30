@@ -33,4 +33,4 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - [M0020 - System.Text.Json Contract Integration](milestones/m0020-system-text-json-contract-integration.md)
 - [M0021 - Power BI Projection Hardening](milestones/m0021-power-bi-projection-hardening.md)
 - [M0022 - 1.0 Public API, Compatibility, Documentation, Samples, and Release Readiness](milestones/m0022-1-0-public-api-compatibility-documentation-samples-and-release-readiness.md)
-- [M0023 - 1.0 Release Execution](milestones/m0023-1-0-release-execution.md)
+- [M0023 - 1.0.0 Release Hardening and Final Release](milestones/m0023-1-0-0-release-hardening-and-final-release.md)

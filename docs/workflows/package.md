@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create inspectable prerelease NuGet package artifacts without publishing.
+Create inspectable release NuGet package artifacts without publishing.
 
 ## Constraints
 

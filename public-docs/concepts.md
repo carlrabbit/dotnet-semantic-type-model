@@ -17,9 +17,9 @@ See [guides/projection-capabilities.md](guides/projection-capabilities.md).
 
 The code-first sample (`samples/code-first-authoring`) shows one canonical model projected to JSON Schema, JSON Editor-compatible UI hints, and EF Core configuration.
 
-## Prerelease Status
+## Stable Release Status
 
-`0.1.0-alpha` is the initial prerelease. APIs, projection details, and package split may change before 1.0.
+`1.0.0` is the first stable release. Documented public APIs, diagnostics, annotation keys, and package boundaries follow the compatibility policy. APIs from prerelease versions before 1.0 were not compatibility-stable.
 
 ## System.Text.Json Names
 

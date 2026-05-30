@@ -18,4 +18,4 @@ See runnable sample: `samples/json-schema-roundtrip` and [public-docs/samples/js
 
 For the end-to-end code-first flow, run `samples/code-first-authoring` and see [public-docs/samples/code-first.md](samples/code-first.md).
 
-> This is an initial prerelease (`0.1.0-alpha`). APIs may change before 1.0.
+> `1.0.0` is the first stable release. Documented public APIs follow the compatibility policy.
