@@ -4,7 +4,7 @@
 namespace SemanticTypeModel.PowerBI;
 
 /// <summary>
-/// Controls deterministic Power BI / TOM-like projection behavior.
+/// Controls deterministic Power BI projection behavior.
 /// </summary>
 public sealed record PowerBiProjectionOptions
 {
@@ -49,7 +49,7 @@ public sealed record PowerBiProjectionOptions
     public bool TreatRelationshipsAsRequired { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether unannotated object types can become tabular tables.
+    /// Gets or sets a value indicating whether unannotated object types can become Power BI tables.
     /// </summary>
     public bool ProjectUnannotatedObjectsAsTables { get; set; }
 
@@ -61,7 +61,7 @@ public sealed record PowerBiProjectionOptions
     /// <summary>
     /// Gets or sets how arrays, dictionaries, unions, and unsupported nested objects are handled.
     /// </summary>
-    public UnsupportedTabularShapeBehavior UnsupportedShapeBehavior { get; set; } = UnsupportedTabularShapeBehavior.Diagnose;
+    public UnsupportedPowerBiShapeBehavior UnsupportedShapeBehavior { get; set; } = UnsupportedPowerBiShapeBehavior.Diagnose;
 
     /// <summary>
     /// Gets or sets the enum projection behavior.
@@ -114,9 +114,9 @@ public enum ValueObjectProjectionMode
 }
 
 /// <summary>
-/// Defines behavior for unsupported tabular shapes.
+/// Defines behavior for unsupported Power BI shapes.
 /// </summary>
-public enum UnsupportedTabularShapeBehavior
+public enum UnsupportedPowerBiShapeBehavior
 {
     /// <summary>Emit diagnostics and skip projection.</summary>
     Diagnose,

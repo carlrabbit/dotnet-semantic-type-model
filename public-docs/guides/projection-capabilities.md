@@ -16,7 +16,7 @@ Projection capability metadata is available through:
 - JSON Schema
 - JSON Editor/UI-hints mode
 - EF Core metadata projection
-- Power BI/TOM-like metadata projection
+- Power BI metadata projection
 
 ## Diagnostics and Compatibility
 

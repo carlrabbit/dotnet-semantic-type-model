@@ -2,7 +2,7 @@
   <PropertyGroup>
     <RootNamespace>SemanticTypeModel.PackageSmoke.Tests</RootNamespace>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-    <PackageSmokeVersion Condition="'$(PackageSmokeVersion)' == ''">0.1.0-alpha</PackageSmokeVersion>
+    <PackageSmokeVersion Condition="'$(PackageSmokeVersion)' == ''">1.0.0-rc.1</PackageSmokeVersion>
     <RestoreAdditionalProjectSources Condition="'$(PackageSmokeSource)' != ''">$(PackageSmokeSource);https://api.nuget.org/v3/index.json</RestoreAdditionalProjectSources>
   </PropertyGroup>
 
@@ -14,7 +14,7 @@
     <PackageReference Include="SemanticTypeModel.Core" Version="$(PackageSmokeVersion)" />
     <PackageReference Include="SemanticTypeModel.JsonSchema" Version="$(PackageSmokeVersion)" />
     <PackageReference Include="SemanticTypeModel.DotNet" Version="$(PackageSmokeVersion)" />
-    <PackageReference Include="SemanticTypeModel.JsonEditor" Version="$(PackageSmokeVersion)" />
+    <PackageReference Include="SemanticTypeModel.DependencyInjection" Version="$(PackageSmokeVersion)" />
     <PackageReference Include="SemanticTypeModel.PowerBI" Version="$(PackageSmokeVersion)" />
     <PackageReference Include="SemanticTypeModel.EFCore" Version="$(PackageSmokeVersion)" />
     <PackageReference Include="SemanticTypeModel.Generators" Version="$(PackageSmokeVersion)" />

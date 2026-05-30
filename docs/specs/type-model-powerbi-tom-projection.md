@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define deterministic projection of hardened canonical `TypeSchemaModel` contracts into a TOM-like intermediate tabular metadata model.
+Define deterministic projection of hardened canonical `TypeSchemaModel` contracts into a Power BI intermediate metadata model.
 
 ## Authority
 
@@ -18,17 +18,17 @@ This specification is authoritative for:
 
 - Projection package: `SemanticTypeModel.PowerBI`.
 - Core abstraction contracts remain independent from Power BI/TOM-specific dependencies.
-- M0007 uses an internal TOM-like model and does not require Power BI service, XMLA, credentials, or network access.
+- M0007 uses an internal Power BI model and does not require Power BI service, XMLA, credentials, or network access.
 
 ## Projection Model Contract
 
 The projection result is represented by:
 
-- `TabularModelDefinition`
-- `TabularTableDefinition`
-- `TabularColumnDefinition`
-- `TabularRelationshipDefinition`
-- `TabularMeasureDefinition`
+- `PowerBiProjectionModel`
+- `PowerBiTableDefinition`
+- `PowerBiColumnDefinition`
+- `PowerBiRelationshipDefinition`
+- `PowerBiMeasureDefinition`
 
 Minimum semantics:
 
@@ -225,7 +225,7 @@ M0021 promotes the Power BI projection from prototype behavior to a supported 1.
 
 ### Public entry points
 
-Consumers may call `PowerBiProjection.Project(model, options => { ... })` or `model.ToPowerBiModel(options => { ... })` to receive a `PowerBiProjectionModel`. Existing `PowerBiTabularProjection` and `TabularModelDefinition` APIs remain available for preview compatibility.
+Consumers may call `PowerBiProjection.Project(model, options => { ... })` or `model.ToPowerBiModel(options => { ... })` to receive a `PowerBiProjectionModel`. Existing `PowerBiModelProjection` and `PowerBiProjectionModel` APIs remain available for preview compatibility.
 
 ### Hardened metadata
 

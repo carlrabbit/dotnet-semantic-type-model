@@ -3,7 +3,7 @@
     <RootNamespace>SemanticTypeModel.PowerBI</RootNamespace>
     <PackageId>SemanticTypeModel.PowerBI</PackageId>
     <Title>SemanticTypeModel.PowerBI</Title>
-    <Description>Power BI tabular projection support for SemanticTypeModel.</Description>
+    <Description>Power BI projection support for SemanticTypeModel.</Description>
     <Authors>SemanticTypeModel Contributors</Authors>
     <RepositoryUrl>https://github.com/carlrabbit/dotnet-semantic-type-model</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

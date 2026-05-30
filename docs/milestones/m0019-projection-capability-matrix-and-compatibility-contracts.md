@@ -23,7 +23,7 @@ Without a capability matrix, projection behavior can become ambiguous:
 
 - JSON Schema can represent some structural features that EF Core cannot.
 - EF Core can represent relationships that JSON Editor does not need.
-- Power BI can represent tabular relationships and measures but not arbitrary nested object graphs.
+- Power BI can represent Power BI relationships and measures but not arbitrary nested object graphs.
 - JSON Editor can consume UI hints that should not become database metadata.
 
 This milestone makes those boundaries explicit and testable.

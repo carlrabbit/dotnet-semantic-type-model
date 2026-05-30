@@ -51,7 +51,7 @@ internal sealed class PackageSmokeTests
         Hardening.TypeSchemaModel hardeningModel = BuildHardeningModel();
 
         Hardening.SchemaProjectionContext powerBiContext = new() { Target = Hardening.ProjectionTarget.PowerBi };
-        TabularModelDefinition powerBiProjection = new PowerBiTabularProjection().Project(hardeningModel, powerBiContext);
+        PowerBiProjectionModel powerBiProjection = new PowerBiModelProjection().Project(hardeningModel, powerBiContext);
         _ = await Assert.That(powerBiProjection).IsNotNull();
 
         Hardening.SchemaProjectionContext efCoreContext = new() { Target = Hardening.ProjectionTarget.EfCore };

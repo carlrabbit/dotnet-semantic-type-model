@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft milestone content document.
+Implemented for 1.0 release-candidate readiness.
 
 ## Goal
 
@@ -24,10 +24,10 @@ The implementation must check the current `main` branch before changing files. A
 - `README.md` listed `SemanticTypeModel.JsonEditor` in install commands and the prerelease package list.
 - `public-docs/packages.md` listed `SemanticTypeModel.JsonEditor` in the initial prerelease package set and described it as produced from `src/SemanticTypeModel.DependencyInjection`.
 - `public-docs/release-notes.md` listed `SemanticTypeModel.JsonEditor` as a `0.1.0-alpha` package.
-- `public-docs/nuget/SemanticTypeModel.JsonEditor.md` existed as a NuGet README source.
+- `public-docs/nuget/SemanticTypeModel.DependencyInjection.md` existed as a NuGet README source.
 - `public-docs/guides/projection-capabilities.md` and `docs/specs/type-model-projection-capabilities.md` treated JSON Editor as a projection target or mode.
-- `public-docs/guides/power-bi-projection.md` documented `PowerBiProjectionModel` as the preferred Power BI output but also mentioned `PowerBiTabularProjection` returning `TabularModelDefinition` for compatibility.
-- Repository search found legacy Power BI names such as `TabularModelDefinition` and `PowerBiTabularProjection` in source, tests, docs, and samples.
+- `public-docs/guides/power-bi-projection.md` documented `PowerBiProjectionModel` as the preferred Power BI output but also mentioned `PowerBiModelProjection` returning `PowerBiProjectionModel` for compatibility.
+- Repository search found legacy Power BI names such as `PowerBiProjectionModel` and `PowerBiModelProjection` in source, tests, docs, and samples.
 
 These observations are starting points, not a substitute for implementation-time inspection. The implementation must re-check current `main` and avoid obsolete changes if the repository has already moved on.
 
@@ -75,11 +75,10 @@ Before implementation, read:
 - `docs/guardrails/testing.md`
 - `docs/specs/type-model-projection-capabilities.md`
 - `docs/specs/diagnostics.md`
-- `docs/specs/dotnet-attribute-and-convention-model.md`
-- `docs/specs/json-schema-runtime-import-export.md`
+- `docs/specs/type-model-dotnet-attributes.md and docs/specs/type-model-dotnet-conventions.md`
+- `docs/specs/json-schema-adapter.md and docs/specs/type-model-json-schema-mapping.md`
 - `docs/specs/system-text-json-contract-integration.md`
 - `docs/specs/type-model-powerbi-tom-projection.md`
-- `docs/milestones/m0013-prerelease-nuget-packaging-and-release-automation.md`
 - `docs/milestones/m0014-semantic-type-annotation-usability.md`
 - `docs/milestones/m0015-ef-core-projection-hardening.md`
 - `docs/milestones/m0016-end-to-end-code-first-schema-authoring-samples.md`
@@ -106,11 +105,12 @@ SemanticTypeModel.JsonSchema
 SemanticTypeModel.DotNet
 SemanticTypeModel.Generators
 SemanticTypeModel.SystemTextJson
+SemanticTypeModel.DependencyInjection
 SemanticTypeModel.PowerBI
 SemanticTypeModel.EFCore
 ```
 
-`SemanticTypeModel.JsonEditor` must be removed from package lists, NuGet docs, package smoke tests, release docs, and README unless a real package project exists and is intentionally included.
+`SemanticTypeModel.JsonEditor` has been removed from package lists, NuGet docs, package smoke tests, release docs, and README unless a real package project exists and is intentionally included.
 
 JSON Editor compatibility must be documented as a feature of `SemanticTypeModel.JsonSchema`, not as a standalone package.
 
@@ -133,7 +133,7 @@ Remove `SemanticTypeModel.JsonEditor` from:
 Delete or retire:
 
 ```text
-public-docs/nuget/SemanticTypeModel.JsonEditor.md
+public-docs/nuget/SemanticTypeModel.DependencyInjection.md
 ```
 
 unless a real `SemanticTypeModel.JsonEditor` package project is introduced before this milestone is implemented.
@@ -195,8 +195,8 @@ If the intended 1.0 API is `PowerBiProjectionModel` and related `PowerBi*` types
 Review and remove, rename, or internalize as appropriate:
 
 ```text
-TabularModelDefinition
-PowerBiTabularProjection
+PowerBiProjectionModel
+PowerBiModelProjection
 legacy table/column/relationship DTOs
 legacy TOM prototype names
 old Power BI projection options
@@ -220,6 +220,7 @@ SemanticTypeModel.JsonSchema
 SemanticTypeModel.DotNet
 SemanticTypeModel.Generators
 SemanticTypeModel.SystemTextJson
+SemanticTypeModel.DependencyInjection
 SemanticTypeModel.PowerBI
 SemanticTypeModel.EFCore
 ```

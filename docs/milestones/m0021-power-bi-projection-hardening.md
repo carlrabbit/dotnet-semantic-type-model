@@ -8,7 +8,7 @@ Implemented in this repository. The milestone is tracked by issue #52 and harden
 
 Define, implement, validate, and document the Power BI projection as a supported projection package for the 1.0 path.
 
-The goal is to make `SemanticTypeModel.PowerBI` capable of projecting the canonical semantic type model into a deterministic, testable Power BI / tabular conceptual model representation with clear capability boundaries, diagnostics, options, package smoke tests, and public documentation.
+The goal is to make `SemanticTypeModel.PowerBI` capable of projecting the canonical semantic type model into a deterministic, testable Power BI conceptual model representation with clear capability boundaries, diagnostics, options, package smoke tests, and public documentation.
 
 This milestone turns the Power BI projection from a prototype into a supported 1.0 candidate projection surface.
 
@@ -30,7 +30,7 @@ This milestone covers:
 The implementation must preserve this boundary:
 
 ```text
-SemanticTypeModel.PowerBI projects semantic metadata into a Power BI / tabular model representation.
+SemanticTypeModel.PowerBI projects semantic metadata into a Power BI model representation.
 It does not publish to the Power BI service and does not require Power BI service credentials.
 ```
 
@@ -42,7 +42,7 @@ This milestone does not cover:
 - authenticating against Power BI REST APIs;
 - managing workspaces, reports, dashboards, gateways, refresh schedules, or deployment pipelines;
 - generating DAX beyond explicitly supported measure metadata or templates;
-- implementing full Tabular Object Model parity;
+- implementing full Power BI semantic model parity;
 - reverse-engineering existing Power BI datasets;
 - creating PBIX files;
 - implementing provider-specific database access;

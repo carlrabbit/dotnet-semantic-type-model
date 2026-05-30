@@ -13,13 +13,16 @@ public-docs/diagnostics.md
 public-docs/versioning.md
 public-docs/release-notes.md
 public-docs/api/public-api.md
+public-docs/guides/json-schema.md
+public-docs/guides/json-editor-compatibility.md
 public-docs/api/compatibility.md
 public-docs/nuget/SemanticTypeModel.Abstractions.md
 public-docs/nuget/SemanticTypeModel.Core.md
 public-docs/nuget/SemanticTypeModel.JsonSchema.md
 public-docs/nuget/SemanticTypeModel.DotNet.md
 public-docs/nuget/SemanticTypeModel.Generators.md
-public-docs/nuget/SemanticTypeModel.JsonEditor.md
+public-docs/nuget/SemanticTypeModel.SystemTextJson.md
+public-docs/nuget/SemanticTypeModel.DependencyInjection.md
 public-docs/nuget/SemanticTypeModel.PowerBI.md
 public-docs/nuget/SemanticTypeModel.EFCore.md
 public-docs/samples/getting-started.md

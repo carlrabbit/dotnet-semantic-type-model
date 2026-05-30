@@ -4,7 +4,7 @@ Project: `samples/powerbi-projection`
 
 Demonstrates:
 
-- projection from canonical runtime model to TOM-like metadata;
+- projection from canonical runtime model to Power BI metadata;
 - no Power BI service connection.
 
 Run:

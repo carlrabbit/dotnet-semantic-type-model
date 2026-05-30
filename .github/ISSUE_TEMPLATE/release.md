@@ -6,7 +6,7 @@ labels: release
 
 ## Release Version
 
-<!-- e.g., 0.1.0-alpha -->
+<!-- e.g., 1.0.0-rc.1 -->
 
 ## Package Set
 
@@ -15,7 +15,8 @@ labels: release
 - [ ] SemanticTypeModel.JsonSchema
 - [ ] SemanticTypeModel.DotNet
 - [ ] SemanticTypeModel.Generators
-- [ ] SemanticTypeModel.JsonEditor
+- [ ] SemanticTypeModel.SystemTextJson
+- [ ] SemanticTypeModel.DependencyInjection
 - [ ] SemanticTypeModel.PowerBI
 - [ ] SemanticTypeModel.EFCore
 

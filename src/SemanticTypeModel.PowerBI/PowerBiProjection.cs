@@ -21,25 +21,7 @@ public static class PowerBiProjection
         configure?.Invoke(options);
 
         var context = new SchemaProjectionContext { Diagnostics = [] };
-        TabularModelDefinition tabular = new PowerBiTabularProjection(options).Project(model, context);
-        return PowerBiProjectionModel.FromTabular(tabular);
-    }
-
-    /// <summary>
-    /// Projects a canonical semantic model to legacy tabular metadata.
-    /// </summary>
-    /// <param name="model">The source canonical model.</param>
-    /// <param name="configure">Optional projection option callback.</param>
-    /// <returns>The projected tabular model.</returns>
-    public static TabularModelDefinition ProjectTabular(TypeSchemaModel model, Action<PowerBiProjectionOptions>? configure = null)
-    {
-        ArgumentNullException.ThrowIfNull(model);
-
-        var options = new PowerBiProjectionOptions();
-        configure?.Invoke(options);
-
-        var context = new SchemaProjectionContext { Diagnostics = [] };
-        return new PowerBiTabularProjection(options).Project(model, context);
+        return new PowerBiModelProjection(options).Project(model, context);
     }
 }
 

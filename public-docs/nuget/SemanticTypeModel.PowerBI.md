@@ -1,6 +1,6 @@
 # SemanticTypeModel.PowerBI
 
-`SemanticTypeModel.PowerBI` projects canonical models into Power BI tabular representations.
+`SemanticTypeModel.PowerBI` projects canonical models into Power BI representations.
 
 ```sh
 dotnet add package SemanticTypeModel.PowerBI --version 0.1.0-alpha
@@ -10,7 +10,7 @@ This is an initial prerelease. APIs may change before 1.0.
 
 ## Projection boundary
 
-The package projects a `TypeSchemaModel` into repository-defined Power BI/tabular metadata. It does not publish datasets, authenticate with Power BI, create PBIX files, or manage Power BI service resources.
+The package projects a `TypeSchemaModel` into repository-defined Power BI metadata. It does not publish datasets, authenticate with Power BI, create PBIX files, or manage Power BI service resources.
 
 ## Basic usage
 

@@ -27,6 +27,8 @@ This document is authoritative for:
 - `public-docs/release-notes.md`
 - `public-docs/api/public-api.md`
 - `public-docs/api/compatibility.md`
+- `public-docs/guides/json-schema.md`
+- `public-docs/guides/json-editor-compatibility.md`
 - `public-docs/nuget/*.md`
 - `public-docs/samples/*.md`
 - `public-docs/diagnostics/*.md`
@@ -48,7 +50,7 @@ NuGet package README sources are mapped per package:
 - `SemanticTypeModel.JsonSchema` -> `public-docs/nuget/SemanticTypeModel.JsonSchema.md`
 - `SemanticTypeModel.DotNet` -> `public-docs/nuget/SemanticTypeModel.DotNet.md`
 - `SemanticTypeModel.Generators` -> `public-docs/nuget/SemanticTypeModel.Generators.md`
-- `SemanticTypeModel.JsonEditor` -> `public-docs/nuget/SemanticTypeModel.JsonEditor.md`
+- `SemanticTypeModel.DependencyInjection` -> `public-docs/nuget/SemanticTypeModel.DependencyInjection.md`
 - `SemanticTypeModel.PowerBI` -> `public-docs/nuget/SemanticTypeModel.PowerBI.md`
 - `SemanticTypeModel.EFCore` -> `public-docs/nuget/SemanticTypeModel.EFCore.md`
 - `SemanticTypeModel.SystemTextJson` -> `public-docs/nuget/SemanticTypeModel.SystemTextJson.md`

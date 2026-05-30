@@ -2,19 +2,19 @@
 
 ## Purpose
 
-Deliver the first Power BI / Tabular Object Model projection prototype over the hardened canonical `TypeSchemaModel`, without introducing service or deployment dependencies.
+Deliver the first Power BI metadata projection prototype over the hardened canonical `TypeSchemaModel`, without introducing service or deployment dependencies.
 
 ## Delivered Runtime Surface
 
 - New projection package: `SemanticTypeModel.PowerBI`.
-- TOM-like intermediate metadata model:
-  - `TabularModelDefinition`
-  - `TabularTableDefinition`
-  - `TabularColumnDefinition`
-  - `TabularRelationshipDefinition`
-  - `TabularMeasureDefinition`
+- Power BI intermediate metadata model:
+  - `PowerBiProjectionModel`
+  - `PowerBiTableDefinition`
+  - `PowerBiColumnDefinition`
+  - `PowerBiRelationshipDefinition`
+  - `PowerBiMeasureDefinition`
 - Projection entrypoint:
-  - `PowerBiTabularProjection : ISchemaProjection<TabularModelDefinition>`
+  - `PowerBiModelProjection : ISchemaProjection<PowerBiProjectionModel>`
 - Deterministic projection options:
   - table candidacy for unannotated objects
   - value object modes (diagnose, flatten, serialize)
@@ -26,9 +26,9 @@ Deliver the first Power BI / Tabular Object Model projection prototype over the 
 ## Supported Baseline Mapping
 
 - Object roles (`Fact`, `Dimension`, `Lookup`, `Entity`) and `powerBi.tableRole` map objects to tables.
-- Scalar and enum properties map to tabular columns.
+- Scalar and enum properties map to Power BI columns.
 - Keys influence `IsKey`.
-- Canonical relationships map to tabular relationships for one-to-one, one-to-many, and many-to-one.
+- Canonical relationships map to Power BI relationships for one-to-one, one-to-many, and many-to-one.
 - DAX computed members map to measures with expression/language preserved.
 - Display metadata and projection annotations are consumed with precedence rules from the Power BI/TOM spec.
 
