@@ -8,17 +8,17 @@ namespace SemanticTypeModel.PowerBI.Tests.Unit;
 #pragma warning disable CS1591
 #pragma warning disable IDE0305
 /// <summary>
-/// Verifies M0007 Power BI / TOM-like projection fixture behavior.
+/// Verifies M0007 Power BI projection fixture behavior.
 /// </summary>
 [SuppressMessage("Naming", "CA1707:Remove the underscores from member name", Justification = "Test names may use underscores for readability.")]
-public sealed class PowerBiTabularProjectionTests
+public sealed class PowerBiModelProjectionTests
 {
     private static readonly AnnotationBag EmptyAnnotations = new();
 
     [Test]
     public async Task Projection_should_expose_capability_metadata()
     {
-        ProjectionCompatibilityContract capabilities = new PowerBiTabularProjection().GetCapabilities();
+        ProjectionCompatibilityContract capabilities = new PowerBiModelProjection().GetCapabilities();
 
         _ = await Assert.That(capabilities.Projection).IsEqualTo(ProjectionTarget.PowerBi);
         _ = await Assert.That(capabilities.GetSupport(SemanticModelFeature.Relationship).SupportLevel).IsEqualTo(ProjectionFeatureSupportLevel.SupportedWithOptions);
@@ -59,9 +59,9 @@ public sealed class PowerBiTabularProjectionTests
             Relationships = [],
         };
 
-        TabularModelDefinition projection = Project(BuildModel(dimension, stringType, dateType, intType));
-        TabularTableDefinition table = projection.Tables.Single();
-        TabularColumnDefinition keyColumn = table.Columns.Single(static column => column.Name == "customerKey");
+        PowerBiProjectionModel projection = Project(BuildModel(dimension, stringType, dateType, intType));
+        PowerBiTableDefinition table = projection.Tables.Single();
+        PowerBiColumnDefinition keyColumn = table.Columns.Single(static column => column.Name == "customerKey");
 
         _ = await Assert.That(table.Name).IsEqualTo("Customer");
         _ = await Assert.That(table.DisplayFolder).IsEqualTo("Reference");
@@ -146,11 +146,11 @@ public sealed class PowerBiTabularProjectionTests
             ],
         };
 
-        TabularModelDefinition projection = Project(BuildModel(fact, dimension, intType, decimalType));
+        PowerBiProjectionModel projection = Project(BuildModel(fact, dimension, intType, decimalType));
 
         _ = await Assert.That(projection.Tables.Count).IsEqualTo(2);
         _ = await Assert.That(projection.Relationships.Count).IsEqualTo(1);
-        _ = await Assert.That(projection.Relationships[0].Cardinality).IsEqualTo(TabularRelationshipCardinality.ManyToOne);
+        _ = await Assert.That(projection.Relationships[0].Cardinality).IsEqualTo(PowerBiRelationshipCardinality.ManyToOne);
         _ = await Assert.That(projection.Tables.Single(static table => table.Name == "FactSales").Measures.Single().Expression).IsEqualTo("SUM(FactSales[amount])");
     }
 
@@ -188,8 +188,8 @@ public sealed class PowerBiTabularProjectionTests
             ],
         };
 
-        TabularModelDefinition projection = Project(BuildModel(fact, decimalType));
-        TabularMeasureDefinition measure = projection.Tables.Single().Measures.Single();
+        PowerBiProjectionModel projection = Project(BuildModel(fact, decimalType));
+        PowerBiMeasureDefinition measure = projection.Tables.Single().Measures.Single();
 
         _ = await Assert.That(measure.ExpressionLanguage).IsEqualTo("DAX");
         _ = await Assert.That(measure.DisplayFolder).IsEqualTo("Financial");
@@ -232,9 +232,9 @@ public sealed class PowerBiTabularProjectionTests
 
         TypeSchemaModel model = BuildModel(entity, address, stringType);
 
-        TabularModelDefinition diagnosed = Project(model);
-        TabularModelDefinition flattened = Project(model, new PowerBiProjectionOptions { ValueObjectProjectionMode = ValueObjectProjectionMode.Flatten });
-        TabularModelDefinition serialized = Project(model, new PowerBiProjectionOptions { ValueObjectProjectionMode = ValueObjectProjectionMode.SerializeJson });
+        PowerBiProjectionModel diagnosed = Project(model);
+        PowerBiProjectionModel flattened = Project(model, new PowerBiProjectionOptions { ValueObjectProjectionMode = ValueObjectProjectionMode.Flatten });
+        PowerBiProjectionModel serialized = Project(model, new PowerBiProjectionOptions { ValueObjectProjectionMode = ValueObjectProjectionMode.SerializeJson });
 
         _ = await Assert.That(diagnosed.Diagnostics.Any(static diagnostic => diagnostic.Code == "POWERBI_VALUE_OBJECT_UNSUPPORTED")).IsTrue();
         _ = await Assert.That(flattened.Tables.Single().Columns.Any(static column => column.Name == "address_line1")).IsTrue();
@@ -293,8 +293,8 @@ public sealed class PowerBiTabularProjectionTests
         };
 
         TypeSchemaModel model = BuildModel(entity, stringType, arrayType, dictionaryType, unionType);
-        TabularModelDefinition diagnosed = Project(model);
-        TabularModelDefinition serialized = Project(model, new PowerBiProjectionOptions { UnsupportedShapeBehavior = UnsupportedTabularShapeBehavior.SerializeJson });
+        PowerBiProjectionModel diagnosed = Project(model);
+        PowerBiProjectionModel serialized = Project(model, new PowerBiProjectionOptions { UnsupportedShapeBehavior = UnsupportedPowerBiShapeBehavior.SerializeJson });
 
         _ = await Assert.That(diagnosed.Diagnostics.Count(static diagnostic => diagnostic.Code == "POWERBI_UNSUPPORTED_SHAPE")).IsEqualTo(3);
         _ = await Assert.That(serialized.Tables.Single().Columns.Count).IsEqualTo(3);
@@ -339,8 +339,8 @@ public sealed class PowerBiTabularProjectionTests
         };
 
         TypeSchemaModel model = BuildModel(entity, stringType);
-        TabularModelDefinition diagnosed = Project(model);
-        TabularModelDefinition suffixed = Project(model, new PowerBiProjectionOptions { NameCollisionBehavior = NameCollisionBehavior.Suffix });
+        PowerBiProjectionModel diagnosed = Project(model);
+        PowerBiProjectionModel suffixed = Project(model, new PowerBiProjectionOptions { NameCollisionBehavior = NameCollisionBehavior.Suffix });
 
         _ = await Assert.That(diagnosed.Diagnostics.Any(static diagnostic => diagnostic.Code == "POWERBI_DUPLICATE_PROJECTED_NAME")).IsTrue();
         _ = await Assert.That(suffixed.Tables.Single().Columns.Count(static column => column.Name.StartsWith("Duplicate", StringComparison.Ordinal))).IsEqualTo(2);
@@ -384,9 +384,9 @@ public sealed class PowerBiTabularProjectionTests
             options.DefaultNumericSummarization = PowerBiSummarization.Average;
         });
 
-        TabularTableDefinition table = projection.Tables.Single();
-        TabularColumnDefinition key = table.Columns.Single(static column => column.Name == "salesKey");
-        TabularColumnDefinition amount = table.Columns.Single(static column => column.Name == "amount");
+        PowerBiTableDefinition table = projection.Tables.Single();
+        PowerBiColumnDefinition key = table.Columns.Single(static column => column.Name == "salesKey");
+        PowerBiColumnDefinition amount = table.Columns.Single(static column => column.Name == "amount");
 
         _ = await Assert.That(table.Role).IsEqualTo(PowerBiTableRole.Fact);
         _ = await Assert.That(table.SourceTypeId).IsEqualTo(new TypeId("FactSales"));
@@ -437,15 +437,15 @@ public sealed class PowerBiTabularProjectionTests
             ],
         };
 
-        TabularModelDefinition projection = Project(BuildModel(dimension, fact, intType));
+        PowerBiProjectionModel projection = Project(BuildModel(dimension, fact, intType));
 
         _ = await Assert.That(projection.Relationships).IsEmpty();
         _ = await Assert.That(projection.Diagnostics.Any(static diagnostic => diagnostic.Code == "POWERBI_AMBIGUOUS_RELATIONSHIP_ENDPOINTS")).IsTrue();
     }
 
-    private static TabularModelDefinition Project(TypeSchemaModel model, PowerBiProjectionOptions? options = null)
+    private static PowerBiProjectionModel Project(TypeSchemaModel model, PowerBiProjectionOptions? options = null)
     {
-        var projection = new PowerBiTabularProjection(options);
+        var projection = new PowerBiModelProjection(options);
         var context = new SchemaProjectionContext { Target = ProjectionTarget.PowerBi };
         return projection.Project(model, context);
     }

@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>SemanticTypeModel.DependencyInjection</RootNamespace>
-    <PackageId>SemanticTypeModel.JsonEditor</PackageId>
-    <Title>SemanticTypeModel.JsonEditor</Title>
-    <Description>Runtime composition and JSON-editor-oriented projection helpers for SemanticTypeModel.</Description>
+    <PackageId>SemanticTypeModel.DependencyInjection</PackageId>
+    <Title>SemanticTypeModel.DependencyInjection</Title>
+    <Description>Runtime composition and dependency injection helpers for SemanticTypeModel.</Description>
     <Authors>SemanticTypeModel Contributors</Authors>
     <RepositoryUrl>https://github.com/carlrabbit/dotnet-semantic-type-model</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>semantic-type-model;json-editor;runtime</PackageTags>
+    <PackageTags>semantic-type-model;dependency-injection;runtime</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -26,6 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../../public-docs/nuget/SemanticTypeModel.JsonEditor.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../public-docs/nuget/SemanticTypeModel.DependencyInjection.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 </Project>

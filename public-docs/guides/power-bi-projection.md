@@ -1,6 +1,6 @@
 # Power BI Projection
 
-`SemanticTypeModel.PowerBI` projects canonical semantic type models to deterministic Power BI/tabular metadata.
+`SemanticTypeModel.PowerBI` projects canonical semantic type models to deterministic Power BI metadata.
 
 ## Boundary
 
@@ -18,7 +18,6 @@ PowerBiProjectionModel model = semanticModel.ToPowerBiModel(options =>
 });
 ```
 
-For compatibility with earlier preview code, `PowerBiTabularProjection` still returns `TabularModelDefinition`.
 
 ## Supported metadata
 

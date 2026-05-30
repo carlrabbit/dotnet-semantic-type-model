@@ -1,37 +1,50 @@
 # Packages
 
-## Initial Prerelease Package Set (0.1.0-alpha)
+## 1.0 Release Candidate Package Set
+
+The intended `1.0.0-rc.1` package set is:
 
 - `SemanticTypeModel.Abstractions`
 - `SemanticTypeModel.Core`
 - `SemanticTypeModel.JsonSchema`
 - `SemanticTypeModel.DotNet`
 - `SemanticTypeModel.Generators`
-- `SemanticTypeModel.JsonEditor`
+- `SemanticTypeModel.SystemTextJson`
+- `SemanticTypeModel.DependencyInjection`
 - `SemanticTypeModel.PowerBI`
 - `SemanticTypeModel.EFCore`
 
-## EF Core projection
+`SemanticTypeModel.JsonEditor` is not a package. JSON Editor compatibility is exposed by `SemanticTypeModel.JsonSchema` as JSON Schema UI-hint export using `JsonSchemaUiMode.JsonEditorCompatible`.
 
-- Guide: [guides/ef-core-projection.md](guides/ef-core-projection.md)
-- NuGet README source: [nuget/SemanticTypeModel.EFCore.md](nuget/SemanticTypeModel.EFCore.md)
+## Package Roles
 
-## Projection capability matrix
+| Package | Role |
+| --- | --- |
+| `SemanticTypeModel.Abstractions` | Shared model, runtime, diagnostics, and compatibility contracts. |
+| `SemanticTypeModel.Core` | Builders, validation, and transformation pipeline. |
+| `SemanticTypeModel.JsonSchema` | JSON Schema import/export and JSON Editor-compatible UI-hint export mode. |
+| `SemanticTypeModel.DotNet` | Attribute model and Roslyn-based .NET type extraction. |
+| `SemanticTypeModel.Generators` | Incremental source generator for compile-time extraction. |
+| `SemanticTypeModel.SystemTextJson` | System.Text.Json contract integration and annotations. |
+| `SemanticTypeModel.DependencyInjection` | Runtime provider, transformation, and projection service registration. |
+| `SemanticTypeModel.PowerBI` | Power BI projection metadata. |
+| `SemanticTypeModel.EFCore` | EF Core model projection support. |
 
-- Guide: [guides/projection-capabilities.md](guides/projection-capabilities.md)
+## Scenario Packages
 
-## Code-first sample path
+- JSON Schema export/import: `SemanticTypeModel.JsonSchema`.
+- JSON Editor-compatible schemas: `SemanticTypeModel.JsonSchema` with JSON Editor compatibility options.
+- Code-first extraction: `SemanticTypeModel.DotNet` and optionally `SemanticTypeModel.Generators`.
+- System.Text.Json integration: `SemanticTypeModel.SystemTextJson`.
+- Runtime DI composition: `SemanticTypeModel.DependencyInjection` plus the projection package being registered.
+- EF Core projection: `SemanticTypeModel.EFCore`.
+- Power BI projection: `SemanticTypeModel.PowerBI`.
 
-- End-to-end sample: [samples/code-first.md](samples/code-first.md)
-- Uses `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, `SemanticTypeModel.JsonSchema`, and `SemanticTypeModel.EFCore`.
+## Related Guides
 
-## Prerelease Notes
-
-- This is the first prerelease package set.
-- Public APIs may change before 1.0.
-- Package boundaries may be refined before 1.0.
-- Known limitations are documented in release notes.
-- `SemanticTypeModel.JsonEditor` is currently produced from the `src/SemanticTypeModel.DependencyInjection` project.
-- `SemanticTypeModel.SystemTextJson` - System.Text.Json annotation import, generated-context opt-in, and runtime helper APIs.
-
+- [JSON Schema guide](guides/json-schema.md)
+- [JSON Editor compatibility guide](guides/json-editor-compatibility.md)
+- [System.Text.Json guide](guides/system-text-json.md)
+- [EF Core projection guide](guides/ef-core-projection.md)
 - [Power BI projection guide](guides/power-bi-projection.md)
+- [Projection capability matrix](guides/projection-capabilities.md)

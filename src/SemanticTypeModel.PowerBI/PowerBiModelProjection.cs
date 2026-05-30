@@ -11,13 +11,13 @@ using SemanticTypeModel.Abstractions.Hardening;
 namespace SemanticTypeModel.PowerBI;
 
 /// <summary>
-/// Projects canonical hardened type models to a TOM-like tabular metadata model.
+/// Projects canonical hardened type models to a Power BI metadata model.
 /// </summary>
 /// <remarks>
-/// Initializes a new instance of the <see cref="PowerBiTabularProjection"/> class.
+/// Initializes a new instance of the <see cref="PowerBiModelProjection"/> class.
 /// </remarks>
 /// <param name="options">Projection options.</param>
-public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options = null) : ISchemaProjection<TabularModelDefinition>, IProjectionCapabilityProvider
+public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = null) : ISchemaProjection<PowerBiProjectionModel>, IProjectionCapabilityProvider
 {
     private static readonly HashSet<EntityRole> TableRoles =
     [
@@ -30,12 +30,12 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
     private readonly PowerBiProjectionOptions _options = options ?? PowerBiProjectionOptions.Default;
 
     /// <summary>
-    /// Projects a canonical hardened model into TOM-like metadata.
+    /// Projects a canonical hardened model into Power BI metadata.
     /// </summary>
     /// <param name="model">The source model.</param>
     /// <param name="context">Projection context carrying diagnostic sink state.</param>
-    /// <returns>Projected TOM-like model definition.</returns>
-    public TabularModelDefinition Project(TypeSchemaModel model, SchemaProjectionContext context)
+    /// <returns>Projected Power BI model definition.</returns>
+    public PowerBiProjectionModel Project(TypeSchemaModel model, SchemaProjectionContext context)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(context);
@@ -82,9 +82,9 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         }
 
         IReadOnlyDictionary<TypeId, ProjectedTableInfo> tablesByTypeId = projectedTables.ToDictionary(static table => table.SourceTypeId);
-        IReadOnlyList<TabularRelationshipDefinition> relationships = ProjectRelationships(model, tablesByTypeId, diagnostics);
+        IReadOnlyList<PowerBiRelationshipDefinition> relationships = ProjectRelationships(model, tablesByTypeId, diagnostics);
 
-        return new TabularModelDefinition
+        return new PowerBiProjectionModel
         {
             Name = model.Id.Value,
             Tables = projectedTables.Select(static table => table.Table).ToArray(),
@@ -150,13 +150,13 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
     {
         var tablePath = ModelPath.ForType(objectType.Id);
         var keyPropertyIds = objectType.Keys.SelectMany(static key => key.Properties).Select(static property => property.Id).ToHashSet();
-        var columns = new List<TabularColumnDefinition>();
+        var columns = new List<PowerBiColumnDefinition>();
         var columnNameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var columnNameByProperty = new Dictionary<PropertyId, string>();
 
         foreach (PropertyDefinition property in objectType.Properties)
         {
-            foreach (TabularColumnDefinition projectedColumn in ProjectProperty(model, objectType, property, keyPropertyIds, foreignKeyPropertyIds, diagnostics))
+            foreach (PowerBiColumnDefinition projectedColumn in ProjectProperty(model, objectType, property, keyPropertyIds, foreignKeyPropertyIds, diagnostics))
             {
                 var resolvedColumnName = ResolveUniqueName(
                     projectedColumn.Name,
@@ -169,7 +169,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
                     continue;
                 }
 
-                TabularColumnDefinition finalColumn = projectedColumn with { Name = resolvedColumnName };
+                PowerBiColumnDefinition finalColumn = projectedColumn with { Name = resolvedColumnName };
                 columns.Add(finalColumn);
                 if (!columnNameByProperty.ContainsKey(property.Id))
                 {
@@ -178,7 +178,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
             }
         }
 
-        IReadOnlyList<TabularMeasureDefinition> measures = ProjectMeasures(objectType, diagnostics);
+        IReadOnlyList<PowerBiMeasureDefinition> measures = ProjectMeasures(objectType, diagnostics);
         var displayFolder = ResolveStringAnnotation(
             objectType.Annotations,
             tablePath,
@@ -189,7 +189,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         return new ProjectedTableInfo
         {
             SourceTypeId = objectType.Id,
-            Table = new TabularTableDefinition
+            Table = new PowerBiTableDefinition
             {
                 Name = tableName,
                 Columns = columns,
@@ -207,7 +207,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         };
     }
 
-    private IReadOnlyList<TabularColumnDefinition> ProjectProperty(
+    private IReadOnlyList<PowerBiColumnDefinition> ProjectProperty(
         TypeSchemaModel model,
         ObjectTypeDefinition owner,
         PropertyDefinition property,
@@ -299,7 +299,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         return HandleUnsupportedShape(property, propertyPath, propertyType.Kind.ToString(), diagnostics);
     }
 
-    private IReadOnlyList<TabularColumnDefinition> ProjectValueObject(
+    private IReadOnlyList<PowerBiColumnDefinition> ProjectValueObject(
         ObjectTypeDefinition owner,
         PropertyDefinition property,
         ObjectTypeDefinition valueObjectType,
@@ -333,7 +333,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
                 CreateColumn(
                     property.Name,
                     property.DisplayName,
-                    TabularDataType.String,
+                    PowerBiDataType.String,
                     property.Cardinality.AllowsNull || valueObjectType.Nullability.AllowsNull,
                     isKey,
                     isHidden,
@@ -346,7 +346,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
             ];
         }
 
-        var flattened = new List<TabularColumnDefinition>();
+        var flattened = new List<PowerBiColumnDefinition>();
         foreach (PropertyDefinition nestedProperty in valueObjectType.Properties)
         {
             var nestedPath = ModelPath.ForProperty(valueObjectType.Id, nestedProperty.Name);
@@ -395,7 +395,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         return flattened;
     }
 
-    private IReadOnlyList<TabularColumnDefinition> ProjectNestedValueObjectProperty(
+    private IReadOnlyList<PowerBiColumnDefinition> ProjectNestedValueObjectProperty(
         string flattenedName,
         PropertyDefinition nestedProperty,
         IList<SchemaDiagnostic> diagnostics)
@@ -411,7 +411,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
             CreateColumn(
                 flattenedName,
                 nestedProperty.DisplayName,
-                TabularDataType.String,
+                PowerBiDataType.String,
                 nestedProperty.Cardinality.AllowsNull,
                 false,
                 false,
@@ -424,13 +424,13 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         ];
     }
 
-    private IReadOnlyList<TabularColumnDefinition> HandleUnsupportedShape(
+    private IReadOnlyList<PowerBiColumnDefinition> HandleUnsupportedShape(
         PropertyDefinition property,
         string propertyPath,
         string shapeName,
         IList<SchemaDiagnostic> diagnostics)
     {
-        if (_options.UnsupportedShapeBehavior == UnsupportedTabularShapeBehavior.SerializeJson)
+        if (_options.UnsupportedShapeBehavior == UnsupportedPowerBiShapeBehavior.SerializeJson)
         {
             Report(
                 diagnostics,
@@ -440,17 +440,17 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
                 propertyPath);
             return
             [
-                CreateColumn(property.Name, property.DisplayName, TabularDataType.String, true, false, false, property.Description, PowerBiSummarization.None, property.Id, null, null, property.Annotations),
+                CreateColumn(property.Name, property.DisplayName, PowerBiDataType.String, true, false, false, property.Description, PowerBiSummarization.None, property.Id, null, null, property.Annotations),
             ];
         }
 
-        if (_options.UnsupportedShapeBehavior == UnsupportedTabularShapeBehavior.IgnoreWithWarning)
+        if (_options.UnsupportedShapeBehavior == UnsupportedPowerBiShapeBehavior.IgnoreWithWarning)
         {
             Report(
                 diagnostics,
                 SchemaDiagnosticSeverity.Warning,
                 "POWERBI_UNSUPPORTED_SHAPE_IGNORED",
-                $"Property '{property.Name}' with shape '{shapeName}' was skipped for tabular projection.",
+                $"Property '{property.Name}' with shape '{shapeName}' was skipped for Power BI projection.",
                 propertyPath);
             return [];
         }
@@ -459,15 +459,15 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
             diagnostics,
             SchemaDiagnosticSeverity.Warning,
             "POWERBI_UNSUPPORTED_SHAPE",
-            $"Property '{property.Name}' with shape '{shapeName}' is unsupported for tabular projection.",
+            $"Property '{property.Name}' with shape '{shapeName}' is unsupported for Power BI projection.",
             propertyPath);
         return [];
     }
 
-    private static TabularColumnDefinition CreateColumn(
+    private static PowerBiColumnDefinition CreateColumn(
         string name,
         string? displayName,
-        TabularDataType dataType,
+        PowerBiDataType dataType,
         bool isNullable,
         bool isKey,
         bool isHidden,
@@ -478,7 +478,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         string? formatString,
         AnnotationBag annotations)
     {
-        return new TabularColumnDefinition
+        return new PowerBiColumnDefinition
         {
             Name = name,
             DisplayName = displayName,
@@ -495,49 +495,49 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         };
     }
 
-    private TabularDataType MapEnumDataType(EnumTypeDefinition enumType)
+    private PowerBiDataType MapEnumDataType(EnumTypeDefinition enumType)
     {
         if (_options.EnumProjectionMode == EnumProjectionMode.NumericWhenAvailable)
         {
             return enumType.StorageKind switch
             {
-                EnumStorageKind.Integer => TabularDataType.Int64,
-                EnumStorageKind.Number => TabularDataType.Double,
-                _ => TabularDataType.String,
+                EnumStorageKind.Integer => PowerBiDataType.Int64,
+                EnumStorageKind.Number => PowerBiDataType.Double,
+                _ => PowerBiDataType.String,
             };
         }
 
-        return TabularDataType.String;
+        return PowerBiDataType.String;
     }
 
-    private TabularDataType MapScalarDataType(ScalarTypeDefinition scalar, string modelPath, IList<SchemaDiagnostic> diagnostics)
+    private PowerBiDataType MapScalarDataType(ScalarTypeDefinition scalar, string modelPath, IList<SchemaDiagnostic> diagnostics)
     {
         return scalar.ScalarKind switch
         {
-            ScalarKind.Boolean => TabularDataType.Boolean,
-            ScalarKind.String => TabularDataType.String,
-            ScalarKind.Integer => TabularDataType.Int64,
+            ScalarKind.Boolean => PowerBiDataType.Boolean,
+            ScalarKind.String => PowerBiDataType.String,
+            ScalarKind.Integer => PowerBiDataType.Int64,
             ScalarKind.Number => _options.NumericProjectionMode == NumericProjectionMode.DecimalWhenDefined && scalar.Precision is not null
-                ? TabularDataType.Decimal
-                : TabularDataType.Double,
-            ScalarKind.Decimal => TabularDataType.Decimal,
-            ScalarKind.Date => TabularDataType.Date,
-            ScalarKind.Time => TabularDataType.Time,
-            ScalarKind.DateTime => TabularDataType.DateTime,
-            ScalarKind.DateTimeOffset => ReportLossyType(scalar, "POWERBI_LOSSY_DATETIMEOFFSET_MAPPING", "DateTimeOffset was projected as DateTime and offset semantics are lost.", TabularDataType.DateTime, modelPath, diagnostics),
-            ScalarKind.Duration => ReportLossyType(scalar, "POWERBI_LOSSY_DURATION_MAPPING", "Duration was projected as String.", TabularDataType.String, modelPath, diagnostics),
-            ScalarKind.Guid => TabularDataType.String,
-            ScalarKind.Binary => ReportLossyType(scalar, "POWERBI_LOSSY_BINARY_MAPPING", "Binary was projected as Binary without provider-specific guarantees.", TabularDataType.Binary, modelPath, diagnostics),
-            ScalarKind.Json => ReportLossyType(scalar, "POWERBI_LOSSY_JSON_MAPPING", "Json was projected as String.", TabularDataType.String, modelPath, diagnostics),
-            _ => ReportLossyType(scalar, "POWERBI_UNKNOWN_SCALAR_MAPPING", $"Scalar kind '{scalar.ScalarKind}' was projected as String.", TabularDataType.String, modelPath, diagnostics),
+                ? PowerBiDataType.Decimal
+                : PowerBiDataType.Double,
+            ScalarKind.Decimal => PowerBiDataType.Decimal,
+            ScalarKind.Date => PowerBiDataType.Date,
+            ScalarKind.Time => PowerBiDataType.Time,
+            ScalarKind.DateTime => PowerBiDataType.DateTime,
+            ScalarKind.DateTimeOffset => ReportLossyType(scalar, "POWERBI_LOSSY_DATETIMEOFFSET_MAPPING", "DateTimeOffset was projected as DateTime and offset semantics are lost.", PowerBiDataType.DateTime, modelPath, diagnostics),
+            ScalarKind.Duration => ReportLossyType(scalar, "POWERBI_LOSSY_DURATION_MAPPING", "Duration was projected as String.", PowerBiDataType.String, modelPath, diagnostics),
+            ScalarKind.Guid => PowerBiDataType.String,
+            ScalarKind.Binary => ReportLossyType(scalar, "POWERBI_LOSSY_BINARY_MAPPING", "Binary was projected as Binary without provider-specific guarantees.", PowerBiDataType.Binary, modelPath, diagnostics),
+            ScalarKind.Json => ReportLossyType(scalar, "POWERBI_LOSSY_JSON_MAPPING", "Json was projected as String.", PowerBiDataType.String, modelPath, diagnostics),
+            _ => ReportLossyType(scalar, "POWERBI_UNKNOWN_SCALAR_MAPPING", $"Scalar kind '{scalar.ScalarKind}' was projected as String.", PowerBiDataType.String, modelPath, diagnostics),
         };
     }
 
-    private static TabularDataType ReportLossyType(
+    private static PowerBiDataType ReportLossyType(
         ScalarTypeDefinition scalar,
         string code,
         string message,
-        TabularDataType dataType,
+        PowerBiDataType dataType,
         string modelPath,
         IList<SchemaDiagnostic> diagnostics)
     {
@@ -546,10 +546,10 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         return dataType;
     }
 
-    private IReadOnlyList<TabularMeasureDefinition> ProjectMeasures(ObjectTypeDefinition objectType, IList<SchemaDiagnostic> diagnostics)
+    private IReadOnlyList<PowerBiMeasureDefinition> ProjectMeasures(ObjectTypeDefinition objectType, IList<SchemaDiagnostic> diagnostics)
     {
         var typePath = ModelPath.ForType(objectType.Id);
-        var measures = new List<TabularMeasureDefinition>();
+        var measures = new List<PowerBiMeasureDefinition>();
         var measureNameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (ComputedMemberDefinition member in objectType.ComputedMembers)
@@ -576,7 +576,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
                 continue;
             }
 
-            measures.Add(new TabularMeasureDefinition
+            measures.Add(new PowerBiMeasureDefinition
             {
                 Name = resolvedName,
                 Expression = expression,
@@ -591,12 +591,12 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         return measures;
     }
 
-    private IReadOnlyList<TabularRelationshipDefinition> ProjectRelationships(
+    private IReadOnlyList<PowerBiRelationshipDefinition> ProjectRelationships(
         TypeSchemaModel model,
         IReadOnlyDictionary<TypeId, ProjectedTableInfo> tablesByTypeId,
         IList<SchemaDiagnostic> diagnostics)
     {
-        var projectedRelationships = new List<TabularRelationshipDefinition>();
+        var projectedRelationships = new List<PowerBiRelationshipDefinition>();
         var relationshipNameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var dedupe = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -716,7 +716,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
 
                 var isActive = ResolveBooleanAnnotation(relationship.Annotations, relationshipPath, diagnostics, PowerBiAnnotationNames.RelationshipActive) ?? true;
                 PowerBiRelationshipDirection direction = ResolveRelationshipDirection(relationship.Annotations, relationshipPath, diagnostics);
-                projectedRelationships.Add(new TabularRelationshipDefinition
+                projectedRelationships.Add(new PowerBiRelationshipDefinition
                 {
                     Name = resolvedName,
                     FromTable = fromTable.Table.Name,
@@ -734,15 +734,15 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
         return projectedRelationships;
     }
 
-    private static TabularRelationshipCardinality MapCardinality(RelationshipCardinality cardinality)
+    private static PowerBiRelationshipCardinality MapCardinality(RelationshipCardinality cardinality)
     {
         return cardinality switch
         {
-            RelationshipCardinality.OneToOne => TabularRelationshipCardinality.OneToOne,
-            RelationshipCardinality.OneToMany => TabularRelationshipCardinality.OneToMany,
-            RelationshipCardinality.ManyToOne => TabularRelationshipCardinality.ManyToOne,
-            RelationshipCardinality.ManyToMany => TabularRelationshipCardinality.ManyToMany,
-            _ => TabularRelationshipCardinality.ManyToOne,
+            RelationshipCardinality.OneToOne => PowerBiRelationshipCardinality.OneToOne,
+            RelationshipCardinality.OneToMany => PowerBiRelationshipCardinality.OneToMany,
+            RelationshipCardinality.ManyToOne => PowerBiRelationshipCardinality.ManyToOne,
+            RelationshipCardinality.ManyToMany => PowerBiRelationshipCardinality.ManyToMany,
+            _ => PowerBiRelationshipCardinality.ManyToOne,
         };
     }
 
@@ -992,7 +992,7 @@ public sealed class PowerBiTabularProjection(PowerBiProjectionOptions? options =
     {
         public required TypeId SourceTypeId { get; init; }
 
-        public required TabularTableDefinition Table { get; init; }
+        public required PowerBiTableDefinition Table { get; init; }
 
         public required IReadOnlySet<PropertyId> KeyPropertyIds { get; init; }
 

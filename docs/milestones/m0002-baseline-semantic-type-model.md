@@ -162,7 +162,7 @@ Compile-time generation is optional in this milestone.
 The architecture must support future projections to:
 
 - EF Core;
-- Power BI tabular models;
+- Power BI metadata models;
 - OpenAPI;
 - TypeScript;
 - documentation systems.

@@ -9,7 +9,7 @@ Define projection capability contracts for the hardened canonical model and keep
 1. JSON Schema Draft 2020-12 runtime projection
 2. JSON editor/UI-hint projection mode
 3. EF Core metadata projection
-4. Power BI/TOM-like metadata projection
+4. Power BI metadata projection
 
 ## Capability Metadata API
 

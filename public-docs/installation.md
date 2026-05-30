@@ -1,13 +1,24 @@
 # Installation
 
-Install the packages needed by your scenario.
+Install the packages needed by your scenario. The 1.0 release candidate package set does not include a standalone `SemanticTypeModel.JsonEditor` package.
 
 ```sh
-dotnet add package SemanticTypeModel.JsonSchema --version 0.1.0-alpha
-dotnet add package SemanticTypeModel.JsonEditor --version 0.1.0-alpha
-dotnet add package SemanticTypeModel.DotNet --version 0.1.0-alpha
+dotnet add package SemanticTypeModel.JsonSchema --version 1.0.0-rc.1
+dotnet add package SemanticTypeModel.DotNet --version 1.0.0-rc.1
+dotnet add package SemanticTypeModel.SystemTextJson --version 1.0.0-rc.1
 ```
 
-This is an initial prerelease; APIs and package split may change before 1.0.
+For runtime composition, add dependency injection support explicitly:
 
-For package roles and combinations, see [packages.md](packages.md).
+```sh
+dotnet add package SemanticTypeModel.DependencyInjection --version 1.0.0-rc.1
+```
+
+For projection targets, add the package that owns the target:
+
+```sh
+dotnet add package SemanticTypeModel.EFCore --version 1.0.0-rc.1
+dotnet add package SemanticTypeModel.PowerBI --version 1.0.0-rc.1
+```
+
+JSON Editor compatibility is enabled through `SemanticTypeModel.JsonSchema` export options rather than through a separate package. For package roles and combinations, see [packages.md](packages.md).

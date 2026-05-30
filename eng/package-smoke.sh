@@ -52,7 +52,8 @@ SemanticTypeModel.Core
 SemanticTypeModel.JsonSchema
 SemanticTypeModel.DotNet
 SemanticTypeModel.Generators
-SemanticTypeModel.JsonEditor
+SemanticTypeModel.SystemTextJson
+SemanticTypeModel.DependencyInjection
 SemanticTypeModel.PowerBI
 SemanticTypeModel.EFCore
 "

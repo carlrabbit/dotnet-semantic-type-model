@@ -1,4 +1,4 @@
-// CA1720 is disabled because tabular data-type enum members intentionally use canonical type names
+// CA1720 is disabled because Power BI data-type enum members intentionally use canonical type names
 // (for example String/Int64/Decimal) to align with projection terminology and spec contracts.
 #pragma warning disable CA1720
 using SemanticTypeModel.Abstractions.Hardening;
@@ -6,9 +6,9 @@ using SemanticTypeModel.Abstractions.Hardening;
 namespace SemanticTypeModel.PowerBI;
 
 /// <summary>
-/// Represents the TOM-like projection result for a semantic type model.
+/// Represents the Power BI projection result for a semantic type model.
 /// </summary>
-public sealed record TabularModelDefinition
+public sealed record PowerBiProjectionModel
 {
     /// <summary>
     /// Gets the projected model name.
@@ -18,12 +18,12 @@ public sealed record TabularModelDefinition
     /// <summary>
     /// Gets projected tables.
     /// </summary>
-    public required IReadOnlyList<TabularTableDefinition> Tables { get; init; }
+    public required IReadOnlyList<PowerBiTableDefinition> Tables { get; init; }
 
     /// <summary>
     /// Gets projected relationships.
     /// </summary>
-    public required IReadOnlyList<TabularRelationshipDefinition> Relationships { get; init; }
+    public required IReadOnlyList<PowerBiRelationshipDefinition> Relationships { get; init; }
 
     /// <summary>
     /// Gets projection diagnostics.
@@ -32,9 +32,9 @@ public sealed record TabularModelDefinition
 }
 
 /// <summary>
-/// Represents a projected tabular table.
+/// Represents a projected Power BI table.
 /// </summary>
-public sealed record TabularTableDefinition
+public sealed record PowerBiTableDefinition
 {
     /// <summary>
     /// Gets table name.
@@ -64,12 +64,12 @@ public sealed record TabularTableDefinition
     /// <summary>
     /// Gets projected columns.
     /// </summary>
-    public required IReadOnlyList<TabularColumnDefinition> Columns { get; init; }
+    public required IReadOnlyList<PowerBiColumnDefinition> Columns { get; init; }
 
     /// <summary>
     /// Gets projected measures.
     /// </summary>
-    public required IReadOnlyList<TabularMeasureDefinition> Measures { get; init; }
+    public required IReadOnlyList<PowerBiMeasureDefinition> Measures { get; init; }
 
     /// <summary>
     /// Gets optional table description.
@@ -88,9 +88,9 @@ public sealed record TabularTableDefinition
 }
 
 /// <summary>
-/// Represents a projected tabular column.
+/// Represents a projected Power BI column.
 /// </summary>
-public sealed record TabularColumnDefinition
+public sealed record PowerBiColumnDefinition
 {
     /// <summary>
     /// Gets column name.
@@ -103,9 +103,9 @@ public sealed record TabularColumnDefinition
     public string? DisplayName { get; init; }
 
     /// <summary>
-    /// Gets tabular data type.
+    /// Gets Power BI data type.
     /// </summary>
-    public required TabularDataType DataType { get; init; }
+    public required PowerBiDataType DataType { get; init; }
 
     /// <summary>
     /// Gets a value indicating whether the column is nullable.
@@ -154,9 +154,9 @@ public sealed record TabularColumnDefinition
 }
 
 /// <summary>
-/// Represents a projected tabular relationship.
+/// Represents a projected Power BI relationship.
 /// </summary>
-public sealed record TabularRelationshipDefinition
+public sealed record PowerBiRelationshipDefinition
 {
     /// <summary>
     /// Gets relationship name.
@@ -186,7 +186,7 @@ public sealed record TabularRelationshipDefinition
     /// <summary>
     /// Gets relationship cardinality.
     /// </summary>
-    public required TabularRelationshipCardinality Cardinality { get; init; }
+    public required PowerBiRelationshipCardinality Cardinality { get; init; }
 
     /// <summary>
     /// Gets a value indicating whether this relationship is active.
@@ -205,9 +205,9 @@ public sealed record TabularRelationshipDefinition
 }
 
 /// <summary>
-/// Represents a projected tabular measure.
+/// Represents a projected Power BI measure.
 /// </summary>
-public sealed record TabularMeasureDefinition
+public sealed record PowerBiMeasureDefinition
 {
     /// <summary>
     /// Gets measure name.
@@ -329,38 +329,9 @@ public enum PowerBiNamingPolicy
 }
 
 /// <summary>
-/// Represents the hardened Power BI projection result.
+/// Defines projected Power BI data types.
 /// </summary>
-public sealed record PowerBiProjectionModel
-{
-    /// <summary>Gets projected tables.</summary>
-    public required IReadOnlyList<TabularTableDefinition> Tables { get; init; }
-
-    /// <summary>Gets projected relationships.</summary>
-    public required IReadOnlyList<TabularRelationshipDefinition> Relationships { get; init; }
-
-    /// <summary>Gets projection diagnostics.</summary>
-    public required IReadOnlyList<SchemaDiagnostic> Diagnostics { get; init; }
-
-    /// <summary>Creates a Power BI projection model from tabular metadata.</summary>
-    /// <param name="tabular">The tabular projection.</param>
-    /// <returns>The Power BI projection model.</returns>
-    public static PowerBiProjectionModel FromTabular(TabularModelDefinition tabular)
-    {
-        ArgumentNullException.ThrowIfNull(tabular);
-        return new PowerBiProjectionModel
-        {
-            Tables = tabular.Tables,
-            Relationships = tabular.Relationships,
-            Diagnostics = tabular.Diagnostics,
-        };
-    }
-}
-
-/// <summary>
-/// Defines projected tabular data types.
-/// </summary>
-public enum TabularDataType
+public enum PowerBiDataType
 {
     /// <summary>Boolean type.</summary>
     Boolean,
@@ -393,7 +364,7 @@ public enum TabularDataType
 /// <summary>
 /// Defines relationship cardinality in the projection model.
 /// </summary>
-public enum TabularRelationshipCardinality
+public enum PowerBiRelationshipCardinality
 {
     /// <summary>One-to-one.</summary>
     OneToOne,

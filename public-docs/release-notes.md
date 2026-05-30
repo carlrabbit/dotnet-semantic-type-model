@@ -2,7 +2,7 @@
 
 ## M0019 — Projection Capability Matrix and Compatibility Contracts
 
-Defined projection capability and compatibility contracts across JSON Schema, JSON Editor mode, EF Core, and Power BI projections.
+Defined projection capability and compatibility contracts across JSON Schema, JSON Editor compatibility mode, EF Core, and Power BI projections.
 
 - Added projection capability metadata contracts in `SemanticTypeModel.Abstractions.Hardening`.
 - Added deterministic `ProjectionCapabilityCatalog` with core feature coverage for each supported projection target.
@@ -34,7 +34,7 @@ Initial prerelease package publication milestone.
   - `SemanticTypeModel.JsonSchema`
   - `SemanticTypeModel.DotNet`
   - `SemanticTypeModel.Generators`
-  - `SemanticTypeModel.JsonEditor`
+  - `SemanticTypeModel.DependencyInjection`
   - `SemanticTypeModel.PowerBI`
   - `SemanticTypeModel.EFCore`
 - Added public API baseline files and release-gate validation.

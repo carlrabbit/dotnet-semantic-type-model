@@ -19,9 +19,9 @@ const string schema = """
 
 var imported = JsonSchemaImporter.Import(schema);
 var adapted = LegacyTypeSchemaModelAdapter.Adapt(imported.Model);
-var projection = new PowerBiTabularProjection(new PowerBiProjectionOptions { ProjectUnannotatedObjectsAsTables = true });
+var projection = new PowerBiModelProjection(new PowerBiProjectionOptions { ProjectUnannotatedObjectsAsTables = true });
 var context = new SchemaProjectionContext { Target = ProjectionTarget.PowerBi };
-TabularModelDefinition model = projection.Project(adapted.Model!, context);
+PowerBiProjectionModel model = projection.Project(adapted.Model!, context);
 
 Console.WriteLine($"tables: {model.Tables.Count}");
 Console.WriteLine($"diagnostics: {model.Diagnostics.Count}");

@@ -7,10 +7,10 @@ SemanticTypeModel is a .NET 10 library set for canonical semantic type models, J
 Add the package(s) your scenario needs:
 
 ```sh
-dotnet add package SemanticTypeModel.JsonSchema --version 0.1.0-alpha
-dotnet add package SemanticTypeModel.JsonEditor --version 0.1.0-alpha
-dotnet add package SemanticTypeModel.DotNet --version 0.1.0-alpha
-dotnet add package SemanticTypeModel.SystemTextJson --version 0.1.0-alpha
+dotnet add package SemanticTypeModel.JsonSchema --version 1.0.0-rc.1
+dotnet add package SemanticTypeModel.DependencyInjection --version 1.0.0-rc.1
+dotnet add package SemanticTypeModel.DotNet --version 1.0.0-rc.1
+dotnet add package SemanticTypeModel.SystemTextJson --version 1.0.0-rc.1
 ```
 
 See full package guidance in [public-docs/packages.md](public-docs/packages.md).
@@ -38,21 +38,21 @@ var exported = JsonSchemaExporter.Export(imported.Model!);
 Console.WriteLine(exported.Document.RootElement.GetRawText());
 ```
 
-## Package List (0.1.0-alpha)
+## Package List (1.0.0-rc.1)
 
 - `SemanticTypeModel.Abstractions`
 - `SemanticTypeModel.Core`
 - `SemanticTypeModel.JsonSchema`
 - `SemanticTypeModel.DotNet`
 - `SemanticTypeModel.Generators`
-- `SemanticTypeModel.JsonEditor`
+- `SemanticTypeModel.DependencyInjection`
 - `SemanticTypeModel.PowerBI`
 - `SemanticTypeModel.EFCore`
 - `SemanticTypeModel.SystemTextJson`
 
 ## Prerelease Notice
 
-`0.1.0-alpha` is the first prerelease. APIs, package split, and known limitations may change before 1.0.
+`1.0.0-rc.1` is the release-readiness package set. Compatibility rules are documented in public-docs/api/compatibility.md.
 
 ## Samples
 
@@ -74,6 +74,8 @@ Run all samples:
 - [public-docs/packages.md](public-docs/packages.md)
 - [public-docs/api/public-api.md](public-docs/api/public-api.md)
 - [public-docs/diagnostics.md](public-docs/diagnostics.md)
+- [public-docs/guides/json-schema.md](public-docs/guides/json-schema.md)
+- [public-docs/guides/json-editor-compatibility.md](public-docs/guides/json-editor-compatibility.md)
 - [public-docs/guides/ef-core-projection.md](public-docs/guides/ef-core-projection.md)
 - [public-docs/guides/projection-capabilities.md](public-docs/guides/projection-capabilities.md)
 - [public-docs/guides/system-text-json.md](public-docs/guides/system-text-json.md)
