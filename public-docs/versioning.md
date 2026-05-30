@@ -2,11 +2,13 @@
 
 ## Policy
 
-- Semantic versioning is used.
-- `0.1.0-alpha` is the first prerelease.
-- Public APIs may change before 1.0.
-- Package split may change before 1.0.
-- Diagnostics and generated output are preview unless explicitly stabilized.
+- `1.0.0` is the first stable release.
+- Semantic versioning applies after `1.0.0`.
+- Documented public APIs are covered by the compatibility policy.
+- Experimental APIs are explicitly marked when present.
+- Diagnostic IDs are stable unless the compatibility policy explicitly says otherwise.
+- Annotation keys are stable unless the compatibility policy explicitly says otherwise.
+- Prerelease APIs before 1.0 were not compatibility-stable.
 
 ## Compatibility
 

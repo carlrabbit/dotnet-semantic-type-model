@@ -1,8 +1,8 @@
 # Packages
 
-## 1.0 Release Candidate Package Set
+## 1.0 Stable Package Set
 
-The intended `1.0.0-rc.1` package set is:
+The final `1.0.0` package set is:
 
 - `SemanticTypeModel.Abstractions`
 - `SemanticTypeModel.Core`

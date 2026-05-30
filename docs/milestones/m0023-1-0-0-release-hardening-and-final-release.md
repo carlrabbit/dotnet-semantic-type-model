@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft milestone content document.
+Implemented release-hardening milestone content document. Local release gates, package artifact validation, and public documentation are hardened for the final `1.0.0` package set; external NuGet publishing remains a manual owner action.
 
 ## Goal
 
@@ -92,7 +92,7 @@ Use the package set finalized by M0022.
 
 Unless M0022 explicitly introduced a real `SemanticTypeModel.JsonEditor` package, the final 1.0 package set must exclude it.
 
-Expected package set after M0022:
+Confirmed final `1.0.0` package set after M0022:
 
 ```text
 SemanticTypeModel.Abstractions
@@ -101,11 +101,12 @@ SemanticTypeModel.JsonSchema
 SemanticTypeModel.DotNet
 SemanticTypeModel.Generators
 SemanticTypeModel.SystemTextJson
+SemanticTypeModel.DependencyInjection
 SemanticTypeModel.PowerBI
 SemanticTypeModel.EFCore
 ```
 
-The release process must not publish `SemanticTypeModel.JsonEditor` unless a real package exists and M0022 changed the package policy.
+The release process must not publish `SemanticTypeModel.JsonEditor` unless a real package exists and M0022 changed the package policy. The canonical `eng/` scripts validate the exact package set before smoke testing and publishing.
 
 ## Release Candidate Phase
 

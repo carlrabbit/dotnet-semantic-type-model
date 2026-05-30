@@ -25,22 +25,19 @@ if [ ! -d "$package_dir" ]; then
   exit 1
 fi
 
-found=0
-for package_file in "$package_dir"/*."$version".nupkg; do
-  [ -f "$package_file" ] || continue
-  case "$package_file" in
-    *.snupkg)
-      continue
-      ;;
-  esac
-
-  found=1
-  dotnet nuget push "$package_file" --api-key "$api_key" --source "$source_url" --skip-duplicate
-done
-
-if [ "$found" -eq 0 ]; then
-  echo "No publishable .nupkg files found for version $version in $package_dir." >&2
+if find "$package_dir" -maxdepth 1 -type f -name "SemanticTypeModel.JsonEditor.$version.nupkg" | grep . >/dev/null; then
+  echo "SemanticTypeModel.JsonEditor is not part of the 1.0 package set and will not be published." >&2
   exit 1
 fi
+
+for package_id in $(semantic_type_model_package_ids); do
+  package_file="$package_dir/$package_id.$version.nupkg"
+  if [ ! -f "$package_file" ]; then
+    echo "Expected package is missing: $package_file" >&2
+    exit 1
+  fi
+
+  dotnet nuget push "$package_file" --api-key "$api_key" --source "$source_url" --skip-duplicate
+done
 
 echo "Publish command completed for version $version."

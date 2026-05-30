@@ -17,7 +17,7 @@ Define the stable set of repository commands used by humans, CI, and agents.
 | `./eng/samples.sh` | Build and run runnable samples |
 | `./eng/public-docs.sh` | Validate required public documentation surfaces |
 | `./eng/public-api.sh` | Validate public API baseline files |
-| `./eng/package.sh <version>` | Pack prerelease NuGet packages into `artifacts/nuget` |
+| `./eng/package.sh <version>` | Pack release NuGet packages into `artifacts/nuget` |
 | `./eng/package-smoke.sh <version>` | Validate local package consumption from `artifacts/nuget` |
 | `./eng/release-check.sh <version>` | Run release-readiness gate without publishing |
 | `./eng/publish.sh <version>` | Publish local `artifacts/nuget` packages to NuGet.org |

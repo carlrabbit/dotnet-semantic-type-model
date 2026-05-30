@@ -7,10 +7,10 @@ SemanticTypeModel is a .NET 10 library set for canonical semantic type models, J
 Add the package(s) your scenario needs:
 
 ```sh
-dotnet add package SemanticTypeModel.JsonSchema --version 1.0.0-rc.1
-dotnet add package SemanticTypeModel.DependencyInjection --version 1.0.0-rc.1
-dotnet add package SemanticTypeModel.DotNet --version 1.0.0-rc.1
-dotnet add package SemanticTypeModel.SystemTextJson --version 1.0.0-rc.1
+dotnet add package SemanticTypeModel.JsonSchema --version 1.0.0
+dotnet add package SemanticTypeModel.DependencyInjection --version 1.0.0
+dotnet add package SemanticTypeModel.DotNet --version 1.0.0
+dotnet add package SemanticTypeModel.SystemTextJson --version 1.0.0
 ```
 
 See full package guidance in [public-docs/packages.md](public-docs/packages.md).
@@ -38,7 +38,7 @@ var exported = JsonSchemaExporter.Export(imported.Model!);
 Console.WriteLine(exported.Document.RootElement.GetRawText());
 ```
 
-## Package List (1.0.0-rc.1)
+## Package List (1.0.0)
 
 - `SemanticTypeModel.Abstractions`
 - `SemanticTypeModel.Core`
@@ -50,9 +50,9 @@ Console.WriteLine(exported.Document.RootElement.GetRawText());
 - `SemanticTypeModel.EFCore`
 - `SemanticTypeModel.SystemTextJson`
 
-## Prerelease Notice
+## Stable Release Notice
 
-`1.0.0-rc.1` is the release-readiness package set. Compatibility rules are documented in public-docs/api/compatibility.md.
+`1.0.0` is the first stable release package set. Compatibility rules are documented in public-docs/api/compatibility.md.
 
 ## Samples
 
