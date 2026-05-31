@@ -60,31 +60,32 @@ This milestone does not cover:
 - resurrecting `SemanticTypeModel.JsonEditor` as a package unless a real package exists and was accepted before M0023;
 - changing package boundaries after the release candidate except to fix a release blocker.
 
-## Required Reading
+## Implementation Router
 
-Before implementation, read:
+Read only the authoritative documents needed for the focus area being implemented:
 
-- `docs/TERMINOLOGY.md`
-- `docs/MILESTONES.md`
-- `docs/ENGINEERING.md`
-- `docs/PUBLIC-DOCS.md`
-- `docs/WORKFLOWS.md`
-- `docs/GUARDRAILS.md`
-- `docs/workflows/release.md`
-- `docs/workflows/release-check.md`
-- `docs/workflows/package.md`
-- `docs/engineering/packaging.md`
-- `docs/engineering/release-readiness.md`
-- `docs/engineering/command-contract.md`
-- `public-docs/packages.md`
-- `public-docs/versioning.md`
-- `public-docs/release-notes.md`
-- `public-docs/guides/projection-capabilities.md`
-- `docs/milestones/m0022-1-0-public-api-compatibility-documentation-samples-and-release-readiness.md`
-- `docs/research/project-setup-guide-v5.md`
-- `docs/research/engineering-guide-v4.md`
+- relevant specs from `docs/specs/`;
+- `docs/ENGINEERING.md` and `docs/engineering/command-contract.md` for validation-tier selection;
+- `docs/PUBLIC-DOCS.md` and affected `public-docs/` pages only when the change is consumer-facing;
+- architecture or decision records only when the change alters structure or rationale.
 
-If any document is missing or renamed, update this milestone according to current repository structure before implementation.
+Historical research guide copies are non-authoritative references and are not required milestone reading.
+
+## Focus Areas
+
+Use the milestone scope to choose one or more focused implementation slices instead of treating the whole milestone as a single work item:
+
+| Focus area | Validation tier | Documentation impact |
+|---|---|---|
+| Behavior or API implementation | Tier 1 during development, Tier 2 before completion | Direct when behavior is consumer-facing; otherwise update specs only when contracts change. |
+| Tests and diagnostics | Tier 1 for the affected test project or diagnostic filter, Tier 2 before completion | Direct for public diagnostics; deferred only when examples require a later feature slice. |
+| Public documentation, samples, or release readiness | Tier 0 for documentation checks, Tier 3 for package/release readiness | Direct for changed public docs and package README sources; record deferred docs explicitly. |
+
+## Validation Tier
+
+- Default implementation focus areas: Tier 1 during the inner loop, then Tier 2 before completion.
+- Documentation-only focus areas: Tier 0 plus `./eng/public-docs.sh` when public documentation changes.
+- Packaging or release focus areas: Tier 3 or Tier 4 as described by the release-readiness documents.
 
 ## Intended Final Package Set
 

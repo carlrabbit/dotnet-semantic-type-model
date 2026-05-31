@@ -15,10 +15,14 @@ Define engineering validation expectations for public consumer documentation sur
 `./eng/public-docs.sh` validates:
 
 - required consumer-facing files exist;
-- package README source file exists;
+- package README source files exist;
+- package IDs in project files match `docs/PUBLIC-DOCS.md`;
+- NuGet package README source mappings match project files;
+- package installation versions are consistent across `README.md` and `public-docs/`;
+- package lists do not drift between the README, public docs, and project files;
 - public API and compatibility reference docs exist;
 - sample documentation pages exist;
-- non-root README files are rejected under `public-docs/`.
+- non-root README files are rejected.
 
 ## Related Authority
 
@@ -30,7 +34,7 @@ Define engineering validation expectations for public consumer documentation sur
 
 - Public documentation surfaces required by `docs/PUBLIC-DOCS.md` exist.
 - Public documentation validation command passes.
-- No `README.md` files are added under `public-docs/`.
+- No `README.md` files are added outside the repository root.
 
 ## Document Contract
 

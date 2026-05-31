@@ -104,7 +104,7 @@ The following test coverage is required:
 
 ## Related Documents
 
-- `docs/guardrails/implementation.md`
+- `docs/ENGINEERING.md`
 - `public-docs/diagnostics.md`
 - `public-docs/diagnostics/stm0xxx.md`
 - `public-docs/diagnostics/stm3xxx.md`

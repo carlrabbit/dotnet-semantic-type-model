@@ -10,6 +10,18 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - Root namespace: `SemanticTypeModel`
 - Package prefix: `SemanticTypeModel.*`
 
+
+## Milestone Usage
+
+Milestones are implementation routers, not broad required-reading bundles. Use each milestone to identify the relevant focus area, authoritative specs, direct documentation impact, deferred documentation impact, and validation tier. Historical research guide copies are non-authoritative and are not required to implement a milestone.
+
+For each focus area:
+
+- read only the specs and engineering documents needed for that change;
+- classify validation using Tier 0 through Tier 4 from `docs/ENGINEERING.md`;
+- update public docs immediately for direct consumer-facing impact;
+- record deferred documentation impact explicitly when docs cannot be completed in the same change.
+
 ## Available Milestones
 
 - [M0001 - Project and Engineering Setup](milestones/m0001-project-and-engineering-setup.md)

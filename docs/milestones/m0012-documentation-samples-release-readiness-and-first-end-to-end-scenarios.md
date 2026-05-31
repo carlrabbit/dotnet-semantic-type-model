@@ -2,18 +2,15 @@
 
 ## Purpose
 
-Align the repository with Project Setup Guide V5 and Engineering Guide V4, then introduce the first consumer-facing public documentation, runnable samples, and release-readiness command surface.
+Introduce the first consumer-facing public documentation, runnable samples, and release-readiness command surface.
 
 ## Delivered Scope
 
-- Research guide alignment to:
-  - `docs/research/project-setup-guide-v5.md`
-  - `docs/research/engineering-guide-v4.md`
 - Public documentation authority and source structure:
   - `docs/PUBLIC-DOCS.md`
   - `public-docs/`
 - User-first root `README.md` with install, quick start, packages, concepts, samples, public docs, and contributor docs.
-- Documentation governance updates across terminology, guardrails, engineering docs, TBPs, workflows, and issue templates.
+- Documentation governance updates across terminology, engineering docs, workflows, and public documentation.
 - New engineering commands:
   - `./eng/public-docs.sh`
   - `./eng/package-smoke.sh <version>`
