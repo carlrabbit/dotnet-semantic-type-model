@@ -1,0 +1,13 @@
+{
+  "name": "dotnet-semantic-type-model",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:2.1-10.0-noble",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit"
+      ]
+    }
+  },
+  "postCreateCommand": "./eng/restore.sh"
+}
