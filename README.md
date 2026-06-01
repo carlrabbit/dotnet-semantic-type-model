@@ -85,7 +85,6 @@ Run all samples:
 ## Contributor Docs
 
 - [docs/TERMINOLOGY.md](docs/TERMINOLOGY.md)
-- [docs/GUARDRAILS.md](docs/GUARDRAILS.md)
 - [docs/ENGINEERING.md](docs/ENGINEERING.md)
 - [docs/MILESTONES.md](docs/MILESTONES.md)
 - [docs/PUBLIC-DOCS.md](docs/PUBLIC-DOCS.md)

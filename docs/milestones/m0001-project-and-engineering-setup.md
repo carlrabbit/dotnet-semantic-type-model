@@ -20,7 +20,7 @@ This milestone includes:
 - CI workflow baseline;
 - agent instructions;
 - documentation indexes;
-- guardrails;
+- engineering guidance;
 - repository naming conventions;
 - initial package/project structure.
 
@@ -34,10 +34,32 @@ The following names are mandatory:
 
 All projects, namespaces, and package identifiers must follow these conventions.
 
-## Required Reading
+## Implementation Router
 
-- `docs/research/project-setup-guide-v4.md`
-- `docs/research/engineering-guide-v3.md`
+Read only the authoritative documents needed for the focus area being implemented:
+
+- relevant specs from `docs/specs/`;
+- `docs/ENGINEERING.md` and `docs/engineering/command-contract.md` for validation-tier selection;
+- `docs/PUBLIC-DOCS.md` and affected `public-docs/` pages only when the change is consumer-facing;
+- architecture or decision records only when the change alters structure or rationale.
+
+Historical research guide copies are non-authoritative references and are not required milestone reading.
+
+## Focus Areas
+
+Use the milestone scope to choose one or more focused implementation slices instead of treating the whole milestone as a single work item:
+
+| Focus area | Validation tier | Documentation impact |
+|---|---|---|
+| Behavior or API implementation | Tier 1 during development, Tier 2 before completion | Direct when behavior is consumer-facing; otherwise update specs only when contracts change. |
+| Tests and diagnostics | Tier 1 for the affected test project or diagnostic filter, Tier 2 before completion | Direct for public diagnostics; deferred only when examples require a later feature slice. |
+| Public documentation, samples, or release readiness | Tier 0 for documentation checks, Tier 3 for package/release readiness | Direct for changed public docs and package README sources; record deferred docs explicitly. |
+
+## Validation Tier
+
+- Default implementation focus areas: Tier 1 during the inner loop, then Tier 2 before completion.
+- Documentation-only focus areas: Tier 0 plus `./eng/public-docs.sh` when public documentation changes.
+- Packaging or release focus areas: Tier 3 or Tier 4 as described by the release-readiness documents.
 
 ## Deliverables
 
@@ -50,21 +72,17 @@ At minimum:
 ```text
 /docs
 /docs/milestones
-/docs/research
 /docs/engineering
-/docs/guardrails
 /docs/workflows
 /docs/specs
 /docs/architecture
 /docs/decisions
-/docs/tbps
 /src
 /tests/unit
 /tests/integration
 /benchmarks
 /eng
 /.github/workflows
-/.github/ISSUE_TEMPLATE
 ```
 
 ### Guide relocation
@@ -72,27 +90,23 @@ At minimum:
 Move:
 
 ```text
-/project-setup-guide-v4.md
-/engineering-guide-v3.md
+historical setup and engineering guide copies
 ```
 
 into:
 
 ```text
-/docs/research/project-setup-guide-v4.md
-/docs/research/engineering-guide-v3.md
+historical research references
 ```
 
 Create:
 
 - `docs/RESEARCH.md`
 - `docs/ENGINEERING.md`
-- `docs/GUARDRAILS.md`
 - `docs/WORKFLOWS.md`
 - `docs/SPECS.md`
 - `docs/ARCHITECTURE.md`
 - `docs/DECISIONS.md`
-- `docs/TBPS.md`
 - `docs/TERMINOLOGY.md`
 
 ### Solution and projects
@@ -195,9 +209,7 @@ AGENTS.md
 
 Instructions must reference:
 
-- `docs/ENGINEERING.md`;
-- `docs/GUARDRAILS.md`;
-- `docs/TBPS.md`;
+- `docs/ENGINEERING.md`;;;
 - `docs/MILESTONES.md`.
 
 ### Issue templates
@@ -205,10 +217,6 @@ Instructions must reference:
 Create:
 
 ```text
-.github/ISSUE_TEMPLATE/bug.md
-.github/ISSUE_TEMPLATE/documentation.md
-.github/ISSUE_TEMPLATE/milestone-implementation.md
-.github/ISSUE_TEMPLATE/release.md
 ```
 
 ## Non-Goals
@@ -239,7 +247,7 @@ The milestone is complete when:
 
 - the repository structure exists;
 - all required documentation indexes exist;
-- the guides were moved into `docs/research/`;
+- historical guides were retained as non-authoritative research references;
 - the solution builds successfully;
 - tests run successfully;
 - benchmark project builds successfully;

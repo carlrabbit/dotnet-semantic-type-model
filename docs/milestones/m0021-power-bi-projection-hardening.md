@@ -50,31 +50,32 @@ This milestone does not cover:
 
 Power BI service publishing and deployment automation are post-1.0 candidates unless explicitly introduced by a later milestone.
 
-## Required Reading
+## Implementation Router
 
-Before implementation, read:
+Read only the authoritative documents needed for the focus area being implemented:
 
-- `docs/TERMINOLOGY.md`
-- `docs/SPECS.md`
-- `docs/MILESTONES.md`
-- `docs/ENGINEERING.md`
-- `docs/PUBLIC-DOCS.md`
-- `docs/GUARDRAILS.md`
-- `docs/guardrails/implementation.md`
-- `docs/guardrails/testing.md`
-- `docs/specs/dotnet-type-system-extraction.md`
-- `docs/specs/dotnet-attribute-and-convention-model.md`
-- `docs/specs/runtime-api-and-di-integration.md`
-- `docs/specs/type-model-projection-capabilities.md`
-- `docs/specs/type-model-powerbi-tom-projection.md`
-- `docs/milestones/m0014-semantic-type-annotation-usability.md`
-- `docs/milestones/m0016-end-to-end-code-first-schema-authoring-samples.md`
-- `docs/milestones/m0018-diagnostics-documentation-and-analyzer-experience.md`
-- `docs/milestones/m0019-projection-capability-matrix-and-compatibility-contracts.md`
-- `docs/research/project-setup-guide-v5.md`
-- `docs/research/engineering-guide-v4.md`
+- relevant specs from `docs/specs/`;
+- `docs/ENGINEERING.md` and `docs/engineering/command-contract.md` for validation-tier selection;
+- `docs/PUBLIC-DOCS.md` and affected `public-docs/` pages only when the change is consumer-facing;
+- architecture or decision records only when the change alters structure or rationale.
 
-If any referenced document does not exist yet, create or update the appropriate document as part of repository alignment before or during implementation.
+Historical research guide copies are non-authoritative references and are not required milestone reading.
+
+## Focus Areas
+
+Use the milestone scope to choose one or more focused implementation slices instead of treating the whole milestone as a single work item:
+
+| Focus area | Validation tier | Documentation impact |
+|---|---|---|
+| Behavior or API implementation | Tier 1 during development, Tier 2 before completion | Direct when behavior is consumer-facing; otherwise update specs only when contracts change. |
+| Tests and diagnostics | Tier 1 for the affected test project or diagnostic filter, Tier 2 before completion | Direct for public diagnostics; deferred only when examples require a later feature slice. |
+| Public documentation, samples, or release readiness | Tier 0 for documentation checks, Tier 3 for package/release readiness | Direct for changed public docs and package README sources; record deferred docs explicitly. |
+
+## Validation Tier
+
+- Default implementation focus areas: Tier 1 during the inner loop, then Tier 2 before completion.
+- Documentation-only focus areas: Tier 0 plus `./eng/public-docs.sh` when public documentation changes.
+- Packaging or release focus areas: Tier 3 or Tier 4 as described by the release-readiness documents.
 
 ## Package
 

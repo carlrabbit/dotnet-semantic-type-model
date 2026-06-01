@@ -28,24 +28,32 @@ Without a capability matrix, projection behavior can become ambiguous:
 
 This milestone makes those boundaries explicit and testable.
 
-## Required Reading
+## Implementation Router
 
-- `docs/TERMINOLOGY.md`
-- `docs/SPECS.md`
-- `docs/MILESTONES.md`
-- `docs/ENGINEERING.md`
-- `docs/PUBLIC-DOCS.md`
-- `docs/GUARDRAILS.md`
-- `docs/guardrails/implementation.md`
-- `docs/guardrails/testing.md`
-- `docs/specs/type-model-core.md`
-- `docs/specs/type-model-json-schema-mapping.md`
-- `docs/specs/type-model-ui-hints.md`
-- `docs/specs/type-model-ef-core-projection.md`
-- `docs/specs/type-model-powerbi-tom-projection.md`
-- `docs/specs/type-model-projection-capabilities.md`
-- `docs/research/project-setup-guide-v5.md`
-- `docs/research/engineering-guide-v4.md`
+Read only the authoritative documents needed for the focus area being implemented:
+
+- relevant specs from `docs/specs/`;
+- `docs/ENGINEERING.md` and `docs/engineering/command-contract.md` for validation-tier selection;
+- `docs/PUBLIC-DOCS.md` and affected `public-docs/` pages only when the change is consumer-facing;
+- architecture or decision records only when the change alters structure or rationale.
+
+Historical research guide copies are non-authoritative references and are not required milestone reading.
+
+## Focus Areas
+
+Use the milestone scope to choose one or more focused implementation slices instead of treating the whole milestone as a single work item:
+
+| Focus area | Validation tier | Documentation impact |
+|---|---|---|
+| Behavior or API implementation | Tier 1 during development, Tier 2 before completion | Direct when behavior is consumer-facing; otherwise update specs only when contracts change. |
+| Tests and diagnostics | Tier 1 for the affected test project or diagnostic filter, Tier 2 before completion | Direct for public diagnostics; deferred only when examples require a later feature slice. |
+| Public documentation, samples, or release readiness | Tier 0 for documentation checks, Tier 3 for package/release readiness | Direct for changed public docs and package README sources; record deferred docs explicitly. |
+
+## Validation Tier
+
+- Default implementation focus areas: Tier 1 during the inner loop, then Tier 2 before completion.
+- Documentation-only focus areas: Tier 0 plus `./eng/public-docs.sh` when public documentation changes.
+- Packaging or release focus areas: Tier 3 or Tier 4 as described by the release-readiness documents.
 
 ## Dependencies
 
@@ -270,10 +278,7 @@ This document is not authoritative for:
 - `docs/SPECS.md`
 - `docs/ENGINEERING.md`
 - `docs/PUBLIC-DOCS.md`
-- `docs/GUARDRAILS.md`
 - `docs/WORKFLOWS.md`
-- `docs/research/project-setup-guide-v5.md`
-- `docs/research/engineering-guide-v4.md`
 
 ### Must Be Updated Together
 
