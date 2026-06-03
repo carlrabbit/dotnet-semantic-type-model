@@ -28,12 +28,12 @@ public-docs/nuget/SemanticTypeModel.DependencyInjection.md
 public-docs/nuget/SemanticTypeModel.PowerBI.md
 public-docs/nuget/SemanticTypeModel.EFCore.md
 public-docs/samples/getting-started.md
-public-docs/samples/code-first.md
-public-docs/samples/dotnet-generator.md
 public-docs/samples/json-schema-roundtrip.md
+public-docs/samples/code-first-json-schema.md
+public-docs/samples/code-first-ef-core.md
+public-docs/samples/code-first-powerbi.md
+public-docs/samples/system-text-json-resolver.md
 public-docs/samples/runtime-di.md
-public-docs/samples/powerbi-projection.md
-public-docs/samples/ef-core-projection.md
 "
 
 for file in $required_files; do

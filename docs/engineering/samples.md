@@ -71,6 +71,22 @@ The public sample set should cover the main consumer workflows:
 
 Sample directory names may differ, but public documentation must clearly map scenario names to project paths.
 
+
+## Current Public Sample Set and Classification
+
+All projects currently under `samples/` are public consumer samples. The M0025 classification is:
+
+| Project path | Classification | Consumer scenario |
+|---|---|---|
+| `samples/json-schema-roundtrip` | Keep public sample | JSON Schema import, transformation, validation, and export. |
+| `samples/code-first-json-schema` | Rewrite public sample | Normal packaged generator usage with JSON Schema export. |
+| `samples/code-first-ef-core` | Rewrite public sample | Normal packaged generator usage with EF Core projection metadata. |
+| `samples/code-first-powerbi` | Rewrite public sample | Normal packaged generator usage with Power BI projection metadata. |
+| `samples/system-text-json-resolver` | Rewrite public sample | User-authored `JsonSerializerContext` with resolver customization. |
+| `samples/runtime-di` | Rewrite public sample | Consumer-style dependency-injection registration and projection usage. |
+
+The former generator-driver/source-string harnesses and source-project projection samples are removed from the public sample set rather than retained as internal examples under `samples/`.
+
 ## Source Generator Sample Contract
 
 A source-generator sample must use the normal consumer path:

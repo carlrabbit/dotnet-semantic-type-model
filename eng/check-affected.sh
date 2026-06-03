@@ -31,6 +31,9 @@ case " $* " in
   *" tests/unit/SemanticTypeModel.PowerBI.Tests.Unit/"*)
     "$SCRIPT_DIR/test-project.sh" tests/unit/SemanticTypeModel.PowerBI.Tests.Unit/SemanticTypeModel.PowerBI.Tests.Unit.csproj
     ;;
+  *" samples/"*)
+    "$SCRIPT_DIR/samples.sh"
+    ;;
   *)
     echo "No focused validation mapping matched; running Tier 2 validation."
     "$SCRIPT_DIR/check.sh"
