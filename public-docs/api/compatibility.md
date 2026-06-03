@@ -4,6 +4,7 @@
 
 - Public API baseline is currently documentation-driven and validated by `./eng/public-api.sh` presence checks.
 - Breaking changes require explicit milestone/release documentation.
+- `SemanticTypeModel.SystemTextJson` 1.1.0 removes generated `JsonSerializerContext` support as a documented compatibility correction because the 1.0 design depended on unsupported source-generator chaining.
 
 ## Diagnostics Compatibility
 

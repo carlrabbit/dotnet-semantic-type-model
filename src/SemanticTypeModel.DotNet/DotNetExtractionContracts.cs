@@ -102,16 +102,6 @@ public sealed record SystemTextJsonExtractionOptions
     /// Gets a value indicating whether unsupported converter metadata is preserved as annotations.
     /// </summary>
     public bool PreserveUnsupportedConverterMetadata { get; init; } = true;
-
-    /// <summary>
-    /// Gets a value indicating whether the source generator should emit a JsonSerializerContext.
-    /// </summary>
-    public bool GenerateJsonSerializerContext { get; init; }
-
-    /// <summary>
-    /// Gets the generated JsonSerializerContext type name.
-    /// </summary>
-    public string? GeneratedContextName { get; init; }
 }
 
 /// <summary>

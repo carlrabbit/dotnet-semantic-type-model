@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.SystemTextJson;
@@ -19,9 +20,8 @@ public static class SemanticTypeModelJsonSerializerOptionsExtensions
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(model);
 
-        var projectionOptions = new SystemTextJsonProjectionOptions();
-        configure?.Invoke(projectionOptions);
-        options.TypeInfoResolver = SemanticTypeModelJsonTypeInfoResolver.Create(model, projectionOptions);
+        IJsonTypeInfoResolver baseResolver = options.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
+        options.TypeInfoResolver = baseResolver.WithSemanticTypeModelJson(model, configure);
         return options;
     }
 }

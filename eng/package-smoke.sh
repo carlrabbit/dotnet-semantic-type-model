@@ -67,7 +67,7 @@ NUGET
 dotnet add "$consumer_dir" package Microsoft.EntityFrameworkCore --version "10.0.0" >/dev/null
 
 for package_id in $(semantic_type_model_package_ids); do
-  dotnet add "$consumer_dir" package "$package_id" --version "$version" --source "$(pwd)/$package_dir" >/dev/null
+  dotnet add "$consumer_dir" package "$package_id" --version "$version" >/dev/null
 done
 
 cat > "$consumer_dir/Program.cs" <<'CS'

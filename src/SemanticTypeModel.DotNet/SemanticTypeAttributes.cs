@@ -189,16 +189,6 @@ public sealed class SemanticTypeModelGeneratorOptionsAttribute : Attribute
     public bool UseJsonPropertyNameAsSemanticName { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the generator emits a System.Text.Json JsonSerializerContext.
-    /// </summary>
-    public bool GenerateSystemTextJsonContext { get; set; }
-
-    /// <summary>
-    /// Gets or sets the generated System.Text.Json context type name.
-    /// </summary>
-    public string? SystemTextJsonContextName { get; set; }
-
-    /// <summary>
     /// Gets or sets a value indicating whether internal types are included in discovery.
     /// </summary>
     public bool IncludeInternalTypes { get; set; }

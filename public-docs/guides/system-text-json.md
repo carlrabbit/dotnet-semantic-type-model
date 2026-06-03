@@ -20,19 +20,30 @@ Enable import during compile-time extraction with MSBuild:
 
 `[JsonPropertyName("customer_id")]` becomes `systemTextJson.propertyName=customer_id`. It does not replace the semantic member name unless `SemanticTypeModelUseJsonPropertyNameAsSemanticName=true` is explicitly configured.
 
-## Generated Context
+## Source Generation
 
-Context generation is opt-in:
+`SemanticTypeModel` does not generate `JsonSerializerContext` declarations. Generated context support is removed in 1.1.0 because it depended on unsupported source-generator chaining and did not produce a reliable consumer feature.
 
-```xml
-<PropertyGroup>
-  <SemanticTypeModelGenerateSystemTextJsonContext>true</SemanticTypeModelGenerateSystemTextJsonContext>
-  <SemanticTypeModelSystemTextJsonContextName>AppSemanticJsonContext</SemanticTypeModelSystemTextJsonContextName>
-</PropertyGroup>
+Consumers who want `System.Text.Json` source generation own the context declaration:
+
+```csharp
+[JsonSerializable(typeof(Customer))]
+internal partial class AppJsonContext : JsonSerializerContext
+{
+}
 ```
-
-The generator includes safe extracted object and enum roots. Object-typed or polymorphic surfaces may require hand-authored `JsonSerializable` roots.
 
 ## Runtime Helpers
 
-`JsonSerializerOptions.AddSemanticTypeModelJson(model)` installs a conservative resolver that applies supported property-name annotations when CLR metadata can be matched safely. It does not attempt to emulate arbitrary custom converter behavior.
+`JsonSerializerOptions.AddSemanticTypeModelJson(model)` installs a conservative resolver that wraps the existing `TypeInfoResolver` when one is already configured, or uses the default resolver when none is present. It does not attempt to emulate arbitrary custom converter behavior.
+
+Existing resolvers and user-authored source-generated contexts can be wrapped directly:
+
+```csharp
+IJsonTypeInfoResolver resolver =
+    AppJsonContext.Default.WithSemanticTypeModelJson(
+        AppSemanticTypeModel.Create(),
+        options => options.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName);
+```
+
+The `PropertyNameSource` option controls whether customization preserves the existing JSON contract, uses the imported `systemTextJson.propertyName` annotation, or uses semantic property names as JSON property names. Duplicate final JSON property names fail deterministically.

@@ -49,14 +49,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Include="$(OutputPath)$(AssemblyName).pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)$(AssemblyName).pdb')" />
-    <None Include="$(OutputPath)SemanticTypeModel.Abstractions.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)SemanticTypeModel.Abstractions.dll')" />
-    <None Include="$(OutputPath)SemanticTypeModel.Abstractions.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)SemanticTypeModel.Abstractions.pdb')" />
-    <None Include="$(OutputPath)SemanticTypeModel.Core.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)SemanticTypeModel.Core.dll')" />
-    <None Include="$(OutputPath)SemanticTypeModel.Core.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)SemanticTypeModel.Core.pdb')" />
-    <None Include="$(OutputPath)SemanticTypeModel.DotNet.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)SemanticTypeModel.DotNet.dll')" />
-    <None Include="$(OutputPath)SemanticTypeModel.DotNet.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(OutputPath)SemanticTypeModel.DotNet.pdb')" />
+    <None Include="$(TargetDir)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(TargetDir)$(AssemblyName).pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
+    <None Include="$(TargetDir)SemanticTypeModel.Abstractions.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.Abstractions.dll')" />
+    <None Include="$(TargetDir)SemanticTypeModel.Abstractions.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.Abstractions.pdb')" />
+    <None Include="$(TargetDir)SemanticTypeModel.Core.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.Core.dll')" />
+    <None Include="$(TargetDir)SemanticTypeModel.Core.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.Core.pdb')" />
+    <None Include="$(TargetDir)SemanticTypeModel.DotNet.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.DotNet.dll')" />
+    <None Include="$(TargetDir)SemanticTypeModel.DotNet.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.DotNet.pdb')" />
   </ItemGroup>
 
   <ItemGroup>

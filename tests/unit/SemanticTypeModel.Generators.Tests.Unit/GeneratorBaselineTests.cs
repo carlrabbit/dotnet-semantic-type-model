@@ -708,6 +708,79 @@ public sealed class GeneratorBaselineTests
         _ = await Assert.That(promotedCustomer.Properties.Single(static property => property.Name == "customer_id").Annotations.Any(static annotation => annotation.Key == "systemTextJson.propertyName" && annotation.Value == "customer_id")).IsTrue();
     }
 
+
+    [Test]
+    public async Task Fixture_20_generator_should_reject_removed_system_text_json_context_options()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType]
+            public sealed class Customer
+            {
+                public required string Name { get; init; }
+            }
+            """;
+
+        Diagnostic[] diagnostics = GenerateDiagnostics(source, new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["SemanticTypeModelGenerateSystemTextJsonContext"] = "true",
+            ["SemanticTypeModelSystemTextJsonContextName"] = "RemovedContext",
+        });
+
+        _ = await Assert.That(diagnostics.Count(static diagnostic => diagnostic.Id == "STJ004")).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Fixture_21_generator_should_not_emit_system_text_json_context_source()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType]
+            public sealed class Customer
+            {
+                public required string Name { get; init; }
+            }
+            """;
+
+        string[] generatedHints = GenerateSourceHints(source);
+
+        _ = await Assert.That(generatedHints).Contains("SemanticTypeModel.Generated.g.cs");
+        _ = await Assert.That(generatedHints.Any(static hint => hint.Contains("SystemTextJsonContext", StringComparison.Ordinal))).IsFalse();
+    }
+
+
+    private static Diagnostic[] GenerateDiagnostics(string source, IReadOnlyDictionary<string, string>? globalOptions = null)
+    {
+        CSharpCompilation compilation = CreateCompilation(source);
+        IIncrementalGenerator generator = new SemanticTypeModelSourceGenerator();
+        CSharpParseOptions parseOptions = (CSharpParseOptions)compilation.SyntaxTrees.First().Options;
+        AnalyzerConfigOptionsProvider optionsProvider = new TestAnalyzerConfigOptionsProvider(globalOptions);
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [generator.AsSourceGenerator()],
+            parseOptions: parseOptions,
+            optionsProvider: optionsProvider);
+        driver = driver.RunGenerators(compilation);
+        GeneratorDriverRunResult runResult = driver.GetRunResult();
+        return runResult.Results.SelectMany(static result => result.Diagnostics).ToArray();
+    }
+
+    private static string[] GenerateSourceHints(string source, IReadOnlyDictionary<string, string>? globalOptions = null)
+    {
+        CSharpCompilation compilation = CreateCompilation(source);
+        IIncrementalGenerator generator = new SemanticTypeModelSourceGenerator();
+        CSharpParseOptions parseOptions = (CSharpParseOptions)compilation.SyntaxTrees.First().Options;
+        AnalyzerConfigOptionsProvider optionsProvider = new TestAnalyzerConfigOptionsProvider(globalOptions);
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [generator.AsSourceGenerator()],
+            parseOptions: parseOptions,
+            optionsProvider: optionsProvider);
+        driver = driver.RunGenerators(compilation);
+        GeneratorDriverRunResult runResult = driver.GetRunResult();
+        return runResult.Results.SelectMany(static result => result.GeneratedSources).Select(static source => source.HintName).ToArray();
+    }
+
     private static (TypeSchemaModel Model, IReadOnlyList<Diagnostic> Diagnostics) GenerateModel(
         string source,
         IReadOnlyDictionary<string, string>? globalOptions = null,

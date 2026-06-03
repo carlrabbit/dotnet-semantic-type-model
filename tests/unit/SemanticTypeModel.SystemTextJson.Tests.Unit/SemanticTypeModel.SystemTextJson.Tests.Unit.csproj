@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SemanticTypeModel.SystemTextJson.Tests.Unit</RootNamespace>
+    <NoWarn>$(NoWarn);CS1591;CA1707</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Assertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.Core/SemanticTypeModel.Core.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj" />
+  </ItemGroup>
+</Project>
