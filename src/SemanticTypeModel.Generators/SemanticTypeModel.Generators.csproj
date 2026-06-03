@@ -48,16 +48,22 @@
     <ProjectReference Include="../SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="$(TargetDir)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Include="$(TargetDir)$(AssemblyName).pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
-    <None Include="$(TargetDir)SemanticTypeModel.Abstractions.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.Abstractions.dll')" />
-    <None Include="$(TargetDir)SemanticTypeModel.Abstractions.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.Abstractions.pdb')" />
-    <None Include="$(TargetDir)SemanticTypeModel.Core.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.Core.dll')" />
-    <None Include="$(TargetDir)SemanticTypeModel.Core.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.Core.pdb')" />
-    <None Include="$(TargetDir)SemanticTypeModel.DotNet.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.DotNet.dll')" />
-    <None Include="$(TargetDir)SemanticTypeModel.DotNet.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)SemanticTypeModel.DotNet.pdb')" />
-  </ItemGroup>
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CollectGeneratorAnalyzerDependencies</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <Target Name="CollectGeneratorAnalyzerDependencies" DependsOnTargets="Build">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(TargetDir)$(AssemblyName).dll" PackagePath="analyzers/dotnet/cs" />
+      <TfmSpecificPackageFile Include="$(TargetDir)$(AssemblyName).pdb" PackagePath="analyzers/dotnet/cs" Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
+      <TfmSpecificPackageFile Include="$(TargetDir)SemanticTypeModel.Abstractions.dll" PackagePath="analyzers/dotnet/cs" Condition="Exists('$(TargetDir)SemanticTypeModel.Abstractions.dll')" />
+      <TfmSpecificPackageFile Include="$(TargetDir)SemanticTypeModel.Abstractions.pdb" PackagePath="analyzers/dotnet/cs" Condition="Exists('$(TargetDir)SemanticTypeModel.Abstractions.pdb')" />
+      <TfmSpecificPackageFile Include="$(TargetDir)SemanticTypeModel.Core.dll" PackagePath="analyzers/dotnet/cs" Condition="Exists('$(TargetDir)SemanticTypeModel.Core.dll')" />
+      <TfmSpecificPackageFile Include="$(TargetDir)SemanticTypeModel.Core.pdb" PackagePath="analyzers/dotnet/cs" Condition="Exists('$(TargetDir)SemanticTypeModel.Core.pdb')" />
+      <TfmSpecificPackageFile Include="$(TargetDir)SemanticTypeModel.DotNet.dll" PackagePath="analyzers/dotnet/cs" Condition="Exists('$(TargetDir)SemanticTypeModel.DotNet.dll')" />
+      <TfmSpecificPackageFile Include="$(TargetDir)SemanticTypeModel.DotNet.pdb" PackagePath="analyzers/dotnet/cs" Condition="Exists('$(TargetDir)SemanticTypeModel.DotNet.pdb')" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <None Include="../../public-docs/nuget/SemanticTypeModel.Generators.md" Pack="true" PackagePath="README.md" />

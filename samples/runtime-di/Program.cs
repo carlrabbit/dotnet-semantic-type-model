@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SemanticTypeModel.Abstractions.Runtime;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema;
+using SemanticTypeModel.JsonSchema.Import;
 
 const string schema = """
 {
@@ -15,8 +16,9 @@ const string schema = """
 }
 """;
 
+// Consumers register model creation, transformations, and projections in their DI container.
 using ServiceProvider serviceProvider = new ServiceCollection()
-    .AddSemanticTypeModel(() => SemanticTypeModel.JsonSchema.Import.JsonSchemaImporter.Import(schema).Model)
+    .AddSemanticTypeModel(() => JsonSchemaImporter.Import(schema).Model)
     .AddSemanticTypeModelTransformation<ValidateModelTransformation>()
     .AddSemanticTypeModelJsonSchema()
     .BuildServiceProvider();

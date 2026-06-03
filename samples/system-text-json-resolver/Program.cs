@@ -5,7 +5,7 @@ using SemanticTypeModel.Core.Building;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.SystemTextJson;
 
-namespace SemanticTypeModel.Samples.SystemTextJsonBasic;
+namespace SemanticTypeModel.Samples.SystemTextJsonResolver;
 
 internal static class Program
 {
@@ -13,6 +13,7 @@ internal static class Program
     {
         JsonSerializerOptions options = new()
         {
+            // AppJsonContext is user-authored; SemanticTypeModel customizes its resolver.
             TypeInfoResolver = AppJsonContext.Default.WithSemanticTypeModelJson(
                 CreateModel(),
                 semanticOptions => semanticOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName),
@@ -29,17 +30,18 @@ internal static class Program
 
     private static TypeSchemaModel CreateModel()
     {
+        // In consumer code this model can come from the generator or another supported import path.
         return new TypeSchemaModelBuilder()
             .AddShape("global::System.String", new ScalarShape { Kind = ScalarKind.String })
-            .AddShape("global::SemanticTypeModel.Samples.SystemTextJsonBasic.Customer", new ObjectShape
+            .AddShape("global::SemanticTypeModel.Samples.SystemTextJsonResolver.Customer", new ObjectShape
             {
                 Properties =
                 [
-                    CreateProperty("customerId", "Id", "customer_id"),
-                    CreateProperty("displayName", "DisplayName", "display_name"),
+                    CreateProperty("customer_id", "Id", "customer_id"),
+                    CreateProperty("display_name", "DisplayName", "display_name"),
                 ],
             })
-            .SetRoot("global::SemanticTypeModel.Samples.SystemTextJsonBasic.Customer")
+            .SetRoot("global::SemanticTypeModel.Samples.SystemTextJsonResolver.Customer")
             .Build();
     }
 
@@ -53,12 +55,14 @@ internal static class Program
             Annotations =
             [
                 new SchemaAnnotation("dotnet.memberName", memberName),
+                // The resolver can apply System.Text.Json names from semantic annotations.
                 new SchemaAnnotation(SystemTextJsonAnnotationNames.PropertyName, jsonName),
             ],
         };
     }
 }
 
+// Consumers own System.Text.Json source-generation contexts.
 [JsonSerializable(typeof(Customer))]
 internal sealed partial class AppJsonContext : JsonSerializerContext
 {
@@ -67,11 +71,9 @@ internal sealed partial class AppJsonContext : JsonSerializerContext
 [SemanticType]
 internal sealed class Customer
 {
-    [SemanticName("customerId")]
-    [JsonPropertyName("customer_id")]
+    [SemanticName("customer_id")]
     public required string Id { get; init; }
 
-    [SemanticName("displayName")]
-    [JsonPropertyName("display_name")]
+    [SemanticName("display_name")]
     public required string DisplayName { get; init; }
 }

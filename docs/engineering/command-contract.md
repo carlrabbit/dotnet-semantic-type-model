@@ -29,7 +29,7 @@ Define the stable set of repository commands used by humans, CI, and agents.
 | `./eng/format.sh` | Format all code |
 | `./eng/check.sh` | Tier 2 validation (restore + build + short-running tests + format check) |
 | `./eng/benchmark.sh` | Run benchmarks in Release mode |
-| `./eng/samples.sh` | Build and run runnable samples |
+| `./eng/samples.sh` | Build and run runnable samples against locally prepared packages in `artifacts/nuget`; run `./eng/package.sh <version>` first |
 | `./eng/public-docs.sh` | Validate public documentation surfaces and package documentation consistency |
 | `./eng/public-api.sh` | Validate public API baseline files |
 | `./eng/package.sh <version>` | Pack release NuGet packages into `artifacts/nuget` |

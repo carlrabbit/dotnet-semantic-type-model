@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>SemanticTypeModel.Samples.CodeFirstJsonSchema</RootNamespace>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SemanticTypeModel.DotNet" />
+    <PackageReference Include="SemanticTypeModel.Generators" PrivateAssets="all" />
+    <PackageReference Include="SemanticTypeModel.JsonSchema" />
+  </ItemGroup>
+</Project>

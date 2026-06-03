@@ -1,15 +1,32 @@
-# Sample - Runtime DI Usage
+# Runtime DI Sample
 
-Project: `samples/runtime-di-usage`
+## Scenario Goal
 
-Demonstrates:
+Register SemanticTypeModel runtime services in a consumer dependency-injection container and project a model to JSON Schema.
 
-- static model provider registration through DI;
-- runtime transformation registration;
-- JSON Schema projection service usage.
+## Packages Used
 
-Run:
+- `Microsoft.Extensions.DependencyInjection`
+- `SemanticTypeModel.DependencyInjection`
+- `SemanticTypeModel.JsonSchema`
+
+## Run Command
 
 ```sh
-dotnet run --project samples/runtime-di-usage/runtime-di-usage.csproj
+./eng/package.sh 0.0.0-samples
+./eng/samples.sh
 ```
+
+The sample project path is `samples/runtime-di/runtime-di.csproj`.
+
+## Expected Output
+
+The sample prints runtime and projection diagnostic counts, then prints the projected JSON Schema document.
+
+## Consumer Pattern Demonstrated
+
+A consumer registers model creation, validation transformation, and JSON Schema projection services through normal package APIs.
+
+## Non-Goals
+
+This sample does not use a source generator, external service, database, or network dependency.

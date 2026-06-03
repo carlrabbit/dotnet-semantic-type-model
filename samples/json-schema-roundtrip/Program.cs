@@ -18,9 +18,11 @@ var input = """
 }
 """;
 
+// The importer reads a consumer-provided JSON Schema into the canonical semantic model.
 JsonSchemaImportResult imported = JsonSchemaImporter.Import(input);
 var adapted = LegacyTypeSchemaModelAdapter.Adapt(imported.Model);
 
+// Transformations are deterministic validation/normalization steps before projection.
 SchemaTransformationPipeline pipeline = SchemaTransformationPipeline.Create()
     .Use(new NormalizeNamesTransformation())
     .Use(new NormalizeAnnotationsTransformation())
@@ -31,7 +33,13 @@ var projectionContext = new SchemaProjectionContext { Target = ProjectionTarget.
 var exporter = new JsonSchemaRuntimeProjection();
 JsonSchemaExportResult exported = exporter.Project(transformed.Model, projectionContext);
 
+string outputDirectory = Path.Combine("artifacts", "samples", "json-schema-roundtrip");
+Directory.CreateDirectory(outputDirectory);
+string outputPath = Path.Combine(outputDirectory, "customer.roundtrip.schema.json");
+File.WriteAllText(outputPath, exported.Document.RootElement.GetRawText());
+
 Console.WriteLine($"import diagnostics: {imported.Diagnostics.Count}");
+Console.WriteLine($"adapter diagnostics: {adapted.Diagnostics.Count}");
 Console.WriteLine($"transform diagnostics: {transformed.Diagnostics.Count}");
 Console.WriteLine($"projection diagnostics: {projectionContext.Diagnostics.Count}");
-Console.WriteLine(exported.Document.RootElement.GetRawText());
+Console.WriteLine($"artifacts: {outputPath}");

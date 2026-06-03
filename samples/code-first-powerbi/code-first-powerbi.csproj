@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>SemanticTypeModel.Samples.CodeFirstPowerBi</RootNamespace>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SemanticTypeModel.Abstractions" />
+    <PackageReference Include="SemanticTypeModel.Core" />
+    <PackageReference Include="SemanticTypeModel.DotNet" />
+    <PackageReference Include="SemanticTypeModel.Generators" PrivateAssets="all" />
+    <PackageReference Include="SemanticTypeModel.PowerBI" />
+  </ItemGroup>
+</Project>

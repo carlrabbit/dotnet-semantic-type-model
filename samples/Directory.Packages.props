@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <SemanticTypeModelSamplePackageVersion Condition="'$(SemanticTypeModelSamplePackageVersion)' == ''">0.0.0-local</SemanticTypeModelSamplePackageVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageVersion Include="SemanticTypeModel.Abstractions" Version="$(SemanticTypeModelSamplePackageVersion)" />
+    <PackageVersion Include="SemanticTypeModel.Core" Version="$(SemanticTypeModelSamplePackageVersion)" />
+    <PackageVersion Include="SemanticTypeModel.JsonSchema" Version="$(SemanticTypeModelSamplePackageVersion)" />
+    <PackageVersion Include="SemanticTypeModel.DotNet" Version="$(SemanticTypeModelSamplePackageVersion)" />
+    <PackageVersion Include="SemanticTypeModel.Generators" Version="$(SemanticTypeModelSamplePackageVersion)" />
+    <PackageVersion Include="SemanticTypeModel.DependencyInjection" Version="$(SemanticTypeModelSamplePackageVersion)" />
+    <PackageVersion Include="SemanticTypeModel.PowerBI" Version="$(SemanticTypeModelSamplePackageVersion)" />
+    <PackageVersion Include="SemanticTypeModel.EFCore" Version="$(SemanticTypeModelSamplePackageVersion)" />
+    <PackageVersion Include="SemanticTypeModel.SystemTextJson" Version="$(SemanticTypeModelSamplePackageVersion)" />
+  </ItemGroup>
+</Project>
