@@ -183,15 +183,6 @@ public sealed class RoslynDotNetTypeExtractor
             {
                 systemTextJson = systemTextJson with { UseJsonPropertyNameAsSemanticName = value.Value is bool boolValue && boolValue };
             }
-            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.GenerateSystemTextJsonContext), StringComparison.Ordinal))
-            {
-                systemTextJson = systemTextJson with { GenerateJsonSerializerContext = value.Value is bool boolValue && boolValue };
-            }
-            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.SystemTextJsonContextName), StringComparison.Ordinal)
-                && value.Value is string contextName)
-            {
-                systemTextJson = systemTextJson with { GeneratedContextName = contextName };
-            }
             else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.DiscoveryMode), StringComparison.Ordinal)
                 && value.Value is int discoveryModeValue
                 && Enum.IsDefined(typeof(DotNetTypeDiscoveryMode), discoveryModeValue))
@@ -575,7 +566,10 @@ public sealed class RoslynDotNetTypeExtractor
             string typeId = GetTypeId(memberType);
             ExtractType(memberType, cancellationToken);
 
-            var memberAnnotations = new Dictionary<string, string>(StringComparer.Ordinal);
+            var memberAnnotations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["dotnet.memberName"] = property.Name,
+            };
             ImmutableArray<AttributeData> memberAttributes = property.GetAttributes();
             string propertyName = GetPropertyName(property);
             TryAddSystemTextJsonAnnotations(memberAttributes, memberAnnotations, property, ref propertyName);

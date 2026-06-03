@@ -47,14 +47,6 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             string source = GenerateProviderSource(extraction);
             productionContext.AddSource("SemanticTypeModel.Generated.g.cs", source);
 
-            if (extraction.Options.SystemTextJson.GenerateJsonSerializerContext)
-            {
-                string? contextSource = GenerateSystemTextJsonContextSource(extraction, compilation.Assembly.Locations.FirstOrDefault(), productionContext);
-                if (contextSource is not null)
-                {
-                    productionContext.AddSource("SemanticTypeModel.SystemTextJsonContext.g.cs", contextSource);
-                }
-            }
         });
     }
 
@@ -118,14 +110,21 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             systemTextJson = systemTextJson with { UseJsonPropertyNameAsSemanticName = useJsonPropertyNameAsSemanticName };
         }
 
-        if (TryParseBoolOption(globalOptions, "SemanticTypeModelGenerateSystemTextJsonContext", out bool generateSystemTextJsonContext))
+        if (TryParseBoolOption(globalOptions, "SemanticTypeModelGenerateSystemTextJsonContext", out bool generateSystemTextJsonContext)
+            && generateSystemTextJsonContext)
         {
-            systemTextJson = systemTextJson with { GenerateJsonSerializerContext = generateSystemTextJsonContext };
+            extractedDiagnostics.Add(new DotNetExtractionDiagnostic(
+                "STJ004",
+                "Generated JsonSerializerContext support is removed in SemanticTypeModel 1.1.0; author a JsonSerializerContext and wrap it with SemanticTypeModel resolver customization instead.",
+                location));
         }
 
-        if (TryGetOption(globalOptions, "SemanticTypeModelSystemTextJsonContextName", out string? systemTextJsonContextName))
+        if (TryGetOption(globalOptions, "SemanticTypeModelSystemTextJsonContextName", out _))
         {
-            systemTextJson = systemTextJson with { GeneratedContextName = systemTextJsonContextName };
+            extractedDiagnostics.Add(new DotNetExtractionDiagnostic(
+                "STJ004",
+                "SemanticTypeModelSystemTextJsonContextName is unsupported because SemanticTypeModel no longer generates JsonSerializerContext declarations.",
+                location));
         }
 
         options = options with { SystemTextJson = systemTextJson };
@@ -240,62 +239,6 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         return Diagnostic.Create(descriptor, diagnostic.Location, diagnostic.Message);
     }
 
-
-    private static string? GenerateSystemTextJsonContextSource(DotNetExtractionResult extraction, Location? location, SourceProductionContext productionContext)
-    {
-        string contextName = string.IsNullOrWhiteSpace(extraction.Options.SystemTextJson.GeneratedContextName)
-            ? "AppSemanticJsonContext"
-            : SanitizeIdentifier(extraction.Options.SystemTextJson.GeneratedContextName);
-
-        string[] rootTypeIds =
-        [
-            .. extraction.TypesById
-                .Where(static pair => pair.Value is DotNetObjectTypeDescriptor or DotNetEnumTypeDescriptor)
-                .Select(static pair => pair.Key)
-                .Where(IsTypeofCompatibleTypeId)
-                .OrderBy(static id => id, StringComparer.Ordinal),
-        ];
-
-        if (rootTypeIds.Length == 0)
-        {
-            productionContext.ReportDiagnostic(Diagnostic.Create(GeneratorDiagnosticDescriptors.ExtractionFallback("STJ004"), location, "System.Text.Json context generation was requested but no valid root types can be included."));
-            return null;
-        }
-
-        foreach (DotNetObjectTypeDescriptor descriptor in extraction.TypesById.Values.OfType<DotNetObjectTypeDescriptor>())
-        {
-            foreach (DotNetPropertyDescriptor property in descriptor.Properties)
-            {
-                if (string.Equals(property.TypeId, "global::System.Object", StringComparison.Ordinal))
-                {
-                    productionContext.ReportDiagnostic(Diagnostic.Create(GeneratorDiagnosticDescriptors.ExtractionFallback("STJ005"), location, $"Object-typed member '{property.Name}' requires an explicit JsonSerializable root for reliable context generation."));
-                }
-            }
-        }
-
-        var source = new StringBuilder();
-        source.AppendLine("using global::System.Text.Json.Serialization;");
-        source.AppendLine();
-        source.AppendLine($"namespace {extraction.Options.GeneratedNamespace};");
-        source.AppendLine();
-        source.AppendLine("[global::System.Text.Json.Serialization.JsonSourceGenerationOptions(PropertyNamingPolicy = global::System.Text.Json.Serialization.JsonKnownNamingPolicy.CamelCase)]");
-        foreach (string rootTypeId in rootTypeIds)
-        {
-            source.AppendLine($"[global::System.Text.Json.Serialization.JsonSerializable(typeof({rootTypeId}))]");
-        }
-
-        source.AppendLine($"internal sealed partial class {contextName} : global::System.Text.Json.Serialization.JsonSerializerContext");
-        source.AppendLine("{");
-        source.AppendLine("}");
-        return source.ToString();
-    }
-
-    private static bool IsTypeofCompatibleTypeId(string typeId)
-    {
-        return typeId.StartsWith("global::", StringComparison.Ordinal)
-            && !typeId.Contains('<', StringComparison.Ordinal)
-            && !typeId.Contains('[', StringComparison.Ordinal);
-    }
 
     private static string GenerateProviderSource(DotNetExtractionResult extraction)
     {

@@ -13,8 +13,6 @@ public sealed class SystemTextJsonProjectionOptions
     public bool UseJsonPropertyNameAsSemanticName { get; set; }
     /// <summary>Gets or sets whether unsupported converter metadata is preserved as annotations.</summary>
     public bool PreserveUnsupportedConverterMetadata { get; set; } = true;
-    /// <summary>Gets or sets whether the source generator emits a JsonSerializerContext.</summary>
-    public bool GenerateJsonSerializerContext { get; set; }
-    /// <summary>Gets or sets the generated JsonSerializerContext type name.</summary>
-    public string? GeneratedContextName { get; set; }
+    /// <summary>Gets or sets the metadata source used when SemanticTypeModel customizes JSON property names.</summary>
+    public SemanticJsonPropertyNameSource PropertyNameSource { get; set; } = SemanticJsonPropertyNameSource.ExistingJsonContract;
 }

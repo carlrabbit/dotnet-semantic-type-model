@@ -40,7 +40,7 @@ This spec is authoritative for:
 | `systemTextJson.unmappedMemberHandling` | `JsonUnmappedMemberHandlingAttribute` value when available |
 | `systemTextJson.polymorphism` | Polymorphism metadata marker when metadata is preserved but not modeled canonically |
 
-Additional internal matching annotations may be introduced when needed to map CLR members to semantic properties reliably, for example an annotation representing the original CLR member name. Such annotations must use the existing annotation namespace policy and must not replace semantic names.
+Additional internal matching annotations may be introduced when needed to map CLR members to semantic properties reliably, for example an annotation representing the original CLR member name. Such annotations must use the existing annotation namespace policy and must not replace semantic names. The .NET extractor records `dotnet.memberName` on extracted properties for resolver matching.
 
 ## Name Boundary
 
@@ -82,8 +82,16 @@ Required behavior:
 
 - no generated source file may declare a type deriving from `JsonSerializerContext`;
 - no option may promise generated context output;
-- existing generated-context options must be removed, obsolete, or rejected according to compatibility policy;
+- `GenerateJsonSerializerContext` and `GeneratedContextName` are removed from `SemanticTypeModel.SystemTextJson` options;
+- `GenerateSystemTextJsonContext` and `SystemTextJsonContextName` are removed from `SemanticTypeModelGeneratorOptionsAttribute`;
+- `SemanticTypeModelGenerateSystemTextJsonContext=true` and `SemanticTypeModelSystemTextJsonContextName` MSBuild properties are rejected with explicit generated-context removal guidance;
 - samples must use user-authored `JsonSerializerContext` declarations when demonstrating source generation.
+
+Compatibility behavior:
+
+```text
+Generated JsonSerializerContext support is removed in 1.1.0 because it depended on unsupported source-generator chaining and did not produce a reliable consumer feature.
+```
 
 ## User-Owned Source-Generated Contexts
 

@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
@@ -75,9 +77,46 @@ internal sealed class PackageSmokeTests
         _ = typeof(SemanticFormatAttribute);
         _ = typeof(SemanticStringConstraintsAttribute);
         _ = typeof(SemanticAnnotationAttribute);
-        _ = SystemTextJsonAnnotationNames.PropertyName;
+        JsonSerializerOptions jsonOptions = new()
+        {
+            TypeInfoResolver = PackageSmokeJsonContext.Default.WithSemanticTypeModelJson(
+                BuildPackageSmokeJsonModel(),
+                projectionOptions => projectionOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName),
+        };
+        string smokeJson = JsonSerializer.Serialize(new SmokeJsonCustomer { Id = "C-001" }, jsonOptions);
+        SmokeJsonCustomer? smokeCustomer = JsonSerializer.Deserialize<SmokeJsonCustomer>("""
+            { "smokeId": "C-002" }
+            """, jsonOptions);
 
+        _ = SystemTextJsonAnnotationNames.PropertyName;
+        _ = await Assert.That(smokeJson).Contains("smokeId");
+        _ = await Assert.That(smokeCustomer?.Id).IsEqualTo("C-002");
         _ = await Assert.That(nameof(SmokeCustomer)).IsEqualTo("SmokeCustomer");
+    }
+
+    private static LegacyTypeSchemaModel BuildPackageSmokeJsonModel()
+    {
+        return new SemanticTypeModel.Core.Building.TypeSchemaModelBuilder()
+            .AddShape("global::System.String", new Legacy.ScalarShape { Kind = Legacy.ScalarKind.String })
+            .AddShape("global::SemanticTypeModel.PackageSmoke.Tests.SmokeJsonCustomer", new Legacy.ObjectShape
+            {
+                Properties =
+                [
+                    new Legacy.PropertyShape
+                    {
+                        Name = "smokeId",
+                        IsRequired = true,
+                        Type = Legacy.ShapeRef.FromIdentifier("global::System.String"),
+                        Annotations =
+                        [
+                            new Legacy.SchemaAnnotation("dotnet.memberName", "Id"),
+                            new Legacy.SchemaAnnotation(SystemTextJsonAnnotationNames.PropertyName, "smoke_id"),
+                        ],
+                    },
+                ],
+            })
+            .SetRoot("global::SemanticTypeModel.PackageSmoke.Tests.SmokeJsonCustomer")
+            .Build();
     }
 
     private static Hardening.TypeSchemaModel BuildHardeningModel()
@@ -105,4 +144,15 @@ internal sealed class PackageSmokeTests
             Annotations = new Hardening.AnnotationBag(),
         };
     }
+}
+
+internal sealed class SmokeJsonCustomer
+{
+    [JsonPropertyName("smoke_id")]
+    public required string Id { get; init; }
+}
+
+[JsonSerializable(typeof(SmokeJsonCustomer))]
+internal sealed partial class PackageSmokeJsonContext : JsonSerializerContext
+{
 }

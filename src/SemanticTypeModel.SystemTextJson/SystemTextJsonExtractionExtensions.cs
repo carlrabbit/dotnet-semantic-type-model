@@ -8,7 +8,7 @@ namespace SemanticTypeModel.SystemTextJson;
 public static class SystemTextJsonExtractionExtensions
 {
     /// <summary>
-    /// Enables System.Text.Json attribute import and optional generator settings for .NET extraction.
+    /// Enables System.Text.Json attribute import and resolver customization settings for .NET extraction.
     /// </summary>
     public static DotNetExtractionOptions UseSystemTextJson(
         this DotNetExtractionOptions options,
@@ -27,8 +27,6 @@ public static class SystemTextJsonExtractionExtensions
                 UseJsonPropertyNameAsSerializationName = projectionOptions.UseJsonPropertyNameAsSerializationName,
                 UseJsonPropertyNameAsSemanticName = projectionOptions.UseJsonPropertyNameAsSemanticName,
                 PreserveUnsupportedConverterMetadata = projectionOptions.PreserveUnsupportedConverterMetadata,
-                GenerateJsonSerializerContext = projectionOptions.GenerateJsonSerializerContext,
-                GeneratedContextName = projectionOptions.GeneratedContextName,
             },
         };
     }

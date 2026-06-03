@@ -21,5 +21,6 @@
     <Project Path="tests/unit/SemanticTypeModel.JsonSchema.Tests.Unit/SemanticTypeModel.JsonSchema.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.EFCore.Tests.Unit/SemanticTypeModel.EFCore.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.PowerBI.Tests.Unit/SemanticTypeModel.PowerBI.Tests.Unit.csproj" />
+    <Project Path="tests/unit/SemanticTypeModel.SystemTextJson.Tests.Unit/SemanticTypeModel.SystemTextJson.Tests.Unit.csproj" />
   </Folder>
 </Solution>

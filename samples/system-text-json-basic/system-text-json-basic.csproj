@@ -1,13 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <SemanticTypeModelImportSystemTextJsonAttributes>true</SemanticTypeModelImportSystemTextJsonAttributes>
-    <SemanticTypeModelGenerateSystemTextJsonContext>true</SemanticTypeModelGenerateSystemTextJsonContext>
-    <SemanticTypeModelSystemTextJsonContextName>SampleJsonContext</SemanticTypeModelSystemTextJsonContextName>
+    <RootNamespace>SemanticTypeModel.Samples.SystemTextJsonBasic</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../src/SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
+    <ProjectReference Include="../../src/SemanticTypeModel.Core/SemanticTypeModel.Core.csproj" />
     <ProjectReference Include="../../src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
-    <ProjectReference Include="../../src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj" />
   </ItemGroup>
 </Project>
