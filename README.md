@@ -4,13 +4,13 @@ SemanticTypeModel is a .NET 10 library set for canonical semantic type models, J
 
 ## Install
 
-Add the package(s) your scenario needs:
+Add the package or packages your scenario needs:
 
 ```sh
-dotnet add package SemanticTypeModel.JsonSchema --version 1.0.0
-dotnet add package SemanticTypeModel.DependencyInjection --version 1.0.0
-dotnet add package SemanticTypeModel.DotNet --version 1.0.0
-dotnet add package SemanticTypeModel.SystemTextJson --version 1.0.0
+dotnet add package SemanticTypeModel.JsonSchema --version 1.1.0
+dotnet add package SemanticTypeModel.DependencyInjection --version 1.1.0
+dotnet add package SemanticTypeModel.DotNet --version 1.1.0
+dotnet add package SemanticTypeModel.SystemTextJson --version 1.1.0
 ```
 
 See full package guidance in [public-docs/packages.md](public-docs/packages.md).
@@ -38,7 +38,7 @@ var exported = JsonSchemaExporter.Export(imported.Model!);
 Console.WriteLine(exported.Document.RootElement.GetRawText());
 ```
 
-## Package List (1.0.0)
+## Package List
 
 - `SemanticTypeModel.Abstractions`
 - `SemanticTypeModel.Core`
@@ -52,17 +52,18 @@ Console.WriteLine(exported.Document.RootElement.GetRawText());
 
 ## Stable Release Notice
 
-`1.0.0` is the first stable release package set. Compatibility rules are documented in public-docs/api/compatibility.md.
+`1.0.0` is the first stable release package set. `1.1.0` corrects the System.Text.Json contract and sample validation model. Compatibility rules are documented in [public-docs/api/compatibility.md](public-docs/api/compatibility.md).
 
 ## Samples
 
 Runnable samples live under `samples/` and are documented in [public-docs/samples.md](public-docs/samples.md).
 
-For a code-first end-to-end flow, start with `samples/code-first-authoring`.
+For a code-first JSON Schema flow, start with `samples/code-first-json-schema`.
 
-Run all samples:
+Prepare local packages, then run all package-based samples:
 
 ```sh
+./eng/package.sh 0.0.0-samples
 ./eng/samples.sh
 ```
 

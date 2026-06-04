@@ -18,3 +18,5 @@ Decision records are not authoritative for:
 | Decision | Purpose |
 |---|---|
 | decisions/json-schema-as-primary-dialect.md | Rationale for choosing JSON Schema Draft 2020-12 as the first adapter dialect |
+| decisions/remove-system-text-json-context-generation.md | Rationale for removing SemanticTypeModel-generated `JsonSerializerContext` support and using resolver-centered System.Text.Json integration |
+| decisions/consumer-facing-package-based-samples.md | Rationale for treating public samples as package-based consumer examples rather than internal development harnesses |

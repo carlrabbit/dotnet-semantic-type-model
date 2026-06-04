@@ -3,7 +3,7 @@
 System.Text.Json contract integration for SemanticTypeModel.
 
 ```sh
-dotnet add package SemanticTypeModel.SystemTextJson --version 1.0.0
+dotnet add package SemanticTypeModel.SystemTextJson --version 1.1.0
 ```
 
 ## What it does

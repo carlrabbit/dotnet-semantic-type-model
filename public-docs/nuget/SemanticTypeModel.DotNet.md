@@ -3,10 +3,10 @@
 `SemanticTypeModel.DotNet` exposes .NET extraction contracts and semantic attributes.
 
 ```sh
-dotnet add package SemanticTypeModel.DotNet --version 1.0.0
+dotnet add package SemanticTypeModel.DotNet --version 1.1.0
 ```
 
-This package is part of the stable 1.0 package set. Public APIs follow the compatibility policy.
+This package is part of the stable package set. Public APIs follow the compatibility policy.
 
 Common attribute surface:
 

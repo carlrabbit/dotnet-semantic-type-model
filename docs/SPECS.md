@@ -38,4 +38,4 @@ Specs are authoritative for:
 | specs/type-model-projection-capabilities.md | Projection capability matrix, compatibility contracts, and capability metadata API across targets |
 | specs/type-model-powerbi-tom-projection.md | Deterministic Power BI projection behavior over the hardened canonical model |
 | specs/type-model-ef-core-projection.md | Deterministic EF Core-like projection behavior over the hardened canonical model |
-| specs/system-text-json-contract-integration.md | System.Text.Json contract metadata import, annotation keys, generator context behavior, runtime helper limits, and diagnostics |
+| specs/system-text-json-contract-integration.md | System.Text.Json contract metadata import, annotation keys, resolver customization, unsupported generated-context behavior, and diagnostics |

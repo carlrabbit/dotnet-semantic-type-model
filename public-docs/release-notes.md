@@ -2,13 +2,16 @@
 
 ## 1.1.0
 
-System.Text.Json contract correction release.
+System.Text.Json contract correction and consumer sample validation release.
 
 - Removed SemanticTypeModel-generated `JsonSerializerContext` support. Generated JsonSerializerContext support is removed in 1.1.0 because it depended on unsupported source-generator chaining and did not produce a reliable consumer feature.
 - Removed public generated-context options from `SemanticTypeModel.SystemTextJson` projection/extraction helpers and the generator options attribute. The legacy MSBuild properties are rejected with explicit STJ004 guidance when set.
 - Made resolver customization the supported System.Text.Json application mechanism. Existing `JsonSerializerOptions.TypeInfoResolver` values and user-authored `JsonSerializerContext` resolvers are wrapped instead of replaced.
 - Added `SemanticJsonPropertyNameSource` and `SystemTextJsonProjectionOptions.PropertyNameSource` so consumers can explicitly preserve existing JSON names, use imported `systemTextJson.propertyName` values, or use semantic property names as JSON serialization names.
 - Added deterministic duplicate final JSON property-name failure during resolver customization.
+- Reworked public samples as consumer-facing package-based examples instead of source-tree development harnesses.
+- Public samples now consume locally prepared SemanticTypeModel NuGet packages and validate package assets, including source-generator packaging.
+- Removed source-string compiler and manual Roslyn generator-driver patterns from the public sample set.
 
 ## 1.0.0
 
@@ -59,7 +62,7 @@ Compatibility policy is documented in [api/compatibility.md](api/compatibility.m
 
 ### Migration from 0.1.0-alpha
 
-- Update package references to `1.0.0`.
+- Update package references to `1.0.0` or later.
 - Use the documented package set above; do not reference a standalone `SemanticTypeModel.JsonEditor` package.
 - Prefer the current public APIs documented in [api/public-api.md](api/public-api.md) and package-specific guides.
 - Validate applications with the scenario guides and sample flows under [samples.md](samples.md).
@@ -116,5 +119,4 @@ Initial prerelease package publication milestone.
   - `SemanticTypeModel.PowerBI`
   - `SemanticTypeModel.EFCore`
 - Added public API baseline files and release-gate validation.
-- Hardened `SemanticTypeModel.EFCore` with `ModelBuilder.ApplySemanticTypeModel(...)` and configurable projection options returning diagnostics.
-- Added end-to-end code-first schema authoring sample at `samples/code-first-authoring` with JSON Schema, JSON Editor-compatible UI-hint, and EF Core outputs.
+- Added the first end-to-end code-first schema authoring sample. Later sample milestones replaced prerelease source-tree samples with consumer-facing package-based samples.

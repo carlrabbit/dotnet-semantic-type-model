@@ -10,7 +10,6 @@ Milestones sequence implementation work for the SemanticTypeModel repository.
 - Root namespace: `SemanticTypeModel`
 - Package prefix: `SemanticTypeModel.*`
 
-
 ## Milestone Usage
 
 Milestones are implementation routers, not broad required-reading bundles. Use each milestone to identify the relevant focus area, authoritative specs, direct documentation impact, deferred documentation impact, and validation tier. Historical research guide copies are non-authoritative and are not required to implement a milestone.
@@ -46,3 +45,5 @@ For each focus area:
 - [M0021 - Power BI Projection Hardening](milestones/m0021-power-bi-projection-hardening.md)
 - [M0022 - 1.0 Public API, Compatibility, Documentation, Samples, and Release Readiness](milestones/m0022-1-0-public-api-compatibility-documentation-samples-and-release-readiness.md)
 - [M0023 - 1.0.0 Release Hardening and Final Release](milestones/m0023-1-0-0-release-hardening-and-final-release.md)
+- [M0024 - System.Text.Json Contract Correction](milestones/m0024-system-text-json-contract-correction.md)
+- [M0025 - Consumer-Facing Samples and Package-Based Sample Validation](milestones/m0025-consumer-facing-samples-and-package-based-sample-validation.md)

@@ -3,10 +3,10 @@
 `SemanticTypeModel.PowerBI` projects canonical models into Power BI representations.
 
 ```sh
-dotnet add package SemanticTypeModel.PowerBI --version 1.0.0
+dotnet add package SemanticTypeModel.PowerBI --version 1.1.0
 ```
 
-This package is part of the stable 1.0 package set. Public APIs follow the compatibility policy.
+This package is part of the stable package set. Public APIs follow the compatibility policy.
 
 ## Projection boundary
 

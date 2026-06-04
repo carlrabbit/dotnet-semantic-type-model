@@ -1,8 +1,8 @@
 # Packages
 
-## 1.0 Stable Package Set
+## Current Stable Package Set
 
-The final `1.0.0` package set is:
+The current stable package set is:
 
 - `SemanticTypeModel.Abstractions`
 - `SemanticTypeModel.Core`
@@ -25,7 +25,7 @@ The final `1.0.0` package set is:
 | `SemanticTypeModel.JsonSchema` | JSON Schema import/export and JSON Editor-compatible UI-hint export mode. |
 | `SemanticTypeModel.DotNet` | Attribute model and Roslyn-based .NET type extraction. |
 | `SemanticTypeModel.Generators` | Incremental source generator for compile-time extraction. |
-| `SemanticTypeModel.SystemTextJson` | System.Text.Json contract integration and annotations. |
+| `SemanticTypeModel.SystemTextJson` | System.Text.Json contract metadata import, annotation constants, and resolver customization helpers. |
 | `SemanticTypeModel.DependencyInjection` | Runtime provider, transformation, and projection service registration. |
 | `SemanticTypeModel.PowerBI` | Power BI projection metadata. |
 | `SemanticTypeModel.EFCore` | EF Core model projection support. |
