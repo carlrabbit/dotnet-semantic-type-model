@@ -66,3 +66,24 @@ Consumer-facing documentation describing diagnostics, severity, cause, and corre
 
 ### Public API Baseline
 A documented comparison point used to detect breaking changes in consumer-visible API contracts.
+
+### Code Source
+Annotated .NET code used as the supported authoring source for a canonical semantic type model.
+
+### Model Snapshot
+A persisted representation of a code-generated semantic type model that can be loaded without access to the original codebase.
+
+### Semantic Primitive
+A canonical semantic concept such as entity, value object, key, relationship, requiredness, nullability, format, constraint, or annotation.
+
+### Domain Semantic Model
+A package-owned semantic model derived from the canonical semantic type model for a specific domain such as JSON Schema, EF Core, Power BI, or System.Text.Json.
+
+### Transformation
+A deterministic operation that derives, normalizes, validates, or enriches semantic model information while emitting diagnostics when needed.
+
+### Query Surface
+The API surface used to locate and navigate semantic model elements by CLR type, property expression, or canonical string identifier.
+
+### Inspection Surface
+The API surface used to produce deterministic human-readable summaries of models, diagnostics, transformations, and domain semantic models.
