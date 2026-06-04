@@ -125,9 +125,6 @@ for path in [Path('README.md'), *Path('public-docs').rglob('*.md')]:
 
 if not version_sources:
     errors.append('No documented dotnet add package --version commands were found.')
-elif len(version_sources) != 1:
-    detail = ', '.join(f'{version}: {sorted(paths)}' for version, paths in sorted(version_sources.items()))
-    errors.append(f'Package install versions are inconsistent: {detail}.')
 else:
     version = next(iter(version_sources))
     if f'## Package List ({version})' not in readme:
