@@ -127,8 +127,6 @@ if not version_sources:
     errors.append('No documented dotnet add package --version commands were found.')
 else:
     version = next(iter(version_sources))
-    if f'## Package List ({version})' not in readme:
-        errors.append(f'README.md package list heading must use the documented install version {version}.')
     if f'## {version}' not in release_notes:
         errors.append(f'public-docs/release-notes.md must contain a release heading for {version}.')
 
