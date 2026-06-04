@@ -370,6 +370,38 @@ Short-running tests must cover:
 
 Snapshot-style tests are recommended for inspection output.
 
+
+## Public API Surface
+
+M0027 implementation exposes the shared query and inspection helpers from `SemanticTypeModel.Core`.
+Consumers opt in with the Core query and inspection namespaces and may use the same string-fallback APIs for generated models and snapshot-like models that do not have CLR metadata available.
+
+Required supported surface:
+
+```csharp
+using SemanticTypeModel.Core.Query;
+using SemanticTypeModel.Core.Inspection;
+
+var type = model.RequireType<Customer>();
+var typeById = model.RequireType("global::MyApp.Customer");
+var property = model.RequireProperty<Customer>(x => x.Email);
+var propertyByName = model.RequireProperty("global::MyApp.Customer", "Email");
+var entities = model.Types().WithSemanticType("Entity");
+var annotated = model.Properties().WithAnnotation("efCore.primaryKey");
+var constrained = model.Properties().WithConstraint("string.minLength", 5);
+var text = model.ToSemanticText(new SemanticTextOptions { Detail = SemanticTextDetail.Detailed });
+```
+
+Diagnostic helpers operate on canonical `SchemaDiagnostic` sequences and must preserve deterministic ordering for filtering, assertion, and text inspection:
+
+```csharp
+diagnostics.HasErrors();
+diagnostics.Errors();
+diagnostics.WithCode("STM5008");
+diagnostics.ForPath("/types/Customer/properties/Email");
+diagnostics.ThrowIfErrors(new DiagnosticTextOptions { IncludeRelatedPaths = true });
+```
+
 ## Non-Goals
 
 M0027 does not define:

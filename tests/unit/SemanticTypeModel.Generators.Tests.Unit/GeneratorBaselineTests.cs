@@ -7,6 +7,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Emit;
 using SemanticTypeModel.Abstractions.Model;
+using SemanticTypeModel.Core.Inspection;
+using SemanticTypeModel.Core.Query;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.Generators;
 using SemanticTypeModel.JsonSchema;
@@ -514,6 +516,33 @@ public sealed class GeneratorBaselineTests
         _ = await Assert.That(diagnostics.Count).IsEqualTo(0);
         _ = await Assert.That(export.Diagnostics.Any(static diagnostic => diagnostic.Severity == Hardening.SchemaDiagnosticSeverity.Error)).IsFalse();
         _ = await Assert.That(json.Contains("\"properties\"", StringComparison.Ordinal)).IsTrue();
+    }
+
+
+    [Test]
+    public async Task Fixture_15b_generated_model_should_support_query_and_inspection_development_loop()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType]
+            public sealed class Customer
+            {
+                public int Id { get; init; }
+                public required string Email { get; init; }
+            }
+            """;
+
+        (TypeSchemaModel model, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(source);
+
+        TypeShape customer = model.RequireType("global::Customer");
+        PropertyShape email = model.RequireProperty("global::Customer", "Email");
+        string text = model.ToSemanticText(new SemanticTextOptions { IncludeAnnotations = true });
+
+        _ = await Assert.That(diagnostics.Count).IsEqualTo(0);
+        _ = await Assert.That(customer).IsTypeOf<ObjectShape>();
+        _ = await Assert.That(email.Annotations.Any(static annotation => annotation.Key == "dotnet.memberName" && annotation.Value == "Email")).IsTrue();
+        _ = await Assert.That(text.Contains("Property Email:", StringComparison.Ordinal)).IsTrue();
     }
 
     [Test]
