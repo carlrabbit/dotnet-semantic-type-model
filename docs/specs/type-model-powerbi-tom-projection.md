@@ -18,9 +18,12 @@ This specification is authoritative for:
 
 - Projection package: `SemanticTypeModel.PowerBI`.
 - Core abstraction contracts remain independent from Power BI/TOM-specific dependencies.
-- M0007 uses an internal Power BI model and does not require Power BI service, XMLA, credentials, or network access.
+- M0007 uses an internal Power BI domain semantic model and does not require Power BI service, XMLA, credentials, or network access.
+- The package does not publish to the Power BI service, generate PBIX files, or provide full TOM parity.
 
-## Projection Model Contract
+## Domain Semantic Model Contract
+
+Power BI behavior is derived through a Power BI domain semantic model before local metadata output is emitted.
 
 The projection result is represented by:
 
@@ -30,7 +33,7 @@ The projection result is represented by:
 - `PowerBiRelationshipDefinition`
 - `PowerBiMeasureDefinition`
 
-Minimum semantics:
+Minimum domain semantic model semantics:
 
 - tables with columns and measures;
 - relationship endpoints and cardinality;

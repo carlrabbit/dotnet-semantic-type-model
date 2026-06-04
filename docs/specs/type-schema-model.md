@@ -4,6 +4,8 @@
 
 Define the canonical runtime representation of semantic type information used by this repository.
 
+The canonical model is authored from annotated .NET code through runtime extraction or compile-time generation, or loaded from a persisted snapshot of such a model.
+
 ## Authority
 
 This specification is authoritative for:
@@ -31,6 +33,8 @@ The canonical semantic type model consists of:
 ## Invariants
 
 - `TypeSchemaModel` is immutable after construction.
+- Consumer-facing runtime editing is unsupported.
+- Builder APIs are construction infrastructure for extraction, generation, transformations, tests, and controlled snapshot loading, not a general-purpose model authoring product.
 - Named shapes are stored in `TypeSchemaModel.Shapes` and are addressable by identifier.
 - `TypeSchemaModel.RootIdentifier` may be null.
 - `TypeSchemaModel.Root` resolves from `RootIdentifier` when one is present.
@@ -68,6 +72,8 @@ Traversal order is implementation-defined, but named shapes must not be yielded 
 
 ## Related Documents
 
+- [code-first-semantic-model-architecture.md](code-first-semantic-model-architecture.md)
 - [json-schema-adapter.md](json-schema-adapter.md)
+- ../architecture/code-first-domain-projection-pipeline.md
 - ../architecture/canonical-schema-model.md
 - ../architecture/transformation-pipeline.md

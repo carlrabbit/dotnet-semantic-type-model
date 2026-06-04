@@ -11,7 +11,8 @@ This spec is authoritative for:
 - generic `ui.*` hint keys and value expectations;
 - downstream `jsonEditor.*` hint keys and compatibility scope;
 - UI hint validation and normalization expectations;
-- JSON Schema import/export mapping behavior for UI hints.
+- JSON Schema projection/export mapping behavior for UI hints;
+- legacy/internal JSON Schema import mapping behavior when retained for compatibility.
 
 ## Generic UI Hint Vocabulary (`ui.*`)
 
@@ -38,7 +39,7 @@ When both `ui.category` and `ui.group` exist, `ui.group` is treated as the finer
 - `jsonEditor.watch`
 - `jsonEditor.template`
 
-M0006 runtime import/export supports direct keyword mapping for `propertyOrder`, `options`, `watch`, and `template` plus namespaced forms (`jsonEditor:*`). Other downstream behavior is annotation-preserved and may be diagnosed as deferred.
+M0006 runtime export supports direct keyword mapping for `propertyOrder`, `options`, and `template` plus namespaced forms (`jsonEditor:*`) when JSON-editor compatibility output is explicitly enabled. Retained legacy/internal import may map those keywords plus `watch`. Other downstream behavior is annotation-preserved and may be diagnosed as deferred. SemanticTypeModel does not provide a standalone JSON editor runtime.
 
 ## Display Text Precedence
 
@@ -107,18 +108,20 @@ Normalization behavior:
 - optional widget inference;
 - explicit hints retained unless overwrite options are enabled.
 
-## JSON Schema Import/Export
+## JSON Schema Projection and Legacy Import
 
-Import behavior:
-
-- standard `title`/`description` map to canonical schema annotations;
-- `ui:*` maps to `ui.*`;
-- JSON-editor keywords (`propertyOrder`, `options`, `watch`, `template`, `jsonEditor:*`) map to `jsonEditor.*`;
-- unknown keywords remain governed by unsupported keyword policy from M0004.
-
-Export behavior:
+JSON Schema projection/export behavior:
 
 - default mode emits standard JSON Schema keywords only;
 - generic extension mode emits selected `ui:*` extension annotations when configured;
 - JSON-editor-compatible mode emits configured downstream keywords;
 - unrepresentable UI/downstream hints produce diagnostics and remain non-semantic hints.
+
+Retained legacy/internal import behavior may map:
+
+- standard `title`/`description` to canonical schema annotations;
+- `ui:*` to `ui.*`;
+- JSON-editor keywords (`propertyOrder`, `options`, `watch`, `template`, `jsonEditor:*`) to `jsonEditor.*`;
+- unknown keywords according to the legacy unsupported keyword policy.
+
+Legacy/internal import is not a supported canonical model authoring path.

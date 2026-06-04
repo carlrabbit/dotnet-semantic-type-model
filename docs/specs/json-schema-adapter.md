@@ -1,20 +1,26 @@
 # JSON Schema Adapter Specification
 
+## Status
+
+Legacy baseline superseded for public canonical model creation by [code-first-semantic-model-architecture.md](code-first-semantic-model-architecture.md) and [../decisions/code-first-only-model-source.md](../decisions/code-first-only-model-source.md).
+
 ## Purpose
 
-Define the supported JSON Schema Draft 2020-12 behavior for import into and export from the canonical semantic type model.
+Define the JSON Schema Draft 2020-12 export baseline and document the legacy import behavior that existed before the code-first-only architecture.
 
 ## Authority
 
 This specification is authoritative for:
-- supported JSON Schema features;
-- import normalization behavior;
-- export projection behavior;
-- adapter failure expectations within the baseline feature set.
+- supported JSON Schema export features;
+- legacy/internal import normalization behavior only when retained for compatibility or tests;
+- adapter failure expectations within retained legacy behavior;
+- JSON Schema projection behavior.
 
-## Supported Input and Output Features
+This specification is not authority for canonical model authoring sources. JSON Schema import is unsupported as canonical model creation.
 
-The baseline adapter must support:
+## Supported Output Features
+
+The baseline exporter must support:
 - object schemas;
 - scalar schemas;
 - arrays;
@@ -27,7 +33,13 @@ The baseline adapter must support:
 - annotations;
 - common validation constraints stored in the canonical model.
 
-## Import Rules
+## Legacy/Internal Import Rules
+
+JSON Schema import is not a supported public source for canonical semantic models.
+
+If import components remain for compatibility, tests, or internal migration, they are legacy/internal behavior and must not be presented as an authoring path.
+
+Legacy/import-compatible behavior is:
 
 - `$defs` entries are imported as named shapes.
 - `$ref` values that target `#/$defs/{name}` resolve to the corresponding named shape identifier.
@@ -57,11 +69,13 @@ The baseline adapter must support:
 
 ## Failure Semantics
 
-- Import may throw JSON parsing exceptions for invalid JSON.
-- Import may throw `InvalidOperationException` when canonical model construction detects unresolved references.
-- Export requires a non-null model instance.
+- Legacy/internal import may throw JSON parsing exceptions for invalid JSON.
+- Legacy/internal import may throw `InvalidOperationException` when canonical model construction detects unresolved references.
+- Export requires a non-null code-generated or snapshot-loaded model instance.
 
 ## Related Documents
 
 - [type-schema-model.md](type-schema-model.md)
-- ../decisions/json-schema-as-primary-dialect.md
+- [code-first-semantic-model-architecture.md](code-first-semantic-model-architecture.md)
+- ../decisions/code-first-only-model-source.md
+- ../decisions/json-schema-as-primary-dialect.md (superseded for model source authority)

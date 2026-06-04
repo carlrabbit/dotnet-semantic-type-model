@@ -2,11 +2,19 @@
 
 ## Purpose
 
-Define baseline mapping between the hardened canonical type model and JSON Schema Draft 2020-12.
+Define baseline projection mapping from the hardened canonical type model to JSON Schema Draft 2020-12.
 
 ## Authority
 
-This spec is authoritative for canonical-to-JSON-Schema and JSON-Schema-to-canonical mapping intent for the hardened model.
+This spec is authoritative for canonical-to-JSON-Schema projection intent for the hardened model.
+
+This spec is not authority for JSON-Schema-to-canonical authoring. JSON Schema import is unsupported as canonical model creation under [code-first-semantic-model-architecture.md](code-first-semantic-model-architecture.md). Any retained JSON-Schema-to-canonical mapping is legacy/internal compatibility behavior only.
+
+## Domain Semantic Model Contract
+
+JSON Schema behavior is derived through a JSON Schema domain semantic model before a Draft 2020-12 document is exported.
+
+The domain semantic model must carry projected keyword intent, `$defs`/reference structure, unsupported-shape diagnostics, and any explicitly configured extension keyword behavior.
 
 ## Baseline Keyword Mapping
 
@@ -52,18 +60,20 @@ Unsupported or not-yet-modeled keywords must follow one of these strategies:
 - diagnosed as ignored;
 - explicitly deferred by this specification.
 
-Runtime import must support configurable behavior:
+Legacy/internal import, when retained, may support configurable behavior:
 
 - preserve as annotation + informational diagnostic;
 - ignore + warning diagnostic;
 - reject + error diagnostic.
+
+Public model authoring must not rely on this path.
 
 When preserved, unsupported keyword annotations use reserved namespaces such as `jsonSchema.*` and `ui.*`.
 
 ## UI and JSON-Editor Hint Mapping (M0006)
 
 - `ui.*` annotation keys may be emitted as JSON Schema extension keywords using `ui:*` names.
-- known JSON-editor keywords (`propertyOrder`, `options`, `watch`, `template`) map to `jsonEditor.*` annotations on import.
+- known JSON-editor keywords (`propertyOrder`, `options`, `watch`, `template`) map to `jsonEditor.*` annotations only in retained legacy/internal import paths.
 - downstream-specific keywords are emitted only when explicit JSON-editor compatibility mode is enabled.
 - export defaults to standard JSON Schema semantics without downstream keyword emission.
 - display text export precedence is `ui.title` -> `schema.title`/`title` and `ui.description` -> `schema.description`/`description`.

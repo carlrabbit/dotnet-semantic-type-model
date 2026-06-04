@@ -2,7 +2,18 @@
 
 ## Status
 
-Planned.
+Implemented.
+
+## Completed Outcomes
+
+- Code-first-only canonical model source authority is established in the code-first architecture specification and decision record.
+- JSON Schema import is marked unsupported as canonical model creation, with retained import behavior documented only as legacy/internal compatibility where needed.
+- Persisted model load/save is positioned as model snapshot behavior, not model authoring.
+- Consumer-facing runtime editing of canonical models is explicitly unsupported.
+- Core semantic primitives, custom attribute extensibility, alias attributes, transformations, query, and inspection are defined at authority level.
+- JSON Schema, EF Core, Power BI, and System.Text.Json behavior is routed through domain-specific semantic model derivation before domain-specific functionality.
+- Unsupported feature scope is listed in authority documents.
+- Public documentation and package README surfaces that require a later synchronization pass remain deferred; this milestone implementation did not perform that broad public documentation synchronization pass.
 
 ## Maturity Mode
 

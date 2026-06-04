@@ -110,7 +110,7 @@ The supported pattern is resolver composition, not context generation.
 
 ## Runtime Resolver Customization
 
-`SemanticTypeModel.SystemTextJson` may apply supported semantic metadata to `JsonTypeInfo` through `IJsonTypeInfoResolver`.
+`SemanticTypeModel.SystemTextJson` derives a resolver customization domain semantic model from the canonical semantic model and imported `System.Text.Json` metadata before applying supported metadata to `JsonTypeInfo` through `IJsonTypeInfoResolver`.
 
 The resolver contract must support these scenarios:
 

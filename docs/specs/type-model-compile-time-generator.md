@@ -4,6 +4,8 @@
 
 Define the baseline incremental source generator that emits deterministic model-provider code from extracted .NET type metadata.
 
+Compile-time generation is one of the supported code-first canonical model creation paths.
+
 ## Authority
 
 This specification is authoritative for:
@@ -24,7 +26,7 @@ This specification is authoritative for:
   - emit deterministic provider code that constructs canonical `TypeSchemaModel`;
   - surface extraction/generation diagnostics.
 - Non-responsibilities:
-  - direct projection output generation (JSON Schema/UI/EF Core/Power BI/TOM/OpenAPI).
+  - direct projection output generation that bypasses the canonical model and domain semantic model pipeline.
 
 ## Generated API Baseline
 

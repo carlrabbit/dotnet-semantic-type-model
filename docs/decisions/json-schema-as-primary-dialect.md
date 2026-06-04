@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Superseded for canonical model source authority by [code-first-only-model-source.md](code-first-only-model-source.md).
+
+This decision remains historical rationale for the early JSON Schema adapter baseline only.
 
 ## Context
 
@@ -21,9 +23,10 @@ JSON Schema Draft 2020-12 is the primary initial adapter dialect for milestone 2
 
 ## Consequences
 
-- Milestone 2 implements JSON Schema import and export before other dialect adapters.
+- Milestone 2 implemented JSON Schema import and export before other dialect adapters.
+- M0026 removes JSON Schema import from supported canonical model creation.
 - The canonical model must remain independent from JSON Schema document structure.
-- Future adapters must integrate through the same source, transformation, and projection boundaries.
+- Future domain integrations must derive domain semantic models from code-generated canonical models unless a later accepted decision explicitly adds another source adapter.
 
 ## Alternatives Considered
 
