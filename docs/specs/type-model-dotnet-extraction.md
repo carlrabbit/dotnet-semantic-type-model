@@ -4,6 +4,8 @@
 
 Define Roslyn-based .NET type-system extraction into canonical semantic type model contracts.
 
+Runtime .NET extraction is one of the supported code-first canonical model creation paths.
+
 M0010 extends this baseline with explicit attribute and convention sub-specifications:
 
 - `docs/specs/type-model-dotnet-attributes.md`

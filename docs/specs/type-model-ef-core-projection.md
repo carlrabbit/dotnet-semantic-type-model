@@ -22,6 +22,7 @@ This specification is authoritative for:
   - `EfCoreModelProjection` for non-EF runtime consumers and tests.
   - `ModelBuilder.ApplySemanticTypeModel(...)` for EF Core model configuration.
 - Baseline usage does not require a database provider, database server, or live connection.
+- The package does not create databases or execute migrations.
 
 ## ModelBuilder API Contract
 
@@ -34,7 +35,9 @@ This specification is authoritative for:
 
 The `ModelBuilder` entry point applies provider-neutral baseline configuration for projected entities, scalar properties, keys, and unique indexes while keeping unsupported shape behavior diagnosable.
 
-## Projection Model Contract
+## Domain Semantic Model Contract
+
+EF Core behavior is derived through an EF Core domain semantic model before `ModelBuilder` configuration is applied.
 
 The projection result is represented by:
 
@@ -44,7 +47,7 @@ The projection result is represented by:
 - `EfKeyDefinition`
 - `EfRelationshipDefinition`
 
-Minimum semantics:
+Minimum domain semantic model semantics:
 
 - entity types with provider-neutral table/schema metadata;
 - property CLR type, requiredness, nullability, max length, precision, conversion, generation, and carried annotations;
@@ -253,4 +256,4 @@ Short-running tests must cover at least:
 4. enum storage fixture;
 5. unsupported shape fixture;
 6. name collision fixture;
-7. JSON Schema-originated optional-versus-nullable fixture.
+7. code-generated optional-versus-nullable fixture.

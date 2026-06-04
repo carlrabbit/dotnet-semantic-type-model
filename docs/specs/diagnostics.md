@@ -32,7 +32,7 @@ Projection packages that have not reached a stable diagnostic surface use a desc
 |-----------------|------------------------------|
 | `EFCORE_*`      | SemanticTypeModel.EFCore     |
 | `POWERBI_*`     | SemanticTypeModel.PowerBI    |
-| `JSONSCHEMA_*`  | SemanticTypeModel.JsonSchema (import/export) |
+| `JSONSCHEMA_*`  | SemanticTypeModel.JsonSchema projection/export and retained legacy/internal import compatibility |
 
 Preview codes are subject to change. Their stability expectations are documented in `public-docs/diagnostics/preview-status.md`.
 
