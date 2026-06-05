@@ -60,6 +60,24 @@ public static class StmDiagnosticIds
     /// <summary>STM0013 — Enum type contains duplicate value payloads.</summary>
     public const string DuplicateEnumValuePayload = "STM0013";
 
+
+    // -------------------------------------------------------------------------
+    // STM1xxx — Core transformation diagnostics
+    // Emitted by core semantic model transformations during the Transformation pipeline stage.
+    // -------------------------------------------------------------------------
+
+    /// <summary>STM1004 — Semantic role alias metadata is not a supported core semantic role.</summary>
+    public const string SemanticRoleAliasInvalid = "STM1004";
+
+    /// <summary>STM1005 — Semantic role alias metadata conflicts with an already declared canonical role.</summary>
+    public const string SemanticRoleAliasConflict = "STM1005";
+
+    /// <summary>STM1006 — Explicit semantic key metadata was declared on a non-entity type.</summary>
+    public const string SemanticKeyOnNonEntity = "STM1006";
+
+    /// <summary>STM1007 — Multiple primary semantic keys were declared for one type.</summary>
+    public const string MultiplePrimarySemanticKeys = "STM1007";
+
     // -------------------------------------------------------------------------
     // STM3xxx — JSON Schema runtime projection
     // Emitted by JsonSchemaRuntimeProjection during the Projection pipeline stage.
