@@ -391,3 +391,35 @@ M0028 does not define:
 - plugin loading;
 - file-based transformation configuration;
 - runtime model editing.
+
+## M0028 Core Implementation Contract
+
+The M0028 core implementation exposes the direct-code pipeline from `SemanticTypeModel.Core.Transformation`.
+
+Required public behaviors are:
+
+- `ISemanticModelTransformation` identifies every transformation with a stable `Id` and deterministic `DisplayName`.
+- `SchemaTransformationPipeline` supports `Add`, `Remove`, `Replace`, `AddBefore`, `AddAfter`, `Clear`, `UseCoreDefaults`, and deterministic order inspection.
+- `SemanticModelTransformationExtensions.Transform` creates a configured pipeline directly from a `TypeSchemaModel`.
+- `SemanticModelTransformationResult` contains the transformed model, accumulated diagnostics, and a `SemanticTransformationTrace`.
+- `SemanticDerivationResult<TDomainModel>` is the shared generic result shape for package-owned domain semantic models.
+- `TransformationTextExtensions.ToTransformationText` provides deterministic trace text and must not include timestamps, machine paths, random identifiers, or culture-sensitive formatting.
+
+The minimal core default pipeline order is:
+
+1. normalize annotation keys;
+2. normalize semantic role aliases;
+3. derive semantic keys from explicit key metadata;
+4. normalize display metadata from schema annotations;
+5. validate the resulting model.
+
+The core default pipeline remains projection-neutral. It must not derive EF Core, Power BI, JSON Schema, or System.Text.Json domain semantics.
+
+Core transformation diagnostics added by M0028 use the STM1xxx range:
+
+| Code | Severity | Condition |
+|---|---|---|
+| `STM1004` | Warning | Semantic role alias metadata is not a supported core semantic role. |
+| `STM1005` | Warning | Semantic role alias metadata conflicts with an already declared canonical role. |
+| `STM1006` | Warning | Explicit semantic key metadata was declared on a non-entity type. |
+| `STM1007` | Warning | Multiple primary semantic keys were declared for one type. |

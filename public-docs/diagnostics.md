@@ -14,6 +14,7 @@ All stable diagnostic IDs use the prefix `STM` followed by a four-digit number:
 | Range       | Description                              | Package                          |
 |-------------|------------------------------------------|----------------------------------|
 | STM0xxx     | Semantic model validation                | SemanticTypeModel.Core           |
+| STM1xxx     | Core transformation                      | SemanticTypeModel.Core           |
 | STM3xxx     | JSON Schema runtime projection           | SemanticTypeModel.JsonSchema     |
 | STM5xxx     | .NET type extraction / source generator  | SemanticTypeModel.DotNet / SemanticTypeModel.Generators |
 
@@ -52,6 +53,17 @@ Compile-time diagnostics (source generator) can be suppressed with standard `#pr
 | STM0013 | Error    | Duplicate enum value payload   |
 
 Full reference: [diagnostics/stm0xxx.md](diagnostics/stm0xxx.md)
+
+### Core Transformation (STM1xxx)
+
+| Code    | Severity | Title                          |
+|---------|----------|--------------------------------|
+| STM1004 | Warning  | Semantic role alias invalid    |
+| STM1005 | Warning  | Semantic role alias conflict   |
+| STM1006 | Warning  | Semantic key on non-entity     |
+| STM1007 | Warning  | Multiple primary semantic keys |
+
+Full reference: [diagnostics/stm1xxx.md](diagnostics/stm1xxx.md)
 
 ### JSON Schema Runtime Projection (STM3xxx)
 
