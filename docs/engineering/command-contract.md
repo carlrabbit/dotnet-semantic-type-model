@@ -25,7 +25,7 @@ Define the stable set of repository commands used by humans, CI, and agents.
 | `./eng/test.sh` | Run all short-running tests |
 | `./eng/test-project.sh <project>` | Run short-running tests for one test project |
 | `./eng/test-filter.sh <filter>` | Run short-running tests matching an MTP tree-node filter |
-| `./eng/check-affected.sh [paths...]` | Run focused validation guidance for changed paths, or Tier 2 when no focused mapping is available |
+| `./eng/check-affected.sh [paths...]` | Run focused validation guidance for changed paths, or Tier 2 when no focused mapping is available; sample paths prepare local packages before running sample validation |
 | `./eng/format.sh` | Format all code |
 | `./eng/check.sh` | Tier 2 validation (restore + build + short-running tests + format check) |
 | `./eng/benchmark.sh` | Run benchmarks in Release mode |
