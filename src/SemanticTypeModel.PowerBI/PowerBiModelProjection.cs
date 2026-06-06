@@ -178,6 +178,8 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
             }
         }
 
+        ValidateSortByColumns(objectType, columns, columnNameSet, diagnostics);
+
         IReadOnlyList<PowerBiMeasureDefinition> measures = ProjectMeasures(objectType, diagnostics);
         var displayFolder = ResolveStringAnnotation(
             objectType.Annotations,
@@ -198,13 +200,41 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
                 Description = objectType.Description,
                 DisplayFolder = displayFolder,
                 Role = ResolveTableRole(objectType, tablePath, diagnostics),
-                IsHidden = ResolveBooleanAnnotation(objectType.Annotations, tablePath, diagnostics, PowerBiAnnotationNames.Hidden, "powerBi.isHidden") ?? false,
+                IsHidden = ResolveBooleanAnnotation(objectType.Annotations, tablePath, diagnostics, PowerBiAnnotationNames.Hidden, "powerBi.hidden") ?? false,
                 SourceTypeId = objectType.Id,
                 Annotations = objectType.Annotations,
             },
             KeyPropertyIds = keyPropertyIds,
             ColumnNameByProperty = columnNameByProperty,
         };
+    }
+
+
+    private static void ValidateSortByColumns(
+        ObjectTypeDefinition objectType,
+        IReadOnlyList<PowerBiColumnDefinition> columns,
+        HashSet<string> columnNameSet,
+        IList<SchemaDiagnostic> diagnostics)
+    {
+        foreach (PowerBiColumnDefinition column in columns)
+        {
+            if (string.IsNullOrWhiteSpace(column.SortByColumn))
+            {
+                continue;
+            }
+
+            if (columnNameSet.Contains(column.SortByColumn))
+            {
+                continue;
+            }
+
+            Report(
+                diagnostics,
+                SchemaDiagnosticSeverity.Warning,
+                "POWERBI_SORT_BY_COLUMN_NOT_FOUND",
+                $"Column '{column.Name}' references unresolved sort-by-column '{column.SortByColumn}'.",
+                ModelPath.ForProperty(objectType.Id, column.SourcePropertyId?.Value ?? column.Name));
+        }
     }
 
     private IReadOnlyList<PowerBiColumnDefinition> ProjectProperty(
@@ -236,7 +266,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
             "tom.columnName",
             PowerBiAnnotationNames.ColumnName);
 
-        var isHidden = ResolveBooleanAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.Hidden, "powerBi.isHidden") ?? false;
+        var isHidden = ResolveBooleanAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.Hidden, "powerBi.hidden") ?? false;
         if (isHidden && !_options.IncludeHiddenColumns)
         {
             return [];
@@ -253,13 +283,14 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
 
         var dataCategory = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.DataCategory);
         var formatString = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.FormatString);
+        var sortByColumn = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.SortByColumn);
         PowerBiSummarization summarization = ResolveSummarization(property.Annotations, propertyPath, isKey, propertyType, diagnostics);
 
         if (propertyType is ScalarTypeDefinition scalar)
         {
             return
             [
-                CreateColumn(columnName, property.DisplayName, MapScalarDataType(scalar, propertyPath, diagnostics), isNullable, isKey, isHidden, property.Description, summarization, property.Id, dataCategory, formatString, property.Annotations),
+                CreateColumn(columnName, property.DisplayName, MapScalarDataType(scalar, propertyPath, diagnostics), isNullable, isKey, isHidden, property.Description, summarization, property.Id, dataCategory, formatString, sortByColumn, property.Annotations),
             ];
         }
 
@@ -267,7 +298,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         {
             return
             [
-                CreateColumn(columnName, property.DisplayName, MapEnumDataType(enumType), isNullable, isKey, isHidden, property.Description, summarization, property.Id, dataCategory, formatString, property.Annotations),
+                CreateColumn(columnName, property.DisplayName, MapEnumDataType(enumType), isNullable, isKey, isHidden, property.Description, summarization, property.Id, dataCategory, formatString, sortByColumn, property.Annotations),
             ];
         }
 
@@ -342,6 +373,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
                     property.Id,
                     ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.DataCategory),
                     ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.FormatString),
+                    ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.SortByColumn),
                     property.Annotations),
             ];
         }
@@ -420,6 +452,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
                 nestedProperty.Id,
                 ResolveStringAnnotation(nestedProperty.Annotations, nestedPath, diagnostics, PowerBiAnnotationNames.DataCategory),
                 ResolveStringAnnotation(nestedProperty.Annotations, nestedPath, diagnostics, PowerBiAnnotationNames.FormatString),
+                ResolveStringAnnotation(nestedProperty.Annotations, nestedPath, diagnostics, PowerBiAnnotationNames.SortByColumn),
                 nestedProperty.Annotations),
         ];
     }
@@ -440,7 +473,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
                 propertyPath);
             return
             [
-                CreateColumn(property.Name, property.DisplayName, PowerBiDataType.String, true, false, false, property.Description, PowerBiSummarization.None, property.Id, null, null, property.Annotations),
+                CreateColumn(property.Name, property.DisplayName, PowerBiDataType.String, true, false, false, property.Description, PowerBiSummarization.None, property.Id, null, null, null, property.Annotations),
             ];
         }
 
@@ -476,6 +509,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         PropertyId? sourcePropertyId,
         string? dataCategory,
         string? formatString,
+        string? sortByColumn,
         AnnotationBag annotations)
     {
         return new PowerBiColumnDefinition
@@ -491,6 +525,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
             SourcePropertyId = sourcePropertyId,
             DataCategory = dataCategory,
             FormatString = formatString,
+            SortByColumn = sortByColumn,
             Annotations = annotations,
         };
     }
@@ -943,7 +978,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         TypeDefinition propertyType,
         IList<SchemaDiagnostic> diagnostics)
     {
-        if (TryGetStringAnnotation(annotations, PowerBiAnnotationNames.Summarization, out var summarizationText))
+        if (TryGetStringAnnotation(annotations, PowerBiAnnotationNames.Summarization, out var summarizationText) || TryGetStringAnnotation(annotations, "powerBi.summarization", out summarizationText))
         {
             if (Enum.TryParse(summarizationText, ignoreCase: true, out PowerBiSummarization parsed))
             {

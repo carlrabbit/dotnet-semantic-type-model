@@ -99,12 +99,12 @@ Users must be able to configure Power BI derivation transformations in code.
 The package exposes an API equivalent to:
 
 ```csharp
-PowerBiLocalMetadataExporter.Export(result.Model, outputPath);
+PowerBiLocalMetadataExporter.ExportJson(result.Model, outputPath);
 ```
 
 A convenience API may derive and export in one call only if diagnostics and trace remain available.
 
-At least one deterministic local output format must exist:
+M0031 implements deterministic inspection text and neutral JSON metadata. Additional replaceable local formats may be added later. At least one deterministic local output format must exist:
 
 ```text
 inspection text
@@ -467,7 +467,7 @@ Required behavior:
 ```csharp
 derived.Diagnostics.ToDiagnosticText();
 derived.Trace.ToTransformationText();
-derived.Model.ToSemanticText();
+PowerBiLocalMetadataExporter.Inspect(derived.Model);
 ```
 
 or equivalent package-specific inspection methods.

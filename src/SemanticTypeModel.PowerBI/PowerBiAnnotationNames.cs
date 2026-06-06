@@ -21,10 +21,10 @@ public static class PowerBiAnnotationNames
     public const string FormatString = "powerBi.formatString";
 
     /// <summary>Power BI summarization annotation.</summary>
-    public const string Summarization = "powerBi.summarization";
+    public const string Summarization = "powerBi.summarizeBy";
 
     /// <summary>Power BI hidden flag annotation.</summary>
-    public const string Hidden = "powerBi.hidden";
+    public const string Hidden = "powerBi.isHidden";
 
     /// <summary>Power BI display folder annotation.</summary>
     public const string DisplayFolder = "powerBi.displayFolder";
@@ -37,4 +37,14 @@ public static class PowerBiAnnotationNames
 
     /// <summary>Power BI relationship name annotation.</summary>
     public const string RelationshipName = "powerBi.relationshipName";
+
+
+    /// <summary>Power BI sort-by-column annotation.</summary>
+    public const string SortByColumn = "powerBi.sortByColumn";
+
+    /// <summary>Power BI calculated table annotation.</summary>
+    public const string CalculatedTable = "powerBi.calculatedTable";
+
+    /// <summary>Power BI hierarchy annotation.</summary>
+    public const string Hierarchy = "powerBi.hierarchy";
 }
