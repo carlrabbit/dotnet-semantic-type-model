@@ -1,259 +1,527 @@
 # Type Model EF Core Projection Specification
 
+## Status
+
+Authoritative behavioral specification for the EF Core domain semantic model and provider-neutral `ModelBuilder` projection.
+
 ## Purpose
 
-Define deterministic projection of hardened canonical `TypeSchemaModel` contracts into an EF Core-oriented intermediate metadata model and `ModelBuilder` configuration surface.
-
-## Authority
+Define deterministic derivation of code-generated canonical semantic models into an EF Core domain semantic model and provider-neutral EF Core `ModelBuilder` configuration.
 
 This specification is authoritative for:
 
-- EF Core projection scope in M0008 and M0015;
-- projection naming and annotation precedence;
-- entity/property/key/relationship/value-object/enum mapping behavior;
-- projection options and unsupported-shape behavior;
-- required diagnostic expectations for this projection target.
+- EF Core domain semantic model behavior;
+- EF Core derivation pipeline behavior;
+- EF Core metadata precedence;
+- entity/property/key/index/conversion/relationship/inheritance mapping;
+- provider-neutral `ModelBuilder` application;
+- unsupported EF Core scope boundaries;
+- EF Core projection diagnostics.
+
+## Product Role
+
+`SemanticTypeModel.EFCore` projects code-generated canonical semantic models into EF Core metadata.
+
+The package flow is:
+
+```text
+Code-generated canonical Semantic Type Model
+  -> EF Core derivation transformations
+  -> EfCoreSemanticModel
+  -> EF Core ModelBuilder configuration
+```
+
+The package does not own database lifecycle, migrations, providers, DbContext discovery/generation, runtime database validation, or global query filters.
 
 ## Dependency Boundary
 
 - Projection package: `SemanticTypeModel.EFCore`.
 - Core abstraction contracts remain independent from EF Core-specific dependencies.
-- Projection supports two entry points:
-  - `EfCoreModelProjection` for non-EF runtime consumers and tests.
-  - `ModelBuilder.ApplySemanticTypeModel(...)` for EF Core model configuration.
-- Baseline usage does not require a database provider, database server, or live connection.
-- The package does not create databases or execute migrations.
-
-## ModelBuilder API Contract
-
-`SemanticTypeModel.EFCore` exposes:
-
-- extension method `ModelBuilder.ApplySemanticTypeModel(...)`;
-- canonical `TypeSchemaModel` input;
-- optional configuration callback;
-- result object with projected model metadata and diagnostics.
-
-The `ModelBuilder` entry point applies provider-neutral baseline configuration for projected entities, scalar properties, keys, and unique indexes while keeping unsupported shape behavior diagnosable.
+- The package exposes a domain derivation API and a provider-neutral `ModelBuilder` application API.
+- Baseline usage must not require a database provider, database server, connection string, migration, or live connection.
 
 ## Domain Semantic Model Contract
 
 EF Core behavior is derived through an EF Core domain semantic model before `ModelBuilder` configuration is applied.
 
-The projection result is represented by:
+The domain semantic model must represent:
 
-- `EfModelDefinition`
-- `EfEntityTypeDefinition`
-- `EfPropertyDefinition`
-- `EfKeyDefinition`
-- `EfRelationshipDefinition`
+```text
+model metadata
+entity types
+table and schema metadata
+properties
+column metadata
+primary keys
+alternate keys
+indexes
+requiredness/nullability
+max length
+precision/scale
+type conversion metadata
+relationships
+inheritance metadata
+owned/value-object metadata
+ignored members
+diagnostics
+```
 
-Minimum domain semantic model semantics:
+The `ModelBuilder` projection must operate from the EF Core domain semantic model, not from scattered ad hoc annotation lookups.
 
-- entity types with provider-neutral table/schema metadata;
-- property CLR type, requiredness, nullability, max length, precision, conversion, generation, and carried annotations;
-- primary and non-primary keys;
-- relationship endpoints, cardinality, and delete behavior;
-- accumulated structured projection diagnostics.
+## Derivation API
+
+The package must expose a domain derivation API equivalent to:
+
+```csharp
+var result = model.DeriveEfCoreModel(options =>
+{
+    options.UseDefaultTransformations();
+});
+```
+
+The result must follow the M0028 pattern:
+
+```csharp
+SemanticDerivationResult<EfCoreSemanticModel>
+```
+
+or provide equivalent behavior:
+
+```text
+domain model
+diagnostics
+transformation trace
+```
+
+Users must be able to configure EF Core derivation transformations in code.
+
+## ModelBuilder API Contract
+
+The package exposes an API equivalent to:
+
+```csharp
+modelBuilder.ApplyEfCoreSemanticModel(result.Model);
+```
+
+A convenience API may derive and apply in one call only if diagnostics and trace remain available.
+
+The `ModelBuilder` entry point applies provider-neutral configuration for projected entities, properties, keys, indexes, relationships, owned/value-object mappings, conversions, and explicitly configured inheritance.
 
 ## Annotation Namespaces
 
-Projection consumes:
+Projection may consume:
 
-- `efCore.*`
-- `dotnet.*`
-- `schema.*`
-- `ui.*` (shared display metadata only when naming options enable it)
+```text
+efCore.*
+dotnet.*
+schema.*
+ui.*
+```
 
-Required handled or explicitly diagnosed keys:
+Required handled or explicitly diagnosed metadata includes:
 
-- `efCore.entity`
-- `efCore.owned`
-- `efCore.tableName`
-- `efCore.schemaName`
-- `efCore.columnName`
-- `efCore.valueGenerated`
-- `efCore.conversion`
-- `efCore.enumStorage`
-- `efCore.deleteBehavior`
-- `dotnet.clrType`
-- `dotnet.nullability`
-
-`efCore.index` remains preserved as annotation metadata in M0008 and is not applied as a distinct intermediate contract element.
+```text
+efCore.entity
+efCore.owned
+efCore.tableName
+efCore.schemaName
+efCore.columnName
+efCore.primaryKey
+efCore.alternateKey
+efCore.index
+efCore.valueGenerated
+efCore.conversion
+efCore.providerType
+efCore.enumStorage
+efCore.deleteBehavior
+efCore.inheritanceStrategy
+efCore.discriminator
+dotnet.clrType
+dotnet.nullability
+schema.*
+ui.*
+```
 
 ## Precedence
 
 ### Entity/table names
 
 1. `efCore.tableName`
-2. canonical `DisplayName` when `PreferDisplayNamesForTableAndColumnNames` is enabled
-3. canonical `Name`
+2. configured naming transformation
+3. canonical display name when enabled
+4. canonical name
 
 ### Column/property names
 
 1. `efCore.columnName`
-2. property `DisplayName` when `PreferDisplayNamesForTableAndColumnNames` is enabled
-3. property `Name`
+2. configured naming transformation
+3. property display name when enabled
+4. property name
 
 ### Semantic precedence
 
-- canonical role, key, relationship, requiredness, and nullability semantics remain authoritative by default;
-- explicit `efCore.*` and `dotnet.*` annotations may refine target-specific representation details;
-- invalid target-specific annotation values are diagnosable and do not silently override canonical semantics.
+- Canonical role, key, relationship, requiredness, and nullability semantics provide defaults.
+- Explicit `efCore.*` metadata may refine EF-specific representation details.
+- Invalid target-specific metadata is diagnosable and must not silently override canonical semantics.
 
-## Object-to-Entity Mapping
+## Entity Mapping
 
-Object types project to entity definitions when one of these is true:
+Object types project to EF Core entity definitions when one of these is true:
 
-- role is `Entity`;
-- `EntitySemantics.IsAggregateRoot` is true;
-- explicit `efCore.entity = true` is present;
-- options enable projection of unannotated objects.
+```text
+canonical role is Entity
+aggregate-root semantics indicate entity
+explicit efCore.entity = true
+options enable projection of unannotated objects
+```
 
 Value objects do not become root entities by default.
 
-## Property Mapping
+Missing primary keys on entity candidates are diagnosable unless keyless entity projection is explicitly enabled.
 
-### Scalar mapping baseline
+## Property and Column Mapping
 
-- Boolean -> `bool`
-- String -> `string`
-- Integer -> `long`
-- Number -> `double` or `decimal` when precision metadata exists
-- Decimal -> `decimal`
-- Date -> `DateOnly`
-- Time -> `TimeOnly`
-- DateTime -> `DateTime`
-- DateTimeOffset -> `DateTimeOffset`
-- Duration -> `TimeSpan`
-- Guid -> `Guid`
-- Binary -> `byte[]`
-- Json -> `string` with diagnostic in the baseline prototype
+Properties project when they are compatible with EF Core property mapping or explicitly configured.
 
-Lossy mappings are diagnosable.
+Required support:
 
-### Requiredness and nullability
+```text
+CLR type metadata
+requiredness
+nullability
+column name
+max length
+precision/scale
+value generation metadata when explicit
+ignored member metadata when explicit
+conversion metadata when explicit
+```
 
-The prototype preserves:
+Unsupported property shapes must be diagnosed rather than silently ignored.
 
-- property presence requiredness (`EfPropertyDefinition.IsRequired`);
-- value nullability (`EfPropertyDefinition.IsNullable`);
-- generated annotations (`schema.isRequired`, `schema.isOptional`, `schema.allowsNull`, `dotnet.nullability`).
+## Scalar and Enum Mapping
 
-When canonical schema presence/nullability semantics are not an exact claim about future runtime EF metadata, the projection emits diagnostics while preserving the distinction in the intermediate model and annotations.
+Provider-neutral baseline scalar mapping must be deterministic.
 
-### String and numeric constraints
+Lossy or ambiguous mappings are diagnosable.
 
-- `maxLength` maps directly to `EfPropertyDefinition.MaxLength`;
-- numeric precision maps directly when canonical precision metadata exists;
-- pattern, minimum, maximum, and multipleOf remain annotation-preserved and diagnosable in M0008.
+Enum support:
+
+- default behavior is configurable;
+- string storage and numeric storage must be represented when enough metadata exists;
+- invalid enum storage configuration is diagnosable.
+
+## Type Conversion Mapping
+
+Explicit type conversion mapping is supported.
+
+Required support:
+
+```text
+explicit value converter type
+explicit provider CLR type
+explicit conversion mode when modeled
+diagnostics when converter metadata is missing or ambiguous
+```
+
+Rules:
+
+- the package must not invent custom converter logic;
+- custom date/value-object classes require explicit converter or provider type metadata;
+- invalid converter types emit diagnostics;
+- provider-specific conversions are out of scope.
 
 ## Keys
 
 Projection supports:
 
-- primary keys;
-- alternate and natural keys;
-- surrogate keys;
-- external identity markers.
+```text
+primary keys
+alternate keys
+composite keys
+surrogate keys when explicit
+external identity markers when explicitly modeled
+```
 
-Composite keys are preserved in the intermediate model.
+Rules:
 
-Missing primary keys on entity candidates are diagnosable unless keyless entity projection is explicitly enabled.
+- primary keys are derived from canonical key semantics by default;
+- EF-specific key metadata can refine EF-specific behavior;
+- multiple primary keys without composite-key semantics emit diagnostics;
+- missing key properties emit diagnostics.
+
+## Indexes
+
+Projection supports provider-neutral indexes:
+
+```text
+single-column index
+composite index
+unique index
+named index
+deterministic property order
+```
+
+Out of scope:
+
+```text
+filtered indexes
+included columns
+full-text indexes
+spatial indexes
+provider-specific index methods
+```
+
+Invalid or unresolved index property references emit diagnostics.
 
 ## Relationships
 
-Projection supports:
+Projection supports explicit simple relationships:
 
-- one-to-one;
-- one-to-many;
-- many-to-one.
+```text
+one-to-one
+one-to-many
+many-to-one
+explicit foreign-key property
+explicit navigation metadata
+required/optional relationship
+explicit delete behavior where provider-neutral
+```
 
-Many-to-many remains diagnosable and deferred in M0008.
+Rules:
 
-Relationship projection requires:
+- both endpoint types must resolve to EF Core entities;
+- endpoint properties must resolve when required;
+- ambiguous navigation pairing emits diagnostics;
+- unsupported many-to-many skip navigations emit diagnostics;
+- shadow FK discovery is out of scope;
+- complex relationship inference is out of scope.
 
-- both endpoint types projected as entities;
-- endpoint properties projected as properties.
+## Owned and Value-Object Mapping
 
-Missing endpoint/entity/property resolution is diagnosable.
+Explicit owned/value-object mapping is supported where EF Core can represent it provider-neutrally.
 
-## Value Objects, Arrays, Dictionaries, and Unions
+Supported:
 
-### Value objects
+```text
+owned reference mapping
+value-object property mapping when explicit
+diagnostics for ambiguous ownership
+diagnostics for unsupported owned collections
+```
 
-Options determine behavior:
+Out of scope:
 
-- diagnose;
-- owned/complex-like metadata;
-- flatten deterministic nested names (`parent_child`);
-- serialize as JSON/text.
+```text
+owned collections
+complex owned graph inference
+provider-specific owned mapping behavior
+```
 
-### Arrays/dictionaries/unions/nested unsupported objects
+## Inheritance Mapping
 
-Options determine behavior:
+Simple explicit inheritance mapping is supported.
 
-- diagnose;
-- ignore with warning;
-- serialize as JSON/text.
+Supported strategies:
 
-No silent shape loss is allowed.
+```text
+TPH
+TPT
+TPC
+```
 
-## Enums
+Rules:
 
-- default behavior uses string storage;
-- numeric storage is configurable when canonical enum metadata supports numeric backing;
-- invalid enum storage configuration is diagnosable.
+- user must choose inheritance strategy through options or `efCore.*` metadata;
+- arbitrary inheritance must not automatically imply a strategy;
+- derived types must resolve to EF Core entity definitions;
+- discriminator metadata is supported for TPH when explicitly configured;
+- ambiguous or unsupported inheritance emits diagnostics.
 
-## Projection Options
+Candidate configuration behavior:
 
-`EfCoreProjectionOptions` includes behavior controls for:
+```csharp
+var result = model.DeriveEfCoreModel(options =>
+{
+    options.Inheritance.DefaultStrategy = EfCoreInheritanceStrategy.Tph;
 
-- unannotated object entity projection;
-- keyless-entity allowance;
-- value-object mode;
-- unsupported-shape behavior;
-- enum mode;
-- alternate-key mode;
-- display-name participation for table/column names;
-- name collision behavior.
+    options.Inheritance.For<BasePaymentMethod>()
+        .UseTpc();
+});
+```
 
-Behavior must be deterministic.
+Equivalent behavior is required even if API names differ.
 
-## Name Collision Handling
+## ModelBuilder Application
 
-Duplicate projected names for entities, properties, keys, and relationships must be handled deterministically:
+Provider-neutral `ModelBuilder` application should apply where domain metadata exists:
 
-- diagnose-and-skip (default), or
-- suffix-based renaming when configured.
+```text
+Entity(...)
+ToTable(...)
+HasKey(...)
+HasAlternateKey(...)
+HasIndex(...)
+IsUnique(...)
+Property(...)
+HasColumnName(...)
+IsRequired(...)
+HasMaxLength(...)
+HasPrecision(...)
+HasConversion(...)
+HasOne/WithMany/WithOne
+OwnsOne
+TPH/TPT/TPC mapping APIs supported by the referenced EF Core version
+```
+
+The implementation must use actual EF Core APIs supported by the referenced EF Core package version.
 
 ## Diagnostics
 
-Projection emits `SchemaDiagnostic` entries with:
+Projection emits structured diagnostics with:
 
-- `Stage = Projection`
-- `ProjectionTarget = EfCore`
+```text
+Stage = Projection
+ProjectionTarget = EfCore
+model path when available
+transformation id when emitted during derivation
+related model paths when applicable
+```
 
 Required diagnostic classes include:
 
-- object not projected (missing role/annotation);
-- missing primary key for entity candidate;
-- unresolved property type, key property, or relationship endpoint;
-- unsupported many-to-many relationships;
-- value-object mode conflicts;
-- unsupported arrays, dictionaries, unions, and nested objects;
-- preserved-but-not-directly-applied constraint metadata;
-- invalid projection annotation type/value;
-- duplicate projected names;
-- lossy scalar or enum mapping decisions.
+```text
+object not projected
+missing primary key for entity candidate
+unresolved property type
+unresolved key property
+unresolved relationship endpoint
+unsupported many-to-many relationship
+ambiguous relationship navigation
+unsupported owned collection
+ambiguous ownership
+invalid inheritance strategy
+missing inheritance strategy
+unresolved derived entity
+invalid discriminator metadata
+invalid index property reference
+duplicate index definition
+invalid converter metadata
+lossy scalar or enum mapping
+invalid projection annotation type/value
+duplicate projected names
+provider-specific behavior requested
+```
+
+## Determinism
+
+EF Core derivation and `ModelBuilder` application must be deterministic.
+
+Required deterministic ordering:
+
+```text
+entities by canonical type identifier or configured entity name
+properties by declaration/order metadata when available, then name
+keys by configured/canonical order
+indexes by configured/canonical order
+relationships by model path
+inheritance branches by canonical type identifier unless explicitly ordered
+diagnostics by model path/code/order of discovery
+```
+
+## Inspection Integration
+
+The EF Core domain model and derivation result must integrate with M0027/M0028 inspection.
+
+Required behavior:
+
+```csharp
+derived.Diagnostics.ToDiagnosticText();
+derived.Trace.ToTransformationText();
+derived.Model.ToSemanticText();
+```
+
+or equivalent package-specific inspection methods.
+
+Inspection output must be deterministic and suitable for tests.
+
+## Unsupported Scope
+
+The EF Core package does not define or own:
+
+```text
+database creation
+migration generation
+provider-specific SQL Server/PostgreSQL behavior
+DbContext discovery
+DbContext source generation
+runtime database validation
+global query filters
+connection string handling
+transaction handling
+seed data management
+repository/unit-of-work abstractions
+database deployment
+provider-specific fluent extensions
+```
 
 ## Test Coverage Requirements
 
-Short-running tests must cover at least:
+Short-running tests must cover:
 
-1. simple entity fixture;
-2. alternate-key and relationship fixture;
-3. value-object mode fixture;
-4. enum storage fixture;
-5. unsupported shape fixture;
-6. name collision fixture;
-7. code-generated optional-versus-nullable fixture.
+```text
+domain model derivation from generated model
+entity mapping
+table/schema mapping
+property/column mapping
+primary key mapping
+alternate key mapping
+single-column index mapping
+composite index mapping
+unique index mapping
+requiredness/nullability mapping
+max length mapping
+precision/scale mapping
+explicit value converter mapping
+explicit provider type mapping
+simple one-to-one relationship mapping
+simple one-to-many relationship mapping
+simple many-to-one relationship mapping
+owned/value-object mapping
+TPH inheritance mapping
+TPT inheritance mapping
+TPC inheritance mapping
+unsupported mapping diagnostics
+duplicate/collision diagnostics
+deterministic ModelBuilder metadata
+deterministic inspection output
+no provider/live database requirement
+```
+
+## Non-Goals
+
+M0030 does not define:
+
+```text
+database creation
+migration generation
+provider-specific SQL Server/PostgreSQL behavior
+DbContext discovery
+DbContext source generation
+runtime database validation
+global query filters
+complex relationship inference
+many-to-many skip navigations
+shadow FK discovery
+owned collections
+automatic polymorphism inference from arbitrary inheritance
+advanced provider-specific indexes
+filtered indexes
+included columns
+full-text indexes
+spatial indexes
+complex value-converter generation
+query filters
+interceptors
+compiled models
+```
