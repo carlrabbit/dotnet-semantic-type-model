@@ -3,7 +3,7 @@
     <RootNamespace>SemanticTypeModel.JsonSchema</RootNamespace>
     <PackageId>SemanticTypeModel.JsonSchema</PackageId>
     <Title>SemanticTypeModel.JsonSchema</Title>
-    <Description>JSON Schema import/export adapters for SemanticTypeModel.</Description>
+    <Description>Code-first JSON Schema domain projection and Draft 2020-12 export for SemanticTypeModel.</Description>
     <Authors>SemanticTypeModel Contributors</Authors>
     <RepositoryUrl>https://github.com/carlrabbit/dotnet-semantic-type-model</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

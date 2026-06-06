@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Text.Json;
 using SemanticTypeModel.Abstractions.Contracts;
 using SemanticTypeModel.Abstractions.Model;
@@ -10,8 +11,9 @@ using SchemaDiagnosticStage = SemanticTypeModel.Abstractions.Hardening.SchemaDia
 namespace SemanticTypeModel.JsonSchema.Import;
 
 /// <summary>
-/// Imports a JSON Schema Draft 2020-12 document into the canonical semantic type model.
+/// Legacy compatibility importer for JSON Schema Draft 2020-12 documents. JSON Schema import is not a supported canonical model creation path; use code-first generation and JSON Schema derivation instead.
 /// </summary>
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class JsonSchemaImporter : ISchemaModelSource
 {
     private static readonly HashSet<string> SupportedKeywords =

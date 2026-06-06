@@ -3,7 +3,7 @@ using SemanticTypeModel.DotNet;
 namespace SemanticTypeModel.Samples.CodeFirstJsonSchema;
 
 // Consumers mark normal application types with SemanticTypeModel.DotNet attributes.
-[SemanticType]
+[SemanticType(SemanticTypeRole.Entity)]
 [SemanticName("Customer")]
 [SemanticDescription("A customer account exported by the code-first JSON Schema sample.")]
 public sealed class Customer
