@@ -55,6 +55,10 @@ provider-specific fluent extensions
 - Supporting provider-specific and database-lifecycle behavior would make the package responsible for operational concerns outside the semantic model.
 - Including indexes, conversions, explicit relationships, and explicit inheritance makes the EF Core projection useful without crossing into infrastructure ownership.
 
+## Implementation Notes
+
+M0030 implementation keeps the package boundary at `DeriveEfCoreModel(...)` and `ApplyEfCoreSemanticModel(...)`; convenience APIs that derive directly from a canonical model must still return diagnostics and trace rather than hiding derivation state.
+
 ## Consequences
 
 - EF Core support should be broad enough for common semantic mapping, including indexes, conversions, explicit relationships, and explicit inheritance.

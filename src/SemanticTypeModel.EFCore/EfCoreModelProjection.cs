@@ -139,6 +139,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
         var projectedPropertyNamesById = new Dictionary<PropertyId, string>();
         var relationships = new List<EfRelationshipDefinition>();
         var relationshipNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var indexNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var keyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var keyPropertyIds = objectType.Keys.SelectMany(static key => key.Properties).Select(static property => property.Id).ToHashSet();
         var generatedKeyPropertyIds = objectType.Keys.Where(static key => key.IsGenerated).SelectMany(static key => key.Properties).Select(static property => property.Id).ToHashSet();
@@ -169,6 +170,8 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
         }
 
         IReadOnlyList<EfKeyDefinition> keys = ProjectKeys(objectType, keyNames, projectedPropertyNamesById, diagnostics);
+        IReadOnlyList<EfIndexDefinition> indexes = ProjectIndexes(objectType, indexNames, projectedPropertyNamesById, diagnostics);
+        EfInheritanceDefinition? inheritance = ProjectInheritance(model, objectType, entityInfos, diagnostics);
         if (!isOwned && !_options.AllowKeylessEntities && !keys.Any(static key => key.Kind == EfKeyKind.Primary))
         {
             Report(
@@ -189,6 +192,8 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
             Properties = properties,
             Keys = keys,
             Relationships = relationships,
+            Indexes = indexes,
+            Inheritance = inheritance,
             RelationshipNames = relationshipNames,
             KeyPropertyIds = keyPropertyIds,
             ProjectedPropertyNamesById = projectedPropertyNamesById,
@@ -225,6 +230,8 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
         var effectiveNullability = ResolveNullability(property, propertyType, propertyPath, diagnostics);
         var valueGenerated = ResolveValueGenerated(property.Annotations, propertyPath, diagnostics) || isGeneratedKeyProperty;
         var conversion = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, "efCore.conversion");
+        _ = TryResolveTypeAnnotation(property.Annotations, propertyPath, diagnostics, "efCore.valueConverterType", out Type? converterType);
+        _ = TryResolveTypeAnnotation(property.Annotations, propertyPath, diagnostics, "efCore.providerClrType", out Type? providerClrType);
 
         PreserveSchemaOptionality(property, effectiveNullability, propertyPath, diagnostics);
         ReportConstraintPreservation(property, propertyPath, diagnostics);
@@ -243,7 +250,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
                     scalar.Precision,
                     conversion,
                     valueGenerated,
-                    BuildPropertyAnnotations(property, effectiveNullability)),
+                    BuildPropertyAnnotations(property, effectiveNullability)) with { ConverterType = converterType, ProviderClrType = providerClrType },
             ];
         }
 
@@ -261,7 +268,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
                     null,
                     ResolveEnumConversion(enumType, property, propertyPath, diagnostics, conversion),
                     valueGenerated,
-                    BuildPropertyAnnotations(property, effectiveNullability)),
+                    BuildPropertyAnnotations(property, effectiveNullability)) with { ConverterType = converterType, ProviderClrType = providerClrType },
             ];
         }
 
@@ -341,6 +348,122 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
         }
 
         return projectedKeys;
+    }
+
+    private IReadOnlyList<EfIndexDefinition> ProjectIndexes(
+        ObjectTypeDefinition objectType,
+        HashSet<string> indexNames,
+        IReadOnlyDictionary<PropertyId, string> projectedPropertyNamesById,
+        IList<SchemaDiagnostic> diagnostics)
+    {
+        var indexes = new List<EfIndexDefinition>();
+        foreach (PropertyDefinition property in objectType.Properties)
+        {
+            var propertyPath = ModelPath.ForProperty(objectType.Id, property.Name);
+            if (!TryGetAnnotationValue(property.Annotations, "efCore.index", out var raw))
+            {
+                continue;
+            }
+
+            if (!projectedPropertyNamesById.TryGetValue(property.Id, out var propertyName))
+            {
+                Report(diagnostics, SchemaDiagnosticSeverity.Warning, "EFCORE_INDEX_PROPERTY_NOT_PROJECTED", $"Index metadata for property '{property.Name}' could not be applied because the property was not projected.", propertyPath);
+                continue;
+            }
+
+            var desiredName = raw is string text && !string.IsNullOrWhiteSpace(text) && !string.Equals(text, "true", StringComparison.OrdinalIgnoreCase)
+                ? text.Trim()
+                : $"IX_{objectType.Name}_{propertyName}";
+            var resolvedName = ResolveUniqueName(desiredName, indexNames, "index", propertyPath, diagnostics);
+            if (resolvedName is null)
+            {
+                continue;
+            }
+
+            var unique = ResolveBooleanAnnotation(property.Annotations, propertyPath, diagnostics, "efCore.uniqueIndex") == true;
+            indexes.Add(new EfIndexDefinition { Name = resolvedName, PropertyNames = [propertyName], IsUnique = unique });
+        }
+
+        if (TryGetAnnotationValue(objectType.Annotations, "efCore.indexes", out var rawIndexes))
+        {
+            foreach (var specification in Convert.ToString(rawIndexes, System.Globalization.CultureInfo.InvariantCulture)?.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [])
+            {
+                var parts = specification.Split(':', StringSplitOptions.TrimEntries);
+                if (parts.Length < 2)
+                {
+                    Report(diagnostics, SchemaDiagnosticSeverity.Warning, "EFCORE_INVALID_ANNOTATION_VALUE", "Annotation 'efCore.indexes' entries must use 'Name:PropertyId,PropertyId[:unique]'.", ModelPath.ForType(objectType.Id));
+                    continue;
+                }
+
+                var propertyNames = new List<string>();
+                foreach (var propertyIdText in parts[1].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    if (projectedPropertyNamesById.TryGetValue(new PropertyId(propertyIdText), out var projectedName))
+                    {
+                        propertyNames.Add(projectedName);
+                        continue;
+                    }
+
+                    Report(diagnostics, SchemaDiagnosticSeverity.Warning, "EFCORE_INDEX_PROPERTY_NOT_PROJECTED", $"Index '{parts[0]}' references property '{propertyIdText}' that was not projected.", ModelPath.ForType(objectType.Id));
+                }
+
+                if (propertyNames.Count == 0)
+                {
+                    continue;
+                }
+
+                var resolvedName = ResolveUniqueName(parts[0], indexNames, "index", ModelPath.ForType(objectType.Id), diagnostics);
+                if (resolvedName is null)
+                {
+                    continue;
+                }
+
+                var unique = parts.Length > 2 && string.Equals(parts[2], "unique", StringComparison.OrdinalIgnoreCase);
+                indexes.Add(new EfIndexDefinition { Name = resolvedName, PropertyNames = propertyNames, IsUnique = unique });
+            }
+        }
+
+        return indexes;
+    }
+
+    private EfInheritanceDefinition? ProjectInheritance(TypeSchemaModel model, ObjectTypeDefinition objectType, IReadOnlyList<ProjectedEntityInfo> entityInfos, IList<SchemaDiagnostic> diagnostics)
+    {
+        var typePath = ModelPath.ForType(objectType.Id);
+        string? baseEntity = null;
+        if (objectType.Composition.AllOf.Count > 0)
+        {
+            TypeId baseTypeId = objectType.Composition.AllOf[0].Id;
+            baseEntity = entityInfos.FirstOrDefault(info => info.SourceTypeId == baseTypeId)?.EntityName;
+            if (baseEntity is null && model.TryGetType(baseTypeId) is ObjectTypeDefinition baseType)
+            {
+                baseEntity = baseType.Name;
+            }
+        }
+
+        EfCoreInheritanceStrategy strategy = ResolveInheritanceStrategy(objectType.Annotations, typePath, diagnostics);
+        if (strategy == EfCoreInheritanceStrategy.Unspecified)
+        {
+            strategy = _options.DefaultInheritanceStrategy;
+        }
+
+        if (baseEntity is null && strategy == EfCoreInheritanceStrategy.Unspecified)
+        {
+            return null;
+        }
+
+        if (baseEntity is not null && strategy == EfCoreInheritanceStrategy.Unspecified)
+        {
+            Report(diagnostics, SchemaDiagnosticSeverity.Warning, "EFCORE_INHERITANCE_STRATEGY_REQUIRED", $"Entity '{objectType.Name}' declares inheritance but no EF Core inheritance strategy was selected.", typePath);
+            return null;
+        }
+
+        return new EfInheritanceDefinition
+        {
+            Strategy = strategy,
+            BaseEntity = baseEntity,
+            DiscriminatorProperty = ResolveStringAnnotation(objectType.Annotations, typePath, diagnostics, "efCore.discriminatorProperty"),
+            DiscriminatorValue = ResolveStringAnnotation(objectType.Annotations, typePath, diagnostics, "efCore.discriminatorValue"),
+        };
     }
 
     private void ProjectRelationships(TypeSchemaModel model, IReadOnlyList<ProjectedEntityInfo> entityInfos, IList<SchemaDiagnostic> diagnostics)
@@ -1032,6 +1155,61 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
         return null;
     }
 
+    private static bool TryResolveTypeAnnotation(AnnotationBag annotations, string modelPath, IList<SchemaDiagnostic> diagnostics, string annotationKey, out Type? type)
+    {
+        type = null;
+        if (!TryGetAnnotationValue(annotations, annotationKey, out var raw))
+        {
+            return false;
+        }
+
+        if (raw is Type directType)
+        {
+            type = directType;
+            return true;
+        }
+
+        if (raw is string typeName && !string.IsNullOrWhiteSpace(typeName))
+        {
+            type = Type.GetType(typeName, throwOnError: false);
+            if (type is not null)
+            {
+                return true;
+            }
+        }
+
+        Report(
+            diagnostics,
+            SchemaDiagnosticSeverity.Warning,
+            "EFCORE_INVALID_ANNOTATION_VALUE",
+            $"Annotation '{annotationKey}' must be a System.Type or assembly-qualified type name.",
+            modelPath);
+        return false;
+    }
+
+    private EfCoreInheritanceStrategy ResolveInheritanceStrategy(AnnotationBag annotations, string modelPath, IList<SchemaDiagnostic> diagnostics)
+    {
+        var annotation = ResolveStringAnnotation(annotations, modelPath, diagnostics, "efCore.inheritanceStrategy");
+        if (annotation is null)
+        {
+            return EfCoreInheritanceStrategy.Unspecified;
+        }
+
+        return annotation switch
+        {
+            var value when string.Equals(value, "TPH", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "Tph", StringComparison.OrdinalIgnoreCase) => EfCoreInheritanceStrategy.Tph,
+            var value when string.Equals(value, "TPT", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "Tpt", StringComparison.OrdinalIgnoreCase) => EfCoreInheritanceStrategy.Tpt,
+            var value when string.Equals(value, "TPC", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "Tpc", StringComparison.OrdinalIgnoreCase) => EfCoreInheritanceStrategy.Tpc,
+            _ => ReportInvalidInheritanceStrategy(annotation, modelPath, diagnostics),
+        };
+    }
+
+    private static EfCoreInheritanceStrategy ReportInvalidInheritanceStrategy(string value, string modelPath, IList<SchemaDiagnostic> diagnostics)
+    {
+        Report(diagnostics, SchemaDiagnosticSeverity.Warning, "EFCORE_INVALID_ANNOTATION_VALUE", $"Annotation 'efCore.inheritanceStrategy' value '{value}' is invalid.", modelPath);
+        return EfCoreInheritanceStrategy.Unspecified;
+    }
+
     private static bool TryResolveClrTypeAnnotation(AnnotationBag annotations, string modelPath, IList<SchemaDiagnostic> diagnostics, out Type clrType)
     {
         clrType = typeof(string);
@@ -1194,6 +1372,10 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
 
         public required List<EfRelationshipDefinition> Relationships { get; init; }
 
+        public required IReadOnlyList<EfIndexDefinition> Indexes { get; init; }
+
+        public EfInheritanceDefinition? Inheritance { get; init; }
+
         public required HashSet<string> RelationshipNames { get; init; }
 
         public required IReadOnlySet<PropertyId> KeyPropertyIds { get; init; }
@@ -1213,6 +1395,8 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
                 Properties = Properties.ToArray(),
                 Keys = Keys,
                 Relationships = Relationships.ToArray(),
+                Indexes = Indexes,
+                Inheritance = Inheritance,
                 IsOwned = IsOwned,
                 Annotations = Annotations,
             };
