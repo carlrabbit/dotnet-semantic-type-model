@@ -52,6 +52,9 @@ public sealed record EfCoreProjectionOptions
     /// Gets duplicate projected-name handling behavior.
     /// </summary>
     public NameCollisionBehavior NameCollisionBehavior { get; init; } = NameCollisionBehavior.Diagnose;
+
+    /// <summary>Gets the default inheritance strategy used when canonical inheritance is present without EF-specific metadata.</summary>
+    public EfCoreInheritanceStrategy DefaultInheritanceStrategy { get; init; } = EfCoreInheritanceStrategy.Unspecified;
 }
 
 /// <summary>

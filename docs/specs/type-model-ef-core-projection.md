@@ -131,7 +131,8 @@ efCore.alternateKey
 efCore.index
 efCore.valueGenerated
 efCore.conversion
-efCore.providerType
+efCore.providerClrType
+efCore.valueConverterType
 efCore.enumStorage
 efCore.deleteBehavior
 efCore.inheritanceStrategy
@@ -343,14 +344,14 @@ Candidate configuration behavior:
 ```csharp
 var result = model.DeriveEfCoreModel(options =>
 {
-    options.Inheritance.DefaultStrategy = EfCoreInheritanceStrategy.Tph;
-
-    options.Inheritance.For<BasePaymentMethod>()
-        .UseTpc();
+    options.Projection = options.Projection with
+    {
+        DefaultInheritanceStrategy = EfCoreInheritanceStrategy.Tph
+    };
 });
 ```
 
-Equivalent behavior is required even if API names differ.
+Per-type inheritance strategy may also be selected with `efCore.inheritanceStrategy` metadata when a type needs to override the default projection option.
 
 ## ModelBuilder Application
 
@@ -368,7 +369,7 @@ HasColumnName(...)
 IsRequired(...)
 HasMaxLength(...)
 HasPrecision(...)
-HasConversion(...)
+HasConversion(...) when explicit converter or provider CLR type metadata exists
 HasOne/WithMany/WithOne
 OwnsOne
 TPH/TPT/TPC mapping APIs supported by the referenced EF Core version

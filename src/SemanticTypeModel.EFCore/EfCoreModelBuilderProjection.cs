@@ -54,6 +54,9 @@ public sealed class EfCoreModelBuilderProjectionOptions
     /// </summary>
     public NameCollisionBehavior NameCollisionBehavior { get; set; } = NameCollisionBehavior.Diagnose;
 
+    /// <summary>Gets or sets the default inheritance strategy for explicit canonical inheritance.</summary>
+    public EfCoreInheritanceStrategy DefaultInheritanceStrategy { get; set; } = EfCoreInheritanceStrategy.Unspecified;
+
     internal EfCoreProjectionOptions ToProjectionOptions()
     {
         return new EfCoreProjectionOptions
@@ -66,6 +69,7 @@ public sealed class EfCoreModelBuilderProjectionOptions
             AlternateKeyProjectionMode = AlternateKeyProjectionMode,
             PreferDisplayNamesForTableAndColumnNames = PreferDisplayNamesForTableAndColumnNames,
             NameCollisionBehavior = NameCollisionBehavior,
+            DefaultInheritanceStrategy = DefaultInheritanceStrategy,
         };
     }
 }
@@ -120,6 +124,17 @@ public static class SemanticTypeModelEfCoreExtensions
         };
     }
 
+    /// <summary>
+    /// Applies an EF Core domain semantic model to <see cref="ModelBuilder" /> configuration.
+    /// </summary>
+    public static void ApplyEfCoreSemanticModel(this ModelBuilder modelBuilder, EfCoreSemanticModel model, string? defaultSchema = null)
+    {
+        ArgumentNullException.ThrowIfNull(modelBuilder);
+        ArgumentNullException.ThrowIfNull(model);
+
+        ApplyProjectedModel(modelBuilder, model.ToDefinition(), defaultSchema);
+    }
+
     private static void ApplyProjectedModel(ModelBuilder modelBuilder, EfModelDefinition model, string? defaultSchema)
     {
         foreach (EfEntityTypeDefinition entity in model.EntityTypes.Where(static entity => !entity.IsOwned))
@@ -127,7 +142,9 @@ public static class SemanticTypeModelEfCoreExtensions
             EntityTypeBuilder entityBuilder = modelBuilder.SharedTypeEntity<Dictionary<string, object>>(entity.Name);
             ApplyTable(entityBuilder, entity, defaultSchema);
             ApplyProperties(entityBuilder, entity.Properties);
-            ApplyKeysAndIndexes(entityBuilder, entity.Keys);
+            ApplyKeysAndIndexes(entityBuilder, entity.Keys, entity.Indexes);
+            ApplyRelationships(entityBuilder, entity.Relationships);
+            ApplyInheritance(entityBuilder, entity);
         }
     }
 
@@ -161,6 +178,20 @@ public static class SemanticTypeModelEfCoreExtensions
                 _ = propertyBuilder.HasMaxLength(maxLength);
             }
 
+            if (!string.IsNullOrWhiteSpace(property.ColumnName) && !string.Equals(property.ColumnName, property.Name, StringComparison.Ordinal))
+            {
+                _ = propertyBuilder.HasColumnName(property.ColumnName);
+            }
+
+            if (property.ConverterType is not null)
+            {
+                _ = propertyBuilder.HasConversion(property.ConverterType);
+            }
+            else if (property.ProviderClrType is not null)
+            {
+                _ = propertyBuilder.HasConversion(property.ProviderClrType);
+            }
+
             if (property.Precision?.Precision is int precision)
             {
                 _ = property.Precision.Scale is int scale
@@ -170,8 +201,20 @@ public static class SemanticTypeModelEfCoreExtensions
         }
     }
 
-    private static void ApplyKeysAndIndexes(EntityTypeBuilder entityBuilder, IReadOnlyList<EfKeyDefinition> keys)
+    private static void ApplyKeysAndIndexes(EntityTypeBuilder entityBuilder, IReadOnlyList<EfKeyDefinition> keys, IReadOnlyList<EfIndexDefinition> indexes)
     {
+        foreach (EfIndexDefinition index in indexes)
+        {
+            if (index.PropertyNames.Count > 0)
+            {
+                IndexBuilder indexBuilder = entityBuilder.HasIndex([.. index.PropertyNames]).HasDatabaseName(index.Name);
+                if (index.IsUnique)
+                {
+                    _ = indexBuilder.IsUnique();
+                }
+            }
+        }
+
         foreach (EfKeyDefinition key in keys)
         {
             if (key.PropertyNames.Count == 0)
@@ -196,5 +239,90 @@ public static class SemanticTypeModelEfCoreExtensions
                 _ = entityBuilder.HasIndex([.. key.PropertyNames]).IsUnique().HasDatabaseName(key.Name);
             }
         }
+    }
+    private static void ApplyRelationships(EntityTypeBuilder entityBuilder, IReadOnlyList<EfRelationshipDefinition> relationships)
+    {
+        foreach (EfRelationshipDefinition relationship in relationships)
+        {
+            if (relationship.Cardinality == EfRelationshipCardinality.OneToOne)
+            {
+                ReferenceReferenceBuilder builder = entityBuilder.HasOne(relationship.PrincipalEntity).WithOne();
+                _ = builder.HasForeignKey(relationship.DependentEntity, [.. relationship.DependentProperties]);
+                if (relationship.PrincipalProperties.Count > 0)
+                {
+                    _ = builder.HasPrincipalKey(relationship.PrincipalEntity, [.. relationship.PrincipalProperties]);
+                }
+
+                ApplyDeleteBehavior(builder, relationship.DeleteBehavior);
+                continue;
+            }
+
+            ReferenceCollectionBuilder collectionBuilder = entityBuilder.HasOne(relationship.PrincipalEntity).WithMany();
+            _ = collectionBuilder.HasForeignKey([.. relationship.DependentProperties]);
+            if (relationship.PrincipalProperties.Count > 0)
+            {
+                _ = collectionBuilder.HasPrincipalKey([.. relationship.PrincipalProperties]);
+            }
+
+            ApplyDeleteBehavior(collectionBuilder, relationship.DeleteBehavior);
+        }
+    }
+
+    private static void ApplyDeleteBehavior(ReferenceReferenceBuilder builder, EfDeleteBehavior deleteBehavior)
+    {
+        if (deleteBehavior != EfDeleteBehavior.Unspecified)
+        {
+            _ = builder.OnDelete(MapDeleteBehavior(deleteBehavior));
+        }
+    }
+
+    private static void ApplyDeleteBehavior(ReferenceCollectionBuilder builder, EfDeleteBehavior deleteBehavior)
+    {
+        if (deleteBehavior != EfDeleteBehavior.Unspecified)
+        {
+            _ = builder.OnDelete(MapDeleteBehavior(deleteBehavior));
+        }
+    }
+
+    private static void ApplyInheritance(EntityTypeBuilder entityBuilder, EfEntityTypeDefinition entity)
+    {
+        if (entity.Inheritance is not EfInheritanceDefinition inheritance)
+        {
+            return;
+        }
+
+        if (inheritance.Strategy == EfCoreInheritanceStrategy.Tph && !string.IsNullOrWhiteSpace(inheritance.DiscriminatorProperty))
+        {
+            DiscriminatorBuilder<string> discriminatorBuilder = entityBuilder.HasDiscriminator<string>(inheritance.DiscriminatorProperty);
+            if (!string.IsNullOrWhiteSpace(inheritance.DiscriminatorValue))
+            {
+                _ = discriminatorBuilder.HasValue(inheritance.DiscriminatorValue);
+            }
+        }
+
+        if (inheritance.Strategy == EfCoreInheritanceStrategy.Tpt && !string.IsNullOrWhiteSpace(entity.TableName))
+        {
+            _ = entityBuilder.UseTptMappingStrategy();
+            _ = entityBuilder.ToTable(entity.TableName);
+        }
+
+        if (inheritance.Strategy == EfCoreInheritanceStrategy.Tpc && !string.IsNullOrWhiteSpace(entity.TableName))
+        {
+            _ = entityBuilder.UseTpcMappingStrategy();
+            _ = entityBuilder.ToTable(entity.TableName);
+        }
+    }
+
+    private static DeleteBehavior MapDeleteBehavior(EfDeleteBehavior deleteBehavior)
+    {
+        return deleteBehavior switch
+        {
+            EfDeleteBehavior.Restrict => DeleteBehavior.Restrict,
+            EfDeleteBehavior.Cascade => DeleteBehavior.Cascade,
+            EfDeleteBehavior.SetNull => DeleteBehavior.SetNull,
+            EfDeleteBehavior.NoAction => DeleteBehavior.NoAction,
+            EfDeleteBehavior.Unspecified => DeleteBehavior.ClientSetNull,
+            _ => DeleteBehavior.ClientSetNull,
+        };
     }
 }
