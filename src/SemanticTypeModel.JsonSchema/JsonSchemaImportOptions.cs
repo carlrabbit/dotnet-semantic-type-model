@@ -1,8 +1,10 @@
+using System.ComponentModel;
 namespace SemanticTypeModel.JsonSchema;
 
 /// <summary>
-/// Options controlling runtime JSON Schema import behavior.
+/// Legacy compatibility options for runtime JSON Schema import. JSON Schema import is not a supported canonical model creation path.
 /// </summary>
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class JsonSchemaImportOptions
 {
     /// <summary>

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using SemanticTypeModel.Abstractions.Contracts;
 using SemanticTypeModel.Abstractions.Model;
+using SemanticTypeModel.JsonSchema.Domain;
 using ProjectionTarget = SemanticTypeModel.Abstractions.Hardening.ProjectionTarget;
 using SchemaDiagnostic = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnostic;
 using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticSeverity;
@@ -26,7 +27,15 @@ public sealed class JsonSchemaExporter : ISchemaProjection<string>
     }
 
     /// <summary>
-    /// Exports the canonical model to a JSON Schema Draft 2020-12 document.
+    /// Exports a derived JSON Schema domain semantic model to a JSON Schema Draft 2020-12 document.
+    /// </summary>
+    public static JsonSchemaExportResult Export(JsonSchemaSemanticModel model, JsonSchemaExportOptions? options = null)
+    {
+        return JsonSchemaDomainExporter.Export(model, options);
+    }
+
+    /// <summary>
+    /// Exports the legacy canonical model to a JSON Schema Draft 2020-12 document. Prefer DeriveJsonSchemaModel followed by this exporter for code-first projection.
     /// </summary>
     public static JsonSchemaExportResult Export(TypeSchemaModel model, JsonSchemaExportOptions? options = null)
     {
