@@ -18,7 +18,7 @@ var input = """
 }
 """;
 
-// The importer reads a consumer-provided JSON Schema into the canonical semantic model.
+// Legacy compatibility only: JSON Schema import is not a supported canonical model source. Prefer the code-first JSON Schema sample for the primary projection workflow.
 JsonSchemaImportResult imported = JsonSchemaImporter.Import(input);
 var adapted = LegacyTypeSchemaModelAdapter.Adapt(imported.Model);
 
