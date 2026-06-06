@@ -8,27 +8,54 @@ namespace SemanticTypeModel.PowerBI;
 /// <summary>
 /// Represents the Power BI projection result for a semantic type model.
 /// </summary>
-public sealed record PowerBiProjectionModel
+public sealed record PowerBiSemanticModel
 {
     /// <summary>
     /// Gets the projected model name.
     /// </summary>
-    public required string Name { get; init; }
+    public required string Name { get; set; }
 
     /// <summary>
     /// Gets projected tables.
     /// </summary>
-    public required IReadOnlyList<PowerBiTableDefinition> Tables { get; init; }
+    public required IReadOnlyList<PowerBiTableDefinition> Tables { get; set; }
 
     /// <summary>
     /// Gets projected relationships.
     /// </summary>
-    public required IReadOnlyList<PowerBiRelationshipDefinition> Relationships { get; init; }
+    public required IReadOnlyList<PowerBiRelationshipDefinition> Relationships { get; set; }
+
+    /// <summary>Gets explicit calculated tables.</summary>
+    public IReadOnlyList<PowerBiCalculatedTableDefinition> CalculatedTables { get; set; } = [];
 
     /// <summary>
     /// Gets projection diagnostics.
     /// </summary>
-    public required IReadOnlyList<SchemaDiagnostic> Diagnostics { get; init; }
+    public required IReadOnlyList<SchemaDiagnostic> Diagnostics { get; set; }
+}
+
+/// <summary>
+/// Represents the legacy Power BI projection result for a semantic type model.
+/// </summary>
+public sealed record PowerBiProjectionModel
+{
+    /// <summary>Gets the projected model name.</summary>
+    public required string Name { get; set; }
+
+    /// <summary>Gets projected tables.</summary>
+    public required IReadOnlyList<PowerBiTableDefinition> Tables { get; set; }
+
+    /// <summary>Gets projected relationships.</summary>
+    public required IReadOnlyList<PowerBiRelationshipDefinition> Relationships { get; set; }
+
+    /// <summary>Gets projection diagnostics.</summary>
+    public required IReadOnlyList<SchemaDiagnostic> Diagnostics { get; set; }
+
+    /// <summary>Converts this projection result to the Power BI domain semantic model.</summary>
+    public PowerBiSemanticModel ToSemanticModel()
+    {
+        return new PowerBiSemanticModel { Name = Name, Tables = Tables, Relationships = Relationships, Diagnostics = Diagnostics };
+    }
 }
 
 /// <summary>
@@ -39,12 +66,12 @@ public sealed record PowerBiTableDefinition
     /// <summary>
     /// Gets table name.
     /// </summary>
-    public required string Name { get; init; }
+    public required string Name { get; set; }
 
     /// <summary>
     /// Gets optional display name.
     /// </summary>
-    public string? DisplayName { get; init; }
+    public string? DisplayName { get; set; }
 
     /// <summary>
     /// Gets the Power BI table role.
@@ -54,7 +81,7 @@ public sealed record PowerBiTableDefinition
     /// <summary>
     /// Gets a value indicating whether the table is hidden.
     /// </summary>
-    public bool IsHidden { get; init; }
+    public bool IsHidden { get; set; }
 
     /// <summary>
     /// Gets the source semantic type id.
@@ -71,15 +98,18 @@ public sealed record PowerBiTableDefinition
     /// </summary>
     public required IReadOnlyList<PowerBiMeasureDefinition> Measures { get; init; }
 
+    /// <summary>Gets explicit hierarchies.</summary>
+    public IReadOnlyList<PowerBiHierarchyDefinition> Hierarchies { get; init; } = [];
+
     /// <summary>
     /// Gets optional table description.
     /// </summary>
-    public string? Description { get; init; }
+    public string? Description { get; set; }
 
     /// <summary>
     /// Gets optional display folder.
     /// </summary>
-    public string? DisplayFolder { get; init; }
+    public string? DisplayFolder { get; set; }
 
     /// <summary>
     /// Gets carried annotations.
@@ -95,12 +125,12 @@ public sealed record PowerBiColumnDefinition
     /// <summary>
     /// Gets column name.
     /// </summary>
-    public required string Name { get; init; }
+    public required string Name { get; set; }
 
     /// <summary>
     /// Gets optional display name.
     /// </summary>
-    public string? DisplayName { get; init; }
+    public string? DisplayName { get; set; }
 
     /// <summary>
     /// Gets Power BI data type.
@@ -120,12 +150,12 @@ public sealed record PowerBiColumnDefinition
     /// <summary>
     /// Gets a value indicating whether the column is hidden.
     /// </summary>
-    public bool IsHidden { get; init; }
+    public bool IsHidden { get; set; }
 
     /// <summary>
     /// Gets optional description.
     /// </summary>
-    public string? Description { get; init; }
+    public string? Description { get; set; }
 
     /// <summary>
     /// Gets default summarization behavior.
@@ -145,7 +175,10 @@ public sealed record PowerBiColumnDefinition
     /// <summary>
     /// Gets optional format string.
     /// </summary>
-    public string? FormatString { get; init; }
+    public string? FormatString { get; set; }
+
+    /// <summary>Gets optional sort-by-column metadata.</summary>
+    public string? SortByColumn { get; init; }
 
     /// <summary>
     /// Gets carried annotations.
@@ -161,7 +194,7 @@ public sealed record PowerBiRelationshipDefinition
     /// <summary>
     /// Gets relationship name.
     /// </summary>
-    public required string Name { get; init; }
+    public required string Name { get; set; }
 
     /// <summary>
     /// Gets source table name.
@@ -212,47 +245,101 @@ public sealed record PowerBiMeasureDefinition
     /// <summary>
     /// Gets measure name.
     /// </summary>
-    public required string Name { get; init; }
+    public required string Name { get; set; }
 
     /// <summary>
     /// Gets optional display name.
     /// </summary>
-    public string? DisplayName { get; init; }
+    public string? DisplayName { get; set; }
 
     /// <summary>
     /// Gets a value indicating whether the measure is hidden.
     /// </summary>
-    public bool IsHidden { get; init; }
+    public bool IsHidden { get; set; }
 
     /// <summary>
     /// Gets measure expression.
     /// </summary>
-    public required string Expression { get; init; }
+    public required string Expression { get; set; }
 
     /// <summary>
     /// Gets expression language.
     /// </summary>
-    public string ExpressionLanguage { get; init; } = "DAX";
+    public string ExpressionLanguage { get; set; } = "DAX";
 
     /// <summary>
     /// Gets optional format string.
     /// </summary>
-    public string? FormatString { get; init; }
+    public string? FormatString { get; set; }
 
     /// <summary>
     /// Gets optional display folder.
     /// </summary>
-    public string? DisplayFolder { get; init; }
+    public string? DisplayFolder { get; set; }
 
     /// <summary>
     /// Gets optional description.
     /// </summary>
-    public string? Description { get; init; }
+    public string? Description { get; set; }
 
     /// <summary>
     /// Gets carried annotations.
     /// </summary>
-    public AnnotationBag Annotations { get; init; } = new();
+    public AnnotationBag Annotations { get; set; } = new();
+}
+
+
+/// <summary>
+/// Represents a projected Power BI calculated table.
+/// </summary>
+public sealed record PowerBiCalculatedTableDefinition
+{
+    /// <summary>Gets calculated table name.</summary>
+    public required string Name { get; set; }
+
+    /// <summary>Gets DAX expression text. The expression is preserved, not parsed or validated.</summary>
+    public required string Expression { get; set; }
+
+    /// <summary>Gets expression language.</summary>
+    public string ExpressionLanguage { get; set; } = "DAX";
+
+    /// <summary>Gets optional description.</summary>
+    public string? Description { get; set; }
+
+    /// <summary>Gets optional display folder.</summary>
+    public string? DisplayFolder { get; set; }
+
+    /// <summary>Gets a value indicating whether the calculated table is hidden.</summary>
+    public bool IsHidden { get; set; }
+
+    /// <summary>Gets carried annotations.</summary>
+    public AnnotationBag Annotations { get; set; } = new();
+}
+
+/// <summary>Represents a basic explicit Power BI hierarchy.</summary>
+public sealed record PowerBiHierarchyDefinition
+{
+    /// <summary>Gets hierarchy name.</summary>
+    public required string Name { get; set; }
+
+    /// <summary>Gets optional description.</summary>
+    public string? Description { get; set; }
+
+    /// <summary>Gets ordered hierarchy levels.</summary>
+    public required IReadOnlyList<PowerBiHierarchyLevelDefinition> Levels { get; init; }
+}
+
+/// <summary>Represents one level in a Power BI hierarchy.</summary>
+public sealed record PowerBiHierarchyLevelDefinition
+{
+    /// <summary>Gets level name.</summary>
+    public required string Name { get; set; }
+
+    /// <summary>Gets the column used by this level.</summary>
+    public required string Column { get; init; }
+
+    /// <summary>Gets deterministic level order.</summary>
+    public required int Ordinal { get; init; }
 }
 
 

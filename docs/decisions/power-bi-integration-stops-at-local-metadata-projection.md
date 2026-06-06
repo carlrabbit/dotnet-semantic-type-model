@@ -14,7 +14,7 @@ Power BI and Analysis Services Tabular contain a large surface area: service pub
 
 ## Decision
 
-`SemanticTypeModel.PowerBI` derives a `PowerBiSemanticModel` from the canonical semantic model and emits deterministic local metadata output.
+`SemanticTypeModel.PowerBI` derives a `PowerBiSemanticModel` from the canonical semantic model and emits deterministic local metadata output. The M0031 implementation provides neutral JSON metadata and deterministic inspection text as local outputs.
 
 The Power BI package owns:
 
