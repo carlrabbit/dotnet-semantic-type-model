@@ -1,243 +1,559 @@
-# Type Model Power BI / TOM Projection Specification
+# Type Model Power BI / Local Metadata Projection Specification
+
+## Status
+
+Authoritative behavioral specification for the Power BI domain semantic model and local metadata projection.
 
 ## Purpose
 
-Define deterministic projection of hardened canonical `TypeSchemaModel` contracts into a Power BI intermediate metadata model.
-
-## Authority
+Define deterministic derivation of code-generated canonical semantic models into a Power BI analytical domain semantic model and deterministic local metadata output.
 
 This specification is authoritative for:
 
-- Power BI / TOM projection scope in M0007;
-- projection naming and annotation precedence;
-- table/column/relationship/measure mapping behavior;
-- projection options and unsupported-shape behavior;
-- required diagnostic expectations for this projection target.
+- Power BI domain semantic model behavior;
+- Power BI derivation pipeline behavior;
+- Power BI metadata precedence;
+- tables, columns, relationships, measures, calculated tables, and analytical metadata;
+- user extension points for DAX artifacts;
+- local deterministic export behavior;
+- unsupported Power BI/TOM scope boundaries;
+- Power BI projection diagnostics.
+
+## Product Role
+
+`SemanticTypeModel.PowerBI` projects code-generated canonical semantic models into local analytical metadata.
+
+The package flow is:
+
+```text
+Code-generated canonical Semantic Type Model
+  -> Power BI derivation transformations
+  -> PowerBiSemanticModel
+  -> deterministic local metadata output
+```
+
+The package does not publish to the Power BI Service, generate PBIX files, authenticate, manage workspaces, schedule refresh, execute XMLA operations, or provide full TOM parity.
 
 ## Dependency Boundary
 
 - Projection package: `SemanticTypeModel.PowerBI`.
 - Core abstraction contracts remain independent from Power BI/TOM-specific dependencies.
-- M0007 uses an internal Power BI domain semantic model and does not require Power BI service, XMLA, credentials, or network access.
-- The package does not publish to the Power BI service, generate PBIX files, or provide full TOM parity.
+- The package exposes a domain derivation API and local metadata export API.
+- Baseline usage must not require Power BI Desktop, Power BI Service, XMLA, credentials, network access, a workspace, or PBIX generation.
 
 ## Domain Semantic Model Contract
 
 Power BI behavior is derived through a Power BI domain semantic model before local metadata output is emitted.
 
-The projection result is represented by:
+The domain semantic model must represent:
 
-- `PowerBiProjectionModel`
-- `PowerBiTableDefinition`
-- `PowerBiColumnDefinition`
-- `PowerBiRelationshipDefinition`
-- `PowerBiMeasureDefinition`
+```text
+model metadata
+tables
+columns
+relationships
+measures
+calculated tables
+hierarchies where explicitly modeled
+display folders
+hidden/visible flags
+data categories
+summarization hints
+format strings
+sort-by-column metadata
+annotations/extensions
+diagnostics
+```
 
-Minimum domain semantic model semantics:
+The exporter must operate from the Power BI domain semantic model, not from scattered ad hoc annotation lookups.
 
-- tables with columns and measures;
-- relationship endpoints and cardinality;
-- column key/nullability/hidden/data-category/format metadata;
-- carried annotations;
-- accumulated structured projection diagnostics.
+## Derivation API
+
+The package must expose a domain derivation API equivalent to:
+
+```csharp
+var result = model.DerivePowerBiModel(options =>
+{
+    options.UseDefaultTransformations();
+});
+```
+
+The result must follow the M0028 pattern:
+
+```csharp
+SemanticDerivationResult<PowerBiSemanticModel>
+```
+
+or provide equivalent behavior:
+
+```text
+domain model
+diagnostics
+transformation trace
+```
+
+Users must be able to configure Power BI derivation transformations in code.
+
+## Local Export API Contract
+
+The package exposes an API equivalent to:
+
+```csharp
+PowerBiLocalMetadataExporter.Export(result.Model, outputPath);
+```
+
+A convenience API may derive and export in one call only if diagnostics and trace remain available.
+
+At least one deterministic local output format must exist:
+
+```text
+inspection text
+neutral JSON metadata
+TMDL-like local file/folder output
+TOM script text
+```
+
+Output must not require service access, credentials, XMLA, Power BI Desktop, or PBIX generation.
 
 ## Annotation Namespaces
 
-Projection consumes:
+Projection may consume:
 
-- `powerBi.*`
-- `tom.*`
-- `ui.*` (shared display metadata where relevant)
-- `schema.*` (shared metadata where relevant)
+```text
+powerBi.*
+tom.*
+schema.*
+ui.*
+dotnet.*
+```
 
-Required handled (or diagnosed if invalid) keys:
+Required handled or explicitly diagnosed metadata includes:
 
-- `powerBi.tableRole`
-- `powerBi.dataCategory`
-- `powerBi.displayFolder`
-- `powerBi.formatString`
-- `powerBi.isHidden`
-- `tom.tableName`
-- `tom.columnName`
-- `tom.measureExpression`
-- `tom.measureFormatString`
-- `tom.relationshipName`
+```text
+powerBi.tableRole
+powerBi.tableName
+powerBi.columnName
+powerBi.dataCategory
+powerBi.displayFolder
+powerBi.formatString
+powerBi.isHidden
+powerBi.summarizeBy
+powerBi.sortByColumn
+powerBi.measure
+powerBi.calculatedTable
+powerBi.hierarchy
+tom.tableName
+tom.columnName
+tom.measureExpression
+tom.measureFormatString
+tom.relationshipName
+schema.*
+ui.*
+```
 
-## Naming Precedence
+## Precedence
 
 ### Table names
 
 1. `tom.tableName`
-2. `powerBi.tableName` (when present)
-3. canonical `DisplayName`
-4. canonical `Name`
+2. `powerBi.tableName`
+3. configured naming transformation
+4. canonical display name
+5. canonical name
 
 ### Column names
 
 1. `tom.columnName`
-2. `powerBi.columnName` (when present)
-3. property `DisplayName`
-4. property `Name`
+2. `powerBi.columnName`
+3. configured naming transformation
+4. property display name
+5. property name
 
 ### Relationship names
 
 1. `tom.relationshipName`
-2. canonical relationship id (`RelationshipId.Value`)
+2. configured naming transformation
+3. canonical relationship id
+
+### Measure names
+
+1. explicit measure builder/name
+2. `powerBi.measure` metadata name
+3. configured naming transformation
+4. canonical computed member name
 
 Invalid annotation value types are diagnosable.
 
-## Object-to-Table Mapping
+## Table Mapping
 
 Object types project to tables when one of these is true:
 
-- role is `Fact`, `Dimension`, `Lookup`, or `Entity`;
-- explicit `powerBi.tableRole` annotation is present;
-- options enable projection of unannotated objects.
+```text
+role is Fact, Dimension, Lookup, Aggregate, or Entity
+explicit powerBi.tableRole annotation is present
+options enable projection of unannotated objects
+```
 
 Value objects do not become tables by default.
 
-## Property-to-Column Mapping
+## Column Mapping
 
-### Scalar mapping baseline
+Scalar properties project to columns when they are compatible with Power BI metadata projection or explicitly configured.
 
-- Boolean -> Boolean
-- String -> String
-- Integer -> Int64
-- Number -> Double or Decimal (options-driven)
-- Decimal -> Decimal
-- Date -> Date
-- Time -> Time
-- DateTime -> DateTime
-- DateTimeOffset -> DateTime (lossy diagnostic)
-- Duration -> String (diagnostic)
-- Guid -> String
-- Binary -> Binary (with mapping diagnostic in baseline prototype)
-- Json -> String (diagnostic)
+Required support:
 
-Lossy mappings are diagnosable.
+```text
+CLR/canonical type metadata
+nullability
+key participation
+hidden flag
+data category
+format string
+summarization hint
+sort-by-column metadata
+description/display text
+annotations/extensions when configured
+```
 
-### Enum mapping
+Lossy scalar mappings are diagnosable.
 
-- default: string-based storage;
-- option for numeric storage when enum metadata indicates numeric backing.
+Unsupported nested/collection shapes must not be silently dropped.
 
-### Key influence
+## Scalar and Enum Mapping
 
-- key-participating properties set `IsKey = true`.
-- relationship projection emits diagnostics when required key assumptions are not met.
+Provider-neutral analytical scalar mapping must be deterministic.
+
+Baseline mapping should handle:
+
+```text
+Boolean
+String
+Integer
+Number
+Decimal
+Date
+Time
+DateTime
+DateTimeOffset with lossy diagnostic unless configured
+Duration with diagnostic unless configured
+Guid as String unless configured
+Binary with diagnostic unless configured
+Enum as string by default unless configured
+```
 
 ## Relationships
 
-Projection supports:
+Projection supports explicit simple analytical relationships:
 
-- one-to-one;
-- one-to-many;
-- many-to-one.
+```text
+one-to-one
+one-to-many
+many-to-one
+relationship endpoints
+relationship cardinality
+active/inactive flag when explicitly modeled
+cross-filter direction when explicitly modeled and provider-neutral
+relationship name
+```
 
-Many-to-many is diagnosed as unsupported in the baseline prototype unless later explicitly enabled.
+Rules:
 
-Relationship projection requires:
+- both endpoint types must resolve to projected tables;
+- endpoint properties must resolve to projected columns when required;
+- unsupported many-to-many or ambiguous relationships emit diagnostics;
+- relationship inference beyond explicit metadata is out of scope.
 
-- both endpoint types projected as tables;
-- endpoint properties projected as columns.
+## Measures
 
-Missing endpoint/table/column resolution is diagnosable.
+Explicit measures are supported.
 
-## Measures (Computed Members)
+Required support:
 
-- computed members with expression language `DAX` project to measures by default;
-- expression text and language are preserved;
-- display folder and format string annotations are preserved when present;
-- no DAX syntax validation is performed in M0007;
-- unsupported expression languages are diagnosed unless explicitly preserved by option.
+```text
+measure name
+owning table
+DAX expression text
+expression language metadata when modeled
+format string
+display folder
+description
+hidden flag
+annotations/extensions
+```
+
+Rules:
+
+- no DAX syntax validation is performed;
+- unsupported expression languages emit diagnostics unless preservation is explicitly configured;
+- code configuration is preferred for DAX-heavy artifacts;
+- attribute-based measure metadata is allowed for simple cases if the repository already supports it.
+
+Candidate behavior:
+
+```csharp
+options.Measures.Add<Order>(
+    name: "Total Sales",
+    dax: "SUM(Orders[Amount])",
+    configure: measure =>
+    {
+        measure.FormatString = "#,0.00 €";
+        measure.DisplayFolder = "Sales";
+    });
+```
+
+## Calculated Tables
+
+Explicit calculated tables are supported as user-owned DAX artifacts.
+
+Required support:
+
+```text
+table name
+DAX expression text
+expression language metadata when modeled
+description
+display folder
+hidden flag
+annotations/extensions
+optional columns when explicitly described
+```
+
+Rules:
+
+- no DAX syntax validation is performed;
+- calculated tables are added through options, model configuration, or custom transformations;
+- calculated table export must be deterministic;
+- unsupported expression languages emit diagnostics unless preservation is explicitly configured.
+
+Candidate behavior:
+
+```csharp
+options.CalculatedTables.Add(
+    name: "Active Customers",
+    dax: "FILTER(Customers, Customers[IsActive] = TRUE())",
+    configure: table =>
+    {
+        table.Description = "Customers currently marked active.";
+        table.DisplayFolder = "Derived";
+    });
+```
+
+## User Extension Points
+
+The package must support extension through code.
+
+Supported extension mechanisms:
+
+```text
+derivation options
+measure builder
+calculated table builder
+post-derive model configuration hook
+custom Power BI transformations
+custom annotations consumed by custom transformations
+```
+
+Candidate custom transformation behavior:
+
+```csharp
+options.Transformations.AddAfter<DerivePowerBiTablesTransformation>(
+    new CurrentSnapshotCalculatedTableTransformation());
+```
+
+Extension rules:
+
+- custom transformations operate on the domain derivation pipeline;
+- custom transformations emit diagnostics through the shared diagnostic model;
+- users should not need to fork exporters for common DAX artifacts;
+- unsupported extension metadata must be diagnosable.
+
+## Hierarchies
+
+Basic explicit hierarchies are supported only when metadata is sufficient.
+
+Required support where implemented:
+
+```text
+hierarchy name
+owning table
+ordered levels
+level column references
+display folder
+hidden flag
+description
+```
+
+Unsupported or unresolved hierarchy levels emit diagnostics.
 
 ## Value Objects, Arrays, Dictionaries, and Unions
 
-### Value objects
+Default behavior is diagnostic unless configured otherwise.
 
-Options determine behavior:
+Supported modes may include:
 
-- diagnose;
-- flatten deterministic nested names (`parent_child`);
-- serialize as JSON/string column.
-
-### Arrays/dictionaries/unions/nested unsupported shapes
-
-Options determine behavior:
-
-- diagnose;
-- ignore with warning;
-- serialize as JSON/string.
+```text
+diagnose
+ignore with warning
+flatten deterministic nested names
+serialize as string/JSON metadata
+```
 
 No silent shape loss is allowed.
 
-## Projection Options
-
-`PowerBiProjectionOptions` includes behavior controls for:
-
-- unannotated object table projection;
-- value object mode;
-- unsupported shape behavior;
-- enum mode;
-- numeric mode;
-- hidden column inclusion;
-- name collision behavior;
-- unsupported expression preservation.
-
-Behavior must be deterministic.
+Inheritance and union-like alternatives are not primary Power BI features. When supported, strategies must be explicit, for example flattening, single table, or table-per-concrete-type. Arbitrary automatic polymorphism inference is out of scope.
 
 ## Name Collision Handling
 
-Duplicate projected names for tables, columns, measures, and relationships must be handled deterministically:
+Duplicate projected names for tables, columns, measures, calculated tables, relationships, and hierarchies must be handled deterministically:
 
-- diagnose-and-skip (default), or
-- suffix-based renaming when configured.
+```text
+diagnose-and-skip by default
+suffix-based renaming only when configured
+```
 
 ## Diagnostics
 
-Projection emits `SchemaDiagnostic` entries with:
+Projection emits structured diagnostics with:
 
-- `Stage = Projection`
-- `ProjectionTarget = PowerBi`
+```text
+Stage = Projection
+ProjectionTarget = PowerBi
+model path when available
+transformation id when emitted during derivation
+related model paths when applicable
+```
 
 Required diagnostic classes include:
 
-- object not projected (missing role/annotation);
-- invalid projection annotation type/value;
-- unsupported shapes;
-- value object mode conflicts;
-- relationship endpoint/key projection failures;
-- lossy scalar mapping;
-- unsupported measure expression language;
-- duplicate projected names.
+```text
+object not projected
+invalid projection annotation type/value
+unsupported shape
+value object mode conflict
+relationship endpoint/table/column projection failure
+lossy scalar mapping
+unsupported measure expression language
+unsupported calculated table expression language
+unresolved sort-by-column reference
+unresolved hierarchy level
+duplicate projected name
+unsupported local export target feature
+service/PBIX/XMLA operation requested
+```
+
+## Determinism
+
+Power BI derivation and local metadata export must be deterministic.
+
+Required deterministic ordering:
+
+```text
+tables by canonical type identifier or configured table name
+columns by declaration/order metadata when available, then name
+relationships by model path/name
+measures by table then name unless explicitly ordered
+calculated tables by name unless explicitly ordered
+hierarchies by table then name
+annotations/extensions by key
+diagnostics by model path/code/order of discovery
+```
+
+## Inspection Integration
+
+The Power BI domain model and derivation result must integrate with M0027/M0028 inspection.
+
+Required behavior:
+
+```csharp
+derived.Diagnostics.ToDiagnosticText();
+derived.Trace.ToTransformationText();
+derived.Model.ToSemanticText();
+```
+
+or equivalent package-specific inspection methods.
+
+Inspection output must be deterministic and suitable for tests.
+
+## Unsupported Scope
+
+The Power BI package does not define or own:
+
+```text
+Power BI Service publishing
+workspace management
+dataset deployment
+authentication
+gateway configuration
+refresh scheduling
+incremental refresh configuration
+PBIX generation
+Power BI REST API orchestration
+Fabric integration
+deployment pipelines
+XMLA endpoint operations
+query execution
+credentials/secrets handling
+full TOM parity
+```
 
 ## Test Coverage Requirements
 
-Short-running tests must cover at least:
+Short-running tests must cover:
 
-1. dimension table fixture;
-2. fact + relationship fixture;
-3. computed DAX measure fixture (+ unsupported language diagnostic);
-4. value object mode fixture;
-5. unsupported shape fixture;
-6. name collision fixture.
+```text
+domain model derivation from generated model
+table mapping
+column mapping
+relationship mapping
+measure addition
+calculated table addition
+custom transformation extension
+display folder mapping
+hidden flag mapping
+data category mapping
+summarization mapping
+format string mapping
+sort-by-column mapping
+basic hierarchy mapping when implemented
+unsupported shape diagnostics
+unsupported expression diagnostics
+duplicate/collision diagnostics
+deterministic local export
+deterministic inspection output
+no service/network/PBIX dependency
+```
 
-## M0021 Hardened Projection Surface
+## Non-Goals
 
-M0021 promotes the Power BI projection from prototype behavior to a supported 1.0-candidate projection surface while preserving the boundary that the package does not publish to the Power BI service.
+M0031 does not define:
 
-### Public entry points
-
-Consumers may call `PowerBiProjection.Project(model, options => { ... })` or `model.ToPowerBiModel(options => { ... })` to receive a `PowerBiProjectionModel`. Existing `PowerBiModelProjection` and `PowerBiProjectionModel` APIs remain available for preview compatibility.
-
-### Hardened metadata
-
-Projected tables carry role, display name, hidden state, source type id, description, display folder, and annotations. Projected columns carry display name, type, nullability, key metadata, hidden state, summarization, format string, source property id, and annotations. Relationships carry endpoint names, cardinality, active state, direction, and source relationship id. Measures are projected only from explicit computed members or measure annotations; the projection does not invent business measures.
-
-### Options
-
-`PowerBiProjectionOptions` controls naming policy, default table role, enum mode, numeric type mode, default numeric summarization, technical-key hiding, foreign-key hiding, hidden-column inclusion, unsupported annotation preservation, unsupported shape handling, value-object handling, relationship strictness, name collision behavior, and unsupported expression preservation.
-
-### Diagnostics
-
-Ambiguous composite relationship endpoints emit `POWERBI_AMBIGUOUS_RELATIONSHIP_ENDPOINTS`. Invalid table roles, summarization values, relationship directions, and annotation values are diagnosable. Unsupported shapes and lossy scalar mappings continue to emit stable `POWERBI_*` diagnostics.
+```text
+Power BI Service publishing
+workspace management
+dataset deployment
+authentication
+gateway configuration
+refresh scheduling
+incremental refresh configuration
+PBIX generation
+Power BI REST API orchestration
+Fabric integration
+deployment pipelines
+XMLA endpoint operations
+query execution
+credentials/secrets handling
+full TOM parity
+Tabular Editor replacement
+calculation groups
+perspectives
+translations
+row-level security
+object-level security
+calculated columns unless explicitly added later
+complex partition management
+refresh policies
+detail rows expressions
+full DAX authoring framework
+DAX syntax validation
+lineage/deployment metadata ownership
+```
