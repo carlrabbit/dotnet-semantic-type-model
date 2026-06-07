@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Linq.Expressions;
 using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Core.Semantics;
 using LegacyModel = SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.Core.Query;
@@ -144,6 +145,39 @@ public static class SemanticModelQueryExtensions
         return model.Types()
             .OfType<LegacyModel.ObjectShape>()
             .SelectMany(static type => type.Properties.OrderBy(static property => property.Name, StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// Returns all hardened object types marked as envelope wrappers.
+    /// </summary>
+    public static IEnumerable<ObjectTypeDefinition> Envelopes(this TypeSchemaModel model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        return model.Types()
+            .OfType<ObjectTypeDefinition>()
+            .Where(static type => HasAnnotation(type.Annotations, CoreSemanticAnnotationKeys.Envelope, "true"));
+    }
+
+    /// <summary>
+    /// Returns envelope payload properties in deterministic model order.
+    /// </summary>
+    public static IEnumerable<PropertyDefinition> EnvelopePayloads(this ObjectTypeDefinition envelope)
+    {
+        ArgumentNullException.ThrowIfNull(envelope);
+        return envelope.Properties
+            .Where(static property => HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.EnvelopePayload, "true"))
+            .OrderBy(static property => property.Name, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// Returns envelope metadata properties in deterministic model order.
+    /// </summary>
+    public static IEnumerable<PropertyDefinition> EnvelopeMetadata(this ObjectTypeDefinition envelope)
+    {
+        ArgumentNullException.ThrowIfNull(envelope);
+        return envelope.Properties
+            .Where(static property => HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.EnvelopeMetadata, "true"))
+            .OrderBy(static property => property.Name, StringComparer.Ordinal);
     }
 
     /// <summary>

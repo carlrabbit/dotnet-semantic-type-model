@@ -780,6 +780,42 @@ public sealed class GeneratorBaselineTests
     }
 
 
+    [Test]
+    public async Task Fixture_22_envelope_attributes_should_preserve_generated_metadata_and_invalid_targets_diagnostics()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+
+            public sealed class Payload
+            {
+                public string Value { get; init; } = string.Empty;
+            }
+
+            [SemanticType]
+            [SemanticEnvelope("transport")]
+            public sealed class MessageEnvelope
+            {
+                [SemanticEnvelopeMetadata]
+                public string CorrelationId { get; init; } = string.Empty;
+
+                [SemanticEnvelopePayload]
+                public Payload Payload { get; init; } = new();
+            }
+            """;
+
+        (TypeSchemaModel model, IReadOnlyList<Diagnostic> diagnostics) = GenerateModel(source);
+        ObjectShape envelope = (ObjectShape)model.GetShape("global::MessageEnvelope");
+        PropertyShape payload = envelope.Properties.Single(static property => property.Name == "Payload");
+        PropertyShape metadata = envelope.Properties.Single(static property => property.Name == "CorrelationId");
+
+        _ = await Assert.That(envelope.Annotations.Any(static annotation => annotation.Key == "schema.envelope" && annotation.Value == "true")).IsTrue();
+        _ = await Assert.That(envelope.Annotations.Any(static annotation => annotation.Key == "schema.envelope.purpose" && annotation.Value == "transport")).IsTrue();
+        _ = await Assert.That(payload.Annotations.Any(static annotation => annotation.Key == "schema.envelope.payload" && annotation.Value == "true")).IsTrue();
+        _ = await Assert.That(metadata.Annotations.Any(static annotation => annotation.Key == "schema.envelope.metadata" && annotation.Value == "true")).IsTrue();
+        _ = await Assert.That(diagnostics.Count).IsEqualTo(0);
+    }
+
+
     private static Diagnostic[] GenerateDiagnostics(string source, IReadOnlyDictionary<string, string>? globalOptions = null)
     {
         CSharpCompilation compilation = CreateCompilation(source);

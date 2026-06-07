@@ -88,6 +88,13 @@ The distinguished property inside an envelope that carries the semantic value be
 ### Envelope Metadata
 A property on an envelope that describes the envelope lifecycle, context, transport, audit, revision, status, or management state rather than the payload domain state.
 
+
+### Projection-Specific Metadata
+Metadata that describes representation for one projection target, such as JSON Schema, EF Core, Power BI, or System.Text.Json, rather than projection-neutral domain meaning.
+
+### Envelope Projection Root
+The type selected by target policy as the root projection for an envelope scenario; it may be the envelope wrapper or the envelope payload.
+
 ### Domain Semantic Model
 A package-owned semantic model derived from the canonical semantic type model for a specific domain such as JSON Schema, EF Core, Power BI, or System.Text.Json.
 

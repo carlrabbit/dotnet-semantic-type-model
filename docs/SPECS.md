@@ -26,6 +26,7 @@ Specs are authoritative for:
 | specs/type-schema-model.md | Canonical semantic type model contracts, invariants, and traversal behavior |
 | specs/json-schema-adapter.md | Supported JSON Schema import and export baseline behavior |
 | specs/type-model-core.md | Hardened canonical type model layers, contracts, invariants, and diagnostics model |
+| specs/core-semantic-vocabulary.md | Projection-neutral core semantic vocabulary and envelope semantics |
 | specs/type-model-annotations.md | Annotation namespace policy, preservation rules, and projection separation |
 | specs/type-model-json-schema-mapping.md | JSON Schema Draft 2020-12 mapping baseline for the hardened canonical model |
 | specs/type-model-dotnet-extraction.md | Roslyn-based .NET type-system discovery and extraction baseline into canonical model contracts |

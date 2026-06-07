@@ -25,6 +25,7 @@ public sealed class SchemaTransformationPipeline
         return Use(new NormalizeAnnotationsTransformation())
             .Add(new NormalizeSemanticAliasesTransformation())
             .Add(new DeriveSemanticKeysTransformation())
+            .Add(new ValidateEnvelopeSemanticsTransformation())
             .Add(new NormalizeDisplayMetadataTransformation())
             .Use(new ValidateModelTransformation());
     }

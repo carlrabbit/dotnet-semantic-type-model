@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using SemanticTypeModel.Abstractions.Hardening;
 using SemanticTypeModel.Core.Query;
+using SemanticTypeModel.Core.Semantics;
 using LegacyModel = SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.Core.Inspection;
@@ -171,6 +172,11 @@ public static class SemanticTextExtensions
             builder.Append(']');
         }
 
+        if (type is ObjectTypeDefinition envelopeType && HasBooleanAnnotation(envelopeType.Annotations, CoreSemanticAnnotationKeys.Envelope))
+        {
+            builder.Append(" [Envelope]");
+        }
+
         builder.AppendLine();
 
         if (options.Detail == SemanticTextDetail.Detailed)
@@ -203,6 +209,16 @@ public static class SemanticTextExtensions
                 if (property.Cardinality.AllowsNull)
                 {
                     builder.Append(" nullable");
+                }
+
+                if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.EnvelopePayload))
+                {
+                    builder.Append(" envelopePayload");
+                }
+
+                if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.EnvelopeMetadata))
+                {
+                    builder.Append(" envelopeMetadata");
                 }
 
                 builder.AppendLine();
@@ -283,6 +299,16 @@ public static class SemanticTextExtensions
         {
             AppendLegacyAnnotations(builder, shape.Annotations, "    ");
         }
+    }
+
+    private static bool HasBooleanAnnotation(AnnotationBag bag, string key)
+    {
+        return bag.Items
+            .Where(annotation => string.Equals(annotation.Key.Value, key, StringComparison.Ordinal))
+            .Select(static annotation => annotation.Value?.ToString())
+            .LastOrDefault(static value => !string.IsNullOrWhiteSpace(value))
+            is string value
+            && string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void AppendAnnotations(StringBuilder builder, AnnotationBag annotations, string indent)

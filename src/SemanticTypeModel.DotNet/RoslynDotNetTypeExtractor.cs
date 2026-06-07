@@ -27,6 +27,9 @@ public sealed class RoslynDotNetTypeExtractor
     private const string SemanticAnnotationAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticAnnotationAttribute";
     private const string SemanticKeyAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticKeyAttribute";
     private const string SemanticRelationshipAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticRelationshipAttribute";
+    private const string SemanticEnvelopeAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticEnvelopeAttribute";
+    private const string SemanticEnvelopePayloadAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticEnvelopePayloadAttribute";
+    private const string SemanticEnvelopeMetadataAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticEnvelopeMetadataAttribute";
     private const string GeneratorOptionsAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticTypeModelGeneratorOptionsAttribute";
     private const string JsonPropertyNameAttributeMetadataName = "System.Text.Json.Serialization.JsonPropertyNameAttribute";
     private const string JsonIgnoreAttributeMetadataName = "System.Text.Json.Serialization.JsonIgnoreAttribute";
@@ -544,6 +547,7 @@ public sealed class RoslynDotNetTypeExtractor
         TryAddSemanticTypeOverrides(typeAttributes, annotations);
         TryAddSystemTextJsonTypeAnnotations(typeAttributes, annotations, type);
         TryAddRoleAnnotation(typeAttributes, annotations, type.Locations.FirstOrDefault());
+        TryAddEnvelopeAnnotations(typeAttributes, annotations, type);
         ValidateTypeAttributeUsage(typeAttributes, type);
         AddInheritanceAnnotations(type, annotations, cancellationToken);
         DiagnoseMissingXmlDocumentationIfRequired(type, type.Locations.FirstOrDefault());
@@ -578,6 +582,7 @@ public sealed class RoslynDotNetTypeExtractor
             TryAddCustomAnnotations(memberAttributes, memberAnnotations, property);
             TryAddFormatAndConstraintAnnotations(memberAttributes, memberType, memberAnnotations, property);
             TryAddXmlDescriptionAnnotation(property, memberAttributes, memberAnnotations);
+            TryAddEnvelopeMemberAnnotations(memberAttributes, memberAnnotations);
             ValidateMemberAttributeUsage(memberAttributes, property);
             DiagnoseMissingXmlDocumentationIfRequired(property, property.Locations.FirstOrDefault());
 
@@ -1084,6 +1089,13 @@ public sealed class RoslynDotNetTypeExtractor
                     $"[SemanticRole] is not valid on property '{property.Name}'.",
                     attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? property.Locations.FirstOrDefault()));
             }
+            else if (string.Equals(metadataName, SemanticEnvelopeAttributeMetadataName, StringComparison.Ordinal))
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5001",
+                    $"[SemanticEnvelope] is not valid on property '{property.Name}'.",
+                    attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? property.Locations.FirstOrDefault()));
+            }
         }
 
         if (roleCount > 1)
@@ -1103,7 +1115,9 @@ public sealed class RoslynDotNetTypeExtractor
         {
             string? metadataName = attribute.AttributeClass?.ToDisplayString();
             if (string.Equals(metadataName, SemanticKeyAttributeMetadataName, StringComparison.Ordinal)
-                || string.Equals(metadataName, SemanticRelationshipAttributeMetadataName, StringComparison.Ordinal))
+                || string.Equals(metadataName, SemanticRelationshipAttributeMetadataName, StringComparison.Ordinal)
+                || string.Equals(metadataName, SemanticEnvelopePayloadAttributeMetadataName, StringComparison.Ordinal)
+                || string.Equals(metadataName, SemanticEnvelopeMetadataAttributeMetadataName, StringComparison.Ordinal))
             {
                 _diagnostics.Add(new DotNetExtractionDiagnostic(
                     "STM5001",
@@ -1484,6 +1498,56 @@ public sealed class RoslynDotNetTypeExtractor
         }
 
         return null;
+    }
+
+
+    private void TryAddEnvelopeAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations, INamedTypeSymbol type)
+    {
+        foreach (AttributeData attribute in attributes)
+        {
+            if (!string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticEnvelopeAttributeMetadataName, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            annotations["schema.envelope"] = "true";
+            string? purpose = attribute.ConstructorArguments.Length == 1 ? attribute.ConstructorArguments[0].Value as string : null;
+            foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+            {
+                if (string.Equals(key, nameof(SemanticEnvelopeAttribute.Purpose), StringComparison.Ordinal))
+                {
+                    purpose = value.Value as string;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(purpose))
+            {
+                annotations["schema.envelope.purpose"] = purpose!;
+            }
+            else if (attribute.ConstructorArguments.Length == 1)
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    "STM5017",
+                    $"[SemanticEnvelope] on '{type.ToDisplayString()}' requires a non-empty purpose argument when a purpose is supplied.",
+                    attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? type.Locations.FirstOrDefault()));
+            }
+        }
+    }
+
+    private static void TryAddEnvelopeMemberAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
+    {
+        foreach (AttributeData attribute in attributes)
+        {
+            string? metadataName = attribute.AttributeClass?.ToDisplayString();
+            if (string.Equals(metadataName, SemanticEnvelopePayloadAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["schema.envelope.payload"] = "true";
+            }
+            else if (string.Equals(metadataName, SemanticEnvelopeMetadataAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["schema.envelope.metadata"] = "true";
+            }
+        }
     }
 
     private void TryAddRoleAnnotation(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations, Location? location)

@@ -72,3 +72,16 @@ The M0005 baseline annotation policy is:
 - Projections may consume target namespaces and produce diagnostics for invalid values.
 - Pass-through transforms must preserve unknown namespaces and values.
 - `NormalizeAnnotationsTransformation` is the baseline reusable transform for key validation, namespace normalization, and duplicate-key merge behavior.
+
+## Core Semantic Vocabulary Annotations
+
+The canonical core semantic vocabulary is specified in `docs/specs/core-semantic-vocabulary.md`.
+
+Envelope annotations are projection-neutral and use the `schema.*` namespace:
+
+- `schema.envelope` marks the wrapper boundary on an object type.
+- `schema.envelope.purpose` preserves optional projection-neutral purpose text.
+- `schema.envelope.payload` marks the wrapped payload member.
+- `schema.envelope.metadata` marks lifecycle or context metadata members.
+
+Target-specific choices such as JSON Schema `$ref` placement, EF Core ownership, serialized storage, Power BI flattening, or payload omission must use target policy rather than changing these core annotations.
