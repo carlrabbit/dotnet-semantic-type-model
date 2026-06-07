@@ -102,7 +102,7 @@ Custom attributes do not mutate the canonical model directly. Extraction preserv
 
 ### `SemanticEnvelopePayloadAttribute`
 
-- Targets: property, field.
+- Targets: property.
 - Semantics:
   - marks the distinguished payload property inside an envelope;
   - maps to `schema.envelope.payload=true`;
@@ -112,11 +112,10 @@ Custom attributes do not mutate the canonical model directly. Extraction preserv
 
 ### `SemanticEnvelopeMetadataAttribute`
 
-- Targets: property, field.
+- Targets: property.
 - Semantics:
   - marks a property as envelope lifecycle/context metadata;
   - maps to `schema.envelope.metadata=true`;
-  - optional `Kind` or `Purpose` may map to projection-neutral metadata when supported;
   - metadata marker outside an envelope is diagnosable unless explicitly allowed.
 
 ### `SemanticFormatAttribute`
@@ -164,7 +163,7 @@ Custom attributes do not mutate the canonical model directly. Extraction preserv
 ## Envelope Attribute Example
 
 ```csharp
-[SemanticEnvelope(Purpose = SemanticEnvelopePurpose.Management)]
+[SemanticEnvelope("management")]
 public sealed class ManagedSpecificationEnvelope<TSpecification>
 {
     [SemanticEnvelopePayload]
@@ -210,6 +209,6 @@ Extraction/generator diagnostics in `STM5xxx` include:
 - `STM5023` invalid numeric constraint range;
 - `STM5024` invalid collection constraint range;
 - `STM5025` invalid scalar format usage.
-- envelope-specific diagnostics for invalid envelope target usage, missing payload, duplicate payloads, misplaced payload markers, and misplaced metadata markers must be assigned stable IDs before implementation.
+- envelope-specific diagnostics use stable core transformation IDs for missing payload, duplicate payloads, misplaced payload markers, misplaced metadata markers, missing payload type representation, and ambiguous projection-root declarations.
 
 Diagnostics are contractually stable by code; message text is non-authoritative.

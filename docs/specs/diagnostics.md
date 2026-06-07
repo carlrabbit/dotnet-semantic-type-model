@@ -19,6 +19,7 @@ The numeric sub-ranges are allocated as follows:
 | Range     | Package                        | Emitter                              |
 |-----------|--------------------------------|--------------------------------------|
 | STM0001–STM0013 | SemanticTypeModel.Core   | TypeSchemaModelValidator             |
+| STM1004–STM1013 | SemanticTypeModel.Core   | Core semantic transformations        |
 | STM3201–STM3207 | SemanticTypeModel.JsonSchema | JsonSchemaRuntimeProjection      |
 | STM5001–STM5025 | SemanticTypeModel.DotNet / SemanticTypeModel.Generators | RoslynDotNetTypeExtractor / SemanticTypeModelSourceGenerator |
 

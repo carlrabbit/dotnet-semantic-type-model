@@ -557,3 +557,43 @@ public enum RelationshipCardinality
     /// </summary>
     ManyToMany,
 }
+
+/// <summary>
+/// Marks a CLR type as a projection-neutral envelope wrapper around a semantic payload.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticEnvelopeAttribute : Attribute
+{
+    /// <summary>
+    /// Initializes a new envelope attribute.
+    /// </summary>
+    public SemanticEnvelopeAttribute()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new envelope attribute with a projection-neutral purpose.
+    /// </summary>
+    /// <param name="purpose">The envelope purpose.</param>
+    public SemanticEnvelopeAttribute(string purpose)
+    {
+        Purpose = purpose;
+    }
+
+    /// <summary>
+    /// Gets the optional projection-neutral purpose for the envelope.
+    /// </summary>
+    public string? Purpose { get; init; }
+}
+
+/// <summary>
+/// Marks the member that carries an envelope payload.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticEnvelopePayloadAttribute : Attribute;
+
+/// <summary>
+/// Marks a member as envelope lifecycle/context metadata rather than payload domain state.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticEnvelopeMetadataAttribute : Attribute;

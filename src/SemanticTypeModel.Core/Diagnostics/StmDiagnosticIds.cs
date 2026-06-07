@@ -78,6 +78,24 @@ public static class StmDiagnosticIds
     /// <summary>STM1007 — Multiple primary semantic keys were declared for one type.</summary>
     public const string MultiplePrimarySemanticKeys = "STM1007";
 
+    /// <summary>STM1008 — Envelope type has no payload member.</summary>
+    public const string EnvelopePayloadMissing = "STM1008";
+
+    /// <summary>STM1009 — Envelope type has multiple payload members without an explicit policy.</summary>
+    public const string EnvelopePayloadDuplicate = "STM1009";
+
+    /// <summary>STM1010 — Envelope payload marker appears outside an envelope type.</summary>
+    public const string EnvelopePayloadOutsideEnvelope = "STM1010";
+
+    /// <summary>STM1011 — Envelope metadata marker appears outside an envelope type.</summary>
+    public const string EnvelopeMetadataOutsideEnvelope = "STM1011";
+
+    /// <summary>STM1012 — Envelope payload member references a type that is not represented in the model.</summary>
+    public const string EnvelopePayloadTypeMissing = "STM1012";
+
+    /// <summary>STM1013 — Envelope projection-root selection is ambiguous or unsupported.</summary>
+    public const string EnvelopeProjectionRootAmbiguous = "STM1013";
+
     // -------------------------------------------------------------------------
     // STM3xxx — JSON Schema runtime projection
     // Emitted by JsonSchemaRuntimeProjection during the Projection pipeline stage.

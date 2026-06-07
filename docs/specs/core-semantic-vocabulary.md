@@ -6,12 +6,13 @@ Authoritative behavioral specification.
 
 ## Purpose
 
-Define the core semantic vocabulary for code-first SemanticTypeModel authoring.
+Define the projection-neutral core semantic vocabulary for code-first SemanticTypeModel authoring.
 
 This specification is authoritative for:
 
 - core semantic names and meanings;
 - usage guidance for core semantics;
+- canonical annotation keys used to preserve authoring intent;
 - distinction between core semantics and projection-specific metadata;
 - envelope semantics;
 - projection-neutral interpretation of core semantics;
@@ -19,13 +20,11 @@ This specification is authoritative for:
 
 ## Core Principle
 
-Core semantics describe projection-neutral meaning.
+Core semantics describe domain meaning that remains true before any JSON Schema, EF Core, Power BI, System.Text.Json, or other target projection is selected.
 
-Projection-specific metadata describes target-specific representation.
+Projection-specific metadata describes target-specific representation. Use target namespaces such as `jsonSchema.*`, `efCore.*`, `powerBi.*`, or `systemTextJson.*` when the meaning exists only for one target.
 
-Use core semantics when the meaning is true independently of JSON Schema, EF Core, Power BI, System.Text.Json, or any other target.
-
-Use target-specific metadata when the meaning exists only for a projection target.
+Use a core semantic when the same meaning should be available to the canonical semantic model, domain semantic models, diagnostics, queries, and inspection. Use projection-specific metadata when the meaning is a storage, serialization, reporting, or export choice.
 
 ## Entry Format
 
@@ -46,718 +45,692 @@ Diagnostics / ambiguity notes
 
 | Intent | Core semantic | Projection-specific metadata |
 |---|---|---|
-| Type has identity and lifecycle | `Entity` | EF Core may derive entity mapping. |
-| Property identifies an entity | `Key` | EF Core may derive primary key. |
-| Property is required | `Required` | JSON Schema/EF Core derive requiredness. |
-| Property has user-facing label | `DisplayName` | UI/Power BI may consume display metadata. |
+| Type has identity and lifecycle | `Entity` | EF Core may derive entity mapping by policy. |
+| Type is value-based | `ValueObject` | EF Core may map owned/converted/JSON by policy. |
+| Type has analytical dimensional meaning | `Dimension` | Power BI may choose table/display behavior by policy. |
+| Type represents analytical observations | `Fact` | Power BI may choose measure/table behavior by policy. |
+| Property identifies an entity | `Key` | EF Core may derive primary/alternate keys by policy. |
+| Property associates two types | `Relationship` | EF Core or Power BI may materialize relationships by policy. |
+| Property is required | `Required` | JSON Schema/EF Core derive target requiredness by policy. |
+| Property has a user-facing label | `DisplayName` | UI/Power BI may consume display metadata by policy. |
 | EF Core index | None | `efCore.index` |
 | EF Core table name | None | `efCore.tableName` |
 | Power BI display folder | None | `powerBi.displayFolder` |
-| DAX measure | Usually none | `powerBi.measure` / measure builder |
-| JSON Schema format override | Maybe `Format` if projection-neutral | `jsonSchema.format` if JSON Schema-specific |
-| Wrapper with distinguished payload | `Envelope` + `EnvelopePayload` | Target decides envelope/payload root policy. |
+| DAX measure | None by default | `powerBi.measure` or measure builder metadata |
+| JSON Schema-only format override | None | `jsonSchema.format` |
+| Projection-neutral scalar format | `Format` | Target projections may map when compatible. |
+| Wrapper with distinguished payload | `Envelope` + `EnvelopePayload` | Target decides envelope-root/payload-root and payload representation policy. |
+
+## Canonical Annotation Keys
+
+The following canonical annotation keys preserve authoring intent before or after transformations derive structured model members.
+
+| Key | Scope | Meaning |
+|---|---|---|
+| `schema.role` | Type | Declared core role alias for an object type. |
+| `schema.key` | Member | Declares that a member participates in a key. |
+| `schema.key.name` | Member | Groups members into a named key. |
+| `schema.key.kind` | Member | Declares primary, alternate, natural, surrogate, or external key intent. |
+| `schema.key.order` | Member | Orders members in a composite key. |
+| `schema.key.generated` | Member | Declares generated key intent. |
+| `schema.relationship` | Member | Declares explicit or inferred relationship intent. |
+| `schema.relationship.target` | Member | References the related type. |
+| `schema.relationship.principalType` | Member | Names the principal type when explicitly supplied. |
+| `schema.relationship.principalKey` | Member | Names the principal key when explicitly supplied. |
+| `schema.relationship.foreignKey` | Member | Names the foreign-key member when explicitly supplied. |
+| `schema.relationship.cardinality` | Member | Declares relationship cardinality. |
+| `schema.title` | Type/member | Projection-neutral display name. |
+| `schema.description` | Type/member | Projection-neutral description. |
+| `schema.format` | Type/member | Projection-neutral scalar format. |
+| `schema.minLength`, `schema.maxLength`, `schema.pattern` | Member | String constraints. |
+| `schema.minimum`, `schema.maximum`, `schema.exclusiveMinimum`, `schema.exclusiveMaximum`, `schema.multipleOf` | Member | Numeric constraints. |
+| `schema.minItems`, `schema.maxItems`, `schema.uniqueItems` | Member | Collection constraints. |
+| `schema.envelope` | Type | Marks an object type as an envelope wrapper boundary. |
+| `schema.envelope.purpose` | Type | Optional projection-neutral envelope purpose. |
+| `schema.envelope.payload` | Member | Marks the envelope payload member. |
+| `schema.envelope.metadata` | Member | Marks envelope lifecycle or context metadata. |
 
 ## Baseline Core Semantics
 
 ### Entity
 
-Kind: Type semantic.
+**Kind:** Type semantic.
 
-Description: A type with identity and lifecycle.
+**Description:** A type with identity and lifecycle.
 
-Best used when:
+**Best used when:** The object is referenced independently, has stable identity, or participates in relationships by identity.
 
-```text
-The object is referenced independently.
-The object has a stable identity.
-The object may be persisted, projected, or related by identity.
-```
+**Avoid when:** The type is embedded only by value, is a DTO fragment with no independent identity, or is only a transport wrapper around another payload.
 
-Avoid when:
+**Projection implications:** JSON Schema usually exports an object definition. EF Core may treat the type as an entity candidate. Power BI may treat it as a table candidate when analytical projection is enabled.
 
-```text
-The type is embedded only by value.
-The type is a DTO fragment with no independent identity.
-The type is only a transport wrapper around another payload.
-```
-
-Projection implications:
-
-```text
-JSON Schema: usually becomes an object definition.
-EF Core: entity candidate.
-Power BI: table candidate when analytical projection is enabled.
-```
-
-Example:
+**Example:**
 
 ```csharp
-[SemanticEntity]
+[SemanticType(SemanticTypeRole.Entity)]
 public sealed class Customer
 {
     [SemanticKey]
-    public required CustomerId Id { get; init; }
+    public required string Id { get; init; }
 }
 ```
 
-Diagnostics / ambiguity notes:
-
-```text
-Entity without key may be diagnostic depending configuration.
-Entity and ValueObject on the same type is a conflict unless explicitly allowed.
-Envelope may override projection root selection without erasing entity semantics.
-```
+**Diagnostics / ambiguity notes:** Unsupported role aliases and conflicts with already-derived roles are diagnosable. Keys on non-entity types are diagnosable. Envelope projection-root selection does not erase entity semantics on the envelope or payload.
 
 ### ValueObject
 
-Kind: Type semantic.
+**Kind:** Type semantic.
 
-Description: A type whose equality and meaning are defined by its contained values rather than identity.
+**Description:** A type whose equality and meaning are defined by contained values rather than independent identity.
 
-Best used when:
+**Best used when:** The type is embedded in another object, has no independent lifecycle, or groups related scalar values.
 
-```text
-The type is embedded in another object.
-The type has no independent lifecycle.
-The type groups related scalar values.
-```
+**Avoid when:** The type is referenced independently by identity, is a persistence root, or is an envelope with lifecycle metadata.
 
-Avoid when:
+**Projection implications:** JSON Schema may export an object definition or inline object. EF Core may map it as owned, converted, serialized, or ignored by explicit policy. Power BI may flatten, ignore, or serialize it by analytical policy.
 
-```text
-The type is referenced independently by identity.
-The type is a persistence root.
-The type is an envelope with lifecycle metadata.
-```
-
-Projection implications:
-
-```text
-JSON Schema: object definition or inline object.
-EF Core: owned/value-object candidate when explicitly configured.
-Power BI: usually flattened, ignored, or serialized according to analytical options.
-```
-
-Example:
+**Example:**
 
 ```csharp
-[SemanticValueObject]
+[SemanticType(SemanticTypeRole.ValueObject)]
 public readonly record struct Money(decimal Amount, string Currency);
 ```
 
-Diagnostics / ambiguity notes:
-
-```text
-ValueObject as root entity is diagnostic unless explicitly configured.
-```
+**Diagnostics / ambiguity notes:** A value object used as an entity root or carrying key metadata is ambiguous unless explicit policy allows it.
 
 ### AggregateRoot
 
-Kind: Type semantic.
+**Kind:** Type semantic.
 
-Description: An entity that is the consistency and lifecycle boundary for an aggregate.
+**Description:** An entity that is the consistency and lifecycle boundary for related child entities and value objects.
 
-Best used when the type controls changes to related child entities/value objects or acts as the API/persistence boundary for a group of objects.
+**Best used when:** The type controls changes to an aggregate and should be the API or persistence boundary for a related object group.
 
-Avoid when the type is only a lookup, a child object, or a payload inside an envelope whose management boundary is the envelope.
+**Avoid when:** The type is only a lookup, a child object, or a payload inside an envelope whose management boundary is the envelope.
 
-Projection implications:
+**Projection implications:** JSON Schema may be selected as a root schema by policy. EF Core may treat it as a persistence aggregate root by policy. Power BI may treat it as an analytical table candidate.
 
-```text
-JSON Schema: may be selected as root schema by default.
-EF Core: entity candidate and likely aggregate root.
-Power BI: analytical table candidate.
-```
-
-Example:
+**Example:**
 
 ```csharp
-[SemanticEntity]
-[SemanticRole("AggregateRoot")]
-public sealed class Order { }
+[SemanticType(SemanticTypeRole.Entity)]
+public sealed class Order
+{
+    [SemanticKey]
+    public required string Id { get; init; }
+}
 ```
 
-Diagnostics / ambiguity notes: AggregateRoot without Entity semantics may be diagnostic.
+**Diagnostics / ambiguity notes:** Aggregate-root meaning requires entity semantics. If represented through annotations before structured support, conflicting role or key metadata remains diagnosable.
+
+### Dimension
+
+**Kind:** Type semantic role.
+
+**Description:** A descriptive analytical object used for slicing, grouping, or filtering observations.
+
+**Best used when:** The object has analytical classification meaning independent of any one report layout.
+
+**Avoid when:** The only intent is a Power BI table name, display folder, or visual arrangement.
+
+**Projection implications:** JSON Schema exports the object shape. EF Core does not infer storage behavior from this role alone. Power BI may use it as dimensional modeling input.
+
+**Example:**
+
+```csharp
+[SemanticRole(SemanticTypeRole.Dimension)]
+public sealed class ProductDimension { }
+```
+
+**Diagnostics / ambiguity notes:** Conflicting role declarations are diagnosable.
+
+### Fact
+
+**Kind:** Type semantic role.
+
+**Description:** A quantitative analytical event, observation, or measurement set.
+
+**Best used when:** The type carries measures and links to analytical context.
+
+**Avoid when:** The type is a general entity with no analytical measure semantics.
+
+**Projection implications:** JSON Schema exports the object shape. EF Core behavior requires explicit target policy. Power BI may use it as fact-modeling input.
+
+**Example:**
+
+```csharp
+[SemanticRole(SemanticTypeRole.Fact)]
+public sealed class SalesFact { }
+```
+
+**Diagnostics / ambiguity notes:** Conflicting role declarations are diagnosable.
+
+### Lookup
+
+**Kind:** Type semantic role.
+
+**Description:** A reference set or small semantic catalog used to describe valid categories or choices.
+
+**Best used when:** The same reference values are reused by other types.
+
+**Avoid when:** A simple enum or scalar constraint completely expresses the domain.
+
+**Projection implications:** JSON Schema may export an object or enum-like shape according to model structure. EF Core and Power BI need explicit policy for table or relationship decisions.
+
+**Example:**
+
+```csharp
+[SemanticRole(SemanticTypeRole.Lookup)]
+public sealed class Country { }
+```
+
+**Diagnostics / ambiguity notes:** Conflicting role declarations are diagnosable.
+
+### Event
+
+**Kind:** Type semantic role.
+
+**Description:** A domain occurrence recorded at a point in a process.
+
+**Best used when:** The type represents an immutable occurrence or message describing something that happened.
+
+**Avoid when:** The type is a mutable aggregate state container.
+
+**Projection implications:** JSON Schema exports the event payload shape. EF Core persistence and Power BI analytical treatment require explicit target policy.
+
+**Example:**
+
+```csharp
+[SemanticRole(SemanticTypeRole.Event)]
+public sealed record OrderSubmitted(string OrderId);
+```
+
+**Diagnostics / ambiguity notes:** Conflicting role declarations are diagnosable.
+
+### Configuration
+
+**Kind:** Type semantic role.
+
+**Description:** A type describing configurable behavior or settings.
+
+**Best used when:** Values are authored or changed to affect behavior rather than record domain transactions.
+
+**Avoid when:** The type is target-specific options for a projection implementation.
+
+**Projection implications:** JSON Schema may use the role for configuration contracts. EF Core and Power BI require explicit target policy.
+
+**Example:**
+
+```csharp
+[SemanticRole(SemanticTypeRole.Configuration)]
+public sealed class PricingOptions { }
+```
+
+**Diagnostics / ambiguity notes:** Conflicting role declarations are diagnosable.
+
+### Form
+
+**Kind:** Type semantic role.
+
+**Description:** A user-input-oriented object.
+
+**Best used when:** The domain meaning is an input contract rather than a stored entity.
+
+**Avoid when:** The only intent is a specific UI control library setting.
+
+**Projection implications:** JSON Schema may export an input object. Generic UI hints remain separate annotations. EF Core and Power BI do not infer storage or analytics behavior from this role alone.
+
+**Example:**
+
+```csharp
+[SemanticRole(SemanticTypeRole.Form)]
+public sealed class RegistrationForm { }
+```
+
+**Diagnostics / ambiguity notes:** Conflicting role declarations are diagnosable.
 
 ### Key
 
-Kind: Property semantic.
+**Kind:** Property or key-group semantic.
 
-Description: A property or property group that identifies an entity or semantic object.
+**Description:** A property or property group that identifies an entity or semantic object.
 
-Best used when the property participates in stable identity and relationships.
+**Best used when:** The value participates in stable identity and relationships.
 
-Avoid when the value is only a display number or transient sequence number.
+**Avoid when:** The value is only a display number, transient sequence, database index, or storage clustering choice.
 
-Projection implications:
+**Projection implications:** JSON Schema may preserve key metadata and requiredness. EF Core may map primary, alternate, natural, surrogate, or external keys by policy. Power BI may use keys for relationship endpoints by policy.
 
-```text
-JSON Schema: may become required and annotated as identity metadata.
-EF Core: primary or alternate key candidate.
-Power BI: key column and relationship endpoint candidate.
-```
-
-Example:
+**Example:**
 
 ```csharp
-[SemanticKey]
-public required CustomerId Id { get; init; }
+[SemanticKey(Kind = KeyKind.Primary, IsGenerated = true)]
+public required string Id { get; init; }
 ```
 
-Diagnostics / ambiguity notes: Key on non-entity may be diagnostic unless configured.
+**Diagnostics / ambiguity notes:** Keys on non-entity types and unsupported multiple primary keys are diagnosable.
 
 ### AlternateKey
 
-Kind: Property or key-group semantic.
+**Kind:** Property or key-group semantic.
 
-Description: A secondary unique identity for an entity.
+**Description:** A secondary unique identity for an entity.
 
-Best used when a business identifier uniquely identifies the entity in addition to the primary key.
+**Best used when:** A business identifier uniquely identifies the entity in addition to the primary key.
 
-Avoid when the property is merely indexed or frequently queried.
+**Avoid when:** The property is merely indexed, sorted, or frequently queried.
 
-Projection implications:
+**Projection implications:** JSON Schema may preserve uniqueness metadata but generally cannot enforce model-wide uniqueness. EF Core may map an alternate key by policy. Power BI may use it as relationship endpoint metadata by policy.
 
-```text
-EF Core: alternate key candidate.
-Power BI: possible relationship endpoint metadata.
-JSON Schema: uniqueness may be annotated but is not generally enforceable.
-```
-
-Example:
+**Example:**
 
 ```csharp
-[SemanticKey(Kind = SemanticKeyKind.Alternate, Name = "CustomerNumber")]
+[SemanticKey(Kind = KeyKind.Alternate, Name = "CustomerNumber")]
 public required string CustomerNumber { get; init; }
 ```
 
-Diagnostics / ambiguity notes: Alternate key without entity context may be diagnostic.
+**Diagnostics / ambiguity notes:** Alternate keys without entity context are ambiguous and may emit diagnostics.
 
 ### Relationship
 
-Kind: Property or relationship semantic.
+**Kind:** Property or relationship semantic.
 
-Description: A semantic association between model elements.
+**Description:** A semantic association between model elements.
 
-Best used when a property references another entity or collection of entities and the association matters independently of object nesting.
+**Best used when:** A property references another entity or collection of entities and the association matters independently of object nesting.
 
-Avoid when the property is just embedded value-object composition or the target/cardinality cannot be resolved.
+**Avoid when:** The property is only embedded value-object composition, or when target/cardinality cannot be resolved.
 
-Projection implications:
+**Projection implications:** JSON Schema may preserve reference metadata or object graph references. EF Core may derive relationships by explicit policy. Power BI may derive model relationships by analytical policy.
 
-```text
-JSON Schema: may become reference metadata or object graph reference.
-EF Core: explicit relationship candidate.
-Power BI: relationship candidate.
-```
-
-Example:
+**Example:**
 
 ```csharp
-[SemanticRelationship(typeof(Customer), Cardinality = SemanticCardinality.ManyToOne)]
-public required CustomerId CustomerId { get; init; }
+[SemanticRelationship("Customer", ForeignKey = "CustomerId", Cardinality = RelationshipCardinality.ManyToOne)]
+public Customer Customer { get; init; } = default!;
 ```
 
-Diagnostics / ambiguity notes: Ambiguous cardinality, missing target, or invalid target kind emit diagnostics.
+**Diagnostics / ambiguity notes:** Ambiguous cardinality, missing targets, invalid targets, and unresolved endpoints are diagnosable.
 
 ### Required
 
-Kind: Property semantic.
+**Kind:** Property semantic.
 
-Description: A property must be present for a valid model instance.
+**Description:** A property must be present for a valid model instance.
 
-Best used when the value is required by the domain contract.
+**Best used when:** Presence is required by the domain contract.
 
-Avoid when the property is required only by one projection target.
+**Avoid when:** Presence is required only by one projection target.
 
-Projection implications:
+**Projection implications:** JSON Schema may emit the property in `required`. EF Core may map a required property or relationship. Power BI may carry non-nullable metadata where representable.
 
-```text
-JSON Schema: required property.
-EF Core: required property/relationship candidate.
-Power BI: non-nullable metadata where representable.
+**Example:**
+
+```csharp
+public required string Name { get; init; }
 ```
 
-Diagnostics / ambiguity notes: Required and Nullable are distinct; required nullable means present but may be null.
+**Diagnostics / ambiguity notes:** Required and nullable are distinct. Required nullable means the member must be present but may hold null.
 
 ### Nullable
 
-Kind: Property/type semantic.
+**Kind:** Property/type semantic.
 
-Description: A value may explicitly be null.
+**Description:** A value may explicitly be null.
 
-Best used when null is a valid domain state.
+**Best used when:** Null is a valid domain state.
 
-Avoid when the property is merely optional/absent rather than explicitly nullable.
+**Avoid when:** The property is optional or absent rather than explicitly nullable.
 
-Projection implications:
+**Projection implications:** JSON Schema uses the configured nullable representation. EF Core maps optional property or relationship metadata where applicable. Power BI maps null-capable column metadata where representable.
 
-```text
-JSON Schema: nullable representation according to strategy.
-EF Core: optional property/relationship where applicable.
-Power BI: null-capable column metadata where representable.
+**Example:**
+
+```csharp
+public string? MiddleName { get; init; }
 ```
 
-Diagnostics / ambiguity notes: Nullability must not be conflated with collection cardinality or requiredness.
+**Diagnostics / ambiguity notes:** Nullability must not be conflated with requiredness or collection cardinality.
 
 ### Collection
 
-Kind: Property/type semantic.
+**Kind:** Property/type semantic.
 
-Description: A property contains multiple values.
+**Description:** A property or type contains multiple values.
 
-Best used when the domain value is a list, set, array, or collection.
+**Best used when:** The domain value is a list, set, array, or collection.
 
-Avoid when the property is serialized text that happens to contain multiple values.
+**Avoid when:** A scalar string or JSON value happens to contain multiple serialized values.
 
-Projection implications:
+**Projection implications:** JSON Schema exports an array. EF Core may map a relationship, owned collection, JSON/serialized value, or unsupported case by policy. Power BI may require relationship tables, flattening, serialization, or omission by policy.
 
-```text
-JSON Schema: array.
-EF Core: relationship or unsupported collection depending explicit metadata.
-Power BI: often relationship table or unsupported shape.
+**Example:**
+
+```csharp
+public IReadOnlyList<OrderLine> Lines { get; init; } = [];
 ```
 
-Diagnostics / ambiguity notes: Collections of entities and collections of value objects have different projection implications.
+**Diagnostics / ambiguity notes:** Collections of entities and collections of value objects have different projection implications.
 
 ### Enumeration
 
-Kind: Type semantic.
+**Kind:** Type semantic.
 
-Description: A closed set of named values.
+**Description:** A closed set of named values.
 
-Best used when allowed values are known and finite.
+**Best used when:** Allowed values are known and finite.
 
-Avoid when the set is externally managed or open-ended.
+**Avoid when:** The value set is externally managed, user-defined, or open-ended.
 
-Projection implications:
+**Projection implications:** JSON Schema exports `enum`. EF Core maps string or numeric enum storage according to policy. Power BI treats it as categorical data.
 
-```text
-JSON Schema: enum.
-EF Core: string or numeric enum storage according to policy.
-Power BI: categorical column.
+**Example:**
+
+```csharp
+public enum OrderStatus
+{
+    New,
+    Submitted,
+    Shipped,
+}
 ```
+
+**Diagnostics / ambiguity notes:** Duplicate enum names or duplicate payloads are diagnosable.
 
 ### Scalar
 
-Kind: Type semantic.
+**Kind:** Type semantic.
 
-Description: A primitive or scalar-like value.
+**Description:** A primitive or scalar-like value.
 
-Best used when the value has no properties relevant to semantic model traversal.
+**Best used when:** The value has no properties relevant to semantic model traversal.
 
-Avoid when the type is a value object with meaningful internal structure.
+**Avoid when:** The type is a value object with meaningful internal structure.
 
-Projection implications:
+**Projection implications:** JSON Schema exports a scalar type and format when available. EF Core maps a scalar property or converted value. Power BI maps a column data type.
 
-```text
-JSON Schema: scalar type.
-EF Core: scalar property or converted value.
-Power BI: column data type.
+**Example:**
+
+```csharp
+public string Email { get; init; } = string.Empty;
 ```
 
-Diagnostics / ambiguity notes: Custom scalar-like domain types may require explicit format/conversion metadata.
+**Diagnostics / ambiguity notes:** Custom scalar-like domain types may require explicit format or conversion metadata.
 
 ### Identifier
 
-Kind: Property/type semantic.
+**Kind:** Property/type semantic.
 
-Description: A value identifies something but is not necessarily the primary key of the current entity.
+**Description:** A value identifies something but is not necessarily the primary key of the current entity.
 
-Best used for external IDs, correlation IDs, tenant IDs, or reference IDs.
+**Best used when:** Modeling external IDs, correlation IDs, tenant IDs, or reference IDs.
 
-Avoid when the value is the entity key; use Key instead.
+**Avoid when:** The value is the entity key; use `Key` instead.
 
-Projection implications:
+**Projection implications:** JSON Schema may preserve identifier annotation or format metadata. EF Core treats it as an ordinary property unless key/relationship metadata is also present. Power BI may use it as category or key-like column metadata by policy.
 
-```text
-JSON Schema: identifier annotation/format.
-EF Core: ordinary property unless also key/foreign key.
-Power BI: category or key-like column depending projection options.
+**Example:**
+
+```csharp
+public string CorrelationId { get; init; } = string.Empty;
 ```
 
-Diagnostics / ambiguity notes: Identifier does not imply uniqueness unless key semantics are present.
+**Diagnostics / ambiguity notes:** Identifier does not imply uniqueness unless key semantics are present.
 
 ### DisplayName
 
-Kind: Type/property metadata semantic.
+**Kind:** Type/property metadata semantic.
 
-Description: User-facing label.
+**Description:** A stable user-facing label.
 
-Best used when a stable human-readable label should be shown by UI, documentation, or analytical tools.
+**Best used when:** A human-readable label should be shown by UI, documentation, or analytical tools across targets.
 
-Avoid when serialized or database names need to change for one target only.
+**Avoid when:** Only a serialized name, database column name, or report-specific caption must change.
 
-Projection implications:
+**Projection implications:** JSON Schema may map it to `title`. EF Core does not rename tables or columns unless target policy chooses display names. Power BI may use it as table or column display metadata by policy.
 
-```text
-JSON Schema: title when configured.
-EF Core: no default table/column rename unless option chooses display names.
-Power BI: table/column display name candidate.
+**Example:**
+
+```csharp
+[SemanticName("Customer name")]
+public string Name { get; init; } = string.Empty;
 ```
 
-Diagnostics / ambiguity notes: DisplayName should not replace canonical identifiers.
+**Diagnostics / ambiguity notes:** Display names should not replace canonical identifiers. Conflicting display annotations are diagnosable during extraction.
 
 ### Description
 
-Kind: Type/property metadata semantic.
+**Kind:** Type/property metadata semantic.
 
-Description: Human-readable explanatory text.
+**Description:** Human-readable explanatory text.
 
-Best used when consumers need documentation or tooltips.
+**Best used when:** Consumers need stable documentation or tooltips.
 
-Avoid when the text encodes behavior or validation rules that should be modeled explicitly.
+**Avoid when:** The text encodes behavior or validation rules that should be modeled explicitly.
 
-Projection implications:
+**Projection implications:** JSON Schema may map it to `description`. Power BI may use description metadata where supported. EF Core ignores it unless target-specific comments are configured.
 
-```text
-JSON Schema: description.
-Power BI: description metadata where supported.
-EF Core: ignored unless target-specific comments are configured.
+**Example:**
+
+```csharp
+[SemanticDescription("The customer-facing display name.")]
+public string Name { get; init; } = string.Empty;
 ```
+
+**Diagnostics / ambiguity notes:** Conflicting description sources are diagnosable during extraction.
 
 ### Category
 
-Kind: Metadata semantic.
+**Kind:** Metadata semantic.
 
-Description: Stable grouping/category metadata.
+**Description:** Stable grouping/category metadata.
 
-Best used when properties or types should be grouped in a projection-neutral way.
+**Best used when:** Properties or types should be grouped in a projection-neutral way.
 
-Avoid when the grouping is target-specific, such as a Power BI display folder.
+**Avoid when:** The grouping is target-specific, such as a Power BI display folder.
 
-Projection implications:
+**Projection implications:** JSON Schema/UI projections may preserve grouping metadata. Power BI may use it for display folders only when configured. EF Core normally ignores it.
 
-```text
-JSON Schema/UI: may become grouping metadata.
-Power BI: may inform display folder only when configured.
-EF Core: normally ignored.
+**Example:**
+
+```csharp
+[SemanticCategory("Contact")]
+public string Email { get; init; } = string.Empty;
 ```
+
+**Diagnostics / ambiguity notes:** Category is presentation metadata and should not imply type role or ownership.
 
 ### Order
 
-Kind: Metadata semantic.
+**Kind:** Metadata semantic.
 
-Description: Deterministic presentation/order hint.
+**Description:** Deterministic presentation/order hint.
 
-Best used when a stable order should be preserved across generated outputs.
+**Best used when:** A stable order should be preserved across generated documentation, schemas, or simple UI surfaces.
 
-Avoid when the ordering is target-specific and should not affect other outputs.
+**Avoid when:** The order is target-specific, such as database column order or a single report visual order.
 
-Projection implications:
+**Projection implications:** JSON Schema/UI projections may preserve order metadata. Power BI may map it to display order by policy. EF Core normally ignores it.
 
-```text
-JSON Schema: property order metadata or deterministic ordering.
-Power BI: column order where supported.
-EF Core: generally ignored.
+**Example:**
+
+```csharp
+[SemanticOrder(10)]
+public string Name { get; init; } = string.Empty;
 ```
 
-Diagnostics / ambiguity notes: Duplicate order values must be resolved deterministically.
+**Diagnostics / ambiguity notes:** Order must be deterministic and should not change model identity.
 
 ### Format
 
-Kind: Scalar metadata semantic.
+**Kind:** Scalar metadata semantic.
 
-Description: Projection-neutral scalar format hint.
+**Description:** Projection-neutral scalar format such as email, URI, date, time, date-time, duration, or UUID.
 
-Best used when the format is a domain-level scalar meaning, such as email, URI, date, currency, percentage, or duration.
+**Best used when:** The format has cross-target meaning.
 
-Avoid when the format string is target-specific.
+**Avoid when:** The format is JSON Schema-specific or serializer-specific only.
 
-Projection implications:
+**Projection implications:** JSON Schema maps compatible formats. EF Core may use conversions by target policy. Power BI may map supported data categories or formatting by policy.
 
-```text
-JSON Schema: format where supported.
-Power BI: data category or format candidate when configured.
-EF Core: normally ignored unless conversion policy uses it.
+**Example:**
+
+```csharp
+[SemanticFormat(SemanticScalarFormat.Email)]
+public string Email { get; init; } = string.Empty;
 ```
 
-Diagnostics / ambiguity notes: Invalid format for the target type emits diagnostics.
+**Diagnostics / ambiguity notes:** Invalid format arguments or incompatible member types are diagnosable during extraction.
 
 ### Constraint
 
-Kind: Validation semantic.
+**Kind:** Constraint semantic.
 
-Description: Projection-neutral restriction on valid values.
+**Description:** Projection-neutral validation bounds or predicates on scalar, collection, or object values.
 
-Best used when the domain contract restricts length, range, pattern, cardinality, or allowed values.
+**Best used when:** The constraint is part of the domain contract.
 
-Avoid when the constraint exists only in one storage or UI target.
+**Avoid when:** The constraint is only a UI validation hint or target-specific database constraint.
 
-Projection implications:
+**Projection implications:** JSON Schema maps compatible constraints. EF Core may map length/precision/nullability where policy supports it. Power BI may ignore constraints or preserve metadata.
 
-```text
-JSON Schema: validation keywords.
-EF Core: max length, precision, or limited metadata where supported.
-Power BI: may be ignored or documented.
+**Example:**
+
+```csharp
+[SemanticStringConstraints(MinLength = 1, MaxLength = 200)]
+public string Name { get; init; } = string.Empty;
 ```
+
+**Diagnostics / ambiguity notes:** Invalid constraint ranges and constraints on incompatible member types are diagnosable.
 
 ### Computed
 
-Kind: Member semantic.
+**Kind:** Member semantic.
 
-Description: A value derived from an expression or other model state.
+**Description:** A member whose value is derived from an expression rather than directly supplied state.
 
-Best used when the value is not directly stored as normal domain state and the expression is projection-neutral or explicitly carries a language.
+**Best used when:** Computation is part of the semantic model and can be described projection-neutrally.
 
-Avoid when the expression is target-specific DAX, SQL, or JSONPath; use target-specific metadata unless a core expression model is explicitly supported.
+**Avoid when:** The computation is only DAX, SQL, JSON Schema, or application code specific.
 
-Projection implications:
+**Projection implications:** JSON Schema may preserve read-only or annotation metadata. EF Core calculated columns are not implied. Power BI DAX measures are target-specific and must use Power BI metadata.
 
-```text
-Power BI: explicit DAX measures are target-specific, not generic Computed by default.
-EF Core: calculated columns are not implied by core Computed.
-JSON Schema: usually annotation only.
+**Example:**
+
+```csharp
+[SemanticAnnotation("schema.computed", "true")]
+public decimal Total { get; init; }
 ```
 
-Diagnostics / ambiguity notes: Computed does not imply a target can execute the expression.
-
-### Ignored
-
-Kind: Type/property semantic.
-
-Description: Exclude an element from semantic extraction or downstream consideration.
-
-Best used when a member should not appear in the semantic model.
-
-Avoid when the member should be present in the canonical model but ignored only by one projection.
-
-Projection implications:
-
-```text
-All targets: element absent or marked ignored depending extraction policy.
-Target-specific ignore should use target-specific metadata instead.
-```
+**Diagnostics / ambiguity notes:** Computed does not imply any target can execute the expression.
 
 ## Envelope Semantics
 
 ### Envelope
 
-Kind: Type semantic.
+**Kind:** Type semantic.
 
-Description: A type whose primary role is to carry, manage, version, transport, persist, authorize, audit, or otherwise contextualize another semantic payload.
+**Description:** A wrapper boundary that carries, manages, versions, transports, persists, audits, authorizes, caches, or otherwise contextualizes another semantic payload.
 
-Best used when:
+**Best used when:** The wrapper has lifecycle, transport, audit, management, persistence, versioning, authorization, or context meaning independent of the payload.
 
-```text
-A wrapper has one distinguished payload.
-The wrapper has metadata about lifecycle, transport, management, auditing, status, revision, authorization, or persistence context.
-The wrapper may become the projection root for one target while the payload remains the semantic domain value.
-```
+**Avoid when:** The wrapper exists only because one serializer, database, message bus, report, or endpoint requires a shape.
 
-Avoid when:
+**Projection implications:** JSON Schema can export the envelope as root wrapper object, or export the payload as root schema and keep the envelope as context by target policy. EF Core can map the envelope as a persistence/cache entity with metadata columns while mapping the payload as owned, JSON/serialized, converted, ignored, or separately mapped by explicit policy. Power BI can expose envelope metadata as reporting columns and ignore, flatten, reference, or serialize payload by analytical policy.
 
-```text
-The type is normal composition with several equally important properties.
-The wrapper has no distinguished payload.
-The type is merely an entity with related children.
-```
-
-Projection implications:
-
-```text
-JSON Schema: envelope root exports wrapper object; payload root exports only payload schema; payload can be referenced, inlined, or serialized according to projection policy.
-EF Core: envelope can become persistence/cache entity; metadata maps as columns; payload may be owned, serialized, converted, ignored, or separately mapped by explicit policy.
-Power BI: envelope metadata may become reporting columns; payload may be ignored, flattened, or serialized by analytical policy.
-```
-
-Example:
+**Example:**
 
 ```csharp
-[SemanticEnvelope(Purpose = SemanticEnvelopePurpose.Management)]
-public sealed class ManagedSpecificationEnvelope<TSpecification>
+[SemanticEnvelope("management")]
+public sealed class ManagedEnvelope<TPayload>
 {
     [SemanticEnvelopePayload]
-    public required TSpecification Specification { get; init; }
+    public required TPayload Payload { get; init; }
 
     [SemanticEnvelopeMetadata]
     public required long Revision { get; init; }
 
     [SemanticEnvelopeMetadata]
     public required string ModifiedBy { get; init; }
-
-    [SemanticEnvelopeMetadata]
-    public required DateTimeOffset ModifiedAt { get; init; }
 }
 ```
 
-Diagnostics / ambiguity notes:
-
-```text
-Envelope without payload is diagnostic by default.
-Envelope with multiple payloads is diagnostic unless explicit policy allows it.
-Envelope does not erase payload semantics.
-Projection root ambiguity must emit diagnostics.
-```
+**Diagnostics / ambiguity notes:** Envelope without payload, envelope with multiple payloads, unrepresented payload type, ambiguous projection-root selection, and unsupported target payload representation are diagnosable. Envelope semantics do not erase payload semantics.
 
 ### EnvelopePayload
 
-Kind: Property semantic.
+**Kind:** Property semantic.
 
-Description: The distinguished property inside an envelope that carries the semantic value being transported, managed, persisted, cached, or contextualized.
+**Description:** The distinguished member inside an envelope that carries the wrapped semantic payload.
 
-Best used when one property is the real business/domain/configuration payload and the surrounding type carries metadata about that payload.
+**Best used when:** Exactly one member is the wrapped domain payload.
 
-Avoid when several properties are equally important and no single payload exists.
+**Avoid when:** The member is metadata about transport, auditing, tenancy, versioning, management, persistence, or cache context.
 
-Projection implications:
+**Projection implications:** JSON Schema, EF Core, and Power BI can embed, reference, serialize, flatten, ignore, or treat the payload as opaque by explicit target policy.
 
-```text
-JSON Schema: payload property can be object, $ref, inline, or serialized according to envelope policy.
-EF Core: payload property can be owned, JSON/serialized, converted, ignored, or separately mapped according to EF policy.
-Power BI: payload may be flattened, ignored, or serialized according to analytical policy.
+**Example:**
+
+```csharp
+[SemanticEnvelopePayload]
+public required OrderSubmitted Payload { get; init; }
 ```
 
-Diagnostics / ambiguity notes:
-
-```text
-Payload marker outside an envelope is diagnostic unless a transform promotes the containing type to Envelope.
-Payload property must resolve to a modeled type unless explicit opaque/serialized policy is configured.
-```
+**Diagnostics / ambiguity notes:** Payload markers outside an envelope, duplicate payloads, and payload type references absent from the canonical model are diagnosable.
 
 ### EnvelopeMetadata
 
-Kind: Property semantic.
+**Kind:** Property semantic.
 
-Description: A property on an envelope that describes the envelope lifecycle/context rather than the payload domain state.
+**Description:** A member that describes envelope lifecycle or context rather than payload domain state.
 
-Best used when the property describes revision, audit, transport status, error state, management state, tenant/correlation context, or authorization context.
+**Best used when:** The member describes transport, correlation, version, tenant, audit, authorization, cache, management, or persistence context of the envelope.
 
-Avoid when the property belongs to the payload's own domain state.
+**Avoid when:** The member belongs to the payload domain state.
 
-Projection implications:
+**Projection implications:** JSON Schema includes metadata when the envelope is root. EF Core may map metadata as columns by policy. Power BI may expose metadata as report columns by policy.
 
-```text
-JSON Schema: ordinary metadata property on envelope root.
-EF Core: column on envelope entity/cache record when envelope is root.
-Power BI: reporting column if envelope metadata is analytically relevant.
+**Example:**
+
+```csharp
+[SemanticEnvelopeMetadata]
+public DateTimeOffset ReceivedAt { get; init; }
 ```
 
-Diagnostics / ambiguity notes: Metadata marker outside an envelope is diagnostic unless explicitly allowed.
+**Diagnostics / ambiguity notes:** Metadata markers outside an envelope are diagnosable. Metadata must not be interpreted as payload state.
+
+## Envelope Invariants
+
+- An envelope is a wrapper boundary.
+- An envelope normally has exactly one payload.
+- Envelope metadata describes envelope lifecycle or context, not payload domain state.
+- Envelope semantics do not erase payload semantics.
+- Projection policy decides whether the envelope or payload is the projection root for a target.
+- Unsupported or ambiguous projection-root choices must emit diagnostics.
 
 ## Envelope Projection Policy Concepts
 
-Envelope semantics introduce projection root choice.
+| Concept | Meaning |
+|---|---|
+| envelope-as-root | The wrapper object is the target projection root. |
+| payload-as-root | The wrapped payload is the target projection root. |
+| payload embedded | The payload appears inline in the envelope projection. |
+| payload reference | The payload is represented by a reference to a separately projected artifact. |
+| payload serialized | The payload is represented as serialized data. |
+| payload opaque | The target projection intentionally does not interpret the payload. |
 
-Allowed policy concepts:
+Domain packages may expose target-specific options for these choices, but those options do not change the core meaning of `Envelope`, `EnvelopePayload`, or `EnvelopeMetadata`.
 
-```text
-EnvelopeAsRoot
-PayloadAsRoot
-PayloadEmbedded
-PayloadReference
-PayloadSerialized
-PayloadOpaque
-```
+## Diagnostic Requirements
 
-Rules:
+Core semantic vocabulary diagnostics must be queryable by code, stage, path, and projection target when applicable.
 
-- Envelope semantics do not erase payload semantics.
-- Projection configuration decides whether envelope or payload is root for a target.
-- Domain packages may expose target-specific options for payload representation.
-- Ambiguous root selection emits diagnostics.
-- Payload serialization is a representation policy, not a change to the payload's core semantics.
+Required envelope diagnostic classes include:
 
-## Envelope Use Cases
-
-### Operation Result Envelope
-
-```csharp
-[SemanticEnvelope(Purpose = SemanticEnvelopePurpose.OperationResult)]
-public sealed class OperationResultEnvelope<T>
-{
-    [SemanticEnvelopePayload]
-    public T? Data { get; init; }
-
-    [SemanticEnvelopeMetadata]
-    public bool Failed { get; init; }
-
-    [SemanticEnvelopeMetadata]
-    public string? ErrorCode { get; init; }
-
-    [SemanticEnvelopeMetadata]
-    public string? CorrelationId { get; init; }
-}
-```
-
-Use when the result wrapper carries status/error/correlation metadata around a payload.
-
-### Managed Specification Envelope
-
-```csharp
-[SemanticEnvelope(Purpose = SemanticEnvelopePurpose.Management)]
-public sealed class ManagedSpecificationEnvelope<TSpecification>
-{
-    [SemanticEnvelopePayload]
-    public required TSpecification Specification { get; init; }
-
-    [SemanticEnvelopeMetadata]
-    public required long Revision { get; init; }
-
-    [SemanticEnvelopeMetadata]
-    public required string ModifiedBy { get; init; }
-
-    [SemanticEnvelopeMetadata]
-    public required DateTimeOffset ModifiedAt { get; init; }
-}
-```
-
-Use when a subsystem specification/configuration is the payload, while the envelope is the management, cache, persistence, audit, or revision boundary.
-
-## Canonical Envelope Annotation Keys
-
-The final representation may use dedicated primitives or annotations. If annotations are used, these keys are reserved:
-
-```text
-schema.envelope
-schema.envelope.purpose
-schema.envelope.payload
-schema.envelope.metadata
-schema.envelope.payloadRepresentation
-```
-
-Required values are deterministic and projection-neutral.
-
-`schema.envelope.payloadRepresentation` may express broad representation intent such as:
-
-```text
-Embedded
-Reference
-Serialized
-Opaque
-```
-
-Target-specific storage details remain target-specific metadata.
-
-## Diagnostics
-
-Required diagnostic classes include:
-
-```text
-envelope has no payload
-envelope has multiple payloads without explicit policy
-payload marker outside envelope
-metadata marker outside envelope
-payload type not modeled
-payload representation unsupported
-envelope and payload both selected as projection root without explicit policy
-envelope metadata conflicts with payload semantics
-target cannot represent selected envelope policy
-```
-
-Diagnostics must include model path and related model paths where available.
-
-## Inspection
-
-Inspection output must show:
-
-```text
-Envelope type
-Envelope purpose when present
-Envelope payload property
-Envelope metadata properties
-Envelope projection policy when selected
-Diagnostics related to envelope semantics
-```
-
-Inspection output must be deterministic and suitable for snapshot tests.
+- envelope with no payload;
+- envelope with multiple payloads without explicit policy;
+- payload marker outside envelope;
+- envelope metadata marker outside envelope;
+- envelope payload not represented in canonical model;
+- envelope and payload both selected as projection root without explicit policy;
+- unsupported payload representation for a target.

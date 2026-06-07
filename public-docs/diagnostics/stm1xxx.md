@@ -46,6 +46,66 @@ Model paths in these diagnostics follow the form `/types/{TypeId}/...` as define
 
 ---
 
+## STM1008 — Envelope payload missing
+
+**Severity:** Warning
+
+**Cause:** An object type marked with `schema.envelope=true` does not declare a `schema.envelope.payload=true` member.
+
+**Fix:** Mark exactly one payload member with `[SemanticEnvelopePayload]` or remove the envelope marker.
+
+---
+
+## STM1009 — Envelope payload duplicate
+
+**Severity:** Warning
+
+**Cause:** An envelope declares multiple payload members without an explicit policy that allows more than one payload.
+
+**Fix:** Keep one payload member, or introduce explicit target policy outside the core semantic annotations.
+
+---
+
+## STM1010 — Envelope payload outside envelope
+
+**Severity:** Warning
+
+**Cause:** A member is marked as an envelope payload but the containing object is not marked as an envelope.
+
+**Fix:** Add `[SemanticEnvelope]` to the containing type or remove `[SemanticEnvelopePayload]` from the member.
+
+---
+
+## STM1011 — Envelope metadata outside envelope
+
+**Severity:** Warning
+
+**Cause:** A member is marked as envelope metadata but the containing object is not marked as an envelope.
+
+**Fix:** Add `[SemanticEnvelope]` to the containing type or remove `[SemanticEnvelopeMetadata]` from the member.
+
+---
+
+## STM1012 — Envelope payload type missing
+
+**Severity:** Warning
+
+**Cause:** An envelope payload member references a type that is not represented in the canonical model.
+
+**Fix:** Include the payload type in extraction or update the payload member type reference.
+
+---
+
+## STM1013 — Envelope projection root ambiguous
+
+**Severity:** Warning
+
+**Cause:** An envelope selects both the envelope and the payload as projection roots without an explicit target policy.
+
+**Fix:** Choose one root for the target projection policy or remove the conflicting root annotations.
+
+---
+
 ## Related
 
 - [diagnostics.md](../diagnostics.md)

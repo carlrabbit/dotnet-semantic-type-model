@@ -120,3 +120,17 @@ The required examples are represented at contract level in short-running tests:
 - EF-style entity model;
 - Power BI semantic model candidate;
 - JSON Schema composition (`$defs`, `$ref`, `oneOf`, `allOf`, annotation-preserved keywords).
+
+## Envelope Core Semantics
+
+Envelope semantics are represented by canonical annotations defined in `docs/specs/core-semantic-vocabulary.md`.
+
+Invariants:
+
+- an envelope is a wrapper boundary;
+- an envelope normally has exactly one payload;
+- envelope metadata describes envelope lifecycle or context, not payload domain state;
+- envelope semantics do not erase payload semantics;
+- projection policy decides whether the envelope or payload is the projection root for a target.
+
+Core validation emits transformation diagnostics for missing payloads, duplicate payloads, payload markers outside envelope types, metadata markers outside envelope types, missing payload type representation, and ambiguous projection-root declarations.

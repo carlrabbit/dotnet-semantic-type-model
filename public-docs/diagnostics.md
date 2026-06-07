@@ -62,6 +62,12 @@ Full reference: [diagnostics/stm0xxx.md](diagnostics/stm0xxx.md)
 | STM1005 | Warning  | Semantic role alias conflict   |
 | STM1006 | Warning  | Semantic key on non-entity     |
 | STM1007 | Warning  | Multiple primary semantic keys |
+| STM1008 | Warning  | Envelope payload missing       |
+| STM1009 | Warning  | Envelope payload duplicate     |
+| STM1010 | Warning  | Envelope payload outside envelope |
+| STM1011 | Warning  | Envelope metadata outside envelope |
+| STM1012 | Warning  | Envelope payload type missing  |
+| STM1013 | Warning  | Envelope projection root ambiguous |
 
 Full reference: [diagnostics/stm1xxx.md](diagnostics/stm1xxx.md)
 

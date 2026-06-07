@@ -1,6 +1,7 @@
 using System.Globalization;
 using SemanticTypeModel.Abstractions.Hardening;
 using SemanticTypeModel.Core.Diagnostics;
+using SemanticTypeModel.Core.Semantics;
 
 namespace SemanticTypeModel.Core.Transformation;
 
@@ -345,5 +346,118 @@ public sealed class NormalizeDisplayMetadataTransformation : ISemanticModelTrans
             DisplayName = string.IsNullOrWhiteSpace(property.DisplayName) ? title : property.DisplayName,
             Description = string.IsNullOrWhiteSpace(property.Description) ? description : property.Description,
         };
+    }
+}
+
+/// <summary>
+/// Validates projection-neutral envelope semantics declared through canonical annotations.
+/// </summary>
+public sealed class ValidateEnvelopeSemanticsTransformation : ISemanticModelTransformation
+{
+    private const string EnvelopeKey = CoreSemanticAnnotationKeys.Envelope;
+    private const string EnvelopePayloadKey = CoreSemanticAnnotationKeys.EnvelopePayload;
+    private const string EnvelopeMetadataKey = CoreSemanticAnnotationKeys.EnvelopeMetadata;
+    private const string EnvelopeRootKey = "schema.envelope.projectionRoot.envelope";
+    private const string PayloadRootKey = "schema.envelope.projectionRoot.payload";
+
+    /// <inheritdoc />
+    public string Id => "core.validate-envelope-semantics";
+
+    /// <inheritdoc />
+    public string DisplayName => nameof(ValidateEnvelopeSemanticsTransformation);
+
+    /// <inheritdoc />
+    public SemanticModelTransformationStepResult Transform(TypeSchemaModel model, SemanticModelTransformationContext context)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(context);
+        context.CancellationToken.ThrowIfCancellationRequested();
+
+        foreach (TypeDefinition type in model.Types)
+        {
+            if (type is not ObjectTypeDefinition objectType)
+            {
+                continue;
+            }
+
+            var isEnvelope = NormalizeSemanticAliasesTransformation.GetBooleanAnnotation(objectType.Annotations, EnvelopeKey);
+            PropertyDefinition[] payloads = [.. objectType.Properties.Where(static property => NormalizeSemanticAliasesTransformation.GetBooleanAnnotation(property.Annotations, EnvelopePayloadKey))];
+            PropertyDefinition[] metadata = [.. objectType.Properties.Where(static property => NormalizeSemanticAliasesTransformation.GetBooleanAnnotation(property.Annotations, EnvelopeMetadataKey))];
+
+            if (!isEnvelope)
+            {
+                ReportMarkersOutsideEnvelope(context, objectType, payloads, StmDiagnosticIds.EnvelopePayloadOutsideEnvelope, "Envelope payload marker appears outside envelope type");
+                ReportMarkersOutsideEnvelope(context, objectType, metadata, StmDiagnosticIds.EnvelopeMetadataOutsideEnvelope, "Envelope metadata marker appears outside envelope type");
+                continue;
+            }
+
+            if (payloads.Length == 0)
+            {
+                context.Diagnostics.Report(NormalizeSemanticAliasesTransformation.Diagnostic(
+                    StmDiagnosticIds.EnvelopePayloadMissing,
+                    SchemaDiagnosticSeverity.Warning,
+                    $"Envelope type '{objectType.Name}' does not declare a payload member.",
+                    ModelPath.ForType(objectType.Id),
+                    context.TransformationId));
+            }
+            else if (payloads.Length > 1)
+            {
+                context.Diagnostics.Report(NormalizeSemanticAliasesTransformation.Diagnostic(
+                    StmDiagnosticIds.EnvelopePayloadDuplicate,
+                    SchemaDiagnosticSeverity.Warning,
+                    $"Envelope type '{objectType.Name}' declares multiple payload members without an explicit policy.",
+                    ModelPath.ForType(objectType.Id),
+                    context.TransformationId,
+                    [.. payloads.Select(payload => ModelPath.ForProperty(objectType.Id, payload.Id.Value))]));
+            }
+
+            foreach (PropertyDefinition payload in payloads)
+            {
+                if (!model.TypesById.ContainsKey(payload.Type.Id))
+                {
+                    context.Diagnostics.Report(NormalizeSemanticAliasesTransformation.Diagnostic(
+                        StmDiagnosticIds.EnvelopePayloadTypeMissing,
+                        SchemaDiagnosticSeverity.Warning,
+                        $"Envelope payload member '{payload.Name}' references type '{payload.Type.Id.Value}' which is not represented in the model.",
+                        ModelPath.ForProperty(objectType.Id, payload.Id.Value),
+                        context.TransformationId));
+                }
+            }
+
+            if (NormalizeSemanticAliasesTransformation.GetBooleanAnnotation(objectType.Annotations, EnvelopeRootKey)
+                && NormalizeSemanticAliasesTransformation.GetBooleanAnnotation(objectType.Annotations, PayloadRootKey))
+            {
+                context.Diagnostics.Report(NormalizeSemanticAliasesTransformation.Diagnostic(
+                    StmDiagnosticIds.EnvelopeProjectionRootAmbiguous,
+                    SchemaDiagnosticSeverity.Warning,
+                    $"Envelope type '{objectType.Name}' selects both envelope and payload as projection roots without an explicit target policy.",
+                    ModelPath.ForType(objectType.Id),
+                    context.TransformationId));
+            }
+        }
+
+        return new SemanticModelTransformationStepResult
+        {
+            Model = model,
+            ChangeSummary = [],
+        };
+    }
+
+    private static void ReportMarkersOutsideEnvelope(
+        SemanticModelTransformationContext context,
+        ObjectTypeDefinition objectType,
+        IReadOnlyList<PropertyDefinition> properties,
+        string code,
+        string messagePrefix)
+    {
+        foreach (PropertyDefinition property in properties)
+        {
+            context.Diagnostics.Report(NormalizeSemanticAliasesTransformation.Diagnostic(
+                code,
+                SchemaDiagnosticSeverity.Warning,
+                $"{messagePrefix} '{objectType.Name}.{property.Name}'.",
+                ModelPath.ForProperty(objectType.Id, property.Id.Value),
+                context.TransformationId));
+        }
     }
 }
