@@ -10,7 +10,7 @@ Semantic attributes are the primary code-first declaration mechanism for canonic
 
 The built-in vocabulary may be extended by custom attributes that declare one of these roles:
 
-- core alias attribute: maps directly to a core primitive such as entity, value object, key, relationship, display name, description, format, constraint, or category;
+- core alias attribute: maps directly to a core primitive such as entity, value object, key, relationship, envelope, display name, description, format, constraint, or category;
 - core extension attribute: carries projection-neutral metadata that a transformation normalizes into canonical annotations or primitives;
 - domain attribute: carries domain-specific metadata for a domain semantic model such as JSON Schema, EF Core, Power BI, or System.Text.Json.
 
@@ -90,6 +90,35 @@ Custom attributes do not mutate the canonical model directly. Extraction preserv
   - constructor accepts optional principal type metadata name string;
   - `PrincipalKey`, `ForeignKey`, and `Cardinality` map to relationship annotations.
 
+### `SemanticEnvelopeAttribute`
+
+- Targets: class, struct, record class, record struct.
+- Semantics:
+  - marks a type as an envelope core semantic;
+  - maps to `schema.envelope=true`;
+  - optional projection-neutral `Purpose` maps to `schema.envelope.purpose`;
+  - does not erase the semantics of the payload type;
+  - invalid usage is diagnosable.
+
+### `SemanticEnvelopePayloadAttribute`
+
+- Targets: property, field.
+- Semantics:
+  - marks the distinguished payload property inside an envelope;
+  - maps to `schema.envelope.payload=true`;
+  - payload semantics remain attached to the payload type;
+  - a payload marker outside an envelope is diagnosable unless a transformation explicitly promotes the containing type to an envelope;
+  - multiple payloads are diagnosable unless explicit policy allows them.
+
+### `SemanticEnvelopeMetadataAttribute`
+
+- Targets: property, field.
+- Semantics:
+  - marks a property as envelope lifecycle/context metadata;
+  - maps to `schema.envelope.metadata=true`;
+  - optional `Kind` or `Purpose` may map to projection-neutral metadata when supported;
+  - metadata marker outside an envelope is diagnosable unless explicitly allowed.
+
 ### `SemanticFormatAttribute`
 
 - Targets: property, field.
@@ -132,6 +161,23 @@ Custom attributes do not mutate the canonical model directly. Extraction preserv
   - preserves custom namespaced annotations;
   - invalid keys and conflicting duplicate values are diagnosable.
 
+## Envelope Attribute Example
+
+```csharp
+[SemanticEnvelope(Purpose = SemanticEnvelopePurpose.Management)]
+public sealed class ManagedSpecificationEnvelope<TSpecification>
+{
+    [SemanticEnvelopePayload]
+    public required TSpecification Specification { get; init; }
+
+    [SemanticEnvelopeMetadata]
+    public required long Revision { get; init; }
+
+    [SemanticEnvelopeMetadata]
+    public required string ModifiedBy { get; init; }
+}
+```
+
 ## Precedence Rules
 
 1. Explicit semantic attributes.
@@ -146,6 +192,9 @@ Concrete precedence examples:
 - `[SemanticIgnore]` overrides convention discovery inclusion.
 - `[SemanticKey]` overrides key inference.
 - `[SemanticRelationship]` overrides relationship inference.
+- `[SemanticEnvelope]` declares envelope semantics explicitly.
+- `[SemanticEnvelopePayload]` declares the distinguished payload explicitly.
+- `[SemanticEnvelopeMetadata]` declares envelope metadata explicitly.
 
 ## Diagnostics
 
@@ -161,5 +210,6 @@ Extraction/generator diagnostics in `STM5xxx` include:
 - `STM5023` invalid numeric constraint range;
 - `STM5024` invalid collection constraint range;
 - `STM5025` invalid scalar format usage.
+- envelope-specific diagnostics for invalid envelope target usage, missing payload, duplicate payloads, misplaced payload markers, and misplaced metadata markers must be assigned stable IDs before implementation.
 
 Diagnostics are contractually stable by code; message text is non-authoritative.

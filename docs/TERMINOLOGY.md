@@ -74,7 +74,19 @@ Annotated .NET code used as the supported authoring source for a canonical seman
 A persisted representation of a code-generated semantic type model that can be loaded without access to the original codebase.
 
 ### Semantic Primitive
-A canonical semantic concept such as entity, value object, key, relationship, requiredness, nullability, format, constraint, or annotation.
+A canonical semantic concept such as entity, value object, key, relationship, requiredness, nullability, format, constraint, envelope, or annotation.
+
+### Core Semantic Vocabulary
+The authoritative set of projection-neutral semantic primitives and usage rules available to code-first authors.
+
+### Envelope
+A wrapper type whose primary semantic role is to carry, manage, version, transport, persist, authorize, audit, or otherwise contextualize a distinguished payload.
+
+### Envelope Payload
+The distinguished property inside an envelope that carries the semantic value being transported, managed, persisted, cached, or contextualized.
+
+### Envelope Metadata
+A property on an envelope that describes the envelope lifecycle, context, transport, audit, revision, status, or management state rather than the payload domain state.
 
 ### Domain Semantic Model
 A package-owned semantic model derived from the canonical semantic type model for a specific domain such as JSON Schema, EF Core, Power BI, or System.Text.Json.
