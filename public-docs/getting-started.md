@@ -2,7 +2,7 @@
 
 ## Goal
 
-Build your first semantic model flow from JSON Schema import to JSON Schema export.
+Build your first code-first SemanticTypeModel flow from annotated .NET code to a derived domain model.
 
 ## Prerequisites
 
@@ -10,13 +10,25 @@ Build your first semantic model flow from JSON Schema import to JSON Schema expo
 
 ## First Flow
 
-1. Import Draft 2020-12 JSON Schema with `JsonSchemaImporter`.
-2. Work with the canonical `TypeSchemaModel` result.
-3. Export JSON Schema with `JsonSchemaExporter`.
+1. Annotate .NET types with core semantics such as entity, key, display name, constraints, or envelope metadata.
+2. Let the packaged generator produce a canonical semantic model provider.
+3. Inspect the canonical model and diagnostics.
+4. Derive a target domain model such as JSON Schema, EF Core, or Power BI.
+5. Inspect target diagnostics before using the generated output.
 
-See runnable sample: `samples/json-schema-roundtrip` and [public-docs/samples/json-schema-roundtrip.md](samples/json-schema-roundtrip.md).
+Start with the code-first JSON Schema sample:
 
-For a code-first JSON Schema flow, run `samples/code-first-json-schema` and see [public-docs/samples/code-first-json-schema.md](samples/code-first-json-schema.md).
+```text
+samples/code-first-json-schema
+public-docs/samples/code-first-json-schema.md
+```
+
+Then try the target-specific samples:
+
+```text
+samples/code-first-ef-core
+samples/code-first-powerbi
+```
 
 Prepare local packages before running the package-based sample set:
 
@@ -25,4 +37,12 @@ Prepare local packages before running the package-based sample set:
 ./eng/samples.sh
 ```
 
-> `1.0.0` is the first stable release. Documented public APIs follow the compatibility policy. `1.1.0` corrects the System.Text.Json contract and sample validation model.
+## Core Semantics
+
+Core semantics are projection-neutral. Use them for domain meaning that should be available to all targets. Use target-specific metadata only for representation choices that belong to JSON Schema, EF Core, Power BI, System.Text.Json, or another target.
+
+See [guides/core-semantics.md](guides/core-semantics.md).
+
+## Release Status
+
+`2.0.0` is the code-first semantic model release. Documented public APIs follow the compatibility policy unless a page explicitly marks a feature as preview.

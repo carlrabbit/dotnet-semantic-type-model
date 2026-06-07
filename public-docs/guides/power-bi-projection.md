@@ -1,33 +1,57 @@
-# Power BI Projection
+# Power BI Projection Guide
 
-`SemanticTypeModel.PowerBI` projects canonical semantic type models to deterministic Power BI metadata.
+`SemanticTypeModel.PowerBI` derives a Power BI domain semantic model from the canonical `TypeSchemaModel` and exports deterministic local analytical metadata.
 
 ## Boundary
 
-The projection package does not publish to the Power BI service, authenticate with Power BI REST APIs, create PBIX files, or manage workspaces. The first-class output is an inspectable projection model.
+The package owns semantic analytical metadata derivation and local deterministic output. It does not publish to the Power BI Service, authenticate, manage workspaces, generate PBIX files, schedule refresh, call XMLA endpoints, orchestrate REST APIs, or provide full Tabular Object Model parity.
 
-## Entry points
+## Usage
 
 ```csharp
-PowerBiProjectionModel model = semanticModel.ToPowerBiModel(options =>
+using SemanticTypeModel.PowerBI;
+
+TypeSchemaModel model = AppSemanticTypeModel.Create();
+
+var result = model.DerivePowerBiModel(options =>
 {
-    options.DefaultTableRole = PowerBiTableRole.Dimension;
-    options.HideTechnicalKeys = true;
-    options.HideForeignKeys = true;
-    options.DefaultNumericSummarization = PowerBiSummarization.Sum;
+    options.UseDefaultTransformations();
+
+    options.Measures.Add<Order>(
+        name: "Total Sales",
+        dax: "SUM(Orders[Amount])");
+
+    options.CalculatedTables.Add(
+        name: "Active Customers",
+        dax: "FILTER(Customers, Customers[IsActive] = TRUE())");
 });
+
+result.Diagnostics.ThrowIfErrors();
+
+PowerBiLocalMetadataExporter.Export(result.Model, "artifacts/powerbi");
 ```
 
+## Supported Metadata
 
-## Supported metadata
+The 2.0.0 Power BI projection includes:
 
-The projection includes:
+- tables and columns;
+- relationships;
+- explicit measures;
+- explicit calculated tables;
+- display folders;
+- hidden/visible flags;
+- data categories;
+- summarization hints;
+- format strings;
+- sort-by-column metadata;
+- basic explicit hierarchies when modeled;
+- deterministic inspection and local metadata output.
 
-- tables with display name, description, hidden state, role, source type id, and annotations;
-- columns with display name, data type, nullability, hidden state, key metadata, format string, summarization, source property id, and annotations;
-- relationships with endpoint table/column names, cardinality, direction, active state, and source relationship id;
-- DAX computed members as measures when explicitly represented in the source model.
+## Extension Points
+
+Users can extend derivation through options, measure builders, calculated-table builders, post-derive model configuration hooks, custom transformations, and custom annotations consumed by custom transformations.
 
 ## Diagnostics
 
-Unsupported or ambiguous metadata emits `POWERBI_*` projection diagnostics instead of being silently dropped. Examples include unsupported nested shapes, invalid annotation values, lossy scalar mappings, duplicate projected names, unsupported measure expression languages, and ambiguous relationship endpoints.
+Unsupported or ambiguous metadata emits diagnostics instead of being silently dropped. Typical cases include unsupported nested shapes, invalid annotation values, lossy scalar mappings, duplicate projected names, unsupported expression languages, unresolved sort-by-column references, and ambiguous relationship endpoints.

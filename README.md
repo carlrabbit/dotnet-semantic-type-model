@@ -1,42 +1,58 @@
 # SemanticTypeModel
 
-SemanticTypeModel is a .NET 10 library set for canonical semantic type models, JSON Schema import/export, transformations, runtime composition, and projection targets such as Power BI-like and EF Core-like metadata.
+SemanticTypeModel is a .NET 10 library set for code-first semantic type models. Annotated .NET code is extracted into a canonical semantic model, transformed through deterministic pipelines, and projected into domain semantic models such as JSON Schema, EF Core, and Power BI metadata.
 
 ## Install
 
 Add the package or packages your scenario needs:
 
 ```sh
-dotnet add package SemanticTypeModel.JsonSchema --version 1.1.0
-dotnet add package SemanticTypeModel.DependencyInjection --version 1.1.0
-dotnet add package SemanticTypeModel.DotNet --version 1.1.0
-dotnet add package SemanticTypeModel.SystemTextJson --version 1.1.0
+dotnet add package SemanticTypeModel.Core --version 2.0.0
+dotnet add package SemanticTypeModel.DotNet --version 2.0.0
+dotnet add package SemanticTypeModel.Generators --version 2.0.0
+dotnet add package SemanticTypeModel.JsonSchema --version 2.0.0
+```
+
+Scenario packages:
+
+```sh
+dotnet add package SemanticTypeModel.EFCore --version 2.0.0
+dotnet add package SemanticTypeModel.PowerBI --version 2.0.0
+dotnet add package SemanticTypeModel.SystemTextJson --version 2.0.0
+dotnet add package SemanticTypeModel.DependencyInjection --version 2.0.0
 ```
 
 See full package guidance in [public-docs/packages.md](public-docs/packages.md).
 
 ## Quick Start
 
+Use annotated .NET code as the supported authoring source for the canonical model:
+
 ```csharp
-using SemanticTypeModel.JsonSchema.Import;
-using SemanticTypeModel.JsonSchema.Export;
+using SemanticTypeModel;
 
-const string schema = """
+[SemanticType(SemanticTypeRole.Entity)]
+public sealed class Customer
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "Customer",
-  "type": "object",
-  "properties": {
-    "id": { "type": "string" }
-  },
-  "required": ["id"]
-}
-""";
+    [SemanticKey]
+    public required string Id { get; init; }
 
-var imported = JsonSchemaImporter.Import(schema);
-var exported = JsonSchemaExporter.Export(imported.Model!);
-Console.WriteLine(exported.Document.RootElement.GetRawText());
+    [SemanticName("Customer name")]
+    public required string Name { get; init; }
+}
+
+TypeSchemaModel model = AppSemanticTypeModel.Create();
 ```
+
+From the generated canonical model, derive target-specific domain models:
+
+```csharp
+var jsonSchema = model.DeriveJsonSchemaModel();
+var efCore = model.DeriveEfCoreModel();
+var powerBi = model.DerivePowerBiModel();
+```
+
+Each derivation returns diagnostics and inspection output so unsupported or ambiguous semantics are visible instead of silently dropped.
 
 ## Package List
 
@@ -52,13 +68,17 @@ Console.WriteLine(exported.Document.RootElement.GetRawText());
 
 ## Stable Release Notice
 
-`1.0.0` is the first stable release package set. `1.1.0` corrects the System.Text.Json contract and sample validation model. Compatibility rules are documented in [public-docs/api/compatibility.md](public-docs/api/compatibility.md).
+`2.0.0` is the code-first semantic model release. It adds the core semantic vocabulary, envelope semantics, JSON Schema domain-model export, EF Core domain-model-to-`ModelBuilder` projection, and Power BI domain-model-to-local-metadata projection. Compatibility rules are documented in [public-docs/api/compatibility.md](public-docs/api/compatibility.md).
 
 ## Samples
 
 Runnable samples live under `samples/` and are documented in [public-docs/samples.md](public-docs/samples.md).
 
-For a code-first JSON Schema flow, start with `samples/code-first-json-schema`.
+Start with:
+
+- `samples/code-first-json-schema`
+- `samples/code-first-ef-core`
+- `samples/code-first-powerbi`
 
 Prepare local packages, then run all package-based samples:
 
@@ -75,9 +95,11 @@ Prepare local packages, then run all package-based samples:
 - [public-docs/packages.md](public-docs/packages.md)
 - [public-docs/api/public-api.md](public-docs/api/public-api.md)
 - [public-docs/diagnostics.md](public-docs/diagnostics.md)
+- [public-docs/guides/core-semantics.md](public-docs/guides/core-semantics.md)
 - [public-docs/guides/json-schema.md](public-docs/guides/json-schema.md)
 - [public-docs/guides/json-editor-compatibility.md](public-docs/guides/json-editor-compatibility.md)
 - [public-docs/guides/ef-core-projection.md](public-docs/guides/ef-core-projection.md)
+- [public-docs/guides/power-bi-projection.md](public-docs/guides/power-bi-projection.md)
 - [public-docs/guides/projection-capabilities.md](public-docs/guides/projection-capabilities.md)
 - [public-docs/guides/system-text-json.md](public-docs/guides/system-text-json.md)
 - [public-docs/versioning.md](public-docs/versioning.md)

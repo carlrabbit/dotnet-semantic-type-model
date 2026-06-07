@@ -2,7 +2,7 @@
 
 ## Scenario Goal
 
-Use an annotated C# domain model with the packaged source generator and project the generated semantic model into local Power BI metadata.
+Use an annotated C# domain model with the packaged source generator, derive a Power BI domain semantic model, and export deterministic local analytical metadata.
 
 ## Packages Used
 
@@ -23,12 +23,12 @@ The sample project path is `samples/code-first-powerbi/code-first-powerbi.csproj
 
 ## Expected Output
 
-The sample prints the generated root identifier, adapter diagnostic count, projected table count, and projection diagnostic count.
+The sample prints generated model information, Power BI derivation diagnostics, projected table/relationship/measure counts, and local metadata output information.
 
 ## Consumer Pattern Demonstrated
 
-A consumer can reuse the generated semantic model for Power BI projection metadata without calling Power BI service APIs.
+A consumer can reuse the generated semantic model for Power BI analytical metadata, add explicit measures or calculated tables, inspect diagnostics, and produce local metadata without calling Power BI service APIs.
 
 ## Non-Goals
 
-This sample does not publish to Power BI, require credentials, call cloud services, or generate a full Tabular Object Model deployment.
+This sample does not publish to Power BI, require credentials, call cloud services, use XMLA, manage workspaces, schedule refresh, or generate PBIX files.

@@ -21,20 +21,20 @@ The current stable package set is:
 | Package | Role |
 | --- | --- |
 | `SemanticTypeModel.Abstractions` | Shared model, runtime, diagnostics, and compatibility contracts. |
-| `SemanticTypeModel.Core` | Builders, validation, and transformation pipeline. |
-| `SemanticTypeModel.JsonSchema` | JSON Schema import/export and JSON Editor-compatible UI-hint export mode. |
+| `SemanticTypeModel.Core` | Canonical model, core semantic vocabulary, transformation pipeline, diagnostics, and inspection helpers. |
+| `SemanticTypeModel.JsonSchema` | JSON Schema domain semantic model derivation and Draft 2020-12 export. |
 | `SemanticTypeModel.DotNet` | Attribute model and Roslyn-based .NET type extraction. |
 | `SemanticTypeModel.Generators` | Incremental source generator for compile-time extraction. |
 | `SemanticTypeModel.SystemTextJson` | System.Text.Json contract metadata import, annotation constants, and resolver customization helpers. |
 | `SemanticTypeModel.DependencyInjection` | Runtime provider, transformation, and projection service registration. |
-| `SemanticTypeModel.PowerBI` | Power BI projection metadata. |
-| `SemanticTypeModel.EFCore` | EF Core model projection support. |
+| `SemanticTypeModel.PowerBI` | Power BI domain semantic model derivation and local metadata projection. |
+| `SemanticTypeModel.EFCore` | EF Core domain semantic model derivation and provider-neutral `ModelBuilder` projection. |
 
 ## Scenario Packages
 
-- JSON Schema export/import: `SemanticTypeModel.JsonSchema`.
+- Core semantic authoring: `SemanticTypeModel.Core`, `SemanticTypeModel.DotNet`, and optionally `SemanticTypeModel.Generators`.
+- JSON Schema export: `SemanticTypeModel.JsonSchema`.
 - JSON Editor-compatible schemas: `SemanticTypeModel.JsonSchema` with JSON Editor compatibility options.
-- Code-first extraction: `SemanticTypeModel.DotNet` and optionally `SemanticTypeModel.Generators`.
 - System.Text.Json integration: `SemanticTypeModel.SystemTextJson`.
 - Runtime DI composition: `SemanticTypeModel.DependencyInjection` plus the projection package being registered.
 - EF Core projection: `SemanticTypeModel.EFCore`.
@@ -42,6 +42,7 @@ The current stable package set is:
 
 ## Related Guides
 
+- [Core semantics guide](guides/core-semantics.md)
 - [JSON Schema guide](guides/json-schema.md)
 - [JSON Editor compatibility guide](guides/json-editor-compatibility.md)
 - [System.Text.Json guide](guides/system-text-json.md)

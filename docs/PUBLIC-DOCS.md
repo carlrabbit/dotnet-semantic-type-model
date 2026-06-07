@@ -27,8 +27,13 @@ This document is authoritative for:
 - `public-docs/release-notes.md`
 - `public-docs/api/public-api.md`
 - `public-docs/api/compatibility.md`
+- `public-docs/guides/core-semantics.md`
 - `public-docs/guides/json-schema.md`
 - `public-docs/guides/json-editor-compatibility.md`
+- `public-docs/guides/ef-core-projection.md`
+- `public-docs/guides/power-bi-projection.md`
+- `public-docs/guides/projection-capabilities.md`
+- `public-docs/guides/system-text-json.md`
 - `public-docs/nuget/*.md`
 - `public-docs/samples/*.md`
 - `public-docs/diagnostics/*.md`
@@ -39,7 +44,7 @@ This document is authoritative for:
 - `README.md` remains the repository entry page; `public-docs/` remains the detailed source set.
 - Public API and compatibility statements must align with current shipped assemblies.
 - Diagnostics references must avoid claiming stable IDs unless stability is explicitly guaranteed.
-- Prerelease docs must state that APIs and package split may change before 1.0.
+- Public docs must distinguish semantic meaning from projection-specific representation.
 
 ## Package README Source Mapping
 

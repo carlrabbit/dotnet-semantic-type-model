@@ -24,19 +24,20 @@ Specs are authoritative for:
 | Spec | Purpose |
 |---|---|
 | specs/type-schema-model.md | Canonical semantic type model contracts, invariants, and traversal behavior |
-| specs/json-schema-adapter.md | Supported JSON Schema import and export baseline behavior |
+| specs/json-schema-adapter.md | Legacy/internal JSON Schema import/export adapter behavior where retained for compatibility |
 | specs/type-model-core.md | Hardened canonical type model layers, contracts, invariants, and diagnostics model |
-| specs/core-semantic-vocabulary.md | Projection-neutral core semantic vocabulary and envelope semantics |
+| specs/core-semantic-vocabulary.md | Projection-neutral core semantic vocabulary, usage guidance, and envelope semantics |
 | specs/type-model-annotations.md | Annotation namespace policy, preservation rules, and projection separation |
-| specs/type-model-json-schema-mapping.md | JSON Schema Draft 2020-12 mapping baseline for the hardened canonical model |
+| specs/type-model-json-schema-mapping.md | JSON Schema Draft 2020-12 mapping baseline for code-first semantic models |
+| specs/json-schema-domain-model-and-export.md | JSON Schema domain semantic model derivation and deterministic export behavior |
 | specs/type-model-dotnet-extraction.md | Roslyn-based .NET type-system discovery and extraction baseline into canonical model contracts |
-| specs/type-model-dotnet-attributes.md | Stable attribute vocabulary, precedence, and diagnostics for .NET extraction |
+| specs/type-model-dotnet-attributes.md | Stable attribute vocabulary, including envelope attributes, precedence, and diagnostics for .NET extraction |
 | specs/type-model-dotnet-conventions.md | Deterministic discovery, naming, inference, and configuration conventions for .NET extraction |
 | specs/type-model-compile-time-generator.md | Incremental generator baseline for deterministic compile-time model-provider generation |
 | specs/type-model-runtime-api.md | Hardened runtime model provider, service, result, caching, and diagnostics contracts |
 | specs/type-model-di-integration.md | Dependency-injection registration, lifetime, and projection integration pattern for runtime model services |
 | specs/type-model-ui-hints.md | Generic UI hint vocabulary, normalization, and JSON-editor compatibility mapping |
 | specs/type-model-projection-capabilities.md | Projection capability matrix, compatibility contracts, and capability metadata API across targets |
-| specs/type-model-powerbi-tom-projection.md | Deterministic Power BI projection behavior over the hardened canonical model |
-| specs/type-model-ef-core-projection.md | Deterministic EF Core-like projection behavior over the hardened canonical model |
+| specs/type-model-powerbi-tom-projection.md | Power BI domain semantic model derivation and local deterministic metadata projection |
+| specs/type-model-ef-core-projection.md | EF Core domain semantic model derivation and provider-neutral `ModelBuilder` projection |
 | specs/system-text-json-contract-integration.md | System.Text.Json contract metadata import, annotation keys, resolver customization, unsupported generated-context behavior, and diagnostics |

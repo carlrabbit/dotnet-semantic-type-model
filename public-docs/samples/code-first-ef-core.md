@@ -2,7 +2,7 @@
 
 ## Scenario Goal
 
-Use an annotated C# domain model with the packaged source generator and project the generated semantic model into EF Core model metadata.
+Use an annotated C# domain model with the packaged source generator, derive an EF Core domain semantic model, and apply provider-neutral EF Core configuration to `ModelBuilder`.
 
 ## Packages Used
 
@@ -24,12 +24,12 @@ The sample project path is `samples/code-first-ef-core/code-first-ef-core.csproj
 
 ## Expected Output
 
-The sample prints the generated root identifier, adapter diagnostic count, and number of EF Core model-builder entity types.
+The sample prints generated model information, EF Core derivation diagnostics, and provider-neutral `ModelBuilder` metadata counts.
 
 ## Consumer Pattern Demonstrated
 
-A consumer lets the packaged generator produce `AppSemanticTypeModel.Create()`, adapts the semantic model to the hardened runtime model, and applies EF Core projection metadata to a local `ModelBuilder`.
+A consumer lets the packaged generator produce `AppSemanticTypeModel.Create()`, derives `EfCoreSemanticModel`, checks diagnostics, and applies it to a local `ModelBuilder`.
 
 ## Non-Goals
 
-This sample does not connect to a database, run migrations, require a provider package, or replace EF Core application configuration.
+This sample does not connect to a database, run migrations, require a provider package, discover or generate a `DbContext`, or replace EF Core application configuration.

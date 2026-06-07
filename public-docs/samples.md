@@ -4,12 +4,13 @@ Samples are executable documentation under `samples/`. Public samples demonstrat
 
 ## Available Samples
 
-- [JSON Schema roundtrip](samples/json-schema-roundtrip.md) — import, transform, validate, and export JSON Schema.
-- [Code-first JSON Schema](samples/code-first-json-schema.md) — annotated C# domain model, packaged generator, generated provider, and JSON Schema export.
-- [Code-first EF Core](samples/code-first-ef-core.md) — annotated C# domain model, packaged generator, generated provider, and EF Core projection metadata.
-- [Code-first Power BI](samples/code-first-powerbi.md) — annotated C# domain model, packaged generator, generated provider, and Power BI projection metadata.
+- [Code-first JSON Schema](samples/code-first-json-schema.md) — annotated C# domain model, packaged generator, generated provider, semantic derivation, and JSON Schema export.
+- [Code-first EF Core](samples/code-first-ef-core.md) — annotated C# domain model, packaged generator, generated provider, EF Core domain semantic model derivation, and provider-neutral `ModelBuilder` configuration.
+- [Code-first Power BI](samples/code-first-powerbi.md) — annotated C# domain model, packaged generator, generated provider, Power BI domain semantic model derivation, and local metadata output.
 - [System.Text.Json resolver](samples/system-text-json-resolver.md) — user-authored `JsonSerializerContext` customized by SemanticTypeModel resolver metadata.
 - [Runtime DI](samples/runtime-di.md) — dependency-injection registration and projection usage.
+
+Legacy JSON Schema import/roundtrip samples are not the primary 2.0.0 authoring path. Prefer code-first samples for new consumers.
 
 ## Run the Samples
 

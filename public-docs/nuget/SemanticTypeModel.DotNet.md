@@ -1,36 +1,27 @@
 # SemanticTypeModel.DotNet
 
-`SemanticTypeModel.DotNet` exposes .NET extraction contracts and semantic attributes.
+`SemanticTypeModel.DotNet` provides the .NET attribute model and Roslyn-based extraction support for code-first SemanticTypeModel authoring.
 
 ```sh
-dotnet add package SemanticTypeModel.DotNet --version 1.1.0
+dotnet add package SemanticTypeModel.DotNet --version 2.0.0
 ```
 
-This package is part of the stable package set. Public APIs follow the compatibility policy.
+## Attribute vocabulary
 
-Common attribute surface:
-
-- `[SemanticType]`, `[SemanticIgnore]`, `[SemanticName]`, `[SemanticDisplayName]`, `[SemanticDescription]`
-- `[SemanticRole]`, `[SemanticKey]`, `[SemanticRelationship]`
-- `[SemanticCategory]`, `[SemanticOrder]`, `[SemanticFormat]`
-- `[SemanticStringConstraints]`, `[SemanticNumericConstraints]`, `[SemanticCollectionConstraints]`
-- `[SemanticEnumValue]`, `[SemanticAnnotation]`
-
-Example:
+Use semantic attributes to declare projection-neutral domain meaning in code. 2.0.0 includes envelope attributes:
 
 ```csharp
-using SemanticTypeModel.DotNet;
-
-[SemanticType(SemanticTypeRole.Entity)]
-[SemanticDisplayName("Customer account")]
-public sealed class Customer
+[SemanticEnvelope("management")]
+public sealed class ManagedSpecificationEnvelope<TSpecification>
 {
-    [SemanticKey]
-    public required string Id { get; init; }
+    [SemanticEnvelopePayload]
+    public required TSpecification Specification { get; init; }
 
-    [SemanticFormat(SemanticScalarFormat.Email)]
-    [SemanticStringConstraints(MinLength = 5, MaxLength = 200)]
-    [SemanticAnnotation("ui.placeholder", "name@example.com")]
-    public required string Email { get; init; }
+    [SemanticEnvelopeMetadata]
+    public required long Revision { get; init; }
 }
 ```
+
+Extraction preserves attribute intent; transformations derive canonical semantics and diagnostics.
+
+More details: `public-docs/guides/core-semantics.md`.

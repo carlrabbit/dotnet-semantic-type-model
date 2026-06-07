@@ -1,9 +1,9 @@
 # SemanticTypeModel.EFCore
 
-`SemanticTypeModel.EFCore` projects canonical models into EF Core-oriented metadata and `ModelBuilder` configuration.
+`SemanticTypeModel.EFCore` derives an EF Core domain semantic model from canonical SemanticTypeModel metadata and applies provider-neutral configuration to EF Core `ModelBuilder`.
 
 ```sh
-dotnet add package SemanticTypeModel.EFCore --version 1.1.0
+dotnet add package SemanticTypeModel.EFCore --version 2.0.0
 ```
 
 This package is part of the stable package set. Public APIs follow the compatibility policy.
@@ -12,18 +12,25 @@ This package is part of the stable package set. Public APIs follow the compatibi
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
-using SemanticTypeModel.Abstractions.Hardening;
 using SemanticTypeModel.EFCore;
 
 TypeSchemaModel model = AppSemanticTypeModel.Create();
+
+var result = model.DeriveEfCoreModel(options =>
+{
+    options.UseDefaultTransformations();
+});
+
+result.Diagnostics.ThrowIfErrors();
+
 var modelBuilder = new ModelBuilder(new Microsoft.EntityFrameworkCore.Metadata.Conventions.ConventionSet());
-EfCoreModelBuilderProjectionResult result = modelBuilder.ApplySemanticTypeModel(
-    model,
-    options =>
-    {
-        options.DefaultSchema = "app";
-        options.ProjectUnannotatedObjectsAsEntities = true;
-    });
+modelBuilder.ApplyEfCoreSemanticModel(result.Model);
 ```
+
+## Supported scope
+
+The package supports semantic mapping for entities, properties, keys, alternate keys, indexes, requiredness/nullability, conversions, explicit simple relationships, explicit owned/value-object mapping, and explicit inheritance strategy mapping.
+
+It does not create databases, generate migrations, discover or generate `DbContext` types, configure providers, validate a runtime database, or configure global query filters.
 
 More details: `public-docs/guides/ef-core-projection.md`.
