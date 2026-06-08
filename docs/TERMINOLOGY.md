@@ -74,7 +74,7 @@ Annotated .NET code used as the supported authoring source for a canonical seman
 A persisted representation of a code-generated semantic type model that can be loaded without access to the original codebase.
 
 ### Semantic Primitive
-A canonical semantic concept such as entity, value object, key, relationship, requiredness, nullability, format, constraint, envelope, or annotation.
+A canonical semantic concept such as entity, value object, key, relationship, requiredness, nullability, format, constraint, envelope, ownership, lifecycle state, extension data, or annotation.
 
 ### Core Semantic Vocabulary
 The authoritative set of projection-neutral semantic primitives and usage rules available to code-first authors.
@@ -88,12 +88,47 @@ The distinguished property inside an envelope that carries the semantic value be
 ### Envelope Metadata
 A property on an envelope that describes the envelope lifecycle, context, transport, audit, revision, status, or management state rather than the payload domain state.
 
-
 ### Projection-Specific Metadata
 Metadata that describes representation for one projection target, such as JSON Schema, EF Core, Power BI, or System.Text.Json, rather than projection-neutral domain meaning.
 
 ### Envelope Projection Root
 The type selected by target policy as the root projection for an envelope scenario; it may be the envelope wrapper or the envelope payload.
+
+### Ownership
+Lifecycle containment in which an object or collection is part of an owner's composition boundary and does not stand independently by default.
+
+### Owned Object
+A single object-valued member whose lifecycle follows the containing owner.
+
+### Owned Collection
+A collection-valued member whose element lifecycle follows the containing owner.
+
+### Versioned
+A semantic marker indicating that a type or instance participates in version or revision evolution over time.
+
+### Version
+A semantic identifier for a version of a type, instance, payload, or contract.
+
+### Revision
+An ordered or otherwise comparable instance-level version marker used to distinguish revisions of the same semantic object.
+
+### Current Version
+A marker indicating that an instance represents the current or active version or revision.
+
+### Temporal Validity
+A semantic interval describing when a type, instance, relationship, or value is valid or effective.
+
+### Valid From
+The temporal start endpoint of a validity interval.
+
+### Valid To
+The optional temporal end endpoint of a validity interval.
+
+### Lifecycle State
+A semantic state/status value describing the lifecycle phase of an entity, envelope, specification, workflow, document, operation, or value.
+
+### Extension Data
+Instance-level unknown, unmodeled, forward-compatible, or externally supplied data preserved for compatibility across model revisions.
 
 ### Domain Semantic Model
 A package-owned semantic model derived from the canonical semantic type model for a specific domain such as JSON Schema, EF Core, Power BI, or System.Text.Json.
