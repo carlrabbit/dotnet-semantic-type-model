@@ -26,7 +26,7 @@ public sealed record EfCoreProjectionOptions
     /// <summary>
     /// Gets how nested value objects are represented.
     /// </summary>
-    public ValueObjectEfProjectionMode ValueObjectProjectionMode { get; init; } = ValueObjectEfProjectionMode.Diagnose;
+    public ValueObjectEfProjectionMode ValueObjectProjectionMode { get; init; } = ValueObjectEfProjectionMode.Flatten;
 
     /// <summary>
     /// Gets how unsupported array, dictionary, union, and nested object shapes are handled.
@@ -55,6 +55,9 @@ public sealed record EfCoreProjectionOptions
 
     /// <summary>Gets the default inheritance strategy used when canonical inheritance is present without EF-specific metadata.</summary>
     public EfCoreInheritanceStrategy DefaultInheritanceStrategy { get; init; } = EfCoreInheritanceStrategy.Unspecified;
+
+    /// <summary>Gets configured envelope payload storage policies keyed by envelope type name.</summary>
+    public IReadOnlyDictionary<string, EfCoreEnvelopePayloadPolicy> EnvelopePolicies { get; init; } = new Dictionary<string, EfCoreEnvelopePayloadPolicy>(StringComparer.Ordinal);
 }
 
 /// <summary>

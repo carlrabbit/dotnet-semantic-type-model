@@ -1,6 +1,7 @@
 using System.Text.Json;
 using SemanticTypeModel.Abstractions.Runtime;
 using SemanticTypeModel.Core.Runtime;
+using SemanticTypeModel.Core.Semantics;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema.Domain;
 using Hardening = SemanticTypeModel.Abstractions.Hardening;
@@ -29,7 +30,7 @@ public static class JsonSchemaDerivationExtensions
         }
 
         SemanticModelTransformationResult transformed = options.Transformations.Run(model, options.PipelineOptions, cancellationToken);
-        JsonSchemaDomainMapper mapper = new(options.SchemaId, transformed.Diagnostics);
+        JsonSchemaDomainMapper mapper = new(options.SchemaId, transformed.Diagnostics, options.Envelopes.Policies);
         JsonSchemaSemanticModel domainModel = mapper.Map(transformed.Model);
 
         return new SemanticDerivationResult<JsonSchemaSemanticModel>
@@ -52,7 +53,7 @@ public static class JsonSchemaDerivationExtensions
         return result with { Diagnostics = [.. adapted.Diagnostics, .. result.Diagnostics], Model = result.Model with { Diagnostics = [.. adapted.Diagnostics, .. result.Model.Diagnostics] } };
     }
 
-    private sealed class JsonSchemaDomainMapper(Uri? schemaId, IReadOnlyList<Hardening.SchemaDiagnostic> initialDiagnostics)
+    private sealed class JsonSchemaDomainMapper(Uri? schemaId, IReadOnlyList<Hardening.SchemaDiagnostic> initialDiagnostics, IReadOnlyDictionary<string, JsonSchemaEnvelopeProjectionPolicy> envelopePolicies)
     {
         private readonly List<Hardening.SchemaDiagnostic> _diagnostics = [.. initialDiagnostics];
         private Hardening.TypeSchemaModel? _model;
@@ -61,6 +62,17 @@ public static class JsonSchemaDerivationExtensions
         {
             _model = model;
             Hardening.TypeDefinition rootType = ResolveRoot(model);
+            if (rootType is Hardening.ObjectTypeDefinition rootObject && TryGetEnvelopePolicy(rootObject, out JsonSchemaEnvelopeProjectionPolicy? rootPolicy))
+            {
+                if (rootPolicy.RootPolicy == JsonSchemaEnvelopeRootPolicy.Ambiguous)
+                {
+                    AddDiagnostic("JSONSCHEMA_ENVELOPE_ROOT_AMBIGUOUS", $"Envelope '{rootObject.Name}' selected both envelope and payload roots without explicit policy.", $"/types/{rootObject.Id.Value}");
+                }
+                else if (rootPolicy.RootPolicy == JsonSchemaEnvelopeRootPolicy.PayloadAsRoot && ResolvePayload(rootObject, rootPolicy) is Hardening.PropertyDefinition payload && model.TryGetType(payload.Type.Id) is Hardening.TypeDefinition payloadRoot)
+                {
+                    rootType = payloadRoot;
+                }
+            }
             JsonSchemaNode root = MapType(rootType);
             Dictionary<string, JsonSchemaNode> definitions = new(StringComparer.Ordinal);
 
@@ -128,24 +140,64 @@ public static class JsonSchemaDerivationExtensions
                 Title = type.DisplayName ?? GetStringAnnotation(type.Annotations, "schema.title") ?? GetStringAnnotation(type.Annotations, "title"),
                 Description = type.Description ?? GetStringAnnotation(type.Annotations, "schema.description") ?? GetStringAnnotation(type.Annotations, "description"),
                 AdditionalPropertiesAllowed = additionalAllowed,
-                Properties = [.. type.Properties.OrderBy(static property => property.Name, StringComparer.Ordinal).Select(MapProperty)],
+                Properties = [.. type.Properties.OrderBy(static property => property.Name, StringComparer.Ordinal).Select(property => MapProperty(type, property))],
                 Annotations = MapProjectionAnnotations(type.Annotations),
             };
         }
 
-        private JsonSchemaProperty MapProperty(Hardening.PropertyDefinition property)
+        private JsonSchemaProperty MapProperty(Hardening.ObjectTypeDefinition owner, Hardening.PropertyDefinition property)
         {
+            JsonSchemaSchemaRef schema = MapReference(property.Type, $"/properties/{property.Name}");
+            Dictionary<string, JsonElement> annotations = MapProjectionAnnotations(property.Annotations);
+            if (IsEnvelopePayload(property) && TryGetEnvelopePolicy(owner, out JsonSchemaEnvelopeProjectionPolicy? policy))
+            {
+                schema = MapEnvelopePayloadSchema(property, policy);
+                if (policy.PayloadRepresentation == JsonSchemaEnvelopePayloadRepresentation.SerializedJsonString)
+                {
+                    annotations["contentMediaType"] = ToJsonElement("application/json");
+                }
+            }
+
             return new JsonSchemaProperty
             {
                 Name = property.Name,
-                Schema = MapReference(property.Type, $"/properties/{property.Name}"),
+                Schema = schema,
                 IsRequired = property.Cardinality.IsRequired,
                 IsNullable = property.Cardinality.AllowsNull,
                 Title = property.DisplayName ?? GetStringAnnotation(property.Annotations, "schema.title") ?? GetStringAnnotation(property.Annotations, "title"),
                 Description = property.Description ?? GetStringAnnotation(property.Annotations, "schema.description") ?? GetStringAnnotation(property.Annotations, "description"),
                 Constraints = MapConstraints(property.Constraints),
-                Annotations = MapProjectionAnnotations(property.Annotations),
+                Annotations = annotations,
             };
+        }
+
+        private JsonSchemaSchemaRef MapEnvelopePayloadSchema(Hardening.PropertyDefinition property, JsonSchemaEnvelopeProjectionPolicy policy)
+        {
+            return policy.PayloadRepresentation switch
+            {
+                JsonSchemaEnvelopePayloadRepresentation.Inline when _model?.TryGetType(property.Type.Id) is Hardening.TypeDefinition payloadType => JsonSchemaSchemaRef.FromInline(MapType(payloadType)),
+                JsonSchemaEnvelopePayloadRepresentation.JsonDocument => JsonSchemaSchemaRef.FromInline(new JsonSchemaScalarNode { Type = "object" }),
+                JsonSchemaEnvelopePayloadRepresentation.SerializedJsonString => JsonSchemaSchemaRef.FromInline(new JsonSchemaScalarNode { Type = "string" }),
+                JsonSchemaEnvelopePayloadRepresentation.Opaque => JsonSchemaSchemaRef.FromInline(new JsonSchemaScalarNode { Type = "object" }),
+                JsonSchemaEnvelopePayloadRepresentation.StructuredReference => MapReference(property.Type, $"/properties/{property.Name}"),
+                _ => MapReference(property.Type, $"/properties/{property.Name}"),
+            };
+        }
+
+        private bool TryGetEnvelopePolicy(Hardening.ObjectTypeDefinition envelope, out JsonSchemaEnvelopeProjectionPolicy policy)
+        {
+            return envelopePolicies.TryGetValue(envelope.Name, out policy!) || envelopePolicies.TryGetValue(envelope.Id.Value, out policy!);
+        }
+
+        private static Hardening.PropertyDefinition? ResolvePayload(Hardening.ObjectTypeDefinition envelope, JsonSchemaEnvelopeProjectionPolicy policy)
+        {
+            return envelope.Properties.FirstOrDefault(property => string.Equals(property.Name, policy.PayloadPropertyName, StringComparison.Ordinal))
+                ?? envelope.Properties.FirstOrDefault(IsEnvelopePayload);
+        }
+
+        private static bool IsEnvelopePayload(Hardening.PropertyDefinition property)
+        {
+            return property.Annotations.Items.Any(annotation => string.Equals(annotation.Key.Value, CoreSemanticAnnotationKeys.EnvelopePayload, StringComparison.Ordinal) && Convert.ToString(annotation.Value, System.Globalization.CultureInfo.InvariantCulture)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
         }
 
         private static JsonSchemaScalarNode MapScalar(Hardening.ScalarTypeDefinition type)

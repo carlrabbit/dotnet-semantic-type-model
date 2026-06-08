@@ -3,6 +3,7 @@ using SemanticTypeModel.JsonSchema;
 using SemanticTypeModel.JsonSchema.Derivation;
 using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.Generated;
+using SemanticTypeModel.Samples.CodeFirstJsonSchema;
 
 // AppSemanticTypeModel is generated during the normal project build by the
 // SemanticTypeModel.Generators package referenced by this consumer project.
@@ -10,7 +11,14 @@ TypeSchemaModel canonicalModel = AppSemanticTypeModel.Create();
 
 // JSON Schema is a code-first projection: derive the package-owned JSON Schema
 // domain semantic model, inspect diagnostics/trace, and then export Draft 2020-12.
-var jsonSchemaModel = canonicalModel.DeriveJsonSchemaModel(options => options.UseDefaultTransformations());
+var jsonSchemaModel = canonicalModel.DeriveJsonSchemaModel(options =>
+{
+    _ = options.UseDefaultTransformations();
+    _ = options.Envelopes.For<ManagedSpecificationEnvelope>()
+        .UseEnvelopeAsRoot()
+        .Payload(x => x.Specification)
+        .RepresentAsStructuredReference();
+});
 JsonSchemaExportResult exported = JsonSchemaExporter.Export(jsonSchemaModel.Model);
 
 string outputDirectory = Path.Combine("artifacts", "samples", "code-first-json-schema");

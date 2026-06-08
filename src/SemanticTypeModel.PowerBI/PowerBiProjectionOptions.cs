@@ -88,6 +88,9 @@ public sealed record PowerBiProjectionOptions
     /// </summary>
     public bool PreserveUnsupportedMeasureExpressions { get; set; }
 
+    /// <summary>Gets configured envelope analytical projection policies keyed by envelope type name.</summary>
+    public IReadOnlyDictionary<string, PowerBiEnvelopeProjectionPolicy> EnvelopePolicies { get; init; } = new Dictionary<string, PowerBiEnvelopeProjectionPolicy>(StringComparer.Ordinal);
+
     /// <summary>
     /// Configures table and column naming policy.
     /// </summary>

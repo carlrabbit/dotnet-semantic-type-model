@@ -13,3 +13,42 @@ public sealed class Customer
 
     public required string Name { get; init; }
 }
+
+[SemanticEnvelope("management")]
+[SemanticType]
+public sealed class ManagedSpecificationEnvelope
+{
+    [SemanticKey]
+    public Guid Id { get; init; }
+
+    [SemanticEnvelopeMetadata]
+    public long Revision { get; init; }
+
+    [SemanticEnvelopeMetadata]
+    public required string ModifiedBy { get; init; }
+
+    [SemanticEnvelopeMetadata]
+    public DateTimeOffset ModifiedAt { get; init; }
+
+    [SemanticEnvelopePayload]
+    public required WorkflowSpecification Specification { get; init; }
+
+    public AuditInfo Audit { get; init; } = new();
+}
+
+public sealed class WorkflowSpecification
+{
+    public required string Name { get; init; }
+
+    public IReadOnlyList<WorkflowStep> Steps { get; init; } = [];
+}
+
+public sealed class WorkflowStep
+{
+    public required string Name { get; init; }
+}
+
+public sealed class AuditInfo
+{
+    public string Source { get; init; } = "sample";
+}

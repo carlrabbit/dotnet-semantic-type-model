@@ -14,6 +14,9 @@ SemanticDerivationResult<PowerBiSemanticModel> result = hardenedModel.DerivePowe
 {
     _ = options.UseDefaultTransformations();
     options.Projection.ProjectUnannotatedObjectsAsTables = true;
+    _ = options.Envelopes.For<ManagedSpecificationEnvelope>()
+        .UseEnvelopeMetadataTable()
+        .SummarizePayload(x => x.Specification, "SpecificationSummary");
     options.Measures.Add<SalesRecord>("Total Sales", "SUM(SalesRecord[Amount])", measure =>
     {
         measure.FormatString = "$#,0.00";

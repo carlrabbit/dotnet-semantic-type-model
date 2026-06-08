@@ -27,7 +27,7 @@ public sealed class EfCoreModelBuilderProjectionOptions
     /// <summary>
     /// Gets or sets how nested value objects are represented.
     /// </summary>
-    public ValueObjectEfProjectionMode ValueObjectProjectionMode { get; set; } = ValueObjectEfProjectionMode.Diagnose;
+    public ValueObjectEfProjectionMode ValueObjectProjectionMode { get; set; } = ValueObjectEfProjectionMode.Flatten;
 
     /// <summary>
     /// Gets or sets how unsupported array, dictionary, union, and nested object shapes are handled.
@@ -57,6 +57,9 @@ public sealed class EfCoreModelBuilderProjectionOptions
     /// <summary>Gets or sets the default inheritance strategy for explicit canonical inheritance.</summary>
     public EfCoreInheritanceStrategy DefaultInheritanceStrategy { get; set; } = EfCoreInheritanceStrategy.Unspecified;
 
+    /// <summary>Gets EF Core envelope payload storage policy configuration.</summary>
+    public EfCoreEnvelopeProjectionOptions Envelopes { get; } = new();
+
     internal EfCoreProjectionOptions ToProjectionOptions()
     {
         return new EfCoreProjectionOptions
@@ -70,6 +73,7 @@ public sealed class EfCoreModelBuilderProjectionOptions
             PreferDisplayNamesForTableAndColumnNames = PreferDisplayNamesForTableAndColumnNames,
             NameCollisionBehavior = NameCollisionBehavior,
             DefaultInheritanceStrategy = DefaultInheritanceStrategy,
+            EnvelopePolicies = Envelopes.Policies,
         };
     }
 }
