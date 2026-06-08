@@ -12,6 +12,9 @@ public sealed class JsonSchemaDerivationOptions
     /// <summary>Gets or sets the JSON Schema document identifier.</summary>
     public Uri? SchemaId { get; set; }
 
+    /// <summary>Gets JSON Schema envelope projection policy configuration.</summary>
+    public JsonSchemaEnvelopeProjectionOptions Envelopes { get; } = new();
+
     /// <summary>Gets or sets canonical transformation pipeline options.</summary>
     public SchemaPipelineOptions PipelineOptions { get; set; } = SchemaPipelineOptions.Default;
 

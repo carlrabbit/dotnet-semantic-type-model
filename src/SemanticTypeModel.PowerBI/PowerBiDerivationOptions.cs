@@ -12,6 +12,9 @@ public sealed class PowerBiDerivationOptions
     /// <summary>Gets projection options used by the Power BI domain mapper.</summary>
     public PowerBiProjectionOptions Projection { get; } = new();
 
+    /// <summary>Gets Power BI envelope analytical projection policy configuration.</summary>
+    public PowerBiEnvelopeProjectionOptions Envelopes { get; } = new();
+
     /// <summary>Gets explicit measures added after canonical metadata derivation.</summary>
     public PowerBiMeasureBuilder Measures { get; } = new();
 

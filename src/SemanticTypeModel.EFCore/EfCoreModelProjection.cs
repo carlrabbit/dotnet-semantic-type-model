@@ -6,6 +6,7 @@
 #pragma warning disable CA1822
 #pragma warning disable CA1859
 using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Core.Semantics;
 
 namespace SemanticTypeModel.EFCore;
 
@@ -236,6 +237,11 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
         PreserveSchemaOptionality(property, effectiveNullability, propertyPath, diagnostics);
         ReportConstraintPreservation(property, propertyPath, diagnostics);
 
+        if (IsEnvelopePayload(owner, property))
+        {
+            return ProjectEnvelopePayload(model, owner, ownerEntityName, property, propertyType, projectedName, effectiveNullability, valueGenerated, entityInfos, entityNames, diagnostics);
+        }
+
         if (propertyType is ScalarTypeDefinition scalar)
         {
             return
@@ -298,6 +304,65 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
         }
 
         return HandleUnsupportedShape(property, projectedName, propertyPath, propertyType.Kind.ToString(), effectiveNullability, valueGenerated, diagnostics);
+    }
+
+
+    private IReadOnlyList<EfPropertyDefinition> ProjectEnvelopePayload(
+        TypeSchemaModel model,
+        ObjectTypeDefinition owner,
+        string ownerEntityName,
+        PropertyDefinition property,
+        TypeDefinition propertyType,
+        string projectedName,
+        bool isNullable,
+        bool isGenerated,
+        List<ProjectedEntityInfo> entityInfos,
+        HashSet<string> entityNames,
+        IList<SchemaDiagnostic> diagnostics)
+    {
+        var propertyPath = ModelPath.ForProperty(owner.Id, property.Name);
+        EfCoreEnvelopePayloadPolicy policy = ResolveEnvelopePolicy(owner, property);
+        switch (policy.StoragePolicy)
+        {
+            case EfCoreEnvelopePayloadStoragePolicy.Ignored:
+                return [];
+            case EfCoreEnvelopePayloadStoragePolicy.OwnedSameTable when propertyType is ObjectTypeDefinition payloadObject:
+                return FlattenValueObject(model, owner, property, payloadObject, policy.ColumnName ?? projectedName, diagnostics);
+            case EfCoreEnvelopePayloadStoragePolicy.OwnedJson:
+                return [CreateProperty(projectedName, policy.ColumnName ?? projectedName, typeof(object), property.Cardinality.IsRequired, isNullable, null, null, "OwnedJson", isGenerated, AppendAnnotations(BuildPropertyAnnotations(property, isNullable), CreateAnnotation("efCore.payloadStorage", "OwnedJson", AnnotationScope.Projection, AnnotationSource.Generated)))];
+            case EfCoreEnvelopePayloadStoragePolicy.OwnedSeparateTable when propertyType is ObjectTypeDefinition payloadObject:
+                var ownedName = ResolveUniqueName($"{ownerEntityName}_{projectedName}", entityNames, "entity", propertyPath, diagnostics);
+                if (ownedName is null)
+                {
+                    return [];
+                }
+
+                entityInfos.Add(ProjectEntity(model, payloadObject, ownedName, true, entityInfos, entityNames, diagnostics));
+                return [CreateProperty(projectedName, null, typeof(object), property.Cardinality.IsRequired, isNullable, null, null, "OwnedSeparateTable", isGenerated, AppendAnnotations(BuildPropertyAnnotations(property, isNullable), CreateAnnotation("efCore.ownedTypeName", ownedName, AnnotationScope.Projection, AnnotationSource.Generated), CreateAnnotation("efCore.payloadStorage", "OwnedSeparateTable", AnnotationScope.Projection, AnnotationSource.Generated)))];
+            case EfCoreEnvelopePayloadStoragePolicy.OwnedSameTable:
+            case EfCoreEnvelopePayloadStoragePolicy.OwnedSeparateTable:
+                Report(diagnostics, SchemaDiagnosticSeverity.Warning, "EFCORE_ENVELOPE_PAYLOAD_STORAGE_UNSUPPORTED", $"Envelope payload '{property.Name}' requires an object payload for storage policy '{policy.StoragePolicy}'.", propertyPath);
+                return [];
+            case EfCoreEnvelopePayloadStoragePolicy.SerializedJson:
+            default:
+                return [CreateProperty(projectedName, policy.ColumnName ?? projectedName, typeof(string), property.Cardinality.IsRequired, isNullable, property.Constraints.String?.MaxLength, null, "Json", isGenerated, AppendAnnotations(BuildPropertyAnnotations(property, isNullable), CreateAnnotation("efCore.payloadStorage", "SerializedJson", AnnotationScope.Projection, AnnotationSource.Generated)))];
+        }
+    }
+
+    private EfCoreEnvelopePayloadPolicy ResolveEnvelopePolicy(ObjectTypeDefinition owner, PropertyDefinition property)
+    {
+        if (_options.EnvelopePolicies.TryGetValue(owner.Name, out EfCoreEnvelopePayloadPolicy? byName) || _options.EnvelopePolicies.TryGetValue(owner.Id.Value, out byName))
+        {
+            return byName;
+        }
+
+        return new EfCoreEnvelopePayloadPolicy { EnvelopeTypeName = owner.Name, PayloadPropertyName = property.Name, StoragePolicy = EfCoreEnvelopePayloadStoragePolicy.SerializedJson };
+    }
+
+    private static bool IsEnvelopePayload(ObjectTypeDefinition owner, PropertyDefinition property)
+    {
+        return owner.Annotations.Items.Any(annotation => string.Equals(annotation.Key.Value, CoreSemanticAnnotationKeys.Envelope, StringComparison.Ordinal) && Convert.ToString(annotation.Value, System.Globalization.CultureInfo.InvariantCulture)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
+            && property.Annotations.Items.Any(annotation => string.Equals(annotation.Key.Value, CoreSemanticAnnotationKeys.EnvelopePayload, StringComparison.Ordinal) && Convert.ToString(annotation.Value, System.Globalization.CultureInfo.InvariantCulture)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
     }
 
     private IReadOnlyList<EfKeyDefinition> ProjectKeys(

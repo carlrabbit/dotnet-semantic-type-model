@@ -7,6 +7,7 @@
 #pragma warning disable CA1826
 #pragma warning disable CA1859
 using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Core.Semantics;
 
 namespace SemanticTypeModel.PowerBI;
 
@@ -286,6 +287,11 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         var sortByColumn = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.SortByColumn);
         PowerBiSummarization summarization = ResolveSummarization(property.Annotations, propertyPath, isKey, propertyType, diagnostics);
 
+        if (IsEnvelopePayload(owner, property))
+        {
+            return ProjectEnvelopePayload(owner, property, propertyType, isHidden, diagnostics);
+        }
+
         if (propertyType is ScalarTypeDefinition scalar)
         {
             return
@@ -328,6 +334,62 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         }
 
         return HandleUnsupportedShape(property, propertyPath, propertyType.Kind.ToString(), diagnostics);
+    }
+
+
+    private IReadOnlyList<PowerBiColumnDefinition> ProjectEnvelopePayload(
+        ObjectTypeDefinition owner,
+        PropertyDefinition property,
+        TypeDefinition propertyType,
+        bool isHidden,
+        IList<SchemaDiagnostic> diagnostics)
+    {
+        var propertyPath = ModelPath.ForProperty(owner.Id, property.Name);
+        PowerBiEnvelopeProjectionPolicy policy = ResolveEnvelopePolicy(owner, property);
+        if (policy.PayloadPolicy == PowerBiEnvelopePayloadAnalyticalPolicy.Ignored)
+        {
+            return [];
+        }
+
+        if (policy.PayloadPolicy == PowerBiEnvelopePayloadAnalyticalPolicy.Summary)
+        {
+            return
+            [
+                CreateColumn(
+                    policy.SummaryColumnName ?? $"{property.Name}Summary",
+                    "Payload Summary",
+                    PowerBiDataType.String,
+                    true,
+                    false,
+                    isHidden,
+                    $"Summary for payload type {propertyType.Name}.",
+                    PowerBiSummarization.None,
+                    property.Id,
+                    null,
+                    null,
+                    null,
+                    property.Annotations),
+            ];
+        }
+
+        Report(diagnostics, SchemaDiagnosticSeverity.Warning, "POWERBI_ENVELOPE_PAYLOAD_POLICY_UNSUPPORTED", $"Envelope payload policy '{policy.PayloadPolicy}' is not supported without explicit analytical mapping.", propertyPath);
+        return [];
+    }
+
+    private PowerBiEnvelopeProjectionPolicy ResolveEnvelopePolicy(ObjectTypeDefinition owner, PropertyDefinition property)
+    {
+        if (_options.EnvelopePolicies.TryGetValue(owner.Name, out PowerBiEnvelopeProjectionPolicy? byName) || _options.EnvelopePolicies.TryGetValue(owner.Id.Value, out byName))
+        {
+            return byName;
+        }
+
+        return new PowerBiEnvelopeProjectionPolicy { EnvelopeTypeName = owner.Name, PayloadPropertyName = property.Name, PayloadPolicy = PowerBiEnvelopePayloadAnalyticalPolicy.Ignored };
+    }
+
+    private static bool IsEnvelopePayload(ObjectTypeDefinition owner, PropertyDefinition property)
+    {
+        return owner.Annotations.Items.Any(annotation => string.Equals(annotation.Key.Value, CoreSemanticAnnotationKeys.Envelope, StringComparison.Ordinal) && Convert.ToString(annotation.Value, System.Globalization.CultureInfo.InvariantCulture)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true)
+            && property.Annotations.Items.Any(annotation => string.Equals(annotation.Key.Value, CoreSemanticAnnotationKeys.EnvelopePayload, StringComparison.Ordinal) && Convert.ToString(annotation.Value, System.Globalization.CultureInfo.InvariantCulture)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
     }
 
     private IReadOnlyList<PowerBiColumnDefinition> ProjectValueObject(

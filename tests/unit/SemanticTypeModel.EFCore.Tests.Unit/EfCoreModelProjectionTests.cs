@@ -199,7 +199,7 @@ public sealed class EfCoreModelProjectionTests
 
         TypeSchemaModel model = BuildModel(customer, address, stringType);
 
-        EfModelDefinition diagnosed = Project(model);
+        EfModelDefinition diagnosed = Project(model, new EfCoreProjectionOptions { ValueObjectProjectionMode = ValueObjectEfProjectionMode.Diagnose });
         EfModelDefinition owned = Project(model, new EfCoreProjectionOptions { ValueObjectProjectionMode = ValueObjectEfProjectionMode.Owned });
         EfModelDefinition flattened = Project(model, new EfCoreProjectionOptions { ValueObjectProjectionMode = ValueObjectEfProjectionMode.Flatten });
         EfModelDefinition serialized = Project(model, new EfCoreProjectionOptions { ValueObjectProjectionMode = ValueObjectEfProjectionMode.SerializeJson });
@@ -307,7 +307,7 @@ public sealed class EfCoreModelProjectionTests
         };
 
         TypeSchemaModel model = BuildModel(entity, stringType, arrayType, dictionaryType, unionType);
-        EfModelDefinition diagnosed = Project(model);
+        EfModelDefinition diagnosed = Project(model, new EfCoreProjectionOptions { ValueObjectProjectionMode = ValueObjectEfProjectionMode.Diagnose });
         EfModelDefinition serialized = Project(model, new EfCoreProjectionOptions { UnsupportedShapeBehavior = UnsupportedEfShapeBehavior.SerializeJson });
 
         _ = await Assert.That(diagnosed.Diagnostics.Count(static diagnostic => diagnostic.Code.EndsWith("_UNSUPPORTED", StringComparison.Ordinal))).IsEqualTo(3);
@@ -353,7 +353,7 @@ public sealed class EfCoreModelProjectionTests
         };
 
         TypeSchemaModel model = BuildModel(entity, stringType);
-        EfModelDefinition diagnosed = Project(model);
+        EfModelDefinition diagnosed = Project(model, new EfCoreProjectionOptions { ValueObjectProjectionMode = ValueObjectEfProjectionMode.Diagnose });
         EfModelDefinition suffixed = Project(model, new EfCoreProjectionOptions { NameCollisionBehavior = NameCollisionBehavior.Suffix });
 
         _ = await Assert.That(diagnosed.Diagnostics.Any(static diagnostic => diagnostic.Code == "EFCORE_DUPLICATE_PROJECTED_NAME")).IsTrue();

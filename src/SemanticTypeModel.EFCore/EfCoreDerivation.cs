@@ -16,6 +16,9 @@ public sealed class EfCoreDerivationOptions
     /// <summary>Gets or sets EF Core projection options applied after canonical transformations.</summary>
     public EfCoreProjectionOptions Projection { get; set; } = EfCoreProjectionOptions.Default;
 
+    /// <summary>Gets EF Core envelope payload storage policy configuration.</summary>
+    public EfCoreEnvelopeProjectionOptions Envelopes { get; } = new();
+
     /// <summary>Adds the repository-defined default canonical transformations.</summary>
     public EfCoreDerivationOptions UseDefaultTransformations()
     {
@@ -51,7 +54,8 @@ public static class EfCoreDerivationExtensions
 
         SemanticModelTransformationResult transformed = options.Transformations.Run(model, pipelineOptions, cancellationToken);
         var context = new SchemaProjectionContext { Target = ProjectionTarget.EfCore };
-        EfModelDefinition projected = new EfCoreModelProjection(options.Projection).Project(transformed.Model, context);
+        EfCoreProjectionOptions projectionOptions = options.Projection with { EnvelopePolicies = options.Envelopes.Policies };
+        EfModelDefinition projected = new EfCoreModelProjection(projectionOptions).Project(transformed.Model, context);
         IReadOnlyList<SchemaDiagnostic> diagnostics = [.. transformed.Diagnostics, .. projected.Diagnostics];
 
         return new SemanticDerivationResult<EfCoreSemanticModel>

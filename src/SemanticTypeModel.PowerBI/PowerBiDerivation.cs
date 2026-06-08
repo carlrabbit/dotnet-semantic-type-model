@@ -28,7 +28,8 @@ public static class PowerBiDerivationExtensions
 
         SemanticModelTransformationResult transformed = options.Transformations.Run(model, options.PipelineOptions, cancellationToken);
         var projectionContext = new Hardening.SchemaProjectionContext { Diagnostics = [.. transformed.Diagnostics], Target = Hardening.ProjectionTarget.PowerBi };
-        PowerBiProjectionModel projection = new PowerBiModelProjection(options.Projection).Project(transformed.Model, projectionContext);
+        PowerBiProjectionOptions projectionOptions = options.Projection with { EnvelopePolicies = options.Envelopes.Policies };
+        PowerBiProjectionModel projection = new PowerBiModelProjection(projectionOptions).Project(transformed.Model, projectionContext);
         PowerBiSemanticModel domainModel = projection.ToSemanticModel();
         domainModel = ApplyExplicitArtifacts(domainModel, options);
         foreach (Action<PowerBiSemanticModel> callback in options.ConfigureModelCallbacks)
