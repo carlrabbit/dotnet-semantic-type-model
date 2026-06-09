@@ -96,6 +96,25 @@ public static class StmDiagnosticIds
     /// <summary>STM1013 — Envelope projection-root selection is ambiguous or unsupported.</summary>
     public const string EnvelopeProjectionRootAmbiguous = "STM1013";
 
+
+    /// <summary>STM1014 — Ownership semantics contain a cycle.</summary>
+    public const string OwnershipCycle = "STM1014";
+
+    /// <summary>STM1015 — An owned collection requires an explicit projection policy for a target.</summary>
+    public const string OwnedCollectionPolicyRequired = "STM1015";
+
+    /// <summary>STM1016 — A version/revision/current-version declaration is ambiguous or unsupported.</summary>
+    public const string VersioningSemanticInvalid = "STM1016";
+
+    /// <summary>STM1017 — Temporal validity endpoints are missing or use unsupported types.</summary>
+    public const string TemporalValidityInvalid = "STM1017";
+
+    /// <summary>STM1018 — Lifecycle state member type is unsupported.</summary>
+    public const string LifecycleStateInvalid = "STM1018";
+
+    /// <summary>STM1019 — Extension-data bag shape or multiplicity is unsupported.</summary>
+    public const string ExtensionDataInvalid = "STM1019";
+
     // -------------------------------------------------------------------------
     // STM3xxx — JSON Schema runtime projection
     // Emitted by JsonSchemaRuntimeProjection during the Projection pipeline stage.

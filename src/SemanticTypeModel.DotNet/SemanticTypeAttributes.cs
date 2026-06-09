@@ -597,3 +597,82 @@ public sealed class SemanticEnvelopePayloadAttribute : Attribute;
 /// </summary>
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
 public sealed class SemanticEnvelopeMetadataAttribute : Attribute;
+
+/// <summary>
+/// Marks a CLR type as participating in version or revision evolution.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticVersionedAttribute : Attribute;
+
+/// <summary>
+/// Marks a member as an owned object or owned collection whose lifecycle follows the declaring owner.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticOwnedAttribute : Attribute
+{
+    /// <summary>Gets or sets the ownership kind. Defaults to inference from the property shape.</summary>
+    public SemanticOwnershipKind Kind { get; init; } = SemanticOwnershipKind.Inferred;
+}
+
+/// <summary>
+/// Ownership kind declared for a semantic owned member.
+/// </summary>
+public enum SemanticOwnershipKind
+{
+    /// <summary>Infer owned object or owned collection from the property type.</summary>
+    Inferred,
+
+    /// <summary>The property is a single owned object.</summary>
+    Object,
+
+    /// <summary>The property is a collection of owned elements.</summary>
+    Collection,
+}
+
+/// <summary>
+/// Marks a member as a version identifier.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticVersionAttribute : Attribute;
+
+/// <summary>
+/// Marks a member as a revision identifier.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticRevisionAttribute : Attribute;
+
+/// <summary>
+/// Marks a member as the current version or revision indicator.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticCurrentVersionAttribute : Attribute;
+
+/// <summary>
+/// Marks a CLR type as having a temporal validity interval.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticTemporalValidityAttribute : Attribute;
+
+/// <summary>
+/// Marks a member as the start of a temporal validity interval.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticValidFromAttribute : Attribute;
+
+/// <summary>
+/// Marks a member as the optional end of a temporal validity interval.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticValidToAttribute : Attribute;
+
+/// <summary>
+/// Marks a member as lifecycle state.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticLifecycleStateAttribute : Attribute;
+
+/// <summary>
+/// Marks a dictionary-like member as instance extension data.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticExtensionDataAttribute : Attribute;
