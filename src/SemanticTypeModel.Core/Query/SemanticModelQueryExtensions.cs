@@ -180,6 +180,41 @@ public static class SemanticModelQueryExtensions
             .OrderBy(static property => property.Name, StringComparer.Ordinal);
     }
 
+    /// <summary>Returns object properties marked with ownership semantics.</summary>
+    public static IEnumerable<PropertyDefinition> OwnedMembers(this ObjectTypeDefinition type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        return type.Properties.Where(static property => HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.Ownership, "true") || HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.OwnedObject, "true") || HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.OwnedCollection, "true")).OrderBy(static property => property.Name, StringComparer.Ordinal);
+    }
+
+    /// <summary>Returns version or revision members in deterministic order.</summary>
+    public static IEnumerable<PropertyDefinition> VersionMembers(this ObjectTypeDefinition type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        return type.Properties.Where(static property => HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.Version, "true") || HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.Revision, "true") || HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.CurrentVersion, "true")).OrderBy(static property => property.Name, StringComparer.Ordinal);
+    }
+
+    /// <summary>Returns temporal-validity endpoint members in deterministic order.</summary>
+    public static IEnumerable<PropertyDefinition> TemporalValidityMembers(this ObjectTypeDefinition type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        return type.Properties.Where(static property => HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ValidFrom, "true") || HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ValidTo, "true")).OrderBy(static property => property.Name, StringComparer.Ordinal);
+    }
+
+    /// <summary>Returns lifecycle-state members in deterministic order.</summary>
+    public static IEnumerable<PropertyDefinition> LifecycleStateMembers(this ObjectTypeDefinition type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        return type.Properties.Where(static property => HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.LifecycleState, "true")).OrderBy(static property => property.Name, StringComparer.Ordinal);
+    }
+
+    /// <summary>Returns extension-data members in deterministic order.</summary>
+    public static IEnumerable<PropertyDefinition> ExtensionDataMembers(this ObjectTypeDefinition type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        return type.Properties.Where(static property => HasAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData, "true")).OrderBy(static property => property.Name, StringComparer.Ordinal);
+    }
+
     /// <summary>
     /// Returns properties for the hardened object type identified by <typeparamref name="T"/>.
     /// </summary>

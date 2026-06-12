@@ -140,7 +140,7 @@ public static class JsonSchemaDerivationExtensions
                 Title = type.DisplayName ?? GetStringAnnotation(type.Annotations, "schema.title") ?? GetStringAnnotation(type.Annotations, "title"),
                 Description = type.Description ?? GetStringAnnotation(type.Annotations, "schema.description") ?? GetStringAnnotation(type.Annotations, "description"),
                 AdditionalPropertiesAllowed = additionalAllowed,
-                Properties = [.. type.Properties.OrderBy(static property => property.Name, StringComparer.Ordinal).Select(property => MapProperty(type, property))],
+                Properties = [.. type.Properties.Where(static property => !HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData)).OrderBy(static property => property.Name, StringComparer.Ordinal).Select(property => MapProperty(type, property))],
                 Annotations = MapProjectionAnnotations(type.Annotations),
             };
         }
@@ -361,9 +361,15 @@ public static class JsonSchemaDerivationExtensions
         private static Dictionary<string, JsonElement> MapProjectionAnnotations(Hardening.AnnotationBag bag)
         {
             return bag.Items
-                .Where(static annotation => annotation.Scope == Hardening.AnnotationScope.Projection || annotation.Key.Value.StartsWith("jsonSchema.keyword.", StringComparison.Ordinal))
+                .Where(static annotation => annotation.Scope == Hardening.AnnotationScope.Projection || annotation.Key.Value.StartsWith("jsonSchema.keyword.", StringComparison.Ordinal) || annotation.Key.Value.StartsWith("schema.", StringComparison.Ordinal))
                 .OrderBy(static annotation => annotation.Key.Value, StringComparer.Ordinal)
                 .ToDictionary(static annotation => annotation.Key.Value.StartsWith("jsonSchema.keyword.", StringComparison.Ordinal) ? annotation.Key.Value["jsonSchema.keyword.".Length..] : annotation.Key.Value, static annotation => ToJsonElement(annotation.Value), StringComparer.Ordinal);
+        }
+
+        private static bool HasBooleanAnnotation(Hardening.AnnotationBag bag, string key)
+        {
+            return bag.Items.Where(annotation => string.Equals(annotation.Key.Value, key, StringComparison.Ordinal)).Select(static annotation => annotation.Value?.ToString()).LastOrDefault(static value => !string.IsNullOrWhiteSpace(value)) is string value
+                && string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string? GetStringAnnotation(Hardening.AnnotationBag bag, string key)

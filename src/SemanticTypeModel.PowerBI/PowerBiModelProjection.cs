@@ -7,6 +7,7 @@
 #pragma warning disable CA1826
 #pragma warning disable CA1859
 using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Core.Diagnostics;
 using SemanticTypeModel.Core.Semantics;
 
 namespace SemanticTypeModel.PowerBI;
@@ -287,6 +288,17 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         var sortByColumn = ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.SortByColumn);
         PowerBiSummarization summarization = ResolveSummarization(property.Annotations, propertyPath, isKey, propertyType, diagnostics);
 
+        if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData))
+        {
+            return [];
+        }
+
+        if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.OwnedCollection))
+        {
+            Report(diagnostics, SchemaDiagnosticSeverity.Warning, StmDiagnosticIds.OwnedCollectionPolicyRequired, $"Owned collection '{owner.Name}.{property.Name}' requires an explicit Power BI projection policy.", propertyPath);
+            return [];
+        }
+
         if (IsEnvelopePayload(owner, property))
         {
             return ProjectEnvelopePayload(owner, property, propertyType, isHidden, diagnostics);
@@ -384,6 +396,11 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         }
 
         return new PowerBiEnvelopeProjectionPolicy { EnvelopeTypeName = owner.Name, PayloadPropertyName = property.Name, PayloadPolicy = PowerBiEnvelopePayloadAnalyticalPolicy.Ignored };
+    }
+
+    private static bool HasBooleanAnnotation(AnnotationBag annotations, string key)
+    {
+        return annotations.Items.Any(annotation => string.Equals(annotation.Key.Value, key, StringComparison.Ordinal) && Convert.ToString(annotation.Value, System.Globalization.CultureInfo.InvariantCulture)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
     }
 
     private static bool IsEnvelopePayload(ObjectTypeDefinition owner, PropertyDefinition property)

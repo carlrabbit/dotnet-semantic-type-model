@@ -19,7 +19,7 @@ The numeric sub-ranges are allocated as follows:
 | Range     | Package                        | Emitter                              |
 |-----------|--------------------------------|--------------------------------------|
 | STM0001–STM0013 | SemanticTypeModel.Core   | TypeSchemaModelValidator             |
-| STM1004–STM1013 | SemanticTypeModel.Core   | Core semantic transformations        |
+| STM1004–STM1019 | SemanticTypeModel.Core   | Core semantic transformations        |
 | STM3201–STM3207 | SemanticTypeModel.JsonSchema | JsonSchemaRuntimeProjection      |
 | STM5001–STM5025 | SemanticTypeModel.DotNet / SemanticTypeModel.Generators | RoslynDotNetTypeExtractor / SemanticTypeModelSourceGenerator |
 
@@ -111,3 +111,6 @@ The following test coverage is required:
 - `public-docs/diagnostics/stm3xxx.md`
 - `public-docs/diagnostics/stm5xxx.md`
 - `public-docs/diagnostics/preview-status.md`
+
+
+M0034 core transformation diagnostics reserve `STM1014` through `STM1019` for ownership cycles, owned collection policy requirements, versioning semantic invalidity, temporal validity invalidity, lifecycle-state invalidity, and extension-data invalidity.

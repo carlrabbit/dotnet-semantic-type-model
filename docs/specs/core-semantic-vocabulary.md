@@ -734,3 +734,9 @@ Required envelope diagnostic classes include:
 - envelope payload not represented in canonical model;
 - envelope and payload both selected as projection root without explicit policy;
 - unsupported payload representation for a target.
+
+## M0034 Evolution, Ownership, Lifecycle, Temporal Validity, and Extension Data Semantics
+
+The core semantic vocabulary includes projection-neutral annotation keys for `Ownership`, `OwnedObject`, `OwnedCollection`, `Versioned`, `Version`, `Revision`, `CurrentVersion`, `TemporalValidity`, `ValidFrom`, `ValidTo`, `LifecycleState`, and `ExtensionData`.
+
+These semantics preserve model meaning independently of JSON Schema, EF Core, Power BI, and System.Text.Json; target packages may derive safe metadata or diagnostics but must not generate query filters, workflow transitions, temporal-table configuration, automatic primary-key replacement, DAX measures, or arbitrary extension-data flattening by default.

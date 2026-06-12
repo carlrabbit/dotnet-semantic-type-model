@@ -30,6 +30,16 @@ public sealed class RoslynDotNetTypeExtractor
     private const string SemanticEnvelopeAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticEnvelopeAttribute";
     private const string SemanticEnvelopePayloadAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticEnvelopePayloadAttribute";
     private const string SemanticEnvelopeMetadataAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticEnvelopeMetadataAttribute";
+    private const string SemanticVersionedAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticVersionedAttribute";
+    private const string SemanticOwnedAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticOwnedAttribute";
+    private const string SemanticVersionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticVersionAttribute";
+    private const string SemanticRevisionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticRevisionAttribute";
+    private const string SemanticCurrentVersionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticCurrentVersionAttribute";
+    private const string SemanticTemporalValidityAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticTemporalValidityAttribute";
+    private const string SemanticValidFromAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticValidFromAttribute";
+    private const string SemanticValidToAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticValidToAttribute";
+    private const string SemanticLifecycleStateAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticLifecycleStateAttribute";
+    private const string SemanticExtensionDataAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticExtensionDataAttribute";
     private const string GeneratorOptionsAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticTypeModelGeneratorOptionsAttribute";
     private const string JsonPropertyNameAttributeMetadataName = "System.Text.Json.Serialization.JsonPropertyNameAttribute";
     private const string JsonIgnoreAttributeMetadataName = "System.Text.Json.Serialization.JsonIgnoreAttribute";
@@ -548,6 +558,7 @@ public sealed class RoslynDotNetTypeExtractor
         TryAddSystemTextJsonTypeAnnotations(typeAttributes, annotations, type);
         TryAddRoleAnnotation(typeAttributes, annotations, type.Locations.FirstOrDefault());
         TryAddEnvelopeAnnotations(typeAttributes, annotations, type);
+        TryAddEvolutionTypeAnnotations(typeAttributes, annotations);
         ValidateTypeAttributeUsage(typeAttributes, type);
         AddInheritanceAnnotations(type, annotations, cancellationToken);
         DiagnoseMissingXmlDocumentationIfRequired(type, type.Locations.FirstOrDefault());
@@ -583,6 +594,7 @@ public sealed class RoslynDotNetTypeExtractor
             TryAddFormatAndConstraintAnnotations(memberAttributes, memberType, memberAnnotations, property);
             TryAddXmlDescriptionAnnotation(property, memberAttributes, memberAnnotations);
             TryAddEnvelopeMemberAnnotations(memberAttributes, memberAnnotations);
+            TryAddEvolutionMemberAnnotations(memberAttributes, memberType, memberAnnotations);
             ValidateMemberAttributeUsage(memberAttributes, property);
             DiagnoseMissingXmlDocumentationIfRequired(property, property.Locations.FirstOrDefault());
 
@@ -1500,6 +1512,92 @@ public sealed class RoslynDotNetTypeExtractor
         return null;
     }
 
+
+    private static void TryAddEvolutionTypeAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
+    {
+        if (HasAttribute(attributes, SemanticVersionedAttributeMetadataName))
+        {
+            annotations["schema.versioned"] = "true";
+        }
+
+        if (HasAttribute(attributes, SemanticTemporalValidityAttributeMetadataName))
+        {
+            annotations["schema.temporalValidity"] = "true";
+        }
+    }
+
+    private void TryAddEvolutionMemberAnnotations(ImmutableArray<AttributeData> attributes, ITypeSymbol memberType, Dictionary<string, string> annotations)
+    {
+        foreach (AttributeData attribute in attributes)
+        {
+            string? metadataName = attribute.AttributeClass?.ToDisplayString();
+            if (string.Equals(metadataName, SemanticOwnedAttributeMetadataName, StringComparison.Ordinal))
+            {
+                var kind = GetOwnedKind(attribute, memberType);
+                annotations["schema.ownership"] = "true";
+                annotations["schema.ownership.kind"] = kind;
+                annotations[kind == "collection" ? "schema.ownedCollection" : "schema.ownedObject"] = "true";
+            }
+            else if (string.Equals(metadataName, SemanticVersionAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["schema.version"] = "true";
+            }
+            else if (string.Equals(metadataName, SemanticRevisionAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["schema.revision"] = "true";
+            }
+            else if (string.Equals(metadataName, SemanticCurrentVersionAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["schema.currentVersion"] = "true";
+            }
+            else if (string.Equals(metadataName, SemanticValidFromAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["schema.validFrom"] = "true";
+            }
+            else if (string.Equals(metadataName, SemanticValidToAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["schema.validTo"] = "true";
+            }
+            else if (string.Equals(metadataName, SemanticLifecycleStateAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["schema.lifecycleState"] = "true";
+            }
+            else if (string.Equals(metadataName, SemanticExtensionDataAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["schema.extensionData"] = "true";
+                AddExtensionDataShapeAnnotations(memberType, annotations);
+            }
+        }
+    }
+
+    private static string GetOwnedKind(AttributeData attribute, ITypeSymbol memberType)
+    {
+        foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+        {
+            if (string.Equals(key, nameof(SemanticOwnedAttribute.Kind), StringComparison.Ordinal)
+                && value.Value is int kind
+                && Enum.IsDefined(typeof(SemanticOwnershipKind), kind))
+            {
+                return (SemanticOwnershipKind)kind == SemanticOwnershipKind.Collection ? "collection" : (SemanticOwnershipKind)kind == SemanticOwnershipKind.Object ? "object" : InferOwnedKind(memberType);
+            }
+        }
+
+        return InferOwnedKind(memberType);
+    }
+
+    private static string InferOwnedKind(ITypeSymbol memberType)
+    {
+        return TryGetCollectionItemType(memberType, out _) ? "collection" : "object";
+    }
+
+    private static void AddExtensionDataShapeAnnotations(ITypeSymbol memberType, Dictionary<string, string> annotations)
+    {
+        if (memberType is INamedTypeSymbol namedType && FindImplementedDictionary(namedType) is INamedTypeSymbol dictionaryType)
+        {
+            annotations["schema.extensionData.keyType"] = dictionaryType.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            annotations["schema.extensionData.valueType"] = dictionaryType.TypeArguments[1].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        }
+    }
 
     private void TryAddEnvelopeAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations, INamedTypeSymbol type)
     {

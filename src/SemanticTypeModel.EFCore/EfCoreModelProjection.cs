@@ -6,6 +6,7 @@
 #pragma warning disable CA1822
 #pragma warning disable CA1859
 using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Core.Diagnostics;
 using SemanticTypeModel.Core.Semantics;
 
 namespace SemanticTypeModel.EFCore;
@@ -236,6 +237,24 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
 
         PreserveSchemaOptionality(property, effectiveNullability, propertyPath, diagnostics);
         ReportConstraintPreservation(property, propertyPath, diagnostics);
+
+        if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData))
+        {
+            return [];
+        }
+
+        if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.OwnedCollection))
+        {
+            Report(diagnostics, SchemaDiagnosticSeverity.Warning, StmDiagnosticIds.OwnedCollectionPolicyRequired, $"Owned collection '{owner.Name}.{property.Name}' requires an explicit EF Core projection policy.", propertyPath);
+            return [];
+        }
+
+        if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.OwnedObject) && propertyType is ObjectTypeDefinition ownedObject)
+        {
+            return FlattenValueObject(model, owner, property, ownedObject, projectedName, diagnostics)
+                .Select(projected => projected with { Annotations = AppendAnnotations(projected.Annotations, CreateAnnotation("efCore.ownership", "OwnsOne", AnnotationScope.Projection, AnnotationSource.Generated)) })
+                .ToArray();
+        }
 
         if (IsEnvelopePayload(owner, property))
         {
@@ -1362,6 +1381,12 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
         }
 
         return null;
+    }
+
+    private static bool HasBooleanAnnotation(AnnotationBag annotations, string key)
+    {
+        return TryGetAnnotationValue(annotations, key, out var raw)
+            && Convert.ToString(raw, System.Globalization.CultureInfo.InvariantCulture)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
     }
 
     private static bool? ResolveBooleanAnnotation(AnnotationBag annotations, string modelPath, IList<SchemaDiagnostic> diagnostics, string key)

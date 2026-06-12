@@ -177,6 +177,16 @@ public static class SemanticTextExtensions
             builder.Append(" [Envelope]");
         }
 
+        if (type is ObjectTypeDefinition versionedType && HasBooleanAnnotation(versionedType.Annotations, CoreSemanticAnnotationKeys.Versioned))
+        {
+            builder.Append(" [Versioned]");
+        }
+
+        if (type is ObjectTypeDefinition temporalType && HasBooleanAnnotation(temporalType.Annotations, CoreSemanticAnnotationKeys.TemporalValidity))
+        {
+            builder.Append(" [TemporalValidity]");
+        }
+
         builder.AppendLine();
 
         if (options.Detail == SemanticTextDetail.Detailed)
@@ -220,6 +230,16 @@ public static class SemanticTextExtensions
                 {
                     builder.Append(" envelopeMetadata");
                 }
+
+                AppendSemanticFlag(builder, property.Annotations, CoreSemanticAnnotationKeys.OwnedObject, "ownedObject");
+                AppendSemanticFlag(builder, property.Annotations, CoreSemanticAnnotationKeys.OwnedCollection, "ownedCollection");
+                AppendSemanticFlag(builder, property.Annotations, CoreSemanticAnnotationKeys.Version, "version");
+                AppendSemanticFlag(builder, property.Annotations, CoreSemanticAnnotationKeys.Revision, "revision");
+                AppendSemanticFlag(builder, property.Annotations, CoreSemanticAnnotationKeys.CurrentVersion, "currentVersion");
+                AppendSemanticFlag(builder, property.Annotations, CoreSemanticAnnotationKeys.ValidFrom, "validFrom");
+                AppendSemanticFlag(builder, property.Annotations, CoreSemanticAnnotationKeys.ValidTo, "validTo");
+                AppendSemanticFlag(builder, property.Annotations, CoreSemanticAnnotationKeys.LifecycleState, "lifecycleState");
+                AppendSemanticFlag(builder, property.Annotations, CoreSemanticAnnotationKeys.ExtensionData, "extensionData");
 
                 builder.AppendLine();
 
@@ -309,6 +329,15 @@ public static class SemanticTextExtensions
             .LastOrDefault(static value => !string.IsNullOrWhiteSpace(value))
             is string value
             && string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void AppendSemanticFlag(StringBuilder builder, AnnotationBag annotations, string key, string label)
+    {
+        if (HasBooleanAnnotation(annotations, key))
+        {
+            builder.Append(' ');
+            builder.Append(label);
+        }
     }
 
     private static void AppendAnnotations(StringBuilder builder, AnnotationBag annotations, string indent)

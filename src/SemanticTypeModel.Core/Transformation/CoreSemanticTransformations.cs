@@ -461,3 +461,141 @@ public sealed class ValidateEnvelopeSemanticsTransformation : ISemanticModelTran
         }
     }
 }
+
+/// <summary>
+/// Validates projection-neutral M0034 evolution, ownership, lifecycle, temporal, and extension-data semantics.
+/// </summary>
+public sealed class ValidateEvolutionOwnershipLifecycleSemanticsTransformation : ISemanticModelTransformation
+{
+    /// <inheritdoc />
+    public string Id => "core.validate-evolution-ownership-lifecycle-semantics";
+
+    /// <inheritdoc />
+    public string DisplayName => nameof(ValidateEvolutionOwnershipLifecycleSemanticsTransformation);
+
+    /// <inheritdoc />
+    public SemanticModelTransformationStepResult Transform(TypeSchemaModel model, SemanticModelTransformationContext context)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(context);
+        context.CancellationToken.ThrowIfCancellationRequested();
+
+        foreach (ObjectTypeDefinition objectType in model.Types.OfType<ObjectTypeDefinition>())
+        {
+            ValidateOwnership(model, objectType, context);
+            ValidateVersioning(objectType, context);
+            ValidateTemporalValidity(model, objectType, context);
+            ValidateLifecycleState(model, objectType, context);
+            ValidateExtensionData(model, objectType, context);
+        }
+
+        return new SemanticModelTransformationStepResult { Model = model, ChangeSummary = [] };
+    }
+
+    private static void ValidateOwnership(TypeSchemaModel model, ObjectTypeDefinition objectType, SemanticModelTransformationContext context)
+    {
+        foreach (PropertyDefinition property in objectType.Properties.Where(IsOwned))
+        {
+            if (property.Type.Id == objectType.Id)
+            {
+                Report(context, StmDiagnosticIds.OwnershipCycle, $"Ownership cycle detected on '{objectType.Name}.{property.Name}'.", ModelPath.ForProperty(objectType.Id, property.Id.Value), CoreSemanticAnnotationKeys.Ownership);
+            }
+
+            if (!model.TypesById.ContainsKey(property.Type.Id))
+            {
+                Report(context, StmDiagnosticIds.RelationshipTypeMissing, $"Owned member '{objectType.Name}.{property.Name}' references missing type '{property.Type.Id.Value}'.", ModelPath.ForProperty(objectType.Id, property.Id.Value), CoreSemanticAnnotationKeys.Ownership);
+            }
+        }
+    }
+
+    private static void ValidateVersioning(ObjectTypeDefinition objectType, SemanticModelTransformationContext context)
+    {
+        PropertyDefinition[] versionMembers = [.. objectType.Properties.Where(property => Has(property, CoreSemanticAnnotationKeys.Version) || Has(property, CoreSemanticAnnotationKeys.Revision))];
+        PropertyDefinition[] currentMembers = [.. objectType.Properties.Where(property => Has(property, CoreSemanticAnnotationKeys.CurrentVersion))];
+        if (Has(objectType, CoreSemanticAnnotationKeys.Versioned) && versionMembers.Length == 0)
+        {
+            Report(context, StmDiagnosticIds.VersioningSemanticInvalid, $"Versioned type '{objectType.Name}' does not declare a version or revision member.", ModelPath.ForType(objectType.Id), CoreSemanticAnnotationKeys.Versioned);
+        }
+
+        foreach (PropertyDefinition current in currentMembers)
+        {
+            if (!current.Type.Id.Value.Contains("Boolean", StringComparison.OrdinalIgnoreCase) && !current.Type.Id.Value.Contains("Bool", StringComparison.OrdinalIgnoreCase))
+            {
+                Report(context, StmDiagnosticIds.VersioningSemanticInvalid, $"Current-version marker '{objectType.Name}.{current.Name}' should be boolean/status-compatible.", ModelPath.ForProperty(objectType.Id, current.Id.Value), CoreSemanticAnnotationKeys.CurrentVersion);
+            }
+        }
+    }
+
+    private static void ValidateTemporalValidity(TypeSchemaModel model, ObjectTypeDefinition objectType, SemanticModelTransformationContext context)
+    {
+        PropertyDefinition[] from = [.. objectType.Properties.Where(property => Has(property, CoreSemanticAnnotationKeys.ValidFrom))];
+        PropertyDefinition[] to = [.. objectType.Properties.Where(property => Has(property, CoreSemanticAnnotationKeys.ValidTo))];
+        if ((Has(objectType, CoreSemanticAnnotationKeys.TemporalValidity) || to.Length > 0) && from.Length == 0)
+        {
+            Report(context, StmDiagnosticIds.TemporalValidityInvalid, $"Temporal validity on '{objectType.Name}' requires a ValidFrom member.", ModelPath.ForType(objectType.Id), CoreSemanticAnnotationKeys.TemporalValidity);
+        }
+
+        foreach (PropertyDefinition endpoint in from.Concat(to))
+        {
+            if (!IsTemporal(model, endpoint.Type.Id))
+            {
+                Report(context, StmDiagnosticIds.TemporalValidityInvalid, $"Validity endpoint '{objectType.Name}.{endpoint.Name}' uses non-temporal type '{endpoint.Type.Id.Value}'.", ModelPath.ForProperty(objectType.Id, endpoint.Id.Value), Has(endpoint, CoreSemanticAnnotationKeys.ValidFrom) ? CoreSemanticAnnotationKeys.ValidFrom : CoreSemanticAnnotationKeys.ValidTo);
+            }
+        }
+    }
+
+    private static void ValidateLifecycleState(TypeSchemaModel model, ObjectTypeDefinition objectType, SemanticModelTransformationContext context)
+    {
+        foreach (PropertyDefinition property in objectType.Properties.Where(property => Has(property, CoreSemanticAnnotationKeys.LifecycleState)))
+        {
+            if (model.TryGetType(property.Type.Id) is not (ScalarTypeDefinition or EnumTypeDefinition))
+            {
+                Report(context, StmDiagnosticIds.LifecycleStateInvalid, $"Lifecycle state member '{objectType.Name}.{property.Name}' must be scalar or enum.", ModelPath.ForProperty(objectType.Id, property.Id.Value), CoreSemanticAnnotationKeys.LifecycleState);
+            }
+        }
+    }
+
+    private static void ValidateExtensionData(TypeSchemaModel model, ObjectTypeDefinition objectType, SemanticModelTransformationContext context)
+    {
+        PropertyDefinition[] bags = [.. objectType.Properties.Where(property => Has(property, CoreSemanticAnnotationKeys.ExtensionData))];
+        if (bags.Length > 1)
+        {
+            Report(context, StmDiagnosticIds.ExtensionDataInvalid, $"Type '{objectType.Name}' declares multiple extension-data bags.", ModelPath.ForType(objectType.Id), CoreSemanticAnnotationKeys.ExtensionData, [.. bags.Select(bag => ModelPath.ForProperty(objectType.Id, bag.Id.Value))]);
+        }
+
+        foreach (PropertyDefinition bag in bags)
+        {
+            if (model.TryGetType(bag.Type.Id) is not DictionaryTypeDefinition)
+            {
+                Report(context, StmDiagnosticIds.ExtensionDataInvalid, $"Extension-data member '{objectType.Name}.{bag.Name}' must be dictionary-like.", ModelPath.ForProperty(objectType.Id, bag.Id.Value), CoreSemanticAnnotationKeys.ExtensionData);
+            }
+        }
+    }
+
+    private static bool IsTemporal(TypeSchemaModel model, TypeId typeId)
+    {
+        return model.TryGetType(typeId) is ScalarTypeDefinition scalar
+            && scalar.ScalarKind is ScalarKind.Date or ScalarKind.Time or ScalarKind.DateTime or ScalarKind.DateTimeOffset;
+    }
+
+    private static bool IsOwned(PropertyDefinition property)
+    {
+        return Has(property, CoreSemanticAnnotationKeys.Ownership) || Has(property, CoreSemanticAnnotationKeys.OwnedObject) || Has(property, CoreSemanticAnnotationKeys.OwnedCollection);
+    }
+
+    private static bool Has(TypeDefinition type, string key)
+    {
+        return NormalizeSemanticAliasesTransformation.GetBooleanAnnotation(type.Annotations, key);
+    }
+
+    private static bool Has(PropertyDefinition property, string key)
+    {
+        return NormalizeSemanticAliasesTransformation.GetBooleanAnnotation(property.Annotations, key);
+    }
+
+    private static void Report(SemanticModelTransformationContext context, string code, string message, string path, string semanticName, IReadOnlyList<string>? relatedPaths = null)
+    {
+        SchemaDiagnostic diagnostic = NormalizeSemanticAliasesTransformation.Diagnostic(code, SchemaDiagnosticSeverity.Warning, message, path, context.TransformationId, relatedPaths);
+        context.Diagnostics.Report(diagnostic with { Source = semanticName });
+    }
+}

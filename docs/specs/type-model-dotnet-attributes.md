@@ -212,3 +212,23 @@ Extraction/generator diagnostics in `STM5xxx` include:
 - envelope-specific diagnostics use stable core transformation IDs for missing payload, duplicate payloads, misplaced payload markers, misplaced metadata markers, missing payload type representation, and ambiguous projection-root declarations.
 
 Diagnostics are contractually stable by code; message text is non-authoritative.
+
+## Evolution, Ownership, Lifecycle, Temporal Validity, and Extension Data Attributes
+
+M0034 semantics can be authored with projection-neutral attributes in `SemanticTypeModel.DotNet`.
+
+| Attribute | Target | Canonical annotation emitted |
+|---|---|---|
+| `SemanticOwnedAttribute` | property | `schema.ownership=true`, `schema.ownership.kind`, plus `schema.ownedObject=true` or `schema.ownedCollection=true` |
+| `SemanticVersionedAttribute` | class or struct | `schema.versioned=true` |
+| `SemanticVersionAttribute` | property | `schema.version=true` |
+| `SemanticRevisionAttribute` | property | `schema.revision=true` |
+| `SemanticCurrentVersionAttribute` | property | `schema.currentVersion=true` |
+| `SemanticTemporalValidityAttribute` | class or struct | `schema.temporalValidity=true` |
+| `SemanticValidFromAttribute` | property | `schema.validFrom=true` |
+| `SemanticValidToAttribute` | property | `schema.validTo=true` |
+| `SemanticLifecycleStateAttribute` | property | `schema.lifecycleState=true` |
+| `SemanticExtensionDataAttribute` | property | `schema.extensionData=true`, with `schema.extensionData.keyType` and `schema.extensionData.valueType` when the dictionary shape can be identified |
+
+`SemanticOwnedAttribute.Kind` may explicitly select `Object` or `Collection`; `Inferred` derives the kind from the property shape.
+System.Text.Json `[JsonExtensionData]` import also normalizes to `schema.extensionData=true` when System.Text.Json attribute import is enabled.
