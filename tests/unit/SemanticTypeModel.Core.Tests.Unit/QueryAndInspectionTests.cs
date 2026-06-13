@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Core.Inspection;
 using SemanticTypeModel.Core.Query;
 using LegacyModel = SemanticTypeModel.Abstractions.Model;
@@ -13,7 +13,7 @@ public sealed class QueryAndInspectionTests
     [Test]
     public async Task Query_api_should_support_typed_string_annotation_and_semantic_filters()
     {
-        TypeSchemaModel model = CreateHardeningModel();
+        TypeSchemaModel model = CreateCanonicalModel();
 
         TypeDefinition typed = model.RequireType<Customer>();
         TypeDefinition stringType = model.RequireType("global::SemanticTypeModel.Core.Tests.Unit.QueryAndInspectionTests.Customer");
@@ -92,7 +92,7 @@ public sealed class QueryAndInspectionTests
     [Test]
     public async Task Model_text_should_support_summary_normal_detailed_and_stable_ordering()
     {
-        TypeSchemaModel model = CreateHardeningModel();
+        TypeSchemaModel model = CreateCanonicalModel();
 
         var summary = model.ToSemanticText(new SemanticTextOptions { Detail = SemanticTextDetail.Summary });
         var detailed = model.ToSemanticText(new SemanticTextOptions { Detail = SemanticTextDetail.Detailed, IncludeAnnotations = true, IncludeConstraints = true });
@@ -138,7 +138,7 @@ public sealed class QueryAndInspectionTests
         _ = await Assert.That(text.Contains("Annotation dotnet.memberName=Email", StringComparison.Ordinal)).IsTrue();
     }
 
-    private static TypeSchemaModel CreateHardeningModel()
+    private static TypeSchemaModel CreateCanonicalModel()
     {
         ScalarTypeDefinition stringType = new()
         {

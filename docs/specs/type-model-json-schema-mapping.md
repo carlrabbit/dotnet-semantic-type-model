@@ -10,7 +10,7 @@ Define baseline mapping between the code-generated canonical semantic model, the
 
 ## Authority
 
-This specification is authoritative for canonical-to-JSON-Schema projection intent for the hardened model.
+This specification is authoritative for canonical-to-JSON-Schema projection intent for the canonical semantic model.
 
 The detailed domain model, derivation, export, and composition behavior is defined by [json-schema-domain-model-and-export.md](json-schema-domain-model-and-export.md).
 

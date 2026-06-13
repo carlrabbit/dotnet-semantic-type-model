@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the hardened canonical semantic type model contracts and invariants.
+Define the canonical semantic model contracts and invariants.
 
 ## Authority
 
@@ -24,7 +24,7 @@ This specification is authoritative for:
 
 ## Core Contracts
 
-The hardened model surface includes:
+The canonical semantic model surface includes:
 
 - root model: `TypeSchemaModel` + stable id lookup via `TypeId`;
 - core type hierarchy: `TypeDefinition` with `TypeKind` including `Any` and `Never`;
@@ -57,7 +57,7 @@ These contracts must preserve projection independence and diagnostic emission ca
 
 ## Transformation Pipeline Contract
 
-The hardened runtime pipeline is represented by `SchemaTransformationPipeline` plus:
+The runtime canonical semantic model pipeline is represented by `SchemaTransformationPipeline` plus:
 
 - `SchemaPipelineOptions` for execution policy and initial diagnostics;
 - `SchemaPipelineResult` for the transformed model and accumulated diagnostics;

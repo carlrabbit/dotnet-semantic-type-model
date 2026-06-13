@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="../SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
     <ProjectReference Include="../SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
+    <ProjectReference Include="../SemanticTypeModel.Core/SemanticTypeModel.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

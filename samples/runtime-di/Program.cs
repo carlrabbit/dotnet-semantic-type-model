@@ -1,24 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Abstractions.Runtime;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema;
-using SemanticTypeModel.JsonSchema.Import;
 
-const string schema = """
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "Order",
-  "type": "object",
-  "properties": {
-    "orderId": { "type": "string" }
-  },
-  "required": ["orderId"]
-}
-""";
-
-// Consumers register model creation, transformations, and projections in their DI container.
+// Consumers register runtime canonical semantic model creation, transformations, and projections in their DI container.
 using ServiceProvider serviceProvider = new ServiceCollection()
-    .AddSemanticTypeModel(() => JsonSchemaImporter.Import(schema).Model)
+    .AddSemanticTypeModel(CreateModel)
     .AddSemanticTypeModelTransformation<ValidateModelTransformation>()
     .AddSemanticTypeModelJsonSchema()
     .BuildServiceProvider();
@@ -32,3 +20,15 @@ SchemaProjectionResult<JsonSchemaExportResult> projection = await serviceProvide
 Console.WriteLine($"runtime diagnostics: {modelResult.Diagnostics.Count}");
 Console.WriteLine($"projection diagnostics: {projection.Diagnostics.Count}");
 Console.WriteLine(projection.Projection!.Document.RootElement.GetRawText());
+
+static TypeSchemaModel CreateModel()
+{
+    ScalarTypeDefinition stringType = new() { Id = new TypeId("String"), Name = "String", Kind = TypeKind.Scalar, Nullability = Nullability.NonNullable, Annotations = new AnnotationBag(), ScalarKind = ScalarKind.String };
+    var order = new ObjectTypeDefinition { Id = new TypeId("Order"), Name = "Order", Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = new AnnotationBag(), Properties = [Property("orderId", "OrderId", stringType.Id)], Keys = [], Relationships = [] };
+    return new TypeSchemaModel { Id = new SchemaModelId(order.Id.Value), Types = [order, stringType], TypesById = new Dictionary<TypeId, TypeDefinition> { [order.Id] = order, [stringType.Id] = stringType }, Annotations = new AnnotationBag() };
+}
+
+static PropertyDefinition Property(string name, string id, TypeId typeId)
+{
+    return new PropertyDefinition { Id = new PropertyId(id), Name = name, Type = new TypeRef(typeId), Cardinality = new Cardinality { IsRequired = true }, Mutability = Mutability.Mutable, Constraints = new ConstraintSet(), Annotations = new AnnotationBag() };
+}

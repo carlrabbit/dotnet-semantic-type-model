@@ -3,20 +3,20 @@ using System.Text.Json;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.JsonSchema.Import;
-using Hardening = SemanticTypeModel.Abstractions.Hardening;
+using Canonical = SemanticTypeModel.Abstractions.Canonical;
 using Legacy = SemanticTypeModel.Abstractions.Model;
-using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticSeverity;
+using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Canonical.SchemaDiagnosticSeverity;
 
 namespace SemanticTypeModel.JsonSchema.Tests.Unit;
 
 /// <summary>
-/// Verifies that the runtime JSON Schema baseline composes with the hardened transformation pipeline.
+/// Verifies that the runtime JSON Schema baseline composes with the canonical semantic model transformation pipeline.
 /// </summary>
 [SuppressMessage("Naming", "CA1707:Remove the underscores from member name", Justification = "Test names may use underscores for readability.")]
 public sealed class JsonSchemaPipelineCompositionTests
 {
     /// <summary>
-    /// Imports a JSON Schema fixture, runs it through the hardened transformation pipeline, and exports it again.
+    /// Imports a JSON Schema fixture, runs it through the canonical semantic model transformation pipeline, and exports it again.
     /// </summary>
     [Test]
     public async Task Import_pipeline_export_should_compose_for_simple_json_schema_fixture()
@@ -39,15 +39,15 @@ public sealed class JsonSchemaPipelineCompositionTests
             """;
 
         JsonSchemaImportResult imported = JsonSchemaImporter.Import(json);
-        Hardening.TypeSchemaModel hardeningModel = LegacyJsonSchemaBridge.ToHardening(imported.Model);
+        Canonical.TypeSchemaModel canonicalModel = LegacyJsonSchemaBridge.ToCanonical(imported.Model);
 
-        Hardening.SchemaPipelineResult pipeline = await SchemaTransformationPipeline.Create()
+        Canonical.SchemaPipelineResult pipeline = await SchemaTransformationPipeline.Create()
             .Use(new NormalizeNamesTransformation())
             .Use(new NormalizeAnnotationsTransformation())
             .Use(new ValidateModelTransformation())
             .RunAsync(
-                hardeningModel,
-                new Hardening.SchemaPipelineOptions
+                canonicalModel,
+                new Canonical.SchemaPipelineOptions
                 {
                     InitialDiagnostics = imported.Diagnostics,
                     ContinueOnError = true,
@@ -68,12 +68,12 @@ public sealed class JsonSchemaPipelineCompositionTests
 
     private static class LegacyJsonSchemaBridge
     {
-        public static Hardening.TypeSchemaModel ToHardening(Legacy.TypeSchemaModel legacyModel)
+        public static Canonical.TypeSchemaModel ToCanonical(Legacy.TypeSchemaModel legacyModel)
         {
             Legacy.ObjectShape root = legacyModel.Root as Legacy.ObjectShape
                 ?? throw new InvalidOperationException("The composition test bridge currently expects an object root.");
             var rootId = legacyModel.RootIdentifier ?? "Root";
-            List<Hardening.TypeDefinition> types = [];
+            List<Canonical.TypeDefinition> types = [];
 
             foreach (Legacy.PropertyShape property in root.Properties)
             {
@@ -83,58 +83,58 @@ public sealed class JsonSchemaPipelineCompositionTests
                 }
 
                 var scalarIdValue = $"{rootId}_{property.Name}_Scalar";
-                types.Add(new Hardening.ScalarTypeDefinition
+                types.Add(new Canonical.ScalarTypeDefinition
                 {
-                    Id = new Hardening.TypeId(scalarIdValue),
+                    Id = new Canonical.TypeId(scalarIdValue),
                     Name = scalarIdValue,
-                    Kind = Hardening.TypeKind.Scalar,
-                    Nullability = scalarShape.IsNullable ? Hardening.Nullability.Nullable : Hardening.Nullability.NonNullable,
-                    Annotations = ToHardeningAnnotations(scalarShape.Annotations, Hardening.AnnotationScope.Type),
-                    ScalarKind = ToHardeningScalarKind(scalarShape.Kind),
+                    Kind = Canonical.TypeKind.Scalar,
+                    Nullability = scalarShape.IsNullable ? Canonical.Nullability.Nullable : Canonical.Nullability.NonNullable,
+                    Annotations = ToCanonicalAnnotations(scalarShape.Annotations, Canonical.AnnotationScope.Type),
+                    ScalarKind = ToCanonicalScalarKind(scalarShape.Kind),
                     Format = TryGetConstraintValue(scalarShape.Constraints, "format"),
                 });
             }
 
-            types.Add(new Hardening.ObjectTypeDefinition
+            types.Add(new Canonical.ObjectTypeDefinition
             {
-                Id = new Hardening.TypeId(rootId),
+                Id = new Canonical.TypeId(rootId),
                 Name = rootId,
-                Kind = Hardening.TypeKind.Object,
-                Nullability = Hardening.Nullability.NonNullable,
-                Annotations = ToHardeningAnnotations(root.Annotations, Hardening.AnnotationScope.Type),
+                Kind = Canonical.TypeKind.Object,
+                Nullability = Canonical.Nullability.NonNullable,
+                Annotations = ToCanonicalAnnotations(root.Annotations, Canonical.AnnotationScope.Type),
                 Properties =
                 [
-                    .. root.Properties.Select(property => new Hardening.PropertyDefinition
+                    .. root.Properties.Select(property => new Canonical.PropertyDefinition
                     {
-                        Id = new Hardening.PropertyId($"{rootId}_{property.Name}"),
+                        Id = new Canonical.PropertyId($"{rootId}_{property.Name}"),
                         Name = property.Name,
-                        Type = new Hardening.TypeRef(new Hardening.TypeId($"{rootId}_{property.Name}_Scalar")),
-                        Cardinality = new Hardening.Cardinality
+                        Type = new Canonical.TypeRef(new Canonical.TypeId($"{rootId}_{property.Name}_Scalar")),
+                        Cardinality = new Canonical.Cardinality
                         {
                             IsRequired = property.IsRequired,
                             AllowsNull = property.IsNullable,
                         },
-                        Mutability = Hardening.Mutability.Mutable,
-                        Constraints = new Hardening.ConstraintSet(),
-                        Annotations = ToHardeningAnnotations(property.Annotations, Hardening.AnnotationScope.Member),
+                        Mutability = Canonical.Mutability.Mutable,
+                        Constraints = new Canonical.ConstraintSet(),
+                        Annotations = ToCanonicalAnnotations(property.Annotations, Canonical.AnnotationScope.Member),
                     }),
                 ],
                 Keys = [],
                 Relationships = [],
             });
 
-            return new Hardening.TypeSchemaModel
+            return new Canonical.TypeSchemaModel
             {
-                Id = new Hardening.SchemaModelId(rootId),
+                Id = new Canonical.SchemaModelId(rootId),
                 Types = types,
                 TypesById = types.ToDictionary(static type => type.Id, static type => type),
-                Annotations = new Hardening.AnnotationBag(),
+                Annotations = new Canonical.AnnotationBag(),
             };
         }
 
-        public static Legacy.TypeSchemaModel ToLegacy(Hardening.TypeSchemaModel model)
+        public static Legacy.TypeSchemaModel ToLegacy(Canonical.TypeSchemaModel model)
         {
-            Hardening.ObjectTypeDefinition root = model.Types.OfType<Hardening.ObjectTypeDefinition>().Single(static type => type.Id.Value == type.Name);
+            Canonical.ObjectTypeDefinition root = model.Types.OfType<Canonical.ObjectTypeDefinition>().Single(static type => type.Id.Value == type.Name);
             Legacy.ObjectShape legacyRoot = new()
             {
                 Identifier = root.Id.Value,
@@ -146,7 +146,7 @@ public sealed class JsonSchemaPipelineCompositionTests
                         Name = property.Name,
                         IsRequired = property.Cardinality.IsRequired,
                         IsNullable = property.Cardinality.AllowsNull,
-                        Type = Legacy.ShapeRef.FromInline(ToLegacyScalar((Hardening.ScalarTypeDefinition)model.GetType(property.Type.Id))),
+                        Type = Legacy.ShapeRef.FromInline(ToLegacyScalar((Canonical.ScalarTypeDefinition)model.GetType(property.Type.Id))),
                         Annotations = ToLegacyAnnotations(property.Annotations),
                     }),
                 ],
@@ -160,7 +160,7 @@ public sealed class JsonSchemaPipelineCompositionTests
                 root.Id.Value);
         }
 
-        private static Legacy.ScalarShape ToLegacyScalar(Hardening.ScalarTypeDefinition scalar)
+        private static Legacy.ScalarShape ToLegacyScalar(Canonical.ScalarTypeDefinition scalar)
         {
             List<Legacy.SchemaAnnotation> annotations = [.. ToLegacyAnnotations(scalar.Annotations)];
             if (!string.IsNullOrWhiteSpace(scalar.Format))
@@ -176,24 +176,24 @@ public sealed class JsonSchemaPipelineCompositionTests
             };
         }
 
-        private static Hardening.AnnotationBag ToHardeningAnnotations(IReadOnlyList<Legacy.SchemaAnnotation> annotations, Hardening.AnnotationScope scope)
+        private static Canonical.AnnotationBag ToCanonicalAnnotations(IReadOnlyList<Legacy.SchemaAnnotation> annotations, Canonical.AnnotationScope scope)
         {
-            return new Hardening.AnnotationBag
+            return new Canonical.AnnotationBag
             {
                 Items =
                 [
-                    .. annotations.Select(annotation => new Hardening.Annotation
+                    .. annotations.Select(annotation => new Canonical.Annotation
                     {
-                        Key = new Hardening.AnnotationKey(annotation.Key.Replace(':', '.')),
+                        Key = new Canonical.AnnotationKey(annotation.Key.Replace(':', '.')),
                         Value = TryParseJsonLiteral(annotation.Value),
                         Scope = scope,
-                        Source = Hardening.AnnotationSource.Imported,
+                        Source = Canonical.AnnotationSource.Imported,
                     }),
                 ],
             };
         }
 
-        private static IReadOnlyList<Legacy.SchemaAnnotation> ToLegacyAnnotations(Hardening.AnnotationBag annotations)
+        private static IReadOnlyList<Legacy.SchemaAnnotation> ToLegacyAnnotations(Canonical.AnnotationBag annotations)
         {
             return
             [
@@ -242,36 +242,36 @@ public sealed class JsonSchemaPipelineCompositionTests
             return entry?.Value;
         }
 
-        private static Hardening.ScalarKind ToHardeningScalarKind(Legacy.ScalarKind kind)
+        private static Canonical.ScalarKind ToCanonicalScalarKind(Legacy.ScalarKind kind)
         {
             return kind switch
             {
-                Legacy.ScalarKind.Boolean => Hardening.ScalarKind.Boolean,
-                Legacy.ScalarKind.Integer => Hardening.ScalarKind.Integer,
-                Legacy.ScalarKind.Number => Hardening.ScalarKind.Number,
-                Legacy.ScalarKind.String => Hardening.ScalarKind.String,
-                Legacy.ScalarKind.Null => Hardening.ScalarKind.Unknown,
-                _ => Hardening.ScalarKind.Unknown,
+                Legacy.ScalarKind.Boolean => Canonical.ScalarKind.Boolean,
+                Legacy.ScalarKind.Integer => Canonical.ScalarKind.Integer,
+                Legacy.ScalarKind.Number => Canonical.ScalarKind.Number,
+                Legacy.ScalarKind.String => Canonical.ScalarKind.String,
+                Legacy.ScalarKind.Null => Canonical.ScalarKind.Unknown,
+                _ => Canonical.ScalarKind.Unknown,
             };
         }
 
-        private static Legacy.ScalarKind ToLegacyScalarKind(Hardening.ScalarKind kind)
+        private static Legacy.ScalarKind ToLegacyScalarKind(Canonical.ScalarKind kind)
         {
             return kind switch
             {
-                Hardening.ScalarKind.Boolean => Legacy.ScalarKind.Boolean,
-                Hardening.ScalarKind.Integer => Legacy.ScalarKind.Integer,
-                Hardening.ScalarKind.Number or Hardening.ScalarKind.Decimal => Legacy.ScalarKind.Number,
-                Hardening.ScalarKind.String => Legacy.ScalarKind.String,
-                Hardening.ScalarKind.Date => Legacy.ScalarKind.String,
-                Hardening.ScalarKind.Time => Legacy.ScalarKind.String,
-                Hardening.ScalarKind.DateTime => Legacy.ScalarKind.String,
-                Hardening.ScalarKind.DateTimeOffset => Legacy.ScalarKind.String,
-                Hardening.ScalarKind.Duration => Legacy.ScalarKind.String,
-                Hardening.ScalarKind.Guid => Legacy.ScalarKind.String,
-                Hardening.ScalarKind.Binary => Legacy.ScalarKind.String,
-                Hardening.ScalarKind.Json => Legacy.ScalarKind.String,
-                Hardening.ScalarKind.Unknown => Legacy.ScalarKind.String,
+                Canonical.ScalarKind.Boolean => Legacy.ScalarKind.Boolean,
+                Canonical.ScalarKind.Integer => Legacy.ScalarKind.Integer,
+                Canonical.ScalarKind.Number or Canonical.ScalarKind.Decimal => Legacy.ScalarKind.Number,
+                Canonical.ScalarKind.String => Legacy.ScalarKind.String,
+                Canonical.ScalarKind.Date => Legacy.ScalarKind.String,
+                Canonical.ScalarKind.Time => Legacy.ScalarKind.String,
+                Canonical.ScalarKind.DateTime => Legacy.ScalarKind.String,
+                Canonical.ScalarKind.DateTimeOffset => Legacy.ScalarKind.String,
+                Canonical.ScalarKind.Duration => Legacy.ScalarKind.String,
+                Canonical.ScalarKind.Guid => Legacy.ScalarKind.String,
+                Canonical.ScalarKind.Binary => Legacy.ScalarKind.String,
+                Canonical.ScalarKind.Json => Legacy.ScalarKind.String,
+                Canonical.ScalarKind.Unknown => Legacy.ScalarKind.String,
                 _ => Legacy.ScalarKind.String,
             };
         }

@@ -1,7 +1,7 @@
 #pragma warning disable IDE0046
 using System.Globalization;
 using System.Linq.Expressions;
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Core.Semantics;
 using LegacyModel = SemanticTypeModel.Abstractions.Model;
 
@@ -17,7 +17,7 @@ public static class SemanticModelQueryExtensions
     private const string SemanticPrimitiveAnnotation = "semantic.primitive";
 
     /// <summary>
-    /// Returns all hardened model types in deterministic identifier order.
+    /// Returns all canonical semantic model types in deterministic identifier order.
     /// </summary>
     public static IEnumerable<TypeDefinition> Types(this TypeSchemaModel model)
     {
@@ -35,7 +35,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Attempts to find a hardened model type by canonical string identifier.
+    /// Attempts to find a canonical semantic model type by canonical string identifier.
     /// </summary>
     public static bool TryGetType(this TypeSchemaModel model, string identifier, out TypeDefinition? type)
     {
@@ -56,7 +56,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Requires a hardened model type by canonical string identifier.
+    /// Requires a canonical semantic model type by canonical string identifier.
     /// </summary>
     public static TypeDefinition RequireType(this TypeSchemaModel model, string identifier)
     {
@@ -82,7 +82,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Attempts to find a hardened model type for the CLR type <typeparamref name="T"/>.
+    /// Attempts to find a canonical semantic model type for the CLR type <typeparamref name="T"/>.
     /// </summary>
     public static bool TryGetType<T>(this TypeSchemaModel model, out TypeDefinition? type)
     {
@@ -98,7 +98,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Requires a hardened model type for the CLR type <typeparamref name="T"/>.
+    /// Requires a canonical semantic model type for the CLR type <typeparamref name="T"/>.
     /// </summary>
     public static TypeDefinition RequireType<T>(this TypeSchemaModel model)
     {
@@ -126,7 +126,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Returns all hardened object properties in deterministic model-path order.
+    /// Returns all canonical object properties in deterministic model-path order.
     /// </summary>
     public static IEnumerable<PropertyDefinition> Properties(this TypeSchemaModel model)
     {
@@ -148,7 +148,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Returns all hardened object types marked as envelope wrappers.
+    /// Returns all canonical object types marked as envelope wrappers.
     /// </summary>
     public static IEnumerable<ObjectTypeDefinition> Envelopes(this TypeSchemaModel model)
     {
@@ -216,7 +216,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Returns properties for the hardened object type identified by <typeparamref name="T"/>.
+    /// Returns properties for the canonical object type identified by <typeparamref name="T"/>.
     /// </summary>
     public static IEnumerable<PropertyDefinition> PropertiesOf<T>(this TypeSchemaModel model)
     {
@@ -232,7 +232,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Attempts to find a hardened property by canonical type identifier and property name.
+    /// Attempts to find a canonical property by canonical type identifier and property name.
     /// </summary>
     public static bool TryGetProperty(this TypeSchemaModel model, string typeIdentifier, string propertyName, out PropertyDefinition? property)
     {
@@ -270,7 +270,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Requires a hardened property by canonical type identifier and property name.
+    /// Requires a canonical property by canonical type identifier and property name.
     /// </summary>
     public static PropertyDefinition RequireProperty(this TypeSchemaModel model, string typeIdentifier, string propertyName)
     {
@@ -302,7 +302,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Attempts to find a hardened property by CLR property expression.
+    /// Attempts to find a canonical property by CLR property expression.
     /// </summary>
     public static bool TryGetProperty<T>(this TypeSchemaModel model, Expression<Func<T, object?>> propertyExpression, out PropertyDefinition? property)
     {
@@ -322,7 +322,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Requires a hardened property by CLR property expression.
+    /// Requires a canonical property by CLR property expression.
     /// </summary>
     public static PropertyDefinition RequireProperty<T>(this TypeSchemaModel model, Expression<Func<T, object?>> propertyExpression)
     {
@@ -344,7 +344,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Filters hardened types by semantic primitive.
+    /// Filters canonical types by semantic primitive.
     /// </summary>
     public static IEnumerable<TypeDefinition> WithSemanticType(this IEnumerable<TypeDefinition> types, string semanticPrimitive)
     {
@@ -365,7 +365,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Filters hardened properties by semantic primitive.
+    /// Filters canonical properties by semantic primitive.
     /// </summary>
     public static IEnumerable<PropertyDefinition> WithSemantic(this IEnumerable<PropertyDefinition> properties, string semanticPrimitive)
     {
@@ -387,7 +387,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Filters hardened types by annotation key.
+    /// Filters canonical types by annotation key.
     /// </summary>
     public static IEnumerable<TypeDefinition> WithAnnotation(this IEnumerable<TypeDefinition> types, string annotationKey)
     {
@@ -397,7 +397,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Filters hardened types by annotation key and value.
+    /// Filters canonical types by annotation key and value.
     /// </summary>
     public static IEnumerable<TypeDefinition> WithAnnotation(this IEnumerable<TypeDefinition> types, string annotationKey, object? value)
     {
@@ -427,7 +427,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Filters hardened properties by annotation key.
+    /// Filters canonical properties by annotation key.
     /// </summary>
     public static IEnumerable<PropertyDefinition> WithAnnotation(this IEnumerable<PropertyDefinition> properties, string annotationKey)
     {
@@ -437,7 +437,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Filters hardened properties by annotation key and value.
+    /// Filters canonical properties by annotation key and value.
     /// </summary>
     public static IEnumerable<PropertyDefinition> WithAnnotation(this IEnumerable<PropertyDefinition> properties, string annotationKey, object? value)
     {
@@ -467,7 +467,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Filters hardened properties by constraint name.
+    /// Filters canonical properties by constraint name.
     /// </summary>
     public static IEnumerable<PropertyDefinition> WithConstraint(this IEnumerable<PropertyDefinition> properties, string constraintName)
     {
@@ -477,7 +477,7 @@ public static class SemanticModelQueryExtensions
     }
 
     /// <summary>
-    /// Filters hardened properties by constraint name and value.
+    /// Filters canonical properties by constraint name and value.
     /// </summary>
     public static IEnumerable<PropertyDefinition> WithConstraint(this IEnumerable<PropertyDefinition> properties, string constraintName, object? value)
     {

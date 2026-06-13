@@ -43,6 +43,12 @@ Declaration of related documents and synchronization obligations.
 ### Semantic Type Model
 A canonical, immutable representation of type shapes, properties, constraints, and annotations used as the authoritative runtime model.
 
+### Canonical Semantic Model
+The projection-neutral semantic type model used by current runtime, transformation, query, inspection, and projection APIs.
+
+### Runtime Canonical Semantic Model
+A canonical semantic model instance supplied to runtime services, transformations, or projections.
+
 ### TypeShape
 The canonical representation of a type in the semantic type model.
 
@@ -132,6 +138,12 @@ Instance-level unknown, unmodeled, forward-compatible, or externally supplied da
 
 ### Domain Semantic Model
 A package-owned semantic model derived from the canonical semantic type model for a specific domain such as JSON Schema, EF Core, Power BI, or System.Text.Json.
+
+### System.Text.Json Domain Model
+The System.Text.Json package-owned domain semantic model that describes resolver customization behavior derived from the canonical semantic model.
+
+### Resolver Customization Model
+A domain semantic model that describes deterministic changes applied to `JsonTypeInfo` through `IJsonTypeInfoResolver` composition.
 
 ### Transformation
 A deterministic operation that derives, normalizes, validates, or enriches semantic model information while emitting diagnostics when needed.

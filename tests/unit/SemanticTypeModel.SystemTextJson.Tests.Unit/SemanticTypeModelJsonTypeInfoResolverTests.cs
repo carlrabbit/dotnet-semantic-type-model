@@ -1,12 +1,26 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using SemanticTypeModel.Abstractions.Model;
-using SemanticTypeModel.Core.Building;
+using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Core.Inspection;
+using SemanticTypeModel.Core.Transformation;
 
 namespace SemanticTypeModel.SystemTextJson.Tests.Unit;
 
 public sealed class SemanticTypeModelJsonTypeInfoResolverTests
 {
+    [Test]
+    public async Task Derivation_should_create_deterministic_system_text_json_domain_model()
+    {
+        SemanticDerivationResult<SystemTextJsonSemanticModel> result = CreateCustomerModel().DeriveSystemTextJsonModel(
+            projectionOptions => projectionOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName);
+
+        var text = result.Model.ToSemanticText(new SemanticTextOptions { Detail = SemanticTextDetail.Detailed, IncludeDiagnostics = true });
+
+        _ = await Assert.That(result.Model.TypesById.Count).IsEqualTo(1);
+        _ = await Assert.That(text).Contains("Property customerId member=Id jsonName=customer_id projectedJsonName=customerId");
+        _ = await Assert.That(result.Diagnostics.Count).IsEqualTo(0);
+    }
+
     [Test]
     public async Task AddSemanticTypeModelJson_should_preserve_existing_contract_by_default()
     {
@@ -27,11 +41,12 @@ public sealed class SemanticTypeModelJsonTypeInfoResolverTests
     [Test]
     public async Task Resolver_should_serialize_and_deserialize_using_semantic_property_names()
     {
+        SystemTextJsonSemanticModel stjModel = CreateCustomerModel()
+            .DeriveSystemTextJsonModel(projectionOptions => projectionOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName)
+            .Model;
         JsonSerializerOptions options = new()
         {
-            TypeInfoResolver = ResolverCustomerContext.Default.WithSemanticTypeModelJson(
-                CreateCustomerModel(),
-                projectionOptions => projectionOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName),
+            TypeInfoResolver = ResolverCustomerContext.Default.WithSemanticTypeModelJson(stjModel),
         };
 
         var json = JsonSerializer.Serialize(new ResolverCustomer { Id = "C-001", DisplayName = "Ada" }, options);
@@ -82,48 +97,101 @@ public sealed class SemanticTypeModelJsonTypeInfoResolverTests
 
     private static TypeSchemaModel CreateCustomerModel()
     {
-        return new TypeSchemaModelBuilder()
-            .AddShape("global::System.String", new ScalarShape { Kind = ScalarKind.String })
-            .AddShape("global::SemanticTypeModel.SystemTextJson.Tests.Unit.ResolverCustomer", new ObjectShape
-            {
-                Properties =
-                [
-                    CreateProperty("customerId", "Id", "customer_id"),
-                    CreateProperty("displayName", "DisplayName", "display_name"),
-                ],
-            })
-            .SetRoot("global::SemanticTypeModel.SystemTextJson.Tests.Unit.ResolverCustomer")
-            .Build();
+        ScalarTypeDefinition stringType = Scalar("global::System.String");
+        var customer = new ObjectTypeDefinition
+        {
+            Id = new TypeId("global::SemanticTypeModel.SystemTextJson.Tests.Unit.ResolverCustomer"),
+            Name = "ResolverCustomer",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag(),
+            Properties =
+            [
+                CreateProperty("customerId", "Id", "customer_id"),
+                CreateProperty("displayName", "DisplayName", "display_name"),
+            ],
+            Keys = [],
+            Relationships = [],
+        };
+
+        return BuildModel(customer.Id.Value, customer, stringType);
     }
 
     private static TypeSchemaModel CreateDuplicateNameModel()
     {
-        return new TypeSchemaModelBuilder()
-            .AddShape("global::System.String", new ScalarShape { Kind = ScalarKind.String })
-            .AddShape("global::SemanticTypeModel.SystemTextJson.Tests.Unit.ResolverCustomer", new ObjectShape
-            {
-                Properties =
-                [
-                    CreateProperty("duplicate", "Id", "customer_id"),
-                    CreateProperty("duplicate", "DisplayName", "display_name"),
-                ],
-            })
-            .SetRoot("global::SemanticTypeModel.SystemTextJson.Tests.Unit.ResolverCustomer")
-            .Build();
+        ScalarTypeDefinition stringType = Scalar("global::System.String");
+        var customer = new ObjectTypeDefinition
+        {
+            Id = new TypeId("global::SemanticTypeModel.SystemTextJson.Tests.Unit.ResolverCustomer"),
+            Name = "ResolverCustomer",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag(),
+            Properties =
+            [
+                CreateProperty("duplicate", "Id", "customer_id"),
+                CreateProperty("duplicate", "DisplayName", "display_name"),
+            ],
+            Keys = [],
+            Relationships = [],
+        };
+
+        return BuildModel(customer.Id.Value, customer, stringType);
     }
 
-    private static PropertyShape CreateProperty(string semanticName, string memberName, string jsonName)
+    private static ScalarTypeDefinition Scalar(string id)
     {
-        return new PropertyShape
+        return new ScalarTypeDefinition
         {
+            Id = new TypeId(id),
+            Name = id,
+            Kind = TypeKind.Scalar,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag(),
+            ScalarKind = ScalarKind.String,
+        };
+    }
+
+    private static PropertyDefinition CreateProperty(string semanticName, string memberName, string jsonName)
+    {
+        return new PropertyDefinition
+        {
+            Id = new PropertyId(memberName),
             Name = semanticName,
-            IsRequired = true,
-            Type = ShapeRef.FromIdentifier("global::System.String"),
-            Annotations =
-            [
-                new SchemaAnnotation("dotnet.memberName", memberName),
-                new SchemaAnnotation(SystemTextJsonAnnotationNames.PropertyName, jsonName),
-            ],
+            Type = new TypeRef(new TypeId("global::System.String")),
+            Cardinality = new Cardinality { IsRequired = true },
+            Mutability = Mutability.InitOnly,
+            Constraints = new ConstraintSet(),
+            Annotations = Annotations(
+                Annotation("dotnet.memberName", memberName),
+                Annotation(SystemTextJsonAnnotationNames.PropertyName, jsonName)),
+        };
+    }
+
+    private static TypeSchemaModel BuildModel(string rootId, params TypeDefinition[] types)
+    {
+        return new TypeSchemaModel
+        {
+            Id = new SchemaModelId(rootId),
+            Types = types,
+            TypesById = types.ToDictionary(static type => type.Id, static type => type),
+            Annotations = new AnnotationBag(),
+        };
+    }
+
+    private static AnnotationBag Annotations(params Annotation[] annotations)
+    {
+        return new AnnotationBag { Items = annotations };
+    }
+
+    private static Annotation Annotation(string key, object value)
+    {
+        return new Annotation
+        {
+            Key = new AnnotationKey(key),
+            Value = value,
+            Scope = AnnotationScope.Member,
+            Source = AnnotationSource.Imported,
         };
     }
 }

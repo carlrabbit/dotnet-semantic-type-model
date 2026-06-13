@@ -1,5 +1,5 @@
 using System.Text;
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 
 namespace SemanticTypeModel.Core.Transformation;
 

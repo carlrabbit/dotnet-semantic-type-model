@@ -1,7 +1,7 @@
 #pragma warning disable IDE0058
 using System.Globalization;
 using System.Text;
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Core.Query;
 using SemanticTypeModel.Core.Semantics;
 using LegacyModel = SemanticTypeModel.Abstractions.Model;
@@ -14,7 +14,7 @@ namespace SemanticTypeModel.Core.Inspection;
 public static class SemanticTextExtensions
 {
     /// <summary>
-    /// Produces deterministic human-readable text for a hardened semantic type model.
+    /// Produces deterministic human-readable text for a canonical semantic model.
     /// </summary>
     public static string ToSemanticText(this TypeSchemaModel model)
     {
@@ -22,7 +22,7 @@ public static class SemanticTextExtensions
     }
 
     /// <summary>
-    /// Produces deterministic human-readable text for a hardened semantic type model.
+    /// Produces deterministic human-readable text for a canonical semantic model.
     /// </summary>
     public static string ToSemanticText(this TypeSchemaModel model, SemanticTextOptions options, IEnumerable<SchemaDiagnostic>? diagnostics = null)
     {

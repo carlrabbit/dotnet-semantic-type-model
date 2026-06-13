@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define projection capability contracts for the hardened canonical model and keep capability metadata deterministic across projection targets.
+Define projection capability contracts for the canonical semantic model and keep capability metadata deterministic across projection targets.
 
 ## Targets
 
@@ -13,7 +13,7 @@ Define projection capability contracts for the hardened canonical model and keep
 
 ## Capability Metadata API
 
-Capability metadata is defined by `SemanticTypeModel.Abstractions.Hardening` contracts:
+Capability metadata is defined by `SemanticTypeModel.Abstractions.Canonical` contracts:
 
 - `SemanticModelFeature`
 - `ProjectionFeatureSupportLevel`

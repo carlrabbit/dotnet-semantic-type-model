@@ -1,8 +1,7 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Abstractions.Runtime;
-using Legacy = SemanticTypeModel.Abstractions.Model;
-using RuntimeTypeSchemaModel = SemanticTypeModel.Abstractions.Hardening.TypeSchemaModel;
+using RuntimeTypeSchemaModel = SemanticTypeModel.Abstractions.Canonical.TypeSchemaModel;
 
 // This file intentionally uses the Microsoft.Extensions.DependencyInjection namespace
 // so the registration methods are discoverable as standard IServiceCollection extensions.
@@ -28,7 +27,7 @@ public static class TypeSchemaModelServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers an existing hardened canonical model instance.
+    /// Registers an existing runtime canonical semantic model instance.
     /// </summary>
     public static IServiceCollection AddSemanticTypeModel(this IServiceCollection services, RuntimeTypeSchemaModel model)
     {
@@ -37,7 +36,7 @@ public static class TypeSchemaModelServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers a hardened canonical model factory.
+    /// Registers a runtime canonical semantic model factory.
     /// </summary>
     public static IServiceCollection AddSemanticTypeModel(this IServiceCollection services, Func<RuntimeTypeSchemaModel> factory)
     {
@@ -46,7 +45,7 @@ public static class TypeSchemaModelServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers a hardened canonical model-result factory.
+    /// Registers a runtime canonical semantic model-result factory.
     /// </summary>
     public static IServiceCollection AddSemanticTypeModel(this IServiceCollection services, Func<TypeSchemaModelResult> factory)
     {
@@ -55,7 +54,7 @@ public static class TypeSchemaModelServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers an asynchronous hardened canonical model-result factory.
+    /// Registers an asynchronous runtime canonical semantic model-result factory.
     /// </summary>
     public static IServiceCollection AddSemanticTypeModel(this IServiceCollection services, Func<CancellationToken, ValueTask<TypeSchemaModelResult>> factory)
     {
@@ -64,34 +63,6 @@ public static class TypeSchemaModelServiceCollectionExtensions
 
         _ = services.AddSemanticTypeModelRuntime();
         _ = services.AddSingleton<ITypeSchemaModelProvider>(_ => new SemanticTypeModel.DependencyInjection.DelegateTypeSchemaModelProvider(factory));
-        return services;
-    }
-
-    /// <summary>
-    /// Registers an existing legacy canonical model instance produced by older generated providers.
-    /// </summary>
-    public static IServiceCollection AddSemanticTypeModel(this IServiceCollection services, Legacy.TypeSchemaModel model)
-    {
-        ArgumentNullException.ThrowIfNull(model);
-        return services.AddSemanticTypeModel(_ => new ValueTask<Legacy.TypeSchemaModel>(model));
-    }
-
-    /// <summary>
-    /// Registers a legacy canonical model factory produced by older generated providers.
-    /// </summary>
-    public static IServiceCollection AddSemanticTypeModel(this IServiceCollection services, Func<Legacy.TypeSchemaModel> factory)
-    {
-        ArgumentNullException.ThrowIfNull(factory);
-        return services.AddSemanticTypeModel(_ => new ValueTask<Legacy.TypeSchemaModel>(factory()));
-    }
-
-    private static IServiceCollection AddSemanticTypeModel(this IServiceCollection services, Func<CancellationToken, ValueTask<Legacy.TypeSchemaModel>> factory)
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(factory);
-
-        _ = services.AddSemanticTypeModelRuntime();
-        _ = services.AddSingleton<ITypeSchemaModelProvider>(_ => new SemanticTypeModel.DependencyInjection.LegacyDelegateTypeSchemaModelProvider(factory));
         return services;
     }
 

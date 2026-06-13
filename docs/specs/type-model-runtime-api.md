@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the stable runtime surface for acquiring canonical hardened `TypeSchemaModel` instances and carrying diagnostics through runtime consumption.
+Define the stable runtime surface for acquiring runtime canonical semantic model `TypeSchemaModel` instances and carrying diagnostics through runtime consumption.
 
 ## Authority
 
@@ -15,7 +15,7 @@ This specification is authoritative for:
 
 ## Canonical Runtime Contracts
 
-Runtime model consumption is centered on the hardened canonical model in `SemanticTypeModel.Abstractions.Hardening`.
+Runtime model consumption is centered on the canonical semantic model in `SemanticTypeModel.Abstractions.Canonical`.
 
 ### Model acquisition
 
@@ -36,7 +36,7 @@ public sealed record TypeSchemaModelResult
 
 Rules:
 
-- providers return the canonical hardened `TypeSchemaModel`, not projection-specific artifacts;
+- providers return the runtime canonical semantic model `TypeSchemaModel`, not projection-specific artifacts;
 - providers may return diagnostics with or without a model;
 - provider results are raw acquisition results and are not required to apply transformations or caching.
 
@@ -75,7 +75,7 @@ public interface ITypeSchemaProjectionService<TProjection>
 
 ## Transformation Integration
 
-Registered runtime transformations reuse the hardened contracts from `docs/specs/type-model-core.md`:
+Registered runtime transformations reuse the canonical semantic model contracts from `docs/specs/type-model-core.md`:
 
 - `ISchemaTransformation.TransformAsync(TypeSchemaModelBuilder, SchemaTransformContext, CancellationToken)`;
 - `SchemaTransformationPipeline`;
@@ -139,6 +139,6 @@ public static partial class AppSemanticTypeModel
 
 Rules:
 
-- the runtime surface accepts both hardened canonical models and legacy canonical models produced by current generator output;
-- legacy model instances are adapted into the hardened runtime model before transformations and projections run;
-- generated and runtime-created models therefore meet at the same hardened canonical runtime boundary.
+- the runtime surface accepts both canonical semantic models and legacy canonical models produced by current generator output;
+- legacy model instances are adapted into the runtime canonical semantic model before transformations and projections run;
+- generated and runtime-created models therefore meet at the same runtime canonical semantic model boundary.

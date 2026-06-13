@@ -1,12 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Abstractions.Runtime;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema;
-using Legacy = SemanticTypeModel.Abstractions.Model;
-using LegacyTypeSchemaModelBuilder = SemanticTypeModel.Core.Building.TypeSchemaModelBuilder;
-using RuntimeTypeSchemaModelBuilder = SemanticTypeModel.Abstractions.Hardening.TypeSchemaModelBuilder;
+using RuntimeTypeSchemaModelBuilder = SemanticTypeModel.Abstractions.Canonical.TypeSchemaModelBuilder;
 
 namespace SemanticTypeModel.DependencyInjection.Tests.Unit;
 
@@ -36,51 +34,6 @@ public sealed class TypeSchemaModelDependencyInjectionTests
         _ = await Assert.That(serviceResult.Model).IsSameReferenceAs(model);
         _ = await Assert.That(serviceResult.Diagnostics.Count).IsEqualTo(0);
         _ = await Assert.That(serviceProvider.GetRequiredService<ITypeSchemaModelService>()).IsSameReferenceAs(service);
-    }
-
-    [Test]
-    public async Task Register_generated_factory_should_cache_factory_result_and_preserve_adapter_diagnostics()
-    {
-        var invocationCount = 0;
-        Legacy.TypeSchemaModel CreateLegacyModel()
-        {
-            invocationCount++;
-            LegacyTypeSchemaModelBuilder builder = new();
-            _ = builder.AddShape("Customer", new Legacy.ObjectShape
-            {
-                Properties =
-                [
-                    new Legacy.PropertyShape
-                    {
-                        Name = "value",
-                        IsRequired = true,
-                        IsNullable = true,
-                        Type = Legacy.ShapeRef.FromIdentifier("NullValue"),
-                    },
-                ],
-            });
-            _ = builder.AddShape("NullValue", new Legacy.ScalarShape
-            {
-                Kind = Legacy.ScalarKind.Null,
-                IsNullable = true,
-            });
-            _ = builder.SetRoot("Customer");
-            return builder.Build();
-        }
-
-        using ServiceProvider serviceProvider = new ServiceCollection()
-            .AddSemanticTypeModel(CreateLegacyModel)
-            .BuildServiceProvider();
-
-        ITypeSchemaModelService service = serviceProvider.GetRequiredService<ITypeSchemaModelService>();
-
-        TypeSchemaModelResult first = await service.GetModelAsync();
-        TypeSchemaModelResult second = await service.GetModelAsync();
-
-        _ = await Assert.That(invocationCount).IsEqualTo(1);
-        _ = await Assert.That(first.Model).IsNotNull();
-        _ = await Assert.That(first.Diagnostics.Any(static diagnostic => diagnostic.Code == "STM3103")).IsTrue();
-        _ = await Assert.That(second.Diagnostics.Count).IsEqualTo(first.Diagnostics.Count);
     }
 
     [Test]
@@ -155,28 +108,21 @@ public sealed class TypeSchemaModelDependencyInjectionTests
     public async Task Json_schema_projection_should_compose_with_runtime_model_service()
     {
         var invocationCount = 0;
-        Legacy.TypeSchemaModel CreateCustomerModel()
+        TypeSchemaModel CreateCustomerModel()
         {
             invocationCount++;
-            LegacyTypeSchemaModelBuilder builder = new();
-            _ = builder.AddShape("Customer", new Legacy.ObjectShape
+            var customer = new ObjectTypeDefinition
             {
-                Properties =
-                [
-                    new Legacy.PropertyShape
-                    {
-                        Name = "id",
-                        IsRequired = true,
-                        Type = Legacy.ShapeRef.FromIdentifier("CustomerId"),
-                    },
-                ],
-            });
-            _ = builder.AddShape("CustomerId", new Legacy.ScalarShape
-            {
-                Kind = Legacy.ScalarKind.String,
-            });
-            _ = builder.SetRoot("Customer");
-            return builder.Build();
+                Id = new TypeId("Customer"),
+                Name = "Customer",
+                Kind = TypeKind.Object,
+                Nullability = Nullability.NonNullable,
+                Annotations = EmptyAnnotations,
+                Properties = [Property("id", "CustomerIdProperty", new TypeId("CustomerId"))],
+                Keys = [],
+                Relationships = [],
+            };
+            return BuildModel(customer, Scalar("CustomerId", "CustomerId"));
         }
 
         using ServiceProvider serviceProvider = new ServiceCollection()

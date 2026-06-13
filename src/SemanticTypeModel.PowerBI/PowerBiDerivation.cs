@@ -1,17 +1,14 @@
-using SemanticTypeModel.Abstractions.Runtime;
-using SemanticTypeModel.Core.Runtime;
 using SemanticTypeModel.Core.Transformation;
-using Hardening = SemanticTypeModel.Abstractions.Hardening;
-using Legacy = SemanticTypeModel.Abstractions.Model;
+using Canonical = SemanticTypeModel.Abstractions.Canonical;
 
 namespace SemanticTypeModel.PowerBI;
 
 /// <summary>Power BI domain derivation entry points.</summary>
 public static class PowerBiDerivationExtensions
 {
-    /// <summary>Derives a Power BI domain semantic model from a hardened code-first canonical semantic model.</summary>
+    /// <summary>Derives a Power BI domain semantic model from a code-first canonical semantic model.</summary>
     public static SemanticDerivationResult<PowerBiSemanticModel> DerivePowerBiModel(
-        this Hardening.TypeSchemaModel model,
+        this Canonical.TypeSchemaModel model,
         Action<PowerBiDerivationOptions>? configure = null,
         CancellationToken cancellationToken = default)
     {
@@ -27,7 +24,7 @@ public static class PowerBiDerivationExtensions
         }
 
         SemanticModelTransformationResult transformed = options.Transformations.Run(model, options.PipelineOptions, cancellationToken);
-        var projectionContext = new Hardening.SchemaProjectionContext { Diagnostics = [.. transformed.Diagnostics], Target = Hardening.ProjectionTarget.PowerBi };
+        var projectionContext = new Canonical.SchemaProjectionContext { Diagnostics = [.. transformed.Diagnostics], Target = Canonical.ProjectionTarget.PowerBi };
         PowerBiProjectionOptions projectionOptions = options.Projection with { EnvelopePolicies = options.Envelopes.Policies };
         PowerBiProjectionModel projection = new PowerBiModelProjection(projectionOptions).Project(transformed.Model, projectionContext);
         PowerBiSemanticModel domainModel = projection.ToSemanticModel();
@@ -45,22 +42,10 @@ public static class PowerBiDerivationExtensions
         };
     }
 
-    /// <summary>Derives a Power BI domain semantic model from a legacy generated model by first adapting it to the hardened model.</summary>
-    public static SemanticDerivationResult<PowerBiSemanticModel> DerivePowerBiModel(
-        this Legacy.TypeSchemaModel model,
-        Action<PowerBiDerivationOptions>? configure = null,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(model);
-        TypeSchemaModelResult adapted = LegacyTypeSchemaModelAdapter.Adapt(model);
-        SemanticDerivationResult<PowerBiSemanticModel> result = adapted.Model!.DerivePowerBiModel(configure, cancellationToken);
-        return result with { Diagnostics = [.. adapted.Diagnostics, .. result.Diagnostics], Model = result.Model with { Diagnostics = [.. adapted.Diagnostics, .. result.Model.Diagnostics] } };
-    }
-
     private static PowerBiSemanticModel ApplyExplicitArtifacts(PowerBiSemanticModel model, PowerBiDerivationOptions options)
     {
         List<PowerBiTableDefinition> tables = [.. model.Tables];
-        List<Hardening.SchemaDiagnostic> diagnostics = [.. model.Diagnostics];
+        List<Canonical.SchemaDiagnostic> diagnostics = [.. model.Diagnostics];
 
         foreach (PowerBiExplicitMeasure explicitMeasure in options.Measures.Items)
         {
@@ -98,15 +83,15 @@ public static class PowerBiDerivationExtensions
         };
     }
 
-    private static Hardening.SchemaDiagnostic Diagnostic(string code, string message, string path)
+    private static Canonical.SchemaDiagnostic Diagnostic(string code, string message, string path)
     {
-        return new Hardening.SchemaDiagnostic
+        return new Canonical.SchemaDiagnostic
         {
-            Severity = Hardening.SchemaDiagnosticSeverity.Warning,
+            Severity = Canonical.SchemaDiagnosticSeverity.Warning,
             Code = code,
             Message = message,
-            Stage = Hardening.SchemaDiagnosticStage.Projection,
-            ProjectionTarget = Hardening.ProjectionTarget.PowerBi,
+            Stage = Canonical.SchemaDiagnosticStage.Projection,
+            ProjectionTarget = Canonical.ProjectionTarget.PowerBi,
             ModelPath = path,
         };
     }
@@ -122,7 +107,7 @@ public sealed class DerivePowerBiTablesTransformation : ISemanticModelTransforma
     public string DisplayName => nameof(DerivePowerBiTablesTransformation);
 
     /// <inheritdoc />
-    public SemanticModelTransformationStepResult Transform(Hardening.TypeSchemaModel model, SemanticModelTransformationContext context)
+    public SemanticModelTransformationStepResult Transform(Canonical.TypeSchemaModel model, SemanticModelTransformationContext context)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(context);

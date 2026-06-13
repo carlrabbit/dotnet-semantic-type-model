@@ -5,14 +5,14 @@
 #pragma warning disable IDE0305
 #pragma warning disable CA1822
 #pragma warning disable CA1859
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Core.Diagnostics;
 using SemanticTypeModel.Core.Semantics;
 
 namespace SemanticTypeModel.EFCore;
 
 /// <summary>
-/// Projects hardened canonical type models into an EF Core-like metadata model without requiring EF Core packages.
+/// Projects canonical semantic models into an EF Core-like metadata model without requiring EF Core packages.
 /// </summary>
 /// <remarks>
 /// Initializes a new instance of the <see cref="EfCoreModelProjection"/> class.
@@ -23,7 +23,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
     private readonly EfCoreProjectionOptions _options = options ?? EfCoreProjectionOptions.Default;
 
     /// <summary>
-    /// Projects a canonical hardened model into EF Core-like metadata.
+    /// Projects a canonical canonical semantic model into EF Core-like metadata.
     /// </summary>
     /// <param name="model">The source model.</param>
     /// <param name="context">Projection context carrying diagnostic sink state.</param>
