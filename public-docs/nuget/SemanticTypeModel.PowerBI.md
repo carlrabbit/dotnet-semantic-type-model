@@ -25,6 +25,6 @@ result.Diagnostics.ThrowIfErrors();
 PowerBiLocalMetadataExporter.Export(result.Model, "artifacts/powerbi");
 ```
 
-The output is inspectable without Power BI tooling and includes tables, columns, relationships, explicit measures, explicit calculated tables, analytical metadata, and projection diagnostics.
+The output is inspectable without Power BI tooling and includes tables, columns, relationships, explicit measures, explicit calculated tables, analytical metadata, projection diagnostics, envelope metadata policies, ownership projection behavior, and evolution/lifecycle columns.
 
 More details: `public-docs/guides/power-bi-projection.md`.

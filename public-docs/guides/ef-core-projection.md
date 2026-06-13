@@ -29,7 +29,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 
 ## Supported Mapping
 
-The 2.0.0 EF Core projection supports provider-neutral metadata for:
+The EF Core projection supports provider-neutral metadata for:
 
 - entities and properties;
 - table and column names;
@@ -42,9 +42,29 @@ The 2.0.0 EF Core projection supports provider-neutral metadata for:
 - explicit owned/value-object mapping;
 - explicit user-selected inheritance strategies: TPH, TPT, and TPC.
 
+## Envelope Payload Storage
+
+Envelope metadata maps as normal scalar columns. Envelope payload storage is target-specific EF Core policy.
+
+Supported policy concepts include:
+
+- serialized JSON column;
+- owned JSON mapping where the EF Core/provider shape supports it;
+- owned same-table columns for owned reference payloads;
+- owned separate table mapping where explicitly configured;
+- ignored payload.
+
+The default envelope payload storage policy is serialized JSON. Provider-specific JSON column types, JSON path indexes, computed columns, and database tuning remain user-owned EF Core configuration.
+
+## Ownership and Evolution Semantics
+
+Ownership semantics map to owned reference or owned collection policies. Version/revision, lifecycle state, and temporal validity members map as regular scalar members with optional configured indexes or alternate keys. `ExtensionData` is ignored by default unless configured as serialized JSON or summary metadata.
+
+The package does not automatically replace primary keys, add global query filters, enable SQL Server temporal tables, or generate migrations from these semantics.
+
 ## Diagnostics
 
-Unsupported or ambiguous mapping emits diagnostics. Typical cases include missing keys, unresolved relationship endpoints, invalid converter metadata, duplicate projected names, unsupported owned collections, unsupported many-to-many skip navigations, and ambiguous inheritance strategy.
+Unsupported or ambiguous mapping emits diagnostics. Typical cases include missing keys, unresolved relationship endpoints, invalid converter metadata, duplicate projected names, unsupported owned collections, unsupported many-to-many skip navigations, ambiguous inheritance strategy, unsupported envelope payload storage, invalid extension-data storage policy, and ambiguous ownership configuration.
 
 ## Non-Goals
 

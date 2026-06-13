@@ -23,3 +23,6 @@ Decision records are not authoritative for:
 | decisions/code-first-only-model-source.md | Rationale for making annotated .NET code the supported canonical model authoring source |
 | decisions/ef-core-integration-stops-at-modelbuilder-configuration.md | Rationale for limiting EF Core integration to domain semantic model derivation and provider-neutral `ModelBuilder` configuration |
 | decisions/power-bi-integration-stops-at-local-metadata-projection.md | Rationale for limiting Power BI integration to domain semantic model derivation and deterministic local metadata output |
+| decisions/envelope-projection-policies-are-target-specific.md | Rationale for keeping envelope semantics projection-neutral while target packages own JSON Schema, EF Core, and Power BI representation policies |
+| decisions/evolution-semantics-remain-projection-neutral.md | Rationale for keeping ownership, versioning, temporal validity, lifecycle state, and extension-data semantics projection-neutral |
+| decisions/remove-legacy-model-compatibility-and-hardened-terminology.md | Rationale for removing old model compatibility APIs, stale transition terminology, and System.Text.Json ad hoc model access |

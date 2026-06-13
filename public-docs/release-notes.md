@@ -1,5 +1,27 @@
 # Release Notes
 
+## Unreleased
+
+Documentation synchronization for M0033, M0034, and M0035.
+
+### Highlights
+
+- Documented envelope projection policies across JSON Schema, EF Core, and Power BI.
+- Documented EF Core envelope payload storage policy concepts, including serialized JSON, owned JSON, owned same-table columns, owned separate tables, and ignored payloads.
+- Documented ownership, versioning, revision, current-version, temporal-validity, lifecycle-state, and extension-data semantics.
+- Documented System.Text.Json as a domain projection target and M0035 as the cleanup boundary for removing old model compatibility and stale transition terminology.
+
+### Public Documentation
+
+- Updated the core-semantics guide for ownership, evolution, lifecycle, and extension-data semantics.
+- Updated JSON Schema guidance to emphasize code-first derivation and export rather than JSON Schema import as an authoring path.
+- Updated EF Core and Power BI guides for envelope and evolution/lifecycle projection behavior.
+- Updated System.Text.Json guide and package README source to use 2.0 package guidance while distinguishing current resolver helpers from planned M0035 internal realignment.
+
+### Compatibility Notes
+
+M0035 is planned as a cleanup boundary for removing old model compatibility APIs and stale transition terminology. Consumers using old model-shape APIs, JSON Schema import as a canonical source, or old System.Text.Json model-shape helper patterns should review the M0035 milestone before upgrading to a release that includes it.
+
 ## 2.0.0
 
 Code-first semantic model architecture release.

@@ -86,9 +86,9 @@ Do not use these terms for current behavior:
 
 | Avoid | Replacement |
 |---|---|
-| `canonical semantic model` | `canonical semantic model` |
-| `runtime canonical semantic model` | `runtime canonical semantic model` |
-| `validation` | `stabilization`, `validation`, `cleanup`, or a feature-specific term |
+| `hardened model` | `canonical semantic model` |
+| `hardened runtime model` | `runtime canonical semantic model` |
+| `hardening` | `stabilization`, `validation`, `cleanup`, or a feature-specific term |
 | `legacy model` | Remove the concept or describe only as historical behavior |
 | `legacy adapter` | Remove the concept |
 

@@ -54,3 +54,6 @@ For each focus area:
 - [M0030 - EF Core Domain Semantic Model and ModelBuilder Projection](milestones/m0030-ef-core-domain-semantic-model-and-modelbuilder-projection.md)
 - [M0031 - Power BI Domain Semantic Model and Local Metadata Projection](milestones/m0031-power-bi-domain-semantic-model-and-local-metadata-projection.md)
 - [M0032 - Core Semantic Vocabulary and Envelope Semantics](milestones/m0032-core-semantic-vocabulary-and-envelope-semantics.md)
+- [M0033 - Envelope Projection Policies and EF Core Owned Payload Storage](milestones/m0033-envelope-projection-policies-and-ef-core-owned-payload-storage.md)
+- [M0034 - Evolution, Ownership, and Lifecycle Semantics](milestones/m0034-evolution-ownership-and-lifecycle-semantics.md)
+- [M0035 - Remove Legacy Model Compatibility and Align System.Text.Json Projection](milestones/m0035-remove-legacy-model-compatibility-and-align-system-text-json-projection.md)

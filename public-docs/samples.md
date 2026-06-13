@@ -10,7 +10,7 @@ Samples are executable documentation under `samples/`. Public samples demonstrat
 - [System.Text.Json resolver](samples/system-text-json-resolver.md) — user-authored `JsonSerializerContext` customized by SemanticTypeModel resolver metadata.
 - [Runtime DI](samples/runtime-di.md) — dependency-injection registration and projection usage.
 
-Legacy JSON Schema import/roundtrip samples are not the primary 2.0.0 authoring path. Prefer code-first samples for new consumers.
+New consumers should start with the code-first samples. JSON Schema import/roundtrip flows are not the supported canonical authoring path.
 
 ## Run the Samples
 

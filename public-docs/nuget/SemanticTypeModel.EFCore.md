@@ -29,8 +29,8 @@ modelBuilder.ApplyEfCoreSemanticModel(result.Model);
 
 ## Supported scope
 
-The package supports semantic mapping for entities, properties, keys, alternate keys, indexes, requiredness/nullability, conversions, explicit simple relationships, explicit owned/value-object mapping, and explicit inheritance strategy mapping.
+The package supports semantic mapping for entities, properties, keys, alternate keys, indexes, requiredness/nullability, conversions, explicit simple relationships, explicit owned/value-object mapping, explicit inheritance strategy mapping, envelope payload storage policies, and projection of evolution/lifecycle semantics as provider-neutral metadata.
 
-It does not create databases, generate migrations, discover or generate `DbContext` types, configure providers, validate a runtime database, or configure global query filters.
+It does not create databases, generate migrations, discover or generate `DbContext` types, configure providers, validate a runtime database, configure global query filters, enable temporal tables, or tune provider-specific JSON behavior.
 
 More details: `public-docs/guides/ef-core-projection.md`.

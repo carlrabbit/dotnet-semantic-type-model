@@ -25,7 +25,7 @@ The current stable package set is:
 | `SemanticTypeModel.JsonSchema` | JSON Schema domain semantic model derivation and Draft 2020-12 export. |
 | `SemanticTypeModel.DotNet` | Attribute model and Roslyn-based .NET type extraction. |
 | `SemanticTypeModel.Generators` | Incremental source generator for compile-time extraction. |
-| `SemanticTypeModel.SystemTextJson` | System.Text.Json contract metadata import, annotation constants, and resolver customization helpers. |
+| `SemanticTypeModel.SystemTextJson` | System.Text.Json contract metadata import, annotation constants, and resolver customization helpers; M0035 aligns internals with the domain-model projection pattern. |
 | `SemanticTypeModel.DependencyInjection` | Runtime provider, transformation, and projection service registration. |
 | `SemanticTypeModel.PowerBI` | Power BI domain semantic model derivation and local metadata projection. |
 | `SemanticTypeModel.EFCore` | EF Core domain semantic model derivation and provider-neutral `ModelBuilder` projection. |

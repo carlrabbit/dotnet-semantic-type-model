@@ -1,9 +1,19 @@
 # SemanticTypeModel.JsonSchema
 
-`SemanticTypeModel.JsonSchema` imports and exports JSON Schema Draft 2020-12.
+`SemanticTypeModel.JsonSchema` derives JSON Schema semantic models from code-first canonical SemanticTypeModel metadata and exports JSON Schema Draft 2020-12 documents.
 
 ```sh
-dotnet add package SemanticTypeModel.JsonSchema --version 1.1.0
+dotnet add package SemanticTypeModel.JsonSchema --version 2.0.0
 ```
 
-This package is part of the stable package set. Public APIs and package boundaries follow the compatibility policy.
+## What it does
+
+- Derives a JSON Schema domain semantic model from the canonical semantic model.
+- Exports deterministic JSON Schema Draft 2020-12 documents.
+- Supports envelope projection policies, including envelope-root and payload-root views.
+- Supports ownership, versioning, temporal-validity, lifecycle-state, and extension-data semantics through safe schema defaults and explicit projection policies.
+- Provides JSON Editor compatibility as an export mode.
+
+Annotated .NET code is the supported canonical authoring source. JSON Schema import is not the supported canonical model creation path for new consumers.
+
+More details: `public-docs/guides/json-schema.md`.

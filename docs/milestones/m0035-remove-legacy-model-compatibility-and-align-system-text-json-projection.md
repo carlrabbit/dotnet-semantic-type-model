@@ -133,7 +133,7 @@ Remove transition-era vocabulary from current source, active specs, public docs,
 
 #### Scope
 
-- Replace `canonical semantic model`, `canonical semantic model`, and `runtime canonical semantic model` with current canonical terminology.
+- Replace `hardened model`, `hardened canonical model`, and `hardened runtime model` with current canonical terminology.
 - Replace `hardening` in current active behavior docs with `stabilization`, `validation`, `cleanup`, or a feature-specific term.
 - Remove active `legacy` wording where the old compatibility surface is deleted.
 - Keep historical milestone/decision filenames and historical descriptions unchanged unless they are actively referenced as current behavior.

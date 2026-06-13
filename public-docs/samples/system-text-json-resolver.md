@@ -2,13 +2,12 @@
 
 ## Scenario Goal
 
-Show a user-authored `JsonSerializerContext` wrapped by `SemanticTypeModel.SystemTextJson` resolver customization.
+Show a user-authored `JsonSerializerContext` wrapped by SemanticTypeModel System.Text.Json resolver customization.
 
 ## Packages Used
 
-- `SemanticTypeModel.Abstractions`
-- `SemanticTypeModel.Core`
 - `SemanticTypeModel.DotNet`
+- `SemanticTypeModel.Generators`
 - `SemanticTypeModel.SystemTextJson`
 
 ## Run Command
@@ -22,12 +21,16 @@ The sample project path is `samples/system-text-json-resolver/system-text-json-r
 
 ## Expected Output
 
-The sample prints serialized JSON, the deserialized display name, and the semantic annotation key used for System.Text.Json property names.
+The sample prints serialized JSON and the deserialized display name.
 
 ## Consumer Pattern Demonstrated
 
-A consumer obtains a runtime canonical semantic model, derives a System.Text.Json domain semantic model, owns the `JsonSerializerContext`, and composes a SemanticTypeModel resolver to apply semantic property-name metadata, including semantic-property-name-as-JSON-name behavior.
+A consumer owns the `JsonSerializerContext` and composes a SemanticTypeModel resolver to apply supported metadata, including semantic-property-name-as-JSON-name behavior when explicitly configured.
+
+## Current Implementation Note
+
+The current sample demonstrates resolver wrapping. M0035 replaces manual model-shape setup with the same code-first extraction/generation pattern used by the other public samples. Until that implementation work is complete, this sample page should not claim that a public System.Text.Json domain model API is shipped.
 
 ## Non-Goals
 
-This sample does not claim that SemanticTypeModel generates `JsonSerializerContext` classes, does not demonstrate unsupported generator chaining, and does not use JSON Schema import as a model source.
+This sample does not claim that SemanticTypeModel generates `JsonSerializerContext` classes and does not demonstrate unsupported generator chaining.

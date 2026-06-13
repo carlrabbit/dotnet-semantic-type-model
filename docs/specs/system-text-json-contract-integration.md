@@ -17,11 +17,13 @@ This spec is authoritative for:
 - unsupported generated-context behavior;
 - System.Text.Json integration diagnostics.
 
+The System.Text.Json domain model derivation and resolver customization projection are specified in `docs/specs/system-text-json-domain-model-and-resolver-projection.md`.
+
 ## Package Boundary
 
 - `SemanticTypeModel.Abstractions` remains projection-neutral and has no `System.Text.Json` dependency.
 - `SemanticTypeModel.DotNet` may import `System.Text.Json` attribute metadata into canonical annotations when configured.
-- `SemanticTypeModel.SystemTextJson` owns public annotation constants, projection options, extraction option helpers, and runtime resolver helper APIs.
+- `SemanticTypeModel.SystemTextJson` owns public annotation constants, projection options, extraction option helpers, domain model derivation, and runtime resolver helper APIs.
 - `SemanticTypeModel.Generators` must not generate `JsonSerializerContext` declarations.
 
 ## Annotation Keys
@@ -51,13 +53,13 @@ Definitions:
 | Concept | Meaning |
 |---|---|
 | CLR property name | The source-level .NET member name. |
-| Semantic property name | `PropertyShape.Name`, the canonical model property identity. |
+| Semantic property name | The canonical model property identity. |
 | Semantic display/title metadata | Human-facing metadata such as semantic name/title/display name annotations. |
 | System.Text.Json property name | The JSON property name used by `System.Text.Json` for serialization/deserialization. |
 | `JsonPropertyNameAttribute` value | Explicit STJ serialization-name metadata imported as `systemTextJson.propertyName`. |
 | Existing JSON contract name | The name already present on `JsonPropertyInfo.Name` before SemanticTypeModel customization. |
 
-`JsonPropertyNameAttribute` is imported into `systemTextJson.propertyName` and does not replace `PropertyShape.Name` unless `UseJsonPropertyNameAsSemanticName` or an equivalent explicit extraction option is enabled.
+`JsonPropertyNameAttribute` is imported into `systemTextJson.propertyName` and does not replace the semantic property name unless `UseJsonPropertyNameAsSemanticName` or an equivalent explicit extraction option is enabled.
 
 Using semantic property names as JSON serialization names is a runtime resolver projection choice and must be explicitly configured.
 
@@ -86,12 +88,6 @@ Required behavior:
 - `GenerateSystemTextJsonContext` and `SystemTextJsonContextName` are removed from `SemanticTypeModelGeneratorOptionsAttribute`;
 - `SemanticTypeModelGenerateSystemTextJsonContext=true` and `SemanticTypeModelSystemTextJsonContextName` MSBuild properties are rejected with explicit generated-context removal guidance;
 - samples must use user-authored `JsonSerializerContext` declarations when demonstrating source generation.
-
-Compatibility behavior:
-
-```text
-Generated JsonSerializerContext support is removed in 1.1.0 because it depended on unsupported source-generator chaining and did not produce a reliable consumer feature.
-```
 
 ## User-Owned Source-Generated Contexts
 
@@ -134,9 +130,7 @@ The contract must support at least:
 |---|---|
 | `ExistingJsonContract` | Preserve the name already provided by the base resolver/context. |
 | `SystemTextJsonPropertyNameAnnotation` | Use `systemTextJson.propertyName` when present. |
-| `SemanticPropertyName` | Use `PropertyShape.Name` as the JSON property name. |
-
-The implementation may expose this as an enum, named options, or equivalent public API. Contradictory boolean flags should be avoided for new API.
+| `SemanticPropertyName` | Use the canonical semantic property name as the JSON property name. |
 
 Default behavior must preserve the existing JSON contract unless a compatibility decision explicitly keeps prior behavior.
 
@@ -199,19 +193,6 @@ Custom converter behavior is not inferred. Converter metadata may be preserved a
 ## Diagnostics
 
 `STJ001` through `STJ008` remain the current System.Text.Json integration diagnostic range unless new diagnostics are required.
-
-Existing meanings:
-
-| Diagnostic | Meaning |
-|---|---|
-| `STJ001` | Conflicting semantic name and JSON property name policy. |
-| `STJ002` | Unsupported `JsonConverter` metadata when preservation is disabled or unavailable. |
-| `STJ003` | `JsonIgnore` conflicts with required semantic member. |
-| `STJ004` | Retired or repurposed generated-context diagnostic; must not be reused for unrelated behavior. |
-| `STJ005` | Generated-context object-member diagnostic is obsolete unless explicitly repurposed for resolver guidance. |
-| `STJ006` | `JsonRequired` conflicts with nullable or optional semantic member. |
-| `STJ007` | Unsupported `JsonExtensionData` member type. |
-| `STJ008` | Polymorphism metadata cannot be represented canonically. |
 
 If diagnostics are added or changed, follow the repository diagnostic rules and update the public diagnostics reference.
 
