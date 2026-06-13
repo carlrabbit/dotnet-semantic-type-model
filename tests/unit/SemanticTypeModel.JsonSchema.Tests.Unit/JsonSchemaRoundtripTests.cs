@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.JsonSchema.Import;
-using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticSeverity;
+using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Canonical.SchemaDiagnosticSeverity;
 
 namespace SemanticTypeModel.JsonSchema.Tests.Unit;
 

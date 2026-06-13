@@ -3,17 +3,15 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using Hardening = SemanticTypeModel.Abstractions.Hardening;
-using Legacy = SemanticTypeModel.Abstractions.Model;
+using Canonical = SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Abstractions.Runtime;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.EFCore;
 using SemanticTypeModel.JsonSchema;
 using SemanticTypeModel.JsonSchema.Export;
-using SemanticTypeModel.JsonSchema.Import;
+using SemanticTypeModel.JsonSchema.Derivation;
 using SemanticTypeModel.PowerBI;
 using SemanticTypeModel.SystemTextJson;
-using LegacyTypeSchemaModel = SemanticTypeModel.Abstractions.Model.TypeSchemaModel;
 
 namespace SemanticTypeModel.PackageSmoke.Tests;
 
@@ -28,43 +26,24 @@ internal sealed class PackageSmokeTests
     [Test]
     public async Task PackageSmokeShouldCoverPublicPackageApis()
     {
-        var legacyBuilder = new SemanticTypeModel.Core.Building.TypeSchemaModelBuilder()
-            .AddShape("Root", new Legacy.ScalarShape { Kind = Legacy.ScalarKind.String })
-            .SetRoot("Root");
-        LegacyTypeSchemaModel legacyModel = legacyBuilder.Build();
+        Canonical.TypeSchemaModel canonicalModel = BuildCanonicalModel();
+        JsonSchemaExportResult exported = JsonSchemaExporter.Export(canonicalModel.DeriveJsonSchemaModel().Model);
+        _ = await Assert.That(exported.Document.RootElement.GetRawText()).Contains("string");
 
-        _ = await Assert.That(legacyModel.RootIdentifier).IsEqualTo("Root");
 
-        JsonSchemaImportResult imported = JsonSchemaImporter.Import("""
-        {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "title": "Customer",
-          "type": "object",
-          "properties": {
-            "id": { "type": "string" }
-          }
-        }
-        """);
-
-        _ = await Assert.That(imported.Model).IsNotNull();
-        JsonSchemaExportResult exported = JsonSchemaExporter.Export(imported.Model);
-        _ = await Assert.That(exported.Document.RootElement.TryGetProperty("properties", out _)).IsTrue();
-
-        Hardening.TypeSchemaModel hardeningModel = BuildHardeningModel();
-
-        Hardening.SchemaProjectionContext powerBiContext = new() { Target = Hardening.ProjectionTarget.PowerBi };
-        PowerBiProjectionModel powerBiProjection = new PowerBiModelProjection().Project(hardeningModel, powerBiContext);
+        Canonical.SchemaProjectionContext powerBiContext = new() { Target = Canonical.ProjectionTarget.PowerBi };
+        PowerBiProjectionModel powerBiProjection = new PowerBiModelProjection().Project(canonicalModel, powerBiContext);
         _ = await Assert.That(powerBiProjection).IsNotNull();
 
-        Hardening.SchemaProjectionContext efCoreContext = new() { Target = Hardening.ProjectionTarget.EfCore };
-        EfModelDefinition efCoreProjection = new EfCoreModelProjection().Project(hardeningModel, efCoreContext);
+        Canonical.SchemaProjectionContext efCoreContext = new() { Target = Canonical.ProjectionTarget.EfCore };
+        EfModelDefinition efCoreProjection = new EfCoreModelProjection().Project(canonicalModel, efCoreContext);
         _ = await Assert.That(efCoreProjection).IsNotNull();
         var modelBuilder = new ModelBuilder(new ConventionSet());
-        EfCoreModelBuilderProjectionResult efCoreApplyResult = modelBuilder.ApplySemanticTypeModel(hardeningModel, options => options.ProjectUnannotatedObjectsAsEntities = true);
+        EfCoreModelBuilderProjectionResult efCoreApplyResult = modelBuilder.ApplySemanticTypeModel(canonicalModel, options => options.ProjectUnannotatedObjectsAsEntities = true);
         _ = await Assert.That(efCoreApplyResult.Model).IsNotNull();
 
         using ServiceProvider provider = new ServiceCollection()
-            .AddSemanticTypeModel(hardeningModel)
+            .AddSemanticTypeModel(canonicalModel)
             .AddSemanticTypeModelJsonSchema()
             .BuildServiceProvider();
 
@@ -94,54 +73,73 @@ internal sealed class PackageSmokeTests
         _ = await Assert.That(nameof(SmokeCustomer)).IsEqualTo("SmokeCustomer");
     }
 
-    private static LegacyTypeSchemaModel BuildPackageSmokeJsonModel()
+    private static Canonical.TypeSchemaModel BuildPackageSmokeJsonModel()
     {
-        return new SemanticTypeModel.Core.Building.TypeSchemaModelBuilder()
-            .AddShape("global::System.String", new Legacy.ScalarShape { Kind = Legacy.ScalarKind.String })
-            .AddShape("global::SemanticTypeModel.PackageSmoke.Tests.SmokeJsonCustomer", new Legacy.ObjectShape
-            {
-                Properties =
-                [
-                    new Legacy.PropertyShape
+        Canonical.ScalarTypeDefinition scalar = new()
+        {
+            Id = new Canonical.TypeId("global::System.String"),
+            Name = "String",
+            Kind = Canonical.TypeKind.Scalar,
+            Nullability = Canonical.Nullability.NonNullable,
+            Annotations = new Canonical.AnnotationBag(),
+            ScalarKind = Canonical.ScalarKind.String,
+        };
+        var customer = new Canonical.ObjectTypeDefinition
+        {
+            Id = new Canonical.TypeId("global::SemanticTypeModel.PackageSmoke.Tests.SmokeJsonCustomer"),
+            Name = "SmokeJsonCustomer",
+            Kind = Canonical.TypeKind.Object,
+            Nullability = Canonical.Nullability.NonNullable,
+            Annotations = new Canonical.AnnotationBag(),
+            Properties =
+            [
+                new Canonical.PropertyDefinition
+                {
+                    Id = new Canonical.PropertyId("Id"),
+                    Name = "smokeId",
+                    Type = new Canonical.TypeRef(scalar.Id),
+                    Cardinality = new Canonical.Cardinality { IsRequired = true },
+                    Mutability = Canonical.Mutability.Mutable,
+                    Constraints = new Canonical.ConstraintSet(),
+                    Annotations = new Canonical.AnnotationBag
                     {
-                        Name = "smokeId",
-                        IsRequired = true,
-                        Type = Legacy.ShapeRef.FromIdentifier("global::System.String"),
-                        Annotations =
+                        Items =
                         [
-                            new Legacy.SchemaAnnotation("dotnet.memberName", "Id"),
-                            new Legacy.SchemaAnnotation(SystemTextJsonAnnotationNames.PropertyName, "smoke_id"),
+                            new Canonical.Annotation { Key = new Canonical.AnnotationKey("dotnet.memberName"), Value = "Id", Scope = Canonical.AnnotationScope.Member, Source = Canonical.AnnotationSource.Imported },
+                            new Canonical.Annotation { Key = new Canonical.AnnotationKey(SystemTextJsonAnnotationNames.PropertyName), Value = "smoke_id", Scope = Canonical.AnnotationScope.Member, Source = Canonical.AnnotationSource.Imported },
                         ],
                     },
-                ],
-            })
-            .SetRoot("global::SemanticTypeModel.PackageSmoke.Tests.SmokeJsonCustomer")
-            .Build();
+                },
+            ],
+            Keys = [],
+            Relationships = [],
+        };
+        return new Canonical.TypeSchemaModel { Id = new Canonical.SchemaModelId(customer.Id.Value), Types = [customer, scalar], TypesById = new Dictionary<Canonical.TypeId, Canonical.TypeDefinition> { [customer.Id] = customer, [scalar.Id] = scalar }, Annotations = new Canonical.AnnotationBag() };
     }
 
-    private static Hardening.TypeSchemaModel BuildHardeningModel()
+    private static Canonical.TypeSchemaModel BuildCanonicalModel()
     {
-        Hardening.ScalarTypeDefinition scalar = new()
+        Canonical.ScalarTypeDefinition scalar = new()
         {
-            Id = new Hardening.TypeId("String"),
+            Id = new Canonical.TypeId("String"),
             Name = "String",
-            Kind = Hardening.TypeKind.Scalar,
-            Nullability = Hardening.Nullability.NonNullable,
-            Annotations = new Hardening.AnnotationBag(),
-            ScalarKind = Hardening.ScalarKind.String,
+            Kind = Canonical.TypeKind.Scalar,
+            Nullability = Canonical.Nullability.NonNullable,
+            Annotations = new Canonical.AnnotationBag(),
+            ScalarKind = Canonical.ScalarKind.String,
         };
 
-        System.Collections.Generic.Dictionary<Hardening.TypeId, Hardening.TypeDefinition> typesById = new()
+        System.Collections.Generic.Dictionary<Canonical.TypeId, Canonical.TypeDefinition> typesById = new()
         {
             [scalar.Id] = scalar,
         };
 
-        return new Hardening.TypeSchemaModel
+        return new Canonical.TypeSchemaModel
         {
-            Id = new Hardening.SchemaModelId("String"),
+            Id = new Canonical.SchemaModelId("String"),
             Types = [scalar],
             TypesById = typesById,
-            Annotations = new Hardening.AnnotationBag(),
+            Annotations = new Canonical.AnnotationBag(),
         };
     }
 }

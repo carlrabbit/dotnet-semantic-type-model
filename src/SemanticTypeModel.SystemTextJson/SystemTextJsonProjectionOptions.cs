@@ -1,3 +1,6 @@
+using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Core.Transformation;
+
 namespace SemanticTypeModel.SystemTextJson;
 
 /// <summary>
@@ -15,4 +18,15 @@ public sealed class SystemTextJsonProjectionOptions
     public bool PreserveUnsupportedConverterMetadata { get; set; } = true;
     /// <summary>Gets or sets the metadata source used when SemanticTypeModel customizes JSON property names.</summary>
     public SemanticJsonPropertyNameSource PropertyNameSource { get; set; } = SemanticJsonPropertyNameSource.ExistingJsonContract;
+    /// <summary>Gets or sets the transformation pipeline run before the System.Text.Json domain semantic model is created.</summary>
+    public SchemaTransformationPipeline? Transformations { get; set; }
+    /// <summary>Gets or sets transformation pipeline execution options.</summary>
+    public SchemaPipelineOptions? PipelineOptions { get; set; }
+
+    /// <summary>Configures the derivation to run the default canonical semantic model transformations.</summary>
+    public SystemTextJsonProjectionOptions UseDefaultTransformations()
+    {
+        Transformations = SchemaTransformationPipeline.Create().UseCoreDefaults();
+        return this;
+    }
 }

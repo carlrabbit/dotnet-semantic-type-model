@@ -2,7 +2,7 @@
 
 ## Scenario Goal
 
-Import a JSON Schema document, adapt it to the hardened semantic model, run deterministic transformations, and export JSON Schema again.
+Import a JSON Schema document, convert it to the canonical semantic model, run deterministic transformations, and export JSON Schema again.
 
 ## Packages Used
 

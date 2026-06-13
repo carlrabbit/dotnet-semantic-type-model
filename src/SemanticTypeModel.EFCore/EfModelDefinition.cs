@@ -1,12 +1,12 @@
 // CA1720 is disabled because EF projection enums intentionally use canonical type words such as String,
 // Numeric, and External to align with the published specification and metadata surface.
 #pragma warning disable CA1720
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 
 namespace SemanticTypeModel.EFCore;
 
 /// <summary>
-/// Represents the EF Core-like projection result for a hardened semantic type model.
+/// Represents the EF Core-like projection result for a canonical semantic model.
 /// </summary>
 public sealed record EfCoreSemanticModel
 {
@@ -44,7 +44,7 @@ public sealed record EfCoreSemanticModel
 }
 
 /// <summary>
-/// Represents the EF Core-like projection result for a hardened semantic type model.
+/// Represents the EF Core-like projection result for a canonical semantic model.
 /// </summary>
 public sealed record EfModelDefinition
 {

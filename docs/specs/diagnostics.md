@@ -80,7 +80,7 @@ Runtime validation diagnostics (`SchemaDiagnostic`) use `SchemaDiagnosticSeverit
 /types/{TypeId}/relationships/{RelationshipName}
 ```
 
-Use `ModelPath` from `SemanticTypeModel.Abstractions.Hardening` to generate canonical paths. Do not construct path strings inline.
+Use `ModelPath` from `SemanticTypeModel.Abstractions.Canonical` to generate canonical paths. Do not construct path strings inline.
 
 ## ID Registration and Maintenance
 

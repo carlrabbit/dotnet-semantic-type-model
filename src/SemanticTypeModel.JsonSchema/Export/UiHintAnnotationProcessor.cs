@@ -1,10 +1,10 @@
 using System.Globalization;
 using System.Text.Json;
 using SemanticTypeModel.Abstractions.Model;
-using ProjectionTarget = SemanticTypeModel.Abstractions.Hardening.ProjectionTarget;
-using SchemaDiagnostic = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnostic;
-using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticSeverity;
-using SchemaDiagnosticStage = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnosticStage;
+using ProjectionTarget = SemanticTypeModel.Abstractions.Canonical.ProjectionTarget;
+using SchemaDiagnostic = SemanticTypeModel.Abstractions.Canonical.SchemaDiagnostic;
+using SchemaDiagnosticSeverity = SemanticTypeModel.Abstractions.Canonical.SchemaDiagnosticSeverity;
+using SchemaDiagnosticStage = SemanticTypeModel.Abstractions.Canonical.SchemaDiagnosticStage;
 
 namespace SemanticTypeModel.JsonSchema.Export;
 

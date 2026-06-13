@@ -1,19 +1,25 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using SemanticTypeModel.Abstractions.Model;
+using SemanticTypeModel.Abstractions.Canonical;
 
 namespace SemanticTypeModel.SystemTextJson;
 
 /// <summary>
-/// Creates conservative System.Text.Json type-info resolvers from semantic model annotations.
+/// Creates conservative System.Text.Json type-info resolvers from a System.Text.Json domain semantic model.
 /// </summary>
 public static class SemanticTypeModelJsonTypeInfoResolver
 {
-    private const string DotNetMemberNameAnnotation = "dotnet.memberName";
+    /// <summary>
+    /// Creates a resolver that applies supported System.Text.Json projection metadata over the default resolver.
+    /// </summary>
+    public static IJsonTypeInfoResolver Create(SystemTextJsonSemanticModel model)
+    {
+        return Create(new DefaultJsonTypeInfoResolver(), model);
+    }
 
     /// <summary>
-    /// Creates a resolver that applies supported System.Text.Json annotations over the default resolver.
+    /// Creates a resolver that derives System.Text.Json projection metadata from the canonical semantic model and applies it over the default resolver.
     /// </summary>
     public static IJsonTypeInfoResolver Create(TypeSchemaModel model, SystemTextJsonProjectionOptions? options = null)
     {
@@ -21,7 +27,18 @@ public static class SemanticTypeModelJsonTypeInfoResolver
     }
 
     /// <summary>
-    /// Creates a resolver that applies supported System.Text.Json annotations over an existing resolver.
+    /// Creates a resolver that applies supported System.Text.Json projection metadata over an existing resolver.
+    /// </summary>
+    public static IJsonTypeInfoResolver Create(IJsonTypeInfoResolver baseResolver, SystemTextJsonSemanticModel model)
+    {
+        ArgumentNullException.ThrowIfNull(baseResolver);
+        ArgumentNullException.ThrowIfNull(model);
+
+        return new SemanticTypeModelResolver(baseResolver, model);
+    }
+
+    /// <summary>
+    /// Creates a resolver that derives System.Text.Json projection metadata from the canonical semantic model and applies it over an existing resolver.
     /// </summary>
     public static IJsonTypeInfoResolver Create(
         IJsonTypeInfoResolver baseResolver,
@@ -31,12 +48,27 @@ public static class SemanticTypeModelJsonTypeInfoResolver
         ArgumentNullException.ThrowIfNull(baseResolver);
         ArgumentNullException.ThrowIfNull(model);
 
-        options ??= new SystemTextJsonProjectionOptions();
-        return new SemanticTypeModelResolver(baseResolver, model, options);
+        SystemTextJsonSemanticModel stjModel = options is null
+            ? model.DeriveSystemTextJsonModel().Model
+            : model.DeriveSystemTextJsonModel(configure => CopyOptions(options, configure)).Model;
+        return Create(baseResolver, stjModel);
     }
 
     /// <summary>
-    /// Wraps an existing resolver with SemanticTypeModel customization.
+    /// Wraps an existing resolver with SemanticTypeModel System.Text.Json projection customization.
+    /// </summary>
+    public static IJsonTypeInfoResolver WithSemanticTypeModelJson(
+        this IJsonTypeInfoResolver resolver,
+        SystemTextJsonSemanticModel model)
+    {
+        ArgumentNullException.ThrowIfNull(resolver);
+        ArgumentNullException.ThrowIfNull(model);
+
+        return Create(resolver, model);
+    }
+
+    /// <summary>
+    /// Wraps an existing resolver by deriving System.Text.Json projection metadata from the canonical semantic model.
     /// </summary>
     public static IJsonTypeInfoResolver WithSemanticTypeModelJson(
         this IJsonTypeInfoResolver resolver,
@@ -46,35 +78,35 @@ public static class SemanticTypeModelJsonTypeInfoResolver
         ArgumentNullException.ThrowIfNull(resolver);
         ArgumentNullException.ThrowIfNull(model);
 
-        var options = new SystemTextJsonProjectionOptions();
-        configure?.Invoke(options);
-        return Create(resolver, model, options);
+        SystemTextJsonSemanticModel stjModel = model.DeriveSystemTextJsonModel(configure).Model;
+        return Create(resolver, stjModel);
     }
 
-    private static void ApplyAnnotations(JsonTypeInfo typeInfo, TypeSchemaModel model, SystemTextJsonProjectionOptions options)
+    private static void ApplyProjection(JsonTypeInfo typeInfo, SystemTextJsonSemanticModel model)
     {
         if (typeInfo.Kind != JsonTypeInfoKind.Object)
         {
             return;
         }
 
-        var typeId = "global::" + typeInfo.Type.FullName;
-        if (model.TryGetShape(typeId) is not ObjectShape shape)
+        var typeId = new TypeId("global::" + typeInfo.Type.FullName);
+        SystemTextJsonTypeDefinition? type = model.TryGetType(typeId);
+        if (type is null)
         {
             return;
         }
 
-        Dictionary<string, PropertyShape> semanticProperties = BuildPropertyMap(shape);
+        Dictionary<string, SystemTextJsonPropertyDefinition> properties = BuildPropertyMap(type);
         var finalNames = new Dictionary<string, JsonPropertyInfo>(StringComparer.Ordinal);
         foreach (JsonPropertyInfo jsonProperty in typeInfo.Properties)
         {
-            PropertyShape? property = ResolveProperty(jsonProperty, semanticProperties);
-            if (property is not null && TryResolveName(property, options.PropertyNameSource, out var name))
+            SystemTextJsonPropertyDefinition? property = ResolveProperty(jsonProperty, properties);
+            if (property is not null && !property.IsExtensionData && !string.IsNullOrWhiteSpace(property.ProjectedJsonName))
             {
-                jsonProperty.Name = name!;
+                jsonProperty.Name = property.ProjectedJsonName;
             }
 
-            if (!finalNames.TryAdd(jsonProperty.Name!, jsonProperty))
+            if (!finalNames.TryAdd(jsonProperty.Name, jsonProperty))
             {
                 throw new InvalidOperationException(
                     $"SemanticTypeModel System.Text.Json customization produced duplicate JSON property name '{jsonProperty.Name}' for type '{typeInfo.Type.FullName}'.");
@@ -82,27 +114,27 @@ public static class SemanticTypeModelJsonTypeInfoResolver
         }
     }
 
-    private static Dictionary<string, PropertyShape> BuildPropertyMap(ObjectShape shape)
+    private static Dictionary<string, SystemTextJsonPropertyDefinition> BuildPropertyMap(SystemTextJsonTypeDefinition type)
     {
-        var properties = new Dictionary<string, PropertyShape>(StringComparer.Ordinal);
-        foreach (PropertyShape property in shape.Properties)
+        var properties = new Dictionary<string, SystemTextJsonPropertyDefinition>(StringComparer.Ordinal);
+        foreach (SystemTextJsonPropertyDefinition property in type.Properties)
         {
-            AddIfAbsent(properties, property.Name, property);
-            if (TryGetAnnotation(property, DotNetMemberNameAnnotation, out var memberName))
+            AddIfAbsent(properties, property.SemanticName, property);
+            if (!string.IsNullOrWhiteSpace(property.DotNetMemberName))
             {
-                AddIfAbsent(properties, memberName!, property);
+                AddIfAbsent(properties, property.DotNetMemberName, property);
             }
 
-            if (TryGetAnnotation(property, SystemTextJsonAnnotationNames.PropertyName, out var jsonName))
+            if (!string.IsNullOrWhiteSpace(property.SystemTextJsonPropertyName))
             {
-                AddIfAbsent(properties, jsonName!, property);
+                AddIfAbsent(properties, property.SystemTextJsonPropertyName, property);
             }
         }
 
         return properties;
     }
 
-    private static void AddIfAbsent(Dictionary<string, PropertyShape> properties, string name, PropertyShape property)
+    private static void AddIfAbsent(Dictionary<string, SystemTextJsonPropertyDefinition> properties, string name, SystemTextJsonPropertyDefinition property)
     {
         if (!string.IsNullOrWhiteSpace(name) && !properties.ContainsKey(name))
         {
@@ -110,44 +142,32 @@ public static class SemanticTypeModelJsonTypeInfoResolver
         }
     }
 
-    private static PropertyShape? ResolveProperty(JsonPropertyInfo jsonProperty, Dictionary<string, PropertyShape> properties)
+    private static SystemTextJsonPropertyDefinition? ResolveProperty(JsonPropertyInfo jsonProperty, Dictionary<string, SystemTextJsonPropertyDefinition> properties)
     {
-        return jsonProperty.AttributeProvider is MemberInfo member && properties.TryGetValue(member.Name, out PropertyShape? propertyByMember)
+        return jsonProperty.AttributeProvider is MemberInfo member && properties.TryGetValue(member.Name, out SystemTextJsonPropertyDefinition? propertyByMember)
             ? propertyByMember
-            : properties.TryGetValue(jsonProperty.Name, out PropertyShape? propertyByCurrentName) ? propertyByCurrentName : null;
+            : properties.TryGetValue(jsonProperty.Name, out SystemTextJsonPropertyDefinition? propertyByCurrentName) ? propertyByCurrentName : null;
     }
 
-    private static bool TryResolveName(PropertyShape property, SemanticJsonPropertyNameSource source, out string? name)
+    private static void CopyOptions(SystemTextJsonProjectionOptions source, SystemTextJsonProjectionOptions target)
     {
-        name = source switch
-        {
-            SemanticJsonPropertyNameSource.ExistingJsonContract => null,
-            SemanticJsonPropertyNameSource.SystemTextJsonPropertyNameAnnotation => TryGetAnnotation(property, SystemTextJsonAnnotationNames.PropertyName, out var jsonName) ? jsonName : null,
-            SemanticJsonPropertyNameSource.SemanticPropertyName => property.Name,
-            _ => throw new InvalidOperationException($"Semantic JSON property name source '{source}' is not supported."),
-        };
-
-        return !string.IsNullOrWhiteSpace(name);
+        target.ImportSystemTextJsonAttributes = source.ImportSystemTextJsonAttributes;
+        target.UseJsonPropertyNameAsSerializationName = source.UseJsonPropertyNameAsSerializationName;
+        target.UseJsonPropertyNameAsSemanticName = source.UseJsonPropertyNameAsSemanticName;
+        target.PreserveUnsupportedConverterMetadata = source.PreserveUnsupportedConverterMetadata;
+        target.PropertyNameSource = source.PropertyNameSource;
+        target.Transformations = source.Transformations;
+        target.PipelineOptions = source.PipelineOptions;
     }
 
-    private static bool TryGetAnnotation(PropertyShape property, string key, out string? value)
-    {
-        SchemaAnnotation? annotation = property.Annotations.FirstOrDefault(annotation => string.Equals(annotation.Key, key, StringComparison.Ordinal));
-        value = annotation?.Value;
-        return !string.IsNullOrWhiteSpace(value);
-    }
-
-    private sealed class SemanticTypeModelResolver(
-        IJsonTypeInfoResolver baseResolver,
-        TypeSchemaModel model,
-        SystemTextJsonProjectionOptions options) : IJsonTypeInfoResolver
+    private sealed class SemanticTypeModelResolver(IJsonTypeInfoResolver baseResolver, SystemTextJsonSemanticModel model) : IJsonTypeInfoResolver
     {
         public JsonTypeInfo? GetTypeInfo(Type type, JsonSerializerOptions optionsFromSerializer)
         {
             JsonTypeInfo? typeInfo = baseResolver.GetTypeInfo(type, optionsFromSerializer);
             if (typeInfo is not null)
             {
-                ApplyAnnotations(typeInfo, model, options);
+                ApplyProjection(typeInfo, model);
             }
 
             return typeInfo;

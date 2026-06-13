@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using SemanticTypeModel.Abstractions.Model;
-using SchemaDiagnostic = SemanticTypeModel.Abstractions.Hardening.SchemaDiagnostic;
+using SchemaDiagnostic = SemanticTypeModel.Abstractions.Canonical.SchemaDiagnostic;
 
 namespace SemanticTypeModel.JsonSchema;
 

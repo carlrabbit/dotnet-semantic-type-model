@@ -1,11 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 
 namespace SemanticTypeModel.Core.Tests.Unit;
 
 #pragma warning disable CS1591
 [SuppressMessage("Naming", "CA1707:Remove the underscores from member name", Justification = "Test names may use underscores for readability.")]
-public sealed class TypeModelHardeningContractsTests
+public sealed class TypeModelContractsTests
 {
     private static readonly AnnotationBag EmptyAnnotations = new();
 

@@ -1,4 +1,4 @@
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 
 namespace SemanticTypeModel.DependencyInjection;
 

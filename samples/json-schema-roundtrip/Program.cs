@@ -1,26 +1,47 @@
-using SemanticTypeModel.Abstractions.Hardening;
-using SemanticTypeModel.Core.Runtime;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema;
-using SemanticTypeModel.JsonSchema.Import;
+using SemanticTypeModel.JsonSchema.Derivation;
+using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.JsonSchema.Runtime;
 
-var input = """
+ScalarTypeDefinition stringType = new()
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "Customer",
-  "type": "object",
-  "properties": {
-    "id": { "type": "string" },
-    "name": { "type": "string" }
-  },
-  "required": ["id", "name"]
-}
-""";
+    Id = new TypeId("String"),
+    Name = "String",
+    Kind = TypeKind.Scalar,
+    Nullability = Nullability.NonNullable,
+    Annotations = new AnnotationBag(),
+    ScalarKind = ScalarKind.String,
+};
 
-// Legacy compatibility only: JSON Schema import is not a supported canonical model source. Prefer the code-first JSON Schema sample for the primary projection workflow.
-JsonSchemaImportResult imported = JsonSchemaImporter.Import(input);
-var adapted = LegacyTypeSchemaModelAdapter.Adapt(imported.Model);
+var customer = new ObjectTypeDefinition
+{
+    Id = new TypeId("Customer"),
+    Name = "Customer",
+    Kind = TypeKind.Object,
+    Nullability = Nullability.NonNullable,
+    Annotations = new AnnotationBag(),
+    Properties =
+    [
+        Property("id", "CustomerId", stringType.Id),
+        Property("name", "CustomerName", stringType.Id),
+    ],
+    Keys = [],
+    Relationships = [],
+};
+
+var model = new TypeSchemaModel
+{
+    Id = new SchemaModelId(customer.Id.Value),
+    Types = [customer, stringType],
+    TypesById = new Dictionary<TypeId, TypeDefinition>
+    {
+        [customer.Id] = customer,
+        [stringType.Id] = stringType,
+    },
+    Annotations = new AnnotationBag(),
+};
 
 // Transformations are deterministic validation/normalization steps before projection.
 SchemaTransformationPipeline pipeline = SchemaTransformationPipeline.Create()
@@ -28,18 +49,32 @@ SchemaTransformationPipeline pipeline = SchemaTransformationPipeline.Create()
     .Use(new NormalizeAnnotationsTransformation())
     .Use(new ValidateModelTransformation());
 
-SchemaPipelineResult transformed = await pipeline.RunAsync(adapted.Model!);
+SchemaPipelineResult transformed = await pipeline.RunAsync(model);
 var projectionContext = new SchemaProjectionContext { Target = ProjectionTarget.JsonSchema };
 var exporter = new JsonSchemaRuntimeProjection();
 JsonSchemaExportResult exported = exporter.Project(transformed.Model, projectionContext);
+JsonSchemaExportResult domainExported = JsonSchemaExporter.Export(model.DeriveJsonSchemaModel().Model);
 
 string outputDirectory = Path.Combine("artifacts", "samples", "json-schema-roundtrip");
 Directory.CreateDirectory(outputDirectory);
-string outputPath = Path.Combine(outputDirectory, "customer.roundtrip.schema.json");
+string outputPath = Path.Combine(outputDirectory, "customer.schema.json");
 File.WriteAllText(outputPath, exported.Document.RootElement.GetRawText());
 
-Console.WriteLine($"import diagnostics: {imported.Diagnostics.Count}");
-Console.WriteLine($"adapter diagnostics: {adapted.Diagnostics.Count}");
 Console.WriteLine($"transform diagnostics: {transformed.Diagnostics.Count}");
 Console.WriteLine($"projection diagnostics: {projectionContext.Diagnostics.Count}");
+Console.WriteLine($"domain export bytes: {domainExported.Document.RootElement.GetRawText().Length}");
 Console.WriteLine($"artifacts: {outputPath}");
+
+static PropertyDefinition Property(string name, string id, TypeId typeId)
+{
+    return new PropertyDefinition
+    {
+        Id = new PropertyId(id),
+        Name = name,
+        Type = new TypeRef(typeId),
+        Cardinality = new Cardinality { IsRequired = true },
+        Mutability = Mutability.Immutable,
+        Constraints = new ConstraintSet(),
+        Annotations = new AnnotationBag(),
+    };
+}

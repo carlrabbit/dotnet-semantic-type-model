@@ -1,6 +1,6 @@
 #pragma warning disable CS1591
 #pragma warning disable CA1720
-namespace SemanticTypeModel.Abstractions.Hardening;
+namespace SemanticTypeModel.Abstractions.Canonical;
 
 public readonly record struct SchemaModelId(string Value);
 
@@ -410,6 +410,7 @@ public enum ProjectionTarget
     JsonEditor,
     EfCore,
     PowerBi,
+    SystemTextJson,
     Tom,
     DotNet,
 }

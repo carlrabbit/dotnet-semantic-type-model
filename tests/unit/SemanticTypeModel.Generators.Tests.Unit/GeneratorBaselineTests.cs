@@ -13,7 +13,7 @@ using SemanticTypeModel.DotNet;
 using SemanticTypeModel.Generators;
 using SemanticTypeModel.JsonSchema;
 using SemanticTypeModel.JsonSchema.Export;
-using Hardening = SemanticTypeModel.Abstractions.Hardening;
+using Canonical = SemanticTypeModel.Abstractions.Canonical;
 
 namespace SemanticTypeModel.Generators.Tests.Unit;
 
@@ -514,7 +514,7 @@ public sealed class GeneratorBaselineTests
         string json = export.Document.RootElement.GetRawText();
 
         _ = await Assert.That(diagnostics.Count).IsEqualTo(0);
-        _ = await Assert.That(export.Diagnostics.Any(static diagnostic => diagnostic.Severity == Hardening.SchemaDiagnosticSeverity.Error)).IsFalse();
+        _ = await Assert.That(export.Diagnostics.Any(static diagnostic => diagnostic.Severity == Canonical.SchemaDiagnosticSeverity.Error)).IsFalse();
         _ = await Assert.That(json.Contains("\"properties\"", StringComparison.Ordinal)).IsTrue();
     }
 

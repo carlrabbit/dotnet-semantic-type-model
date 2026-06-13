@@ -6,14 +6,14 @@
 #pragma warning disable CA1822
 #pragma warning disable CA1826
 #pragma warning disable CA1859
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Core.Diagnostics;
 using SemanticTypeModel.Core.Semantics;
 
 namespace SemanticTypeModel.PowerBI;
 
 /// <summary>
-/// Projects canonical hardened type models to a Power BI metadata model.
+/// Projects canonical semantic models to a Power BI metadata model.
 /// </summary>
 /// <remarks>
 /// Initializes a new instance of the <see cref="PowerBiModelProjection"/> class.
@@ -32,7 +32,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
     private readonly PowerBiProjectionOptions _options = options ?? PowerBiProjectionOptions.Default;
 
     /// <summary>
-    /// Projects a canonical hardened model into Power BI metadata.
+    /// Projects a canonical canonical semantic model into Power BI metadata.
     /// </summary>
     /// <param name="model">The source model.</param>
     /// <param name="context">Projection context carrying diagnostic sink state.</param>

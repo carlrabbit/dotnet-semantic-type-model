@@ -1,5 +1,5 @@
 #pragma warning disable CS1591
-namespace SemanticTypeModel.Abstractions.Hardening;
+namespace SemanticTypeModel.Abstractions.Canonical;
 
 /// <summary>
 /// Produces stable, human-readable path strings for use in diagnostics, tests, and projection errors.

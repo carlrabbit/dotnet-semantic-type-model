@@ -1,4 +1,4 @@
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.JsonSchema;
 
 // This file intentionally uses the Microsoft.Extensions.DependencyInjection namespace

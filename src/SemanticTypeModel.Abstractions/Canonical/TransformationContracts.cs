@@ -1,4 +1,4 @@
-namespace SemanticTypeModel.Abstractions.Hardening;
+namespace SemanticTypeModel.Abstractions.Canonical;
 
 #pragma warning disable CS1591
 public interface ISchemaTransformation

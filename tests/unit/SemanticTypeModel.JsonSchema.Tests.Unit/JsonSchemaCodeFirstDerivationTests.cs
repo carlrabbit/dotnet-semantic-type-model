@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema.Derivation;
 using SemanticTypeModel.JsonSchema.Domain;

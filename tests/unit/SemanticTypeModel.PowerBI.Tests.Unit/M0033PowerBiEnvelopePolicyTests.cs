@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 
 namespace SemanticTypeModel.PowerBI.Tests.Unit;
 

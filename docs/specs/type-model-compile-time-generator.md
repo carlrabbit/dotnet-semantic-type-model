@@ -55,7 +55,7 @@ M0011 keeps the generated static-factory shape as the compatibility baseline.
 Rules:
 
 - runtime and DI integration must consume generated providers through the static `Create()` pattern rather than through generator-specific projection shortcuts;
-- current generated factories may be adapted by runtime registration helpers before entering the hardened runtime service pipeline;
+- current generated factories may be adapted by runtime registration helpers before entering the runtime canonical semantic model service pipeline;
 - transformations and projections still operate on the canonical runtime model boundary after any compatibility adaptation is complete.
 
 ## Configuration Baseline

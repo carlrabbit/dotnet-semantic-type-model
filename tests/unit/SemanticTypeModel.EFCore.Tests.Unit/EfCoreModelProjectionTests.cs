@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.JsonSchema;
 using SemanticTypeModel.JsonSchema.Import;
 using Legacy = SemanticTypeModel.Abstractions.Model;
@@ -364,7 +364,7 @@ public sealed class EfCoreModelProjectionTests
     [Test]
     public async Task Fixture_7_optional_vs_nullable_json_schema_properties_should_survive_projection_with_annotations_and_diagnostics()
     {
-        TypeSchemaModel model = ImportHardeningModel(/*lang=json,strict*/ """
+        TypeSchemaModel model = ImportCanonicalModel(/*lang=json,strict*/ """
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
               "$id": "Contact",
@@ -468,7 +468,7 @@ public sealed class EfCoreModelProjectionTests
         };
     }
 
-    private static TypeSchemaModel ImportHardeningModel(string json)
+    private static TypeSchemaModel ImportCanonicalModel(string json)
     {
         JsonSchemaImportResult imported = JsonSchemaImporter.Import(json);
         Legacy.ObjectShape root = imported.Model.Root as Legacy.ObjectShape
@@ -491,7 +491,7 @@ public sealed class EfCoreModelProjectionTests
                 Kind = TypeKind.Scalar,
                 Nullability = scalarShape.IsNullable ? Nullability.Nullable : Nullability.NonNullable,
                 Annotations = new AnnotationBag(),
-                ScalarKind = ToHardeningScalarKind(scalarShape.Kind),
+                ScalarKind = ToCanonicalScalarKind(scalarShape.Kind),
             });
         }
 
@@ -501,7 +501,7 @@ public sealed class EfCoreModelProjectionTests
             Name = rootId,
             Kind = TypeKind.Object,
             Nullability = Nullability.NonNullable,
-            Annotations = ToHardeningAnnotations(root.Annotations, AnnotationScope.Type),
+            Annotations = ToCanonicalAnnotations(root.Annotations, AnnotationScope.Type),
             Semantics = new EntitySemantics { Role = EntityRole.Entity },
             Properties =
             [
@@ -517,7 +517,7 @@ public sealed class EfCoreModelProjectionTests
                     },
                     Mutability = Mutability.Mutable,
                     Constraints = new ConstraintSet(),
-                    Annotations = ToHardeningAnnotations(property.Annotations, AnnotationScope.Member),
+                    Annotations = ToCanonicalAnnotations(property.Annotations, AnnotationScope.Member),
                 }),
             ],
             Keys = [],
@@ -533,7 +533,7 @@ public sealed class EfCoreModelProjectionTests
         };
     }
 
-    private static AnnotationBag ToHardeningAnnotations(IReadOnlyList<Legacy.SchemaAnnotation> annotations, AnnotationScope scope)
+    private static AnnotationBag ToCanonicalAnnotations(IReadOnlyList<Legacy.SchemaAnnotation> annotations, AnnotationScope scope)
     {
         return new AnnotationBag
         {
@@ -575,7 +575,7 @@ public sealed class EfCoreModelProjectionTests
         }
     }
 
-    private static ScalarKind ToHardeningScalarKind(Legacy.ScalarKind scalarKind)
+    private static ScalarKind ToCanonicalScalarKind(Legacy.ScalarKind scalarKind)
     {
         return scalarKind switch
         {

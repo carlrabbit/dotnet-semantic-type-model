@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 
 namespace SemanticTypeModel.PowerBI.Tests.Unit;
 
@@ -348,7 +348,7 @@ public sealed class PowerBiModelProjectionTests
     }
 
     [Test]
-    public async Task Hardened_entry_point_should_apply_visibility_summarization_and_source_metadata()
+    public async Task Canonical_entry_point_should_apply_visibility_summarization_and_source_metadata()
     {
         ScalarTypeDefinition intType = Scalar("Int64", ScalarKind.Integer);
         ScalarTypeDefinition decimalType = Scalar("Amount", ScalarKind.Decimal);

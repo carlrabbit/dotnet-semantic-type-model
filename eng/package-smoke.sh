@@ -75,7 +75,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Legacy = SemanticTypeModel.Abstractions.Model;
-using Hardening = SemanticTypeModel.Abstractions.Hardening;
+using Canonical = SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Core.Building;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.EFCore;
@@ -115,73 +115,73 @@ internal static class Program
             .AddShape("Root", new Legacy.ScalarShape { Kind = Legacy.ScalarKind.String })
             .SetRoot("Root");
         _ = legacyBuilder.Build();
-        Hardening.TypeSchemaModel hardeningModel = BuildHardeningModel();
+        Canonical.TypeSchemaModel canonicalModel = BuildCanonicalModel();
         var modelBuilder = new ModelBuilder(new ConventionSet());
-        _ = modelBuilder.ApplySemanticTypeModel(hardeningModel, options => options.ProjectUnannotatedObjectsAsEntities = true);
+        _ = modelBuilder.ApplySemanticTypeModel(canonicalModel, options => options.ProjectUnannotatedObjectsAsEntities = true);
 
         _ = typeof(SemanticTypeAttribute);
 
         Console.WriteLine("Package smoke consumer succeeded.");
     }
 
-    private static Hardening.TypeSchemaModel BuildHardeningModel()
+    private static Canonical.TypeSchemaModel BuildCanonicalModel()
     {
-        Hardening.ScalarTypeDefinition scalar = new()
+        Canonical.ScalarTypeDefinition scalar = new()
         {
-            Id = new Hardening.TypeId("String"),
+            Id = new Canonical.TypeId("String"),
             Name = "String",
-            Kind = Hardening.TypeKind.Scalar,
-            Nullability = Hardening.Nullability.NonNullable,
-            Annotations = new Hardening.AnnotationBag(),
-            ScalarKind = Hardening.ScalarKind.String,
+            Kind = Canonical.TypeKind.Scalar,
+            Nullability = Canonical.Nullability.NonNullable,
+            Annotations = new Canonical.AnnotationBag(),
+            ScalarKind = Canonical.ScalarKind.String,
         };
 
-        Hardening.ObjectTypeDefinition customer = new()
+        Canonical.ObjectTypeDefinition customer = new()
         {
-            Id = new Hardening.TypeId("Customer"),
+            Id = new Canonical.TypeId("Customer"),
             Name = "Customer",
-            Kind = Hardening.TypeKind.Object,
-            Nullability = Hardening.Nullability.NonNullable,
-            Annotations = new Hardening.AnnotationBag(),
-            Semantics = new Hardening.EntitySemantics { Role = Hardening.EntityRole.Entity },
+            Kind = Canonical.TypeKind.Object,
+            Nullability = Canonical.Nullability.NonNullable,
+            Annotations = new Canonical.AnnotationBag(),
+            Semantics = new Canonical.EntitySemantics { Role = Canonical.EntityRole.Entity },
             Properties =
             [
-                new Hardening.PropertyDefinition
+                new Canonical.PropertyDefinition
                 {
-                    Id = new Hardening.PropertyId("CustomerId"),
+                    Id = new Canonical.PropertyId("CustomerId"),
                     Name = "id",
-                    Type = new Hardening.TypeRef(scalar.Id),
-                    Cardinality = new Hardening.Cardinality { IsRequired = true },
-                    Mutability = Hardening.Mutability.Mutable,
-                    Constraints = new Hardening.ConstraintSet(),
-                    Annotations = new Hardening.AnnotationBag(),
+                    Type = new Canonical.TypeRef(scalar.Id),
+                    Cardinality = new Canonical.Cardinality { IsRequired = true },
+                    Mutability = Canonical.Mutability.Mutable,
+                    Constraints = new Canonical.ConstraintSet(),
+                    Annotations = new Canonical.AnnotationBag(),
                 },
             ],
             Keys =
             [
-                new Hardening.KeyDefinition
+                new Canonical.KeyDefinition
                 {
                     Name = "PK_Customer",
-                    Kind = Hardening.KeyKind.Primary,
-                    Properties = [new Hardening.PropertyRef(new Hardening.PropertyId("CustomerId"))],
-                    Annotations = new Hardening.AnnotationBag(),
+                    Kind = Canonical.KeyKind.Primary,
+                    Properties = [new Canonical.PropertyRef(new Canonical.PropertyId("CustomerId"))],
+                    Annotations = new Canonical.AnnotationBag(),
                 },
             ],
             Relationships = [],
         };
 
-        System.Collections.Generic.Dictionary<Hardening.TypeId, Hardening.TypeDefinition> typesById = new()
+        System.Collections.Generic.Dictionary<Canonical.TypeId, Canonical.TypeDefinition> typesById = new()
         {
             [scalar.Id] = scalar,
             [customer.Id] = customer,
         };
 
-        return new Hardening.TypeSchemaModel
+        return new Canonical.TypeSchemaModel
         {
-            Id = new Hardening.SchemaModelId("CustomerModel"),
+            Id = new Canonical.SchemaModelId("CustomerModel"),
             Types = [scalar, customer],
             TypesById = typesById,
-            Annotations = new Hardening.AnnotationBag(),
+            Annotations = new Canonical.AnnotationBag(),
         };
     }
 }

@@ -37,7 +37,7 @@ Rules:
 
 - `AddSemanticTypeModelRuntime()` registers `ITypeSchemaModelService` and `ITypeSchemaProjectionService<T>` even when no provider is present;
 - `AddSemanticTypeModel(model)` and `AddSemanticTypeModel(factory)` implicitly register runtime services;
-- provider registration supports both hardened models and legacy generated-model outputs;
+- provider registration supports both canonical semantic models and legacy generated-model outputs;
 - `AddSemanticTypeModelProvider<TProvider>()` registers the provider as a singleton;
 - transformations are singletons and execute in registration order;
 - projections are singletons and are keyed by projection result type plus `ProjectionTarget` metadata.
@@ -79,7 +79,7 @@ services.AddSemanticTypeModelJsonSchema();
 Rules:
 
 - package-specific helpers must still register through the canonical runtime model path;
-- projection packages may adapt the hardened canonical model to projection-specific exporters internally;
+- projection packages may adapt the canonical semantic model to projection-specific exporters internally;
 - no direct generator-to-projection shortcut may bypass `ITypeSchemaModelProvider` / `ITypeSchemaModelService`.
 
 ## JSON Schema Proof Path
@@ -94,4 +94,4 @@ Rules:
 
 - JSON Schema registration is optional and package-specific;
 - the JSON Schema runtime path composes with the canonical runtime model service;
-- current generator output may flow through DI as legacy model factories, then be adapted to the hardened runtime model before the JSON Schema projection executes.
+- current generator output may flow through DI as legacy model factories, then be adapted to the runtime canonical semantic model before the JSON Schema projection executes.

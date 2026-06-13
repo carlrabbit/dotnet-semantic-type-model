@@ -1,4 +1,4 @@
-using SemanticTypeModel.Abstractions.Hardening;
+using SemanticTypeModel.Abstractions.Canonical;
 using SemanticTypeModel.Core.Transformation;
 
 namespace SemanticTypeModel.PowerBI;
