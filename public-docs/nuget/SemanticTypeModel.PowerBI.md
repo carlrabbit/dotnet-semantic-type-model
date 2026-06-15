@@ -3,7 +3,7 @@
 `SemanticTypeModel.PowerBI` derives a Power BI domain semantic model from canonical SemanticTypeModel metadata and emits deterministic local analytical metadata.
 
 ```sh
-dotnet add package SemanticTypeModel.PowerBI --version 2.0.0
+dotnet add package SemanticTypeModel.PowerBI --version 2.1.0
 ```
 
 This package is part of the stable package set. Public APIs follow the compatibility policy.

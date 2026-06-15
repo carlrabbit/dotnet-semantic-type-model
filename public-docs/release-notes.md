@@ -1,8 +1,8 @@
 # Release Notes
 
-## Unreleased
+## 2.1.0
 
-Documentation synchronization for M0033, M0034, and M0035.
+Candidate release documentation synchronization for M0033, M0034, M0035, and M0036. Packages are not published until human-approved publication completes.
 
 ### Highlights
 
@@ -16,11 +16,11 @@ Documentation synchronization for M0033, M0034, and M0035.
 - Updated the core-semantics guide for ownership, evolution, lifecycle, and extension-data semantics.
 - Updated JSON Schema guidance to emphasize code-first derivation and export rather than JSON Schema import as an authoring path.
 - Updated EF Core and Power BI guides for envelope and evolution/lifecycle projection behavior.
-- Updated System.Text.Json guide and package README source to use 2.0 package guidance while distinguishing current resolver helpers from planned M0035 internal realignment.
+- Updated System.Text.Json guide and package README source to use 2.1.0 candidate package guidance while distinguishing current resolver helpers from planned M0035 internal realignment.
 
 ### Compatibility Notes
 
-M0035 is planned as a cleanup boundary for removing old model compatibility APIs and stale transition terminology. Consumers using old model-shape APIs, JSON Schema import as a canonical source, or old System.Text.Json model-shape helper patterns should review the M0035 milestone before upgrading to a release that includes it.
+M0035 remains a release-review boundary for removing old model compatibility APIs, stale transition terminology, and System.Text.Json paths that bypass the domain-projection architecture. Consumers using old model-shape APIs, JSON Schema import as a canonical source, or old System.Text.Json helper patterns should review compatibility notes before upgrading to a release that includes those removals.
 
 ## 2.0.0
 

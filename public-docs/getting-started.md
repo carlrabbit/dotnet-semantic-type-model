@@ -45,4 +45,4 @@ See [guides/core-semantics.md](guides/core-semantics.md).
 
 ## Release Status
 
-`2.0.0` is the code-first semantic model release. Documented public APIs follow the compatibility policy unless a page explicitly marks a feature as preview.
+`2.1.0` is the current release candidate documentation target; `2.0.0` remains the code-first semantic model release baseline. Documented public APIs follow the compatibility policy unless a page explicitly marks a feature as preview.

@@ -34,4 +34,4 @@ Semantic member names identify model concepts. `System.Text.Json` property names
 
 ## Stable Release Status
 
-`2.0.0` is the code-first semantic model release. Documented public APIs, diagnostics, annotation keys, and package boundaries follow the compatibility policy unless explicitly marked preview.
+`2.1.0` is the current release candidate documentation target; `2.0.0` remains the code-first semantic model release baseline. Documented public APIs, diagnostics, annotation keys, and package boundaries follow the compatibility policy unless explicitly marked preview.
