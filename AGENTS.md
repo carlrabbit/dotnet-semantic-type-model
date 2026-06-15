@@ -8,9 +8,11 @@ Start with this file. Read additional documents only when they are relevant to t
 - Read relevant specs under `docs/specs/` when changing behavior covered by a specification.
 - Read `docs/PUBLIC-DOCS.md` and affected `public-docs/` pages when changing consumer-facing behavior, package metadata, diagnostics, samples, or release guidance.
 - Read workflow docs and workflow YAML together when changing CI, packaging, release, or publishing automation.
-- Read architecture or decision records only when changing repository structure or durable rationale.
+- Read `.guide-profile.json` and `.guide-sync/` only when explicitly assigned guide migration, documentation synchronization, or release-readiness planning work.
 
 Do not treat `docs/research/project-setup-guide-*` or `docs/research/engineering-guide-*` as authoritative. They are historical research copies and are not required reading.
+
+Do not read the external guide repository during ordinary implementation work. Use only target-repository authority documents listed by the assigned milestone or task.
 
 ## Validation Tiers
 
@@ -38,3 +40,5 @@ Before completing implementation work, run Tier 2 unless the task is documentati
 - Preserve public contracts unless an authoritative spec changes.
 - Do not introduce terminology that is absent from `docs/TERMINOLOGY.md`.
 - Prefer deterministic, short-running tests by default; do not add network, timing-dependent, or expensive tests to the short-running suite.
+- Do not copy external guide documents into this repository.
+- Do not introduce TBPs, broad guardrail documents, default issue templates, or workflow documents unless a project-specific milestone explicitly requires them as project truth.

@@ -44,10 +44,10 @@ Declaration of related documents and synchronization obligations.
 A canonical, immutable representation of type shapes, properties, constraints, and annotations used as the authoritative runtime model.
 
 ### Canonical Semantic Model
-The projection-neutral semantic type model used by current runtime, transformation, query, inspection, and projection APIs.
+The current projection-neutral semantic type model used by runtime services, transformations, query APIs, inspection APIs, and domain projections.
 
 ### Runtime Canonical Semantic Model
-A canonical semantic model instance supplied to runtime services, transformations, or projections.
+The canonical semantic model instance used by runtime APIs after extraction, generation, loading, or transformation.
 
 ### TypeShape
 The canonical representation of a type in the semantic type model.
@@ -140,10 +140,10 @@ Instance-level unknown, unmodeled, forward-compatible, or externally supplied da
 A package-owned semantic model derived from the canonical semantic type model for a specific domain such as JSON Schema, EF Core, Power BI, or System.Text.Json.
 
 ### System.Text.Json Domain Model
-The System.Text.Json package-owned domain semantic model that describes resolver customization behavior derived from the canonical semantic model.
+The System.Text.Json package-owned domain semantic model that describes resolver customization decisions derived from the canonical semantic model.
 
 ### Resolver Customization Model
-A domain semantic model that describes deterministic changes applied to `JsonTypeInfo` through `IJsonTypeInfoResolver` composition.
+A deterministic model of supported System.Text.Json resolver changes, such as property-name selection, ignored members, required markers, and extension-data handling.
 
 ### Transformation
 A deterministic operation that derives, normalizes, validates, or enriches semantic model information while emitting diagnostics when needed.
@@ -153,3 +153,12 @@ The API surface used to locate and navigate semantic model elements by CLR type,
 
 ### Inspection Surface
 The API surface used to produce deterministic human-readable summaries of models, diagnostics, transformations, and domain semantic models.
+
+### Guide Profile
+Repository-local metadata describing the external guide-system version, selected profile, repository role, maturity mode, and execution mode used for migration planning.
+
+### Guide Sync Hint
+Deferred documentation-synchronization metadata stored under `.guide-sync/` for planning and documentation agents, not ordinary implementation agents.
+
+### Guide Migration
+A repository-local migration that adopts external guide-system conventions while keeping operational project authority inside the target repository.
