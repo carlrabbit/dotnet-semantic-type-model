@@ -1,0 +1,30 @@
+{
+  "guideSystem": {
+    "repository": "carlrabbit/agentic-project-guides",
+    "version": "0.3.0",
+    "usage": "planning-migration-documentation-sync-release-readiness-only"
+  },
+  "targetRepository": {
+    "repository": "carlrabbit/dotnet-semantic-type-model",
+    "role": "product-repository",
+    "profile": "dotnet-library",
+    "projectType": "dotnet-library",
+    "maturity": "post-2.0-public-package-set",
+    "executionMode": "ai-executed-human-reviewed"
+  },
+  "authority": {
+    "ordinaryImplementationAgentsUse": "target-repository-local-docs-only",
+    "ordinaryImplementationAgentsIgnore": [
+      ".guide-profile.json",
+      ".guide-sync/",
+      "docs/research/project-setup-guide-*.md",
+      "docs/research/engineering-guide-*.md"
+    ],
+    "externalGuidesAreOperationalAuthority": false
+  },
+  "lastResolvedByPlanningTask": {
+    "resolvedLatestGuideSystemVersion": "0.3.0",
+    "resolvedAt": "2026-06-15",
+    "notes": "Version resolved from carlrabbit/agentic-project-guides README.md and CHANGELOG.md during M0036 planning."
+  }
+}
