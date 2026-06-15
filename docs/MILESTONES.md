@@ -58,3 +58,4 @@ For each focus area:
 - [M0034 - Evolution, Ownership, and Lifecycle Semantics](milestones/m0034-evolution-ownership-and-lifecycle-semantics.md)
 - [M0035 - Remove Legacy Model Compatibility and Align System.Text.Json Projection](milestones/m0035-remove-legacy-model-compatibility-and-align-system-text-json-projection.md)
 - [M0036 - Adopt External Agentic Project Guide System v0.3.0](milestones/m0036-adopt-external-agentic-project-guide-system-v0.3.0.md)
+- [M0037 - Documentation Synchronization and 2.1.0 Release Preparation](milestones/m0037-documentation-synchronization-and-2-1-0-release-preparation.md)

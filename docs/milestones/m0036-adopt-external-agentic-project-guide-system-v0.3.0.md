@@ -2,7 +2,11 @@
 
 ## Status
 
-Planned.
+Completed.
+
+## Completion Note
+
+M0037 verified guide metadata remains planning/documentation metadata only, ordinary implementation routing remains local to `AGENTS.md`, and the M0037 guide-sync hint was resolved.
 
 ## Resolved Guide Version
 

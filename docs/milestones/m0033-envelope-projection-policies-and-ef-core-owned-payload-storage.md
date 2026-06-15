@@ -2,7 +2,11 @@
 
 ## Status
 
-Planned.
+Completed.
+
+## Completion Note
+
+M0037 synchronized public documentation and release notes for envelope projection policies after repository validation passed with `./eng/release-check.sh 2.1.0`.
 
 ## Maturity Mode
 
