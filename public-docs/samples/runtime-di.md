@@ -29,4 +29,4 @@ A consumer registers model creation, validation transformation, and JSON Schema 
 
 ## Non-Goals
 
-This sample does not use a source generator, external service, database, or network dependency.
+This sample does not use a source generator, external service, database, or network dependency; the model factory is intentionally local to keep the DI composition example focused.

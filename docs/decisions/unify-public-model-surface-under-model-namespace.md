@@ -6,11 +6,11 @@ Accepted for M0038 planning.
 
 ## Context
 
-The repository currently contains two active public model surfaces:
+The repository previously contained two active public model surfaces:
 
 ```text
 SemanticTypeModel.Abstractions.Model
-SemanticTypeModel.Abstractions.Model
+SemanticTypeModel.Abstractions.Canonical
 ```
 
 The source generator emits the old `SemanticTypeModel.Abstractions.Model.TypeSchemaModel` shape graph, while current domain projections consume `SemanticTypeModel.Abstractions.Canonical.TypeSchemaModel`.
@@ -25,7 +25,7 @@ Move the current canonical semantic model contracts to `SemanticTypeModel.Abstra
 
 Remove the old shape-graph model contracts rather than preserving them as a compatibility layer.
 
-Remove `SemanticTypeModel.Abstractions.Model` from shipped source and public API baselines after migration.
+Remove `SemanticTypeModel.Abstractions.Canonical` from shipped source and public API baselines after migration.
 
 Update the source generator to emit unified `Model` contracts so generated provider output is directly consumable by every projection package.
 

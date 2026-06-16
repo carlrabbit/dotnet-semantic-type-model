@@ -60,3 +60,4 @@ For each focus area:
 - [M0036 - Adopt External Agentic Project Guide System v0.3.0](milestones/m0036-adopt-external-agentic-project-guide-system-v0.3.0.md)
 - [M0037 - Documentation Synchronization and 2.1.0 Release Preparation](milestones/m0037-documentation-synchronization-and-2-1-0-release-preparation.md)
 - [M0038 - Collapse Model/Canonical Split and Align Generator Output](milestones/m0038-collapse-model-canonical-split-and-align-generator-output.md)
+- [M0039 - Documentation Synchronization and 2.2.0 Release Preparation](milestones/m0039-documentation-synchronization-and-2-2-0-release-preparation.md)

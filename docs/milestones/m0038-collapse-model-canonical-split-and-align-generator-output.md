@@ -2,7 +2,7 @@
 
 ## Status
 
-Planned.
+Implemented pending 2.2.0 release review.
 
 ## Goal
 
@@ -14,8 +14,8 @@ After M0038:
 SemanticTypeModel.Abstractions.Model
   is the sole public namespace for canonical semantic model contracts.
 
-SemanticTypeModel.Abstractions.Model
-  is removed from shipped source, tests, samples, public docs, and public API baselines.
+SemanticTypeModel.Abstractions.Canonical
+  is removed from shipped source, public docs, and public API baselines or documented only as a removed 2.2.0 compatibility break.
 
 SemanticTypeModel.Abstractions.Model.TypeShape / ObjectShape / PropertyShape / ShapeRef
   old shape-graph contracts are removed rather than kept as compatibility shims.
@@ -157,7 +157,7 @@ Make the current canonical contracts the only public model contracts under `Sema
 
 - Move or recreate the current canonical contract set under `SemanticTypeModel.Abstractions.Model`.
 - Remove old shape-graph contracts from `SemanticTypeModel.Abstractions.Model`.
-- Remove `SemanticTypeModel.Abstractions.Model` from public source after migration.
+- Remove `SemanticTypeModel.Abstractions.Canonical` from public source after migration.
 - Preserve semantic expressiveness from the current canonical model, including typed identifiers, annotation bags, type definitions, property definitions, key definitions, relationship definitions, constraints, composition, scalar metadata, and enum metadata.
 - Keep contracts immutable or immutable-by-convention as currently specified.
 - Do not introduce old-to-new adapters as a default path.
@@ -180,7 +180,7 @@ Make generated code produce the unified model surface so code-first samples and 
 
 - Update generator output from `global::SemanticTypeModel.Abstractions.Model` old shape graph to unified `global::SemanticTypeModel.Abstractions.Model` contracts.
 - Generated `Create()` must return the unified `Model.TypeSchemaModel`.
-- Generated output must not reference `SemanticTypeModel.Abstractions.Model`.
+- Generated output must not reference `SemanticTypeModel.Abstractions.Canonical`.
 - Generated output must not require a conversion adapter before projection.
 - Update generator baseline tests and source-generation public docs.
 - Ensure generated provider naming and deterministic output remain stable except for intentional model-contract changes.
@@ -363,7 +363,7 @@ Do not run publish commands. Do not require `./eng/release-check.sh 2.2.0` unles
 
 - `SemanticTypeModel.Abstractions.Model` contains the unified canonical semantic model contracts.
 - The old `SemanticTypeModel.Abstractions.Model` shape graph is removed from shipped source.
-- `SemanticTypeModel.Abstractions.Model` is removed from shipped source and public API baselines.
+- `SemanticTypeModel.Abstractions.Canonical` is removed from shipped source and public API baselines.
 - The source generator emits a provider whose `Create()` method returns the unified `Model.TypeSchemaModel`.
 - Generated models are accepted directly by JSON Schema, EF Core, Power BI, System.Text.Json, DI, transformation, query, and inspection APIs.
 - Public samples use generated code-first providers rather than hand-built canonical models.
@@ -371,6 +371,17 @@ Do not run publish commands. Do not require `./eng/release-check.sh 2.2.0` unles
 - Public API baselines reflect the intentional 2.2.0 breaking cleanup.
 - Public docs and release notes describe the cleanup without claiming release publication.
 - Tier 2 and required Tier 3 commands pass, or any environment limitation is explicitly documented by the implementation agent.
+
+
+## M0039 Verification Notes
+
+M0039 verified the implemented model-surface unification before preparing 2.2.0 release-facing documentation:
+
+- Production model contracts live under `src/SemanticTypeModel.Abstractions/Model/`.
+- The source generator emits `global::SemanticTypeModel.Abstractions.Model.TypeSchemaModel Create()`.
+- Targeted searches found no shipped source namespace declaration for `SemanticTypeModel.Abstractions.Canonical` and no old shape-graph type declarations in `src/`.
+- Code-first JSON Schema, EF Core, and Power BI samples call generated `AppSemanticTypeModel.Create()` providers directly.
+- Remaining non-code-first samples that use local model factories are documented as focused compatibility/DI/resolver examples rather than the preferred authoring path and require human release review.
 
 ## Direct Documentation Impact
 

@@ -3,7 +3,7 @@
 System.Text.Json contract integration for SemanticTypeModel.
 
 ```sh
-dotnet add package SemanticTypeModel.SystemTextJson --version 2.1.0
+dotnet add package SemanticTypeModel.SystemTextJson --version 2.2.0
 ```
 
 ## What it does
@@ -22,6 +22,6 @@ Semantic names and JSON property names remain separate by default. The default r
 
 ## Projection alignment
 
-The repository architecture treats System.Text.Json as a domain projection target. M0035 aligns the implementation internals with that model. Public package documentation should not require consumer-facing domain-model APIs until they are implemented and shipped.
+The repository architecture treats System.Text.Json as a domain projection target. Consumers can derive resolver customization metadata from the unified `TypeSchemaModel` and apply it to `JsonSerializerOptions` or an existing `IJsonTypeInfoResolver`.
 
 More details: `public-docs/guides/system-text-json.md`.
