@@ -13,6 +13,8 @@ The current stable package set is:
 - `SemanticTypeModel.DependencyInjection`
 - `SemanticTypeModel.PowerBI`
 - `SemanticTypeModel.EFCore`
+- `SemanticTypeModel.Configuration`
+- `SemanticTypeModel.Configuration.Generators`
 
 `SemanticTypeModel.JsonEditor` is not a package. JSON Editor compatibility is exposed by `SemanticTypeModel.JsonSchema` as JSON Schema UI-hint export using `JsonSchemaUiMode.JsonEditorCompatible`.
 
@@ -29,6 +31,8 @@ The current stable package set is:
 | `SemanticTypeModel.DependencyInjection` | Runtime provider, transformation, and projection service registration. |
 | `SemanticTypeModel.PowerBI` | Power BI domain semantic model derivation and local metadata projection. |
 | `SemanticTypeModel.EFCore` | EF Core domain semantic model derivation and provider-neutral `ModelBuilder` projection. |
+| `SemanticTypeModel.Configuration` | Configuration domain semantic model derivation and Microsoft.Extensions.Options registration projection. |
+| `SemanticTypeModel.Configuration.Generators` | Source-generator package for deterministic configuration options registration helpers. |
 
 ## Scenario Packages
 
@@ -39,6 +43,7 @@ The current stable package set is:
 - Runtime DI composition: `SemanticTypeModel.DependencyInjection` plus the projection package being registered.
 - EF Core projection: `SemanticTypeModel.EFCore`.
 - Power BI projection: `SemanticTypeModel.PowerBI`.
+- Configuration options projection: `SemanticTypeModel.Configuration` and optionally `SemanticTypeModel.Configuration.Generators`.
 
 ## Related Guides
 

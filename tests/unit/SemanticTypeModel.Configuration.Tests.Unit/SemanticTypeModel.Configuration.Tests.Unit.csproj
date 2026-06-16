@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><RootNamespace>SemanticTypeModel.Configuration.Tests.Unit</RootNamespace></PropertyGroup>
+  <ItemGroup><PackageReference Include="TUnit" /><PackageReference Include="TUnit.Assertions" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../../../src/SemanticTypeModel.Configuration/SemanticTypeModel.Configuration.csproj" /></ItemGroup>
+</Project>

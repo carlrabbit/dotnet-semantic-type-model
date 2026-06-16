@@ -95,10 +95,16 @@ Annotated .NET code used as the supported authoring source for a canonical seman
 A persisted representation of a code-generated semantic type model that can be loaded without access to the original codebase.
 
 ### Semantic Primitive
-A canonical semantic concept such as entity, value object, key, relationship, requiredness, nullability, format, constraint, envelope, ownership, lifecycle state, extension data, or annotation.
+A canonical semantic concept such as entity, value object, key, relationship, requiredness, nullability, format, constraint, conditional constraint, envelope, ownership, lifecycle state, extension data, or annotation.
 
 ### Core Semantic Vocabulary
 The authoritative set of projection-neutral semantic primitives and usage rules available to code-first authors.
+
+### Conditional Constraint
+A projection-neutral constraint whose applicability depends on another modeled value or a simple modeled condition.
+
+### Required When
+A conditional constraint stating that a property must be present when another property equals a supported literal value.
 
 ### Envelope
 A wrapper type whose primary semantic role is to carry, manage, version, transport, persist, authorize, audit, or otherwise contextualize a distinguished payload.
@@ -110,7 +116,7 @@ The distinguished property inside an envelope that carries the semantic value be
 A property on an envelope that describes the envelope lifecycle, context, transport, audit, revision, status, or management state rather than the payload domain state.
 
 ### Projection-Specific Metadata
-Metadata that describes representation for one projection target, such as JSON Schema, EF Core, Power BI, or System.Text.Json, rather than projection-neutral domain meaning.
+Metadata that describes representation for one projection target, such as JSON Schema, EF Core, Power BI, System.Text.Json, or Configuration, rather than projection-neutral domain meaning.
 
 ### Envelope Projection Root
 The type selected by target policy as the root projection for an envelope scenario; it may be the envelope wrapper or the envelope payload.
@@ -122,7 +128,7 @@ Lifecycle containment in which an object or collection is part of an owner's com
 A single object-valued member whose lifecycle follows the containing owner.
 
 ### Owned Collection
-A collection-valued member whose element lifecycle follows the containing owner.
+A collection-valued member whose element lifecycle follows the owner.
 
 ### Versioned
 A semantic marker indicating that a type or instance participates in version or revision evolution over time.
@@ -152,7 +158,25 @@ A semantic state/status value describing the lifecycle phase of an entity, envel
 Instance-level unknown, unmodeled, forward-compatible, or externally supplied data preserved for compatibility across model revisions.
 
 ### Domain Semantic Model
-A package-owned semantic model derived from the canonical semantic type model for a specific domain such as JSON Schema, EF Core, Power BI, or System.Text.Json.
+A package-owned semantic model derived from the canonical semantic type model for a specific domain such as JSON Schema, EF Core, Power BI, System.Text.Json, or Configuration.
+
+### Configuration Domain Model
+The Configuration package-owned domain semantic model that describes configuration options, sections, binding, validation, and options-registration decisions derived from the canonical semantic model.
+
+### Options Registration Projection
+A Configuration package projection that produces Microsoft.Extensions.Options registration behavior or generated registration helpers from a Configuration Domain Model.
+
+### Configuration Section
+A configuration-domain path that selects the configuration subtree bound to an options type.
+
+### Bind Policy
+A configuration-domain policy describing how an options type is bound from configuration data.
+
+### Options Validation Model
+A configuration-domain model of validation rules applied to bound options, including data-annotation validation, conditional constraints, and startup validation policy.
+
+### Validate On Start
+A configuration-domain policy requiring options validation during host startup.
 
 ### System.Text.Json Domain Model
 The System.Text.Json package-owned domain semantic model that describes resolver customization decisions derived from the canonical semantic model.

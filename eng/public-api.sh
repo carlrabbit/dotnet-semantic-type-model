@@ -17,6 +17,8 @@ SemanticTypeModel.DependencyInjection
 SemanticTypeModel.PowerBI
 SemanticTypeModel.EFCore
 SemanticTypeModel.SystemTextJson
+SemanticTypeModel.Configuration
+SemanticTypeModel.Configuration.Generators
 "
 
 for project in $projects; do

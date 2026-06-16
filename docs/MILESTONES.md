@@ -46,7 +46,7 @@ For each focus area:
 - [M0022 - 1.0 Public API, Compatibility, Documentation, Samples, and Release Readiness](milestones/m0022-1-0-public-api-compatibility-documentation-samples-and-release-readiness.md)
 - [M0023 - 1.0.0 Release Hardening and Final Release](milestones/m0023-1-0-0-release-hardening-and-final-release.md)
 - [M0024 - System.Text.Json Contract Correction](milestones/m0024-system-text-json-contract-correction.md)
-- [M0025 - Consumer-Facing Samples and Package-Based Sample Validation](milestones/m0025-consumer-facing-samples-and-package-based-sample-validation.md)
+- [M0025 - Consumer-Facing Samples and Package-Based Sample Validation](milestones/m0025-consumer-facing-package-based-samples.md)
 - [M0026 - Code-First Semantic Model Architecture Realignment](milestones/m0026-code-first-semantic-model-architecture-realignment.md)
 - [M0027 - Query and Inspection API for Code-First Semantic Models](milestones/m0027-query-and-inspection-api-for-code-first-semantic-models.md)
 - [M0028 - Transformation Pipeline and Domain Model Derivation](milestones/m0028-transformation-pipeline-and-domain-model-derivation.md)
@@ -61,3 +61,4 @@ For each focus area:
 - [M0037 - Documentation Synchronization and 2.1.0 Release Preparation](milestones/m0037-documentation-synchronization-and-2-1-0-release-preparation.md)
 - [M0038 - Collapse Model/Canonical Split and Align Generator Output](milestones/m0038-collapse-model-canonical-split-and-align-generator-output.md)
 - [M0039 - Documentation Synchronization and 2.2.0 Release Preparation](milestones/m0039-documentation-synchronization-and-2-2-0-release-preparation.md)
+- [M0040 - Configuration Domain Model and Options Registration Projection](milestones/m0040-configuration-domain-model-and-options-registration-projection.md)

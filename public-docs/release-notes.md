@@ -1,5 +1,20 @@
 # Release Notes
 
+## 2.3.0-preview M0040
+
+M0040 introduces initial Configuration domain model support and a projection-neutral Required When conditional constraint.
+
+### Highlights
+
+- Added `SemanticTypeModel.Configuration` package surface for deriving inspectable configuration options metadata from the canonical model.
+- Added initial `RequiredWhen` annotation keys for projection-neutral conditional requiredness.
+- Added .NET attributes for configuration sections, data-annotation validation, startup validation, generated registration markers, and `RequiredWhen` authoring.
+- Added package documentation placeholders for Configuration and Configuration.Generators.
+
+### Compatibility Notes
+
+Human review is required before publishing package naming, diagnostic IDs, public API baselines, generated registration helper ergonomics, cross-domain default behavior, and release-note wording.
+
 ## 2.2.0
 
 M0038 collapses the `Model` / `Canonical` split so generated models and projection packages share one canonical public model surface.
