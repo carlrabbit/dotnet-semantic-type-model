@@ -1,7 +1,7 @@
 // CA1720 is disabled because Power BI data-type enum members intentionally use canonical type names
 // (for example String/Int64/Decimal) to align with projection terminology and spec contracts.
 #pragma warning disable CA1720
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.PowerBI;
 

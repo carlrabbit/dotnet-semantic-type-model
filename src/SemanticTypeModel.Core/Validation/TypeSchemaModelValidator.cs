@@ -1,5 +1,5 @@
 using System.Text.Json;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Annotations;
 
 namespace SemanticTypeModel.Core.Validation;

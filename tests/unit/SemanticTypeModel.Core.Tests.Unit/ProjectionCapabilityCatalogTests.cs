@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.Core.Tests.Unit;
 

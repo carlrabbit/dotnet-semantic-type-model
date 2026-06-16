@@ -15,7 +15,7 @@ This specification is authoritative for:
 
 ## Canonical Runtime Contracts
 
-Runtime model consumption is centered on the canonical semantic model in `SemanticTypeModel.Abstractions.Canonical`.
+Runtime model consumption is centered on the canonical semantic model in `SemanticTypeModel.Abstractions.Model`.
 
 ### Model acquisition
 

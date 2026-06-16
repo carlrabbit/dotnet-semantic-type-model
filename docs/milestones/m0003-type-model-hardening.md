@@ -19,7 +19,7 @@ This milestone defines the hardened canonical contracts and supporting specs for
 - `docs/specs/type-model-annotations.md`
 - `docs/specs/type-model-json-schema-mapping.md`
 - `docs/specs/type-model-projection-capabilities.md`
-- compile-only hardening contracts under `SemanticTypeModel.Abstractions.Canonical.*`
+- compile-only hardening contracts under `SemanticTypeModel.Abstractions.Model.*`
 - short-running tests for required example coverage and contract-level invariants.
 
 ## Invariants

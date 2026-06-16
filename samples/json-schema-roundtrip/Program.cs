@@ -1,4 +1,4 @@
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema;
 using SemanticTypeModel.JsonSchema.Derivation;

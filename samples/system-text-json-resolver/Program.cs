@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.SystemTextJson;
 

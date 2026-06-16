@@ -26,3 +26,4 @@ Decision records are not authoritative for:
 | decisions/envelope-projection-policies-are-target-specific.md | Rationale for keeping envelope semantics projection-neutral while target packages own JSON Schema, EF Core, and Power BI representation policies |
 | decisions/evolution-semantics-remain-projection-neutral.md | Rationale for keeping ownership, versioning, temporal validity, lifecycle state, and extension-data semantics projection-neutral |
 | decisions/remove-legacy-model-compatibility-and-hardened-terminology.md | Rationale for removing old model compatibility APIs, stale transition terminology, and System.Text.Json ad hoc model access |
+| decisions/unify-public-model-surface-under-model-namespace.md | Rationale for making `SemanticTypeModel.Abstractions.Model` the sole public model namespace and removing the old shape graph |

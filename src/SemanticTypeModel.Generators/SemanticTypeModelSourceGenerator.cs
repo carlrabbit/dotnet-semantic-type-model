@@ -243,9 +243,6 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
     private static string GenerateProviderSource(DotNetExtractionResult extraction)
     {
         var source = new StringBuilder();
-        source.AppendLine("using global::SemanticTypeModel.Abstractions.Model;");
-        source.AppendLine("using global::SemanticTypeModel.Core.Building;");
-        source.AppendLine();
         source.AppendLine($"namespace {extraction.Options.GeneratedNamespace};");
         source.AppendLine();
         source.AppendLine($"public static partial class {SanitizeIdentifier(extraction.Options.ProviderName)}");
@@ -255,163 +252,183 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         source.AppendLine("    /// </summary>");
         source.AppendLine("    public static global::SemanticTypeModel.Abstractions.Model.TypeSchemaModel Create()");
         source.AppendLine("    {");
-        source.AppendLine("        var builder = new global::SemanticTypeModel.Core.Building.TypeSchemaModelBuilder();");
+        source.AppendLine("        global::System.Collections.Generic.List<global::SemanticTypeModel.Abstractions.Model.TypeDefinition> types =");
+        source.AppendLine("        [");
 
-        foreach ((string typeId, DotNetTypeDescriptor descriptor) in extraction.TypesById.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
+        foreach ((string _, DotNetTypeDescriptor descriptor) in extraction.TypesById.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
         {
-            _ = typeId;
-            AppendShape(source, descriptor);
+            AppendTypeDefinition(source, descriptor, 3);
+            source.AppendLine(",");
         }
 
-        source.AppendLine($"        builder.SetRoot(\"{EscapeString(extraction.RootTypeId!)}\");");
-        source.AppendLine("        return builder.Build();");
+        source.AppendLine("        ];");
+        source.AppendLine();
+        source.AppendLine("        return new global::SemanticTypeModel.Abstractions.Model.TypeSchemaModel");
+        source.AppendLine("        {");
+        source.AppendLine($"            Id = new global::SemanticTypeModel.Abstractions.Model.SchemaModelId(\"{EscapeString(extraction.RootTypeId!)}\"),");
+        source.AppendLine("            Types = types,");
+        source.AppendLine("            TypesById = types.ToDictionary(static type => type.Id, static type => type),");
+        source.AppendLine("            Annotations = new global::SemanticTypeModel.Abstractions.Model.AnnotationBag(),");
+        source.AppendLine("        };");
         source.AppendLine("    }");
         source.AppendLine("}");
         return source.ToString();
     }
 
-    private static void AppendShape(StringBuilder source, DotNetTypeDescriptor descriptor)
+    private static void AppendTypeDefinition(StringBuilder source, DotNetTypeDescriptor descriptor, int indentationLevel)
     {
-        source.AppendLine($"        builder.AddShape(\"{EscapeString(descriptor.Id)}\",");
         switch (descriptor)
         {
             case DotNetObjectTypeDescriptor obj:
-                AppendObjectShape(source, obj);
+                AppendObjectType(source, obj, indentationLevel);
                 break;
             case DotNetScalarTypeDescriptor scalar:
-                AppendScalarShape(source, scalar);
+                AppendScalarType(source, scalar, indentationLevel);
                 break;
             case DotNetEnumTypeDescriptor @enum:
-                AppendEnumShape(source, @enum);
+                AppendEnumType(source, @enum, indentationLevel);
                 break;
             case DotNetArrayTypeDescriptor array:
-                source.AppendLine("            new global::SemanticTypeModel.Abstractions.Model.ArrayShape");
-                source.AppendLine("            {");
-                source.AppendLine($"                Items = global::SemanticTypeModel.Abstractions.Model.ShapeRef.FromIdentifier(\"{EscapeString(array.ItemTypeId)}\"),");
-                AppendAnnotations(source, array.Annotations, 4);
-                source.AppendLine("            });");
+                AppendArrayType(source, array, indentationLevel);
                 break;
             case DotNetDictionaryTypeDescriptor dictionary:
-                source.AppendLine("            new global::SemanticTypeModel.Abstractions.Model.DictionaryShape");
-                source.AppendLine("            {");
-                source.AppendLine($"                Values = global::SemanticTypeModel.Abstractions.Model.ShapeRef.FromIdentifier(\"{EscapeString(dictionary.ValueTypeId)}\"),");
-                AppendAnnotations(source, dictionary.Annotations, 4);
-                source.AppendLine("            });");
+                AppendDictionaryType(source, dictionary, indentationLevel);
                 break;
             default:
-                source.AppendLine("            new global::SemanticTypeModel.Abstractions.Model.ScalarShape { Kind = global::SemanticTypeModel.Abstractions.Model.ScalarKind.String });");
+                AppendFallbackScalarType(source, descriptor, indentationLevel);
                 break;
         }
     }
 
-    private static void AppendObjectShape(StringBuilder source, DotNetObjectTypeDescriptor descriptor)
+    private static void AppendObjectType(StringBuilder source, DotNetObjectTypeDescriptor descriptor, int indentationLevel)
     {
-        source.AppendLine("            new global::SemanticTypeModel.Abstractions.Model.ObjectShape");
-        source.AppendLine("            {");
-        source.AppendLine("                Properties =");
-        source.AppendLine("                [");
+        string indent = new(' ', indentationLevel * 4);
+        source.AppendLine($"{indent}new global::SemanticTypeModel.Abstractions.Model.ObjectTypeDefinition");
+        source.AppendLine($"{indent}{{");
+        AppendCommonTypeMembers(source, descriptor.Id, descriptor.Name, "Object", false, descriptor.Annotations, indentationLevel + 1);
+        source.AppendLine($"{indent}    Properties =");
+        source.AppendLine($"{indent}    [");
         foreach (DotNetPropertyDescriptor property in descriptor.Properties.OrderBy(static property => property.Name, StringComparer.Ordinal))
         {
-            source.AppendLine("                    new global::SemanticTypeModel.Abstractions.Model.PropertyShape");
-            source.AppendLine("                    {");
-            source.AppendLine($"                        Name = \"{EscapeString(property.Name)}\",");
-            source.AppendLine($"                        IsRequired = {property.IsRequired.ToString().ToLowerInvariant()},");
-            source.AppendLine($"                        IsNullable = {property.IsNullable.ToString().ToLowerInvariant()},");
-            source.AppendLine($"                        Type = global::SemanticTypeModel.Abstractions.Model.ShapeRef.FromIdentifier(\"{EscapeString(property.TypeId)}\"),");
-            AppendAnnotations(source, property.Annotations, 6);
-            source.AppendLine("                    },");
+            source.AppendLine($"{indent}        new global::SemanticTypeModel.Abstractions.Model.PropertyDefinition");
+            source.AppendLine($"{indent}        {{");
+            source.AppendLine($"{indent}            Id = new global::SemanticTypeModel.Abstractions.Model.PropertyId(\"{EscapeString(descriptor.Id + "." + property.Name)}\"),");
+            source.AppendLine($"{indent}            Name = \"{EscapeString(property.Name)}\",");
+            source.AppendLine($"{indent}            Type = new global::SemanticTypeModel.Abstractions.Model.TypeRef(new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(property.TypeId)}\")),");
+            source.AppendLine($"{indent}            Cardinality = new global::SemanticTypeModel.Abstractions.Model.Cardinality {{ IsRequired = {property.IsRequired.ToString().ToLowerInvariant()}, AllowsNull = {property.IsNullable.ToString().ToLowerInvariant()} }},");
+            source.AppendLine($"{indent}            Mutability = global::SemanticTypeModel.Abstractions.Model.Mutability.Mutable,");
+            source.AppendLine($"{indent}            Constraints = new global::SemanticTypeModel.Abstractions.Model.ConstraintSet(),");
+            AppendAnnotationBag(source, property.Annotations, indentationLevel + 3, "Annotations");
+            source.AppendLine($"{indent}        }},");
         }
-
-        source.AppendLine("                ],");
-        source.AppendLine("                AdditionalPropertiesAllowed = false,");
-        AppendAnnotations(source, descriptor.Annotations, 4);
-        source.AppendLine("            });");
+        source.AppendLine($"{indent}    ],");
+        source.AppendLine($"{indent}    Keys = [],");
+        source.AppendLine($"{indent}    Relationships = [],");
+        source.AppendLine($"{indent}}}");
     }
 
-    private static void AppendScalarShape(StringBuilder source, DotNetScalarTypeDescriptor descriptor)
+    private static void AppendScalarType(StringBuilder source, DotNetScalarTypeDescriptor descriptor, int indentationLevel)
     {
-        string shapeKind = descriptor.ScalarKind switch
+        string kind = descriptor.ScalarKind switch
         {
             DotNetScalarKind.Boolean => "Boolean",
             DotNetScalarKind.Integer => "Integer",
-            DotNetScalarKind.Number or DotNetScalarKind.Decimal => "Number",
+            DotNetScalarKind.Number => "Number",
+            DotNetScalarKind.Decimal => "Decimal",
+            DotNetScalarKind.Date => "Date",
+            DotNetScalarKind.Time => "Time",
+            DotNetScalarKind.DateTime => "DateTime",
+            DotNetScalarKind.DateTimeOffset => "DateTimeOffset",
+            DotNetScalarKind.Duration => "Duration",
+            DotNetScalarKind.Guid => "Guid",
+            DotNetScalarKind.Binary => "Binary",
             _ => "String",
         };
-
-        var annotations = new Dictionary<string, string>(descriptor.Annotations, StringComparer.Ordinal)
-        {
-            ["dotnet.scalarKind"] = descriptor.ScalarKind.ToString(),
-        };
-
-        switch (descriptor.ScalarKind)
-        {
-            case DotNetScalarKind.Date:
-                annotations["schema.format"] = "date";
-                break;
-            case DotNetScalarKind.Time:
-                annotations["schema.format"] = "time";
-                break;
-            case DotNetScalarKind.DateTime:
-            case DotNetScalarKind.DateTimeOffset:
-                annotations["schema.format"] = "date-time";
-                break;
-            case DotNetScalarKind.Duration:
-                annotations["schema.format"] = "duration";
-                break;
-            case DotNetScalarKind.Guid:
-                annotations["schema.format"] = "uuid";
-                break;
-            case DotNetScalarKind.Binary:
-                annotations["schema.format"] = "byte";
-                break;
-            default:
-                break;
-        }
-
-        source.AppendLine("            new global::SemanticTypeModel.Abstractions.Model.ScalarShape");
-        source.AppendLine("            {");
-        source.AppendLine($"                Kind = global::SemanticTypeModel.Abstractions.Model.ScalarKind.{shapeKind},");
-        source.AppendLine("                IsNullable = false,");
-        AppendAnnotations(source, annotations, 4);
-        source.AppendLine("            });");
+        string indent = new(' ', indentationLevel * 4);
+        source.AppendLine($"{indent}new global::SemanticTypeModel.Abstractions.Model.ScalarTypeDefinition");
+        source.AppendLine($"{indent}{{");
+        AppendCommonTypeMembers(source, descriptor.Id, descriptor.Name, "Scalar", false, descriptor.Annotations, indentationLevel + 1);
+        source.AppendLine($"{indent}    ScalarKind = global::SemanticTypeModel.Abstractions.Model.ScalarKind.{kind},");
+        source.AppendLine($"{indent}}}");
     }
 
-    private static void AppendEnumShape(StringBuilder source, DotNetEnumTypeDescriptor descriptor)
+    private static void AppendEnumType(StringBuilder source, DotNetEnumTypeDescriptor descriptor, int indentationLevel)
     {
-        source.AppendLine("            new global::SemanticTypeModel.Abstractions.Model.EnumShape");
-        source.AppendLine("            {");
-        source.AppendLine("                Values =");
-        source.AppendLine("                [");
+        string indent = new(' ', indentationLevel * 4);
+        source.AppendLine($"{indent}new global::SemanticTypeModel.Abstractions.Model.EnumTypeDefinition");
+        source.AppendLine($"{indent}{{");
+        AppendCommonTypeMembers(source, descriptor.Id, descriptor.Name, "Enum", false, descriptor.Annotations, indentationLevel + 1);
+        source.AppendLine($"{indent}    StorageKind = global::SemanticTypeModel.Abstractions.Model.EnumStorageKind.String,");
+        source.AppendLine($"{indent}    Values =");
+        source.AppendLine($"{indent}    [");
         foreach (DotNetEnumValueDescriptor value in descriptor.Values)
         {
-            source.AppendLine($"                    \"{EscapeString(value.Name)}\",");
+            source.AppendLine($"{indent}        new global::SemanticTypeModel.Abstractions.Model.EnumValueDefinition {{ Name = \"{EscapeString(value.Name)}\", Value = \"{EscapeString(value.Name)}\", Annotations = new global::SemanticTypeModel.Abstractions.Model.AnnotationBag() }},");
         }
-
-        source.AppendLine("                ],");
-        var annotations = new Dictionary<string, string>(descriptor.Annotations, StringComparer.Ordinal)
-        {
-            ["dotnet.enumNumericValues"] = "[" + string.Join(",", descriptor.Values.Select(static value => value.NumericValue.ToString(System.Globalization.CultureInfo.InvariantCulture))) + "]",
-        };
-        AppendAnnotations(source, annotations, 4);
-        source.AppendLine("            });");
+        source.AppendLine($"{indent}    ],");
+        source.AppendLine($"{indent}}}");
     }
 
-    private static void AppendAnnotations(StringBuilder source, IReadOnlyDictionary<string, string> annotations, int indentationLevel)
+    private static void AppendArrayType(StringBuilder source, DotNetArrayTypeDescriptor descriptor, int indentationLevel)
     {
+        string indent = new(' ', indentationLevel * 4);
+        source.AppendLine($"{indent}new global::SemanticTypeModel.Abstractions.Model.ArrayTypeDefinition");
+        source.AppendLine($"{indent}{{");
+        AppendCommonTypeMembers(source, descriptor.Id, descriptor.Name, "Array", false, descriptor.Annotations, indentationLevel + 1);
+        source.AppendLine($"{indent}    ItemType = new global::SemanticTypeModel.Abstractions.Model.TypeRef(new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(descriptor.ItemTypeId)}\")),");
+        source.AppendLine($"{indent}}}");
+    }
+
+    private static void AppendDictionaryType(StringBuilder source, DotNetDictionaryTypeDescriptor descriptor, int indentationLevel)
+    {
+        string indent = new(' ', indentationLevel * 4);
+        source.AppendLine($"{indent}new global::SemanticTypeModel.Abstractions.Model.DictionaryTypeDefinition");
+        source.AppendLine($"{indent}{{");
+        AppendCommonTypeMembers(source, descriptor.Id, descriptor.Name, "Dictionary", false, descriptor.Annotations, indentationLevel + 1);
+        source.AppendLine($"{indent}    KeyType = new global::SemanticTypeModel.Abstractions.Model.TypeRef(new global::SemanticTypeModel.Abstractions.Model.TypeId(\"global::System.String\")),");
+        source.AppendLine($"{indent}    ValueType = new global::SemanticTypeModel.Abstractions.Model.TypeRef(new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(descriptor.ValueTypeId)}\")),");
+        source.AppendLine($"{indent}}}");
+    }
+
+    private static void AppendFallbackScalarType(StringBuilder source, DotNetTypeDescriptor descriptor, int indentationLevel)
+    {
+        string indent = new(' ', indentationLevel * 4);
+        source.AppendLine($"{indent}new global::SemanticTypeModel.Abstractions.Model.ScalarTypeDefinition");
+        source.AppendLine($"{indent}{{");
+        AppendCommonTypeMembers(source, descriptor.Id, descriptor.Name, "Scalar", false, descriptor.Annotations, indentationLevel + 1);
+        source.AppendLine($"{indent}    ScalarKind = global::SemanticTypeModel.Abstractions.Model.ScalarKind.Unknown,");
+        source.AppendLine($"{indent}}}");
+    }
+
+    private static void AppendCommonTypeMembers(StringBuilder source, string id, string name, string kind, bool allowsNull, IReadOnlyDictionary<string, string> annotations, int indentationLevel)
+    {
+        string indent = new(' ', indentationLevel * 4);
+        source.AppendLine($"{indent}Id = new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(id)}\"),");
+        source.AppendLine($"{indent}Name = \"{EscapeString(name)}\",");
+        source.AppendLine($"{indent}Kind = global::SemanticTypeModel.Abstractions.Model.TypeKind.{kind},");
+        source.AppendLine($"{indent}Nullability = global::SemanticTypeModel.Abstractions.Model.Nullability.{(allowsNull ? "Nullable" : "NonNullable")},");
+        AppendAnnotationBag(source, annotations, indentationLevel, "Annotations");
+    }
+
+    private static void AppendAnnotationBag(StringBuilder source, IReadOnlyDictionary<string, string> annotations, int indentationLevel, string memberName)
+    {
+        string indent = new(' ', indentationLevel * 4);
         if (annotations.Count == 0)
         {
+            source.AppendLine($"{indent}{memberName} = new global::SemanticTypeModel.Abstractions.Model.AnnotationBag(),");
             return;
         }
 
-        string indent = new(' ', indentationLevel * 4);
-        source.AppendLine($"{indent}Annotations =");
-        source.AppendLine($"{indent}[");
+        source.AppendLine($"{indent}{memberName} = new global::SemanticTypeModel.Abstractions.Model.AnnotationBag");
+        source.AppendLine($"{indent}{{");
+        source.AppendLine($"{indent}    Items =");
+        source.AppendLine($"{indent}    [");
         foreach ((string key, string value) in annotations.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
         {
-            source.AppendLine($"{indent}    new global::SemanticTypeModel.Abstractions.Model.SchemaAnnotation(\"{EscapeString(key)}\", \"{EscapeString(value)}\"),");
+            source.AppendLine($"{indent}        new global::SemanticTypeModel.Abstractions.Model.Annotation {{ Key = new global::SemanticTypeModel.Abstractions.Model.AnnotationKey(\"{EscapeString(key)}\"), Value = \"{EscapeString(value)}\", Scope = global::SemanticTypeModel.Abstractions.Model.AnnotationScope.Type, Source = global::SemanticTypeModel.Abstractions.Model.AnnotationSource.Generated }},");
         }
-
-        source.AppendLine($"{indent}],");
+        source.AppendLine($"{indent}    ],");
+        source.AppendLine($"{indent}}},");
     }
 
     private static string SanitizeIdentifier(string identifier)

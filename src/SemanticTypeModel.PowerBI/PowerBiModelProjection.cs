@@ -6,7 +6,7 @@
 #pragma warning disable CA1822
 #pragma warning disable CA1826
 #pragma warning disable CA1859
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Diagnostics;
 using SemanticTypeModel.Core.Semantics;
 

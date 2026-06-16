@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>SemanticTypeModel.Samples.CodeFirstJsonSchema</RootNamespace>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <NoWarn>$(NoWarn);CS1591;CA1050</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="SemanticTypeModel.DotNet" />

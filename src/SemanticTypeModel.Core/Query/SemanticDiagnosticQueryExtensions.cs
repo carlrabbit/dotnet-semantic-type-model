@@ -1,6 +1,6 @@
 #pragma warning disable IDE0046
 using System.Linq.Expressions;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Inspection;
 
 namespace SemanticTypeModel.Core.Query;

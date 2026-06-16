@@ -23,6 +23,7 @@ Specs are authoritative for:
 
 | Spec | Purpose |
 |---|---|
+| specs/model-surface-unification.md | Unified public model namespace, old shape-graph removal, source-generator output, projection input, and sample contract for M0038 |
 | specs/current-canonical-model-surface.md | Current canonical semantic model surface, legacy-removal boundary, and active terminology rules |
 | specs/type-schema-model.md | Canonical semantic type model contracts, invariants, and traversal behavior |
 | specs/type-model-core.md | Canonical type model layers, contracts, invariants, and diagnostics model |

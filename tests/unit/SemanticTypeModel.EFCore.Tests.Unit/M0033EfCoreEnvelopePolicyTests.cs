@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.EFCore.Tests.Unit;
 

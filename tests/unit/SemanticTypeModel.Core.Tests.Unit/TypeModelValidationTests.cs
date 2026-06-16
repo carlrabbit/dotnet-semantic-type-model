@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Validation;
 
 namespace SemanticTypeModel.Core.Tests.Unit;

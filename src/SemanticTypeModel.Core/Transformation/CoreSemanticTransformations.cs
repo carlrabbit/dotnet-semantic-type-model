@@ -1,5 +1,5 @@
 using System.Globalization;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Diagnostics;
 using SemanticTypeModel.Core.Semantics;
 

@@ -49,8 +49,23 @@ The current projection-neutral semantic type model used by runtime services, tra
 ### Runtime Canonical Semantic Model
 The canonical semantic model instance used by runtime APIs after extraction, generation, loading, or transformation.
 
+### Model Surface
+The public .NET contract namespace and type family used to represent canonical semantic models.
+
+### Unified Model Surface
+The single supported model surface that all generators, runtime services, transformations, query APIs, inspection APIs, and projection packages consume.
+
+### Legacy Shape Model
+The obsolete `TypeShape`-based model graph that predates the current canonical semantic model contracts.
+
 ### TypeShape
-The canonical representation of a type in the semantic type model.
+A legacy shape-graph type name retained only for historical or migration context after the unified model surface removes the old shape model.
+
+### Type Definition
+The canonical representation of a type in the unified semantic model surface.
+
+### Source-Generated Model Provider
+Generated code that creates a canonical semantic model from annotated .NET code.
 
 ### Schema Projection
 A derived representation of the canonical type model targeted at a specific output format or system.

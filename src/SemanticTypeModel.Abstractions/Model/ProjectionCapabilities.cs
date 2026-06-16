@@ -5,7 +5,7 @@
 #pragma warning disable IDE0305
 #pragma warning disable CA1859
 
-namespace SemanticTypeModel.Abstractions.Canonical;
+namespace SemanticTypeModel.Abstractions.Model;
 
 /// <summary>
 /// Identifies canonical semantic-model features tracked in projection capability contracts.

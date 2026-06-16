@@ -1,5 +1,5 @@
 using SemanticTypeModel.Core.Transformation;
-using Canonical = SemanticTypeModel.Abstractions.Canonical;
+using Model = SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.PowerBI;
 
@@ -8,7 +8,7 @@ public static class PowerBiDerivationExtensions
 {
     /// <summary>Derives a Power BI domain semantic model from a code-first canonical semantic model.</summary>
     public static SemanticDerivationResult<PowerBiSemanticModel> DerivePowerBiModel(
-        this Canonical.TypeSchemaModel model,
+        this Model.TypeSchemaModel model,
         Action<PowerBiDerivationOptions>? configure = null,
         CancellationToken cancellationToken = default)
     {
@@ -24,7 +24,7 @@ public static class PowerBiDerivationExtensions
         }
 
         SemanticModelTransformationResult transformed = options.Transformations.Run(model, options.PipelineOptions, cancellationToken);
-        var projectionContext = new Canonical.SchemaProjectionContext { Diagnostics = [.. transformed.Diagnostics], Target = Canonical.ProjectionTarget.PowerBi };
+        var projectionContext = new Model.SchemaProjectionContext { Diagnostics = [.. transformed.Diagnostics], Target = Model.ProjectionTarget.PowerBi };
         PowerBiProjectionOptions projectionOptions = options.Projection with { EnvelopePolicies = options.Envelopes.Policies };
         PowerBiProjectionModel projection = new PowerBiModelProjection(projectionOptions).Project(transformed.Model, projectionContext);
         PowerBiSemanticModel domainModel = projection.ToSemanticModel();
@@ -45,7 +45,7 @@ public static class PowerBiDerivationExtensions
     private static PowerBiSemanticModel ApplyExplicitArtifacts(PowerBiSemanticModel model, PowerBiDerivationOptions options)
     {
         List<PowerBiTableDefinition> tables = [.. model.Tables];
-        List<Canonical.SchemaDiagnostic> diagnostics = [.. model.Diagnostics];
+        List<Model.SchemaDiagnostic> diagnostics = [.. model.Diagnostics];
 
         foreach (PowerBiExplicitMeasure explicitMeasure in options.Measures.Items)
         {
@@ -83,15 +83,15 @@ public static class PowerBiDerivationExtensions
         };
     }
 
-    private static Canonical.SchemaDiagnostic Diagnostic(string code, string message, string path)
+    private static Model.SchemaDiagnostic Diagnostic(string code, string message, string path)
     {
-        return new Canonical.SchemaDiagnostic
+        return new Model.SchemaDiagnostic
         {
-            Severity = Canonical.SchemaDiagnosticSeverity.Warning,
+            Severity = Model.SchemaDiagnosticSeverity.Warning,
             Code = code,
             Message = message,
-            Stage = Canonical.SchemaDiagnosticStage.Projection,
-            ProjectionTarget = Canonical.ProjectionTarget.PowerBi,
+            Stage = Model.SchemaDiagnosticStage.Projection,
+            ProjectionTarget = Model.ProjectionTarget.PowerBi,
             ModelPath = path,
         };
     }
@@ -107,7 +107,7 @@ public sealed class DerivePowerBiTablesTransformation : ISemanticModelTransforma
     public string DisplayName => nameof(DerivePowerBiTablesTransformation);
 
     /// <inheritdoc />
-    public SemanticModelTransformationStepResult Transform(Canonical.TypeSchemaModel model, SemanticModelTransformationContext context)
+    public SemanticModelTransformationStepResult Transform(Model.TypeSchemaModel model, SemanticModelTransformationContext context)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(context);

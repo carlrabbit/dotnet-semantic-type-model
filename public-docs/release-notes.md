@@ -1,5 +1,20 @@
 # Release Notes
 
+## 2.2.0
+
+M0038 collapses the `Model` / `Canonical` split so generated models and projection packages share one canonical public model surface.
+
+### Highlights
+
+- Moved canonical semantic model contracts to `SemanticTypeModel.Abstractions.Model`.
+- Removed the old `TypeShape` / `ObjectShape` / `PropertyShape` / `ShapeRef` shape graph from shipped source.
+- Updated the source generator so `Create()` returns `SemanticTypeModel.Abstractions.Model.TypeSchemaModel`.
+- Updated runtime, transformation, query, JSON Schema, EF Core, Power BI, System.Text.Json, and dependency-injection paths to consume the unified model type.
+
+### Compatibility Notes
+
+This is an intentional breaking cleanup for the 2.2.0 line. Consumers should migrate from `SemanticTypeModel.Abstractions.Canonical` and the old shape graph to `SemanticTypeModel.Abstractions.Model` canonical contracts. Public samples and package guidance use annotated .NET code plus generated providers as the supported model authoring path.
+
 ## 2.1.0
 
 Candidate release documentation synchronization for M0033, M0034, M0035, and M0036. Packages are not published until human-approved publication completes.
