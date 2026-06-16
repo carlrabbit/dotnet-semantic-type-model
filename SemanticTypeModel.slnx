@@ -12,6 +12,8 @@
     <Project Path="src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj" />
     <Project Path="src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj" />
     <Project Path="src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj" />
+    <Project Path="src/SemanticTypeModel.Configuration/SemanticTypeModel.Configuration.csproj" />
+    <Project Path="src/SemanticTypeModel.Configuration.Generators/SemanticTypeModel.Configuration.Generators.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/unit/">
@@ -22,5 +24,6 @@
     <Project Path="tests/unit/SemanticTypeModel.EFCore.Tests.Unit/SemanticTypeModel.EFCore.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.PowerBI.Tests.Unit/SemanticTypeModel.PowerBI.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.SystemTextJson.Tests.Unit/SemanticTypeModel.SystemTextJson.Tests.Unit.csproj" />
+    <Project Path="tests/unit/SemanticTypeModel.Configuration.Tests.Unit/SemanticTypeModel.Configuration.Tests.Unit.csproj" />
   </Folder>
 </Solution>

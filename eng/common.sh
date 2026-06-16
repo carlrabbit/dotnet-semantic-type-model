@@ -20,6 +20,8 @@ SemanticTypeModel.DependencyInjection
 SemanticTypeModel.PowerBI
 SemanticTypeModel.EFCore
 SemanticTypeModel.SystemTextJson
+SemanticTypeModel.Configuration
+SemanticTypeModel.Configuration.Generators
 PACKAGES
 }
 
@@ -34,5 +36,7 @@ src/SemanticTypeModel.DependencyInjection/SemanticTypeModel.DependencyInjection.
 src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj
 src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj
 src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj
+src/SemanticTypeModel.Configuration/SemanticTypeModel.Configuration.csproj
+src/SemanticTypeModel.Configuration.Generators/SemanticTypeModel.Configuration.Generators.csproj
 PROJECTS
 }

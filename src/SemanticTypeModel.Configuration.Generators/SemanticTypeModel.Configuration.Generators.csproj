@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>SemanticTypeModel.Configuration.Generators</RootNamespace>
+    <PackageId>SemanticTypeModel.Configuration.Generators</PackageId>
+    <Title>SemanticTypeModel.Configuration.Generators</Title>
+    <Description>Source generators for SemanticTypeModel configuration options registration helpers.</Description>
+    <Authors>SemanticTypeModel Contributors</Authors>
+    <RepositoryUrl>https://github.com/carlrabbit/dotnet-semantic-type-model</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>semantic-type-model;configuration;options;source-generator</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../public-docs/nuget/SemanticTypeModel.Configuration.Generators.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+</Project>

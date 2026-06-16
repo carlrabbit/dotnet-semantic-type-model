@@ -23,6 +23,8 @@ Specs are authoritative for:
 
 | Spec | Purpose |
 |---|---|
+| specs/configuration-domain-model-and-options-projection.md | Configuration domain semantic model, Microsoft.Extensions.Options registration projection, validation behavior, and diagnostics |
+| specs/core-conditional-constraint-semantics.md | Projection-neutral conditional constraint semantics such as Required When and their cross-domain obligations |
 | specs/model-surface-unification.md | Unified public model namespace, old shape-graph removal, source-generator output, projection input, and sample contract for M0038 |
 | specs/current-canonical-model-surface.md | Current canonical semantic model surface, legacy-removal boundary, and active terminology rules |
 | specs/type-schema-model.md | Canonical semantic type model contracts, invariants, and traversal behavior |

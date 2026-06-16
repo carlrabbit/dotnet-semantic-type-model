@@ -676,3 +676,51 @@ public sealed class SemanticLifecycleStateAttribute : Attribute;
 /// </summary>
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
 public sealed class SemanticExtensionDataAttribute : Attribute;
+
+/// <summary>
+/// Declares a configuration section name for an options type.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticConfigurationSectionAttribute(string sectionName) : Attribute
+{
+    /// <summary>Gets the configuration section name.</summary>
+    public string SectionName { get; } = sectionName;
+}
+
+/// <summary>
+/// Enables data-annotations validation in the Configuration projection.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticValidateDataAnnotationsAttribute : Attribute;
+
+/// <summary>
+/// Enables ValidateOnStart in the Configuration projection.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticValidateOnStartAttribute : Attribute;
+
+/// <summary>
+/// Requests a generated options registration helper for the Configuration projection.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticGenerateOptionsRegistrationAttribute : Attribute
+{
+    /// <summary>Gets or sets the generated extension method name.</summary>
+    public string? ExtensionMethodName { get; init; }
+}
+
+/// <summary>
+/// Declares that the attributed property is required when another property equals a literal value.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticRequiredWhenAttribute(string sourceProperty, string value) : Attribute
+{
+    /// <summary>Gets the source property name.</summary>
+    public string SourceProperty { get; } = sourceProperty;
+
+    /// <summary>Gets the comparison literal.</summary>
+    public string Value { get; } = value;
+
+    /// <summary>Gets or sets an optional validation message.</summary>
+    public string? Message { get; init; }
+}

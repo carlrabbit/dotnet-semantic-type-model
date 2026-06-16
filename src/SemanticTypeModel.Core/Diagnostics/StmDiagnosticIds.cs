@@ -115,6 +115,24 @@ public static class StmDiagnosticIds
     /// <summary>STM1019 — Extension-data bag shape or multiplicity is unsupported.</summary>
     public const string ExtensionDataInvalid = "STM1019";
 
+    /// <summary>STM1020 — RequiredWhen source or target property cannot be resolved.</summary>
+    public const string RequiredWhenPropertyUnresolved = "STM1020";
+
+    /// <summary>STM1021 — RequiredWhen operator is unsupported.</summary>
+    public const string RequiredWhenOperatorUnsupported = "STM1021";
+
+    /// <summary>STM1022 — RequiredWhen literal value is unsupported or incompatible.</summary>
+    public const string RequiredWhenLiteralInvalid = "STM1022";
+
+    /// <summary>STM1023 — RequiredWhen declaration target is unsupported.</summary>
+    public const string RequiredWhenTargetUnsupported = "STM1023";
+
+    /// <summary>STM1024 — RequiredWhen is unsupported by the selected target projection policy.</summary>
+    public const string RequiredWhenProjectionUnsupported = "STM1024";
+
+    /// <summary>STM1025 — Configuration metadata is missing, invalid, or unsupported.</summary>
+    public const string ConfigurationMetadataInvalid = "STM1025";
+
     // -------------------------------------------------------------------------
     // STM3xxx — JSON Schema runtime projection
     // Emitted by JsonSchemaRuntimeProjection during the Projection pipeline stage.

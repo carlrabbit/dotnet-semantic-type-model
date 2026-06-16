@@ -40,6 +40,11 @@ public sealed class RoslynDotNetTypeExtractor
     private const string SemanticValidToAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticValidToAttribute";
     private const string SemanticLifecycleStateAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticLifecycleStateAttribute";
     private const string SemanticExtensionDataAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticExtensionDataAttribute";
+    private const string SemanticConfigurationSectionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticConfigurationSectionAttribute";
+    private const string SemanticValidateDataAnnotationsAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticValidateDataAnnotationsAttribute";
+    private const string SemanticValidateOnStartAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticValidateOnStartAttribute";
+    private const string SemanticGenerateOptionsRegistrationAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticGenerateOptionsRegistrationAttribute";
+    private const string SemanticRequiredWhenAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticRequiredWhenAttribute";
     private const string GeneratorOptionsAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticTypeModelGeneratorOptionsAttribute";
     private const string JsonPropertyNameAttributeMetadataName = "System.Text.Json.Serialization.JsonPropertyNameAttribute";
     private const string JsonIgnoreAttributeMetadataName = "System.Text.Json.Serialization.JsonIgnoreAttribute";
@@ -559,6 +564,7 @@ public sealed class RoslynDotNetTypeExtractor
         TryAddRoleAnnotation(typeAttributes, annotations, type.Locations.FirstOrDefault());
         TryAddEnvelopeAnnotations(typeAttributes, annotations, type);
         TryAddEvolutionTypeAnnotations(typeAttributes, annotations);
+        TryAddConfigurationTypeAnnotations(typeAttributes, annotations);
         ValidateTypeAttributeUsage(typeAttributes, type);
         AddInheritanceAnnotations(type, annotations, cancellationToken);
         DiagnoseMissingXmlDocumentationIfRequired(type, type.Locations.FirstOrDefault());
@@ -595,6 +601,7 @@ public sealed class RoslynDotNetTypeExtractor
             TryAddXmlDescriptionAnnotation(property, memberAttributes, memberAnnotations);
             TryAddEnvelopeMemberAnnotations(memberAttributes, memberAnnotations);
             TryAddEvolutionMemberAnnotations(memberAttributes, memberType, memberAnnotations);
+            TryAddRequiredWhenAnnotations(memberAttributes, memberAnnotations);
             ValidateMemberAttributeUsage(memberAttributes, property);
             DiagnoseMissingXmlDocumentationIfRequired(property, property.Locations.FirstOrDefault());
 
@@ -700,6 +707,61 @@ public sealed class RoslynDotNetTypeExtractor
         };
     }
 
+    private static void TryAddConfigurationTypeAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
+    {
+        foreach (AttributeData attribute in attributes)
+        {
+            string? metadataName = attribute.AttributeClass?.ToDisplayString();
+            if (string.Equals(metadataName, SemanticConfigurationSectionAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["configuration.options"] = "true";
+                annotations["configuration.section"] = "true";
+                annotations["configuration.section.name"] = GetFirstConstructorArgument(attribute);
+            }
+            else if (string.Equals(metadataName, SemanticValidateDataAnnotationsAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["configuration.validateDataAnnotations"] = "true";
+            }
+            else if (string.Equals(metadataName, SemanticValidateOnStartAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["configuration.validateOnStart"] = "true";
+            }
+            else if (string.Equals(metadataName, SemanticGenerateOptionsRegistrationAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["configuration.registration.generateExtensionMethod"] = "true";
+                foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+                {
+                    if (string.Equals(key, "ExtensionMethodName", StringComparison.Ordinal) && value.Value is string methodName)
+                    {
+                        annotations["configuration.registration.extensionMethodName"] = methodName;
+                    }
+                }
+            }
+        }
+    }
+
+    private static void TryAddRequiredWhenAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
+    {
+        foreach (AttributeData attribute in attributes)
+        {
+            if (!string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticRequiredWhenAttributeMetadataName, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            annotations["schema.condition.requiredWhen"] = "true";
+            annotations["schema.condition.requiredWhen.source"] = attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value?.ToString() ?? string.Empty : string.Empty;
+            annotations["schema.condition.requiredWhen.operator"] = "equals";
+            annotations["schema.condition.requiredWhen.value"] = attribute.ConstructorArguments.Length > 1 ? attribute.ConstructorArguments[1].Value?.ToString() ?? string.Empty : string.Empty;
+            foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+            {
+                if (string.Equals(key, "Message", StringComparison.Ordinal) && value.Value is string message)
+                {
+                    annotations["schema.condition.requiredWhen.message"] = message;
+                }
+            }
+        }
+    }
 
     private void TryAddSystemTextJsonTypeAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations, INamedTypeSymbol type)
     {

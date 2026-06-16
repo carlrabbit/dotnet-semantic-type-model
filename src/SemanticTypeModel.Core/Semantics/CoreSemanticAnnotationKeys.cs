@@ -61,4 +61,19 @@ public static class CoreSemanticAnnotationKeys
 
     /// <summary>Records the value type for an extension-data bag.</summary>
     public const string ExtensionDataValueType = "schema.extensionData.valueType";
+
+    /// <summary>Marks a property as conditionally required when another property equals a supported literal.</summary>
+    public const string RequiredWhen = "schema.condition.requiredWhen";
+
+    /// <summary>Stores the source property for a Required When conditional constraint.</summary>
+    public const string RequiredWhenSource = "schema.condition.requiredWhen.source";
+
+    /// <summary>Stores the operator for a Required When conditional constraint.</summary>
+    public const string RequiredWhenOperator = "schema.condition.requiredWhen.operator";
+
+    /// <summary>Stores the comparison literal for a Required When conditional constraint.</summary>
+    public const string RequiredWhenValue = "schema.condition.requiredWhen.value";
+
+    /// <summary>Stores the optional message for a Required When conditional constraint.</summary>
+    public const string RequiredWhenMessage = "schema.condition.requiredWhen.message";
 }
