@@ -29,7 +29,7 @@ A consumer owns the `JsonSerializerContext` and composes a SemanticTypeModel res
 
 ## Current Implementation Note
 
-The current sample demonstrates resolver wrapping. M0035 replaces manual model-shape setup with the same code-first extraction/generation pattern used by the other public samples. Until that implementation work is complete, this sample page should not claim that a public System.Text.Json domain model API is shipped.
+The current sample demonstrates resolver wrapping with a local model factory. This remains a release-review item for M0039 because code-first samples should normally use generated providers; do not treat the hand-built model factory as the preferred authoring path.
 
 ## Non-Goals
 

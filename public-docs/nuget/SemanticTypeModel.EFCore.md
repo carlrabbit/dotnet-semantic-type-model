@@ -3,7 +3,7 @@
 `SemanticTypeModel.EFCore` derives an EF Core domain semantic model from canonical SemanticTypeModel metadata and applies provider-neutral configuration to EF Core `ModelBuilder`.
 
 ```sh
-dotnet add package SemanticTypeModel.EFCore --version 2.1.0
+dotnet add package SemanticTypeModel.EFCore --version 2.2.0
 ```
 
 This package is part of the stable package set. Public APIs follow the compatibility policy.

@@ -3,12 +3,12 @@
 `SemanticTypeModel.Core` contains canonical model contracts, core semantic vocabulary support, transformation infrastructure, diagnostics, and inspection helpers.
 
 ```sh
-dotnet add package SemanticTypeModel.Core --version 2.1.0
+dotnet add package SemanticTypeModel.Core --version 2.2.0
 ```
 
 ## Core semantics
 
-The 2.1.0 candidate package guidance includes the projection-neutral core semantic vocabulary. Use core semantics for domain meaning that should be available to JSON Schema, EF Core, Power BI, System.Text.Json, diagnostics, queries, and inspection.
+The 2.2.0 package guidance includes the projection-neutral core semantic vocabulary. Use core semantics for domain meaning that should be available to JSON Schema, EF Core, Power BI, System.Text.Json, diagnostics, queries, and inspection.
 
 Envelope semantics are part of the core vocabulary:
 

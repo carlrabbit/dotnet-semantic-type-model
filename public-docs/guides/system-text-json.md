@@ -5,7 +5,7 @@
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.SystemTextJson --version 2.1.0
+dotnet add package SemanticTypeModel.SystemTextJson --version 2.2.0
 ```
 
 ## Attribute Import
@@ -52,6 +52,6 @@ The `PropertyNameSource` option controls whether customization preserves the exi
 
 ## Domain Projection Alignment
 
-The supported consumer concept is resolver-centered integration: canonical semantic model metadata is used to produce deterministic resolver customization behavior. M0035 aligns the implementation internals with the repository's domain-projection pipeline so System.Text.Json follows the same canonical-model-to-domain-model pattern as JSON Schema, EF Core, and Power BI.
+The supported consumer concept is resolver-centered integration: canonical semantic model metadata is used to produce deterministic resolver customization behavior through the same canonical-model-to-domain-model pattern as JSON Schema, EF Core, and Power BI.
 
-Until that implementation cleanup is complete, public documentation should not require consumers to use implementation-specific domain-model types that are not yet available in shipped packages.
+Consumers can derive the System.Text.Json semantic model from the unified `TypeSchemaModel` and wrap an existing resolver or user-authored context; SemanticTypeModel still does not generate `JsonSerializerContext` declarations.

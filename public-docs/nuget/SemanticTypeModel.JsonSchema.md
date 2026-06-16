@@ -3,7 +3,7 @@
 `SemanticTypeModel.JsonSchema` derives JSON Schema semantic models from code-first canonical SemanticTypeModel metadata and exports JSON Schema Draft 2020-12 documents.
 
 ```sh
-dotnet add package SemanticTypeModel.JsonSchema --version 2.1.0
+dotnet add package SemanticTypeModel.JsonSchema --version 2.2.0
 ```
 
 ## What it does

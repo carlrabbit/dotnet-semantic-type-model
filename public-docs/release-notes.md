@@ -13,7 +13,7 @@ M0038 collapses the `Model` / `Canonical` split so generated models and projecti
 
 ### Compatibility Notes
 
-This is an intentional breaking cleanup for the 2.2.0 line. Consumers should migrate from `SemanticTypeModel.Abstractions.Canonical` and the old shape graph to `SemanticTypeModel.Abstractions.Model` canonical contracts. Public samples and package guidance use annotated .NET code plus generated providers as the supported model authoring path.
+This is an intentional breaking cleanup for the 2.2.0 line. Consumers should migrate from `SemanticTypeModel.Abstractions.Canonical` and the old shape graph to `SemanticTypeModel.Abstractions.Model` canonical contracts. Public samples and package guidance use annotated .NET code plus generated providers as the supported model authoring path. Human review is required before publishing packages, creating tags, or creating a GitHub release.
 
 ## 2.1.0
 

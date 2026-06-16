@@ -5,7 +5,7 @@
 - Public API baseline is currently documentation-driven and validated by `./eng/public-api.sh` presence checks.
 - Breaking changes require explicit milestone/release documentation.
 - `SemanticTypeModel.SystemTextJson` 1.1.0 removed generated `JsonSerializerContext` support as a documented compatibility correction because the 1.0 design depended on unsupported source-generator chaining.
-- 2.1.0 candidate documentation records M0035 as a release-review boundary; retained old model compatibility APIs and JSON Schema import APIs must not be presented as the primary canonical authoring path unless a later implementation milestone removes or replaces them.
+- 2.2.0 release-preparation documentation records M0038 as the model-surface cleanup boundary; removed `Canonical` namespace and old shape-graph APIs must not be presented as supported current usage.
 
 ## 2.2.0 Model Surface Compatibility
 

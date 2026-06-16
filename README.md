@@ -7,19 +7,19 @@ SemanticTypeModel is a .NET 10 library set for code-first semantic type models. 
 Add the package or packages your scenario needs:
 
 ```sh
-dotnet add package SemanticTypeModel.Core --version 2.1.0
-dotnet add package SemanticTypeModel.DotNet --version 2.1.0
-dotnet add package SemanticTypeModel.Generators --version 2.1.0
-dotnet add package SemanticTypeModel.JsonSchema --version 2.1.0
+dotnet add package SemanticTypeModel.Core --version 2.2.0
+dotnet add package SemanticTypeModel.DotNet --version 2.2.0
+dotnet add package SemanticTypeModel.Generators --version 2.2.0
+dotnet add package SemanticTypeModel.JsonSchema --version 2.2.0
 ```
 
 Scenario packages:
 
 ```sh
-dotnet add package SemanticTypeModel.EFCore --version 2.1.0
-dotnet add package SemanticTypeModel.PowerBI --version 2.1.0
-dotnet add package SemanticTypeModel.SystemTextJson --version 2.1.0
-dotnet add package SemanticTypeModel.DependencyInjection --version 2.1.0
+dotnet add package SemanticTypeModel.EFCore --version 2.2.0
+dotnet add package SemanticTypeModel.PowerBI --version 2.2.0
+dotnet add package SemanticTypeModel.SystemTextJson --version 2.2.0
+dotnet add package SemanticTypeModel.DependencyInjection --version 2.2.0
 ```
 
 See full package guidance in [public-docs/packages.md](public-docs/packages.md).
@@ -68,7 +68,7 @@ Each derivation returns diagnostics and inspection output so unsupported or ambi
 
 ## Stable Release Notice
 
-`2.1.0` is the current release candidate documentation target; `2.0.0` remains the code-first semantic model release baseline. It adds the core semantic vocabulary, envelope semantics, JSON Schema domain-model export, EF Core domain-model-to-`ModelBuilder` projection, and Power BI domain-model-to-local-metadata projection. Compatibility rules are documented in [public-docs/api/compatibility.md](public-docs/api/compatibility.md).
+`2.2.0` is the current release-preparation documentation target. It includes the unified model surface under `SemanticTypeModel.Abstractions.Model`; `2.0.0` remains the code-first semantic model release baseline. It adds the core semantic vocabulary, envelope semantics, JSON Schema domain-model export, EF Core domain-model-to-`ModelBuilder` projection, and Power BI domain-model-to-local-metadata projection. Compatibility rules are documented in [public-docs/api/compatibility.md](public-docs/api/compatibility.md).
 
 ## Samples
 

@@ -2,7 +2,7 @@
 
 ## Scenario Goal
 
-Import a JSON Schema document, convert it to the canonical semantic model, run deterministic transformations, and export JSON Schema again.
+Exercise the retained JSON Schema compatibility import path and export JSON Schema again. New code-first consumers should use generated providers instead of JSON Schema import as a model authoring path.
 
 ## Packages Used
 
@@ -24,7 +24,7 @@ The sample prints import, adapter, transformation, and projection diagnostic cou
 
 ## Consumer Pattern Demonstrated
 
-A consumer can use package APIs to import a schema, normalize and validate the semantic model, and project the model back to JSON Schema.
+A consumer can recognize the retained compatibility import path, but should use annotated .NET code plus the packaged generator for supported model authoring.
 
 ## Non-Goals
 
