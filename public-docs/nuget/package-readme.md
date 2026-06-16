@@ -1,21 +1,30 @@
 # SemanticTypeModel Package README Source
 
-SemanticTypeModel provides canonical semantic model contracts, import/export tooling, and projection/runtime integration for .NET 10.
+SemanticTypeModel provides unified canonical semantic model contracts, code-first model generation, and projection/runtime integration for .NET 10.
 
 ## Install
 
 ```sh
+dotnet add package SemanticTypeModel.Generators
 dotnet add package SemanticTypeModel.JsonSchema
 ```
 
 ## Quick Example
 
 ```csharp
-using SemanticTypeModel.JsonSchema.Import;
+using SemanticTypeModel.DotNet;
+using SemanticTypeModel.JsonSchema.Derivation;
 using SemanticTypeModel.JsonSchema.Export;
 
-var imported = JsonSchemaImporter.Import("""{"type":"string"}""");
-var exported = JsonSchemaExporter.Export(imported.Model);
+[SemanticType]
+public sealed partial class Customer
+{
+    public required string Id { get; init; }
+}
+
+var model = AppSemanticTypeModel.Create();
+var jsonSchemaModel = model.DeriveJsonSchemaModel();
+var exported = JsonSchemaExporter.Export(jsonSchemaModel.Model);
 Console.WriteLine(exported.Document.RootElement.GetRawText());
 ```
 

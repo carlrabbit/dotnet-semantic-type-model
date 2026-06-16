@@ -74,9 +74,7 @@ cat > "$consumer_dir/Program.cs" <<'CS'
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using Legacy = SemanticTypeModel.Abstractions.Model;
-using Canonical = SemanticTypeModel.Abstractions.Canonical;
-using SemanticTypeModel.Core.Building;
+using Model = SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.EFCore;
 using SemanticTypeModel.JsonSchema;
@@ -111,11 +109,7 @@ internal static class Program
 
         _ = JsonSchemaExporter.Export(imported.Model);
 
-        var legacyBuilder = new TypeSchemaModelBuilder()
-            .AddShape("Root", new Legacy.ScalarShape { Kind = Legacy.ScalarKind.String })
-            .SetRoot("Root");
-        _ = legacyBuilder.Build();
-        Canonical.TypeSchemaModel canonicalModel = BuildCanonicalModel();
+        Model.TypeSchemaModel canonicalModel = BuildCanonicalModel();
         var modelBuilder = new ModelBuilder(new ConventionSet());
         _ = modelBuilder.ApplySemanticTypeModel(canonicalModel, options => options.ProjectUnannotatedObjectsAsEntities = true);
 
@@ -124,64 +118,64 @@ internal static class Program
         Console.WriteLine("Package smoke consumer succeeded.");
     }
 
-    private static Canonical.TypeSchemaModel BuildCanonicalModel()
+    private static Model.TypeSchemaModel BuildCanonicalModel()
     {
-        Canonical.ScalarTypeDefinition scalar = new()
+        Model.ScalarTypeDefinition scalar = new()
         {
-            Id = new Canonical.TypeId("String"),
+            Id = new Model.TypeId("String"),
             Name = "String",
-            Kind = Canonical.TypeKind.Scalar,
-            Nullability = Canonical.Nullability.NonNullable,
-            Annotations = new Canonical.AnnotationBag(),
-            ScalarKind = Canonical.ScalarKind.String,
+            Kind = Model.TypeKind.Scalar,
+            Nullability = Model.Nullability.NonNullable,
+            Annotations = new Model.AnnotationBag(),
+            ScalarKind = Model.ScalarKind.String,
         };
 
-        Canonical.ObjectTypeDefinition customer = new()
+        Model.ObjectTypeDefinition customer = new()
         {
-            Id = new Canonical.TypeId("Customer"),
+            Id = new Model.TypeId("Customer"),
             Name = "Customer",
-            Kind = Canonical.TypeKind.Object,
-            Nullability = Canonical.Nullability.NonNullable,
-            Annotations = new Canonical.AnnotationBag(),
-            Semantics = new Canonical.EntitySemantics { Role = Canonical.EntityRole.Entity },
+            Kind = Model.TypeKind.Object,
+            Nullability = Model.Nullability.NonNullable,
+            Annotations = new Model.AnnotationBag(),
+            Semantics = new Model.EntitySemantics { Role = Model.EntityRole.Entity },
             Properties =
             [
-                new Canonical.PropertyDefinition
+                new Model.PropertyDefinition
                 {
-                    Id = new Canonical.PropertyId("CustomerId"),
+                    Id = new Model.PropertyId("CustomerId"),
                     Name = "id",
-                    Type = new Canonical.TypeRef(scalar.Id),
-                    Cardinality = new Canonical.Cardinality { IsRequired = true },
-                    Mutability = Canonical.Mutability.Mutable,
-                    Constraints = new Canonical.ConstraintSet(),
-                    Annotations = new Canonical.AnnotationBag(),
+                    Type = new Model.TypeRef(scalar.Id),
+                    Cardinality = new Model.Cardinality { IsRequired = true },
+                    Mutability = Model.Mutability.Mutable,
+                    Constraints = new Model.ConstraintSet(),
+                    Annotations = new Model.AnnotationBag(),
                 },
             ],
             Keys =
             [
-                new Canonical.KeyDefinition
+                new Model.KeyDefinition
                 {
                     Name = "PK_Customer",
-                    Kind = Canonical.KeyKind.Primary,
-                    Properties = [new Canonical.PropertyRef(new Canonical.PropertyId("CustomerId"))],
-                    Annotations = new Canonical.AnnotationBag(),
+                    Kind = Model.KeyKind.Primary,
+                    Properties = [new Model.PropertyRef(new Model.PropertyId("CustomerId"))],
+                    Annotations = new Model.AnnotationBag(),
                 },
             ],
             Relationships = [],
         };
 
-        System.Collections.Generic.Dictionary<Canonical.TypeId, Canonical.TypeDefinition> typesById = new()
+        System.Collections.Generic.Dictionary<Model.TypeId, Model.TypeDefinition> typesById = new()
         {
             [scalar.Id] = scalar,
             [customer.Id] = customer,
         };
 
-        return new Canonical.TypeSchemaModel
+        return new Model.TypeSchemaModel
         {
-            Id = new Canonical.SchemaModelId("CustomerModel"),
+            Id = new Model.SchemaModelId("CustomerModel"),
             Types = [scalar, customer],
             TypesById = typesById,
-            Annotations = new Canonical.AnnotationBag(),
+            Annotations = new Model.AnnotationBag(),
         };
     }
 }

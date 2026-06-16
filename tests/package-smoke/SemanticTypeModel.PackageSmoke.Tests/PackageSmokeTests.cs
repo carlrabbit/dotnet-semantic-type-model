@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using Canonical = SemanticTypeModel.Abstractions.Canonical;
+using Model = SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Abstractions.Runtime;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.EFCore;
@@ -26,16 +26,16 @@ internal sealed class PackageSmokeTests
     [Test]
     public async Task PackageSmokeShouldCoverPublicPackageApis()
     {
-        Canonical.TypeSchemaModel canonicalModel = BuildCanonicalModel();
+        Model.TypeSchemaModel canonicalModel = BuildCanonicalModel();
         JsonSchemaExportResult exported = JsonSchemaExporter.Export(canonicalModel.DeriveJsonSchemaModel().Model);
         _ = await Assert.That(exported.Document.RootElement.GetRawText()).Contains("string");
 
 
-        Canonical.SchemaProjectionContext powerBiContext = new() { Target = Canonical.ProjectionTarget.PowerBi };
+        Model.SchemaProjectionContext powerBiContext = new() { Target = Model.ProjectionTarget.PowerBi };
         PowerBiProjectionModel powerBiProjection = new PowerBiModelProjection().Project(canonicalModel, powerBiContext);
         _ = await Assert.That(powerBiProjection).IsNotNull();
 
-        Canonical.SchemaProjectionContext efCoreContext = new() { Target = Canonical.ProjectionTarget.EfCore };
+        Model.SchemaProjectionContext efCoreContext = new() { Target = Model.ProjectionTarget.EfCore };
         EfModelDefinition efCoreProjection = new EfCoreModelProjection().Project(canonicalModel, efCoreContext);
         _ = await Assert.That(efCoreProjection).IsNotNull();
         var modelBuilder = new ModelBuilder(new ConventionSet());
@@ -73,40 +73,40 @@ internal sealed class PackageSmokeTests
         _ = await Assert.That(nameof(SmokeCustomer)).IsEqualTo("SmokeCustomer");
     }
 
-    private static Canonical.TypeSchemaModel BuildPackageSmokeJsonModel()
+    private static Model.TypeSchemaModel BuildPackageSmokeJsonModel()
     {
-        Canonical.ScalarTypeDefinition scalar = new()
+        Model.ScalarTypeDefinition scalar = new()
         {
-            Id = new Canonical.TypeId("global::System.String"),
+            Id = new Model.TypeId("global::System.String"),
             Name = "String",
-            Kind = Canonical.TypeKind.Scalar,
-            Nullability = Canonical.Nullability.NonNullable,
-            Annotations = new Canonical.AnnotationBag(),
-            ScalarKind = Canonical.ScalarKind.String,
+            Kind = Model.TypeKind.Scalar,
+            Nullability = Model.Nullability.NonNullable,
+            Annotations = new Model.AnnotationBag(),
+            ScalarKind = Model.ScalarKind.String,
         };
-        var customer = new Canonical.ObjectTypeDefinition
+        var customer = new Model.ObjectTypeDefinition
         {
-            Id = new Canonical.TypeId("global::SemanticTypeModel.PackageSmoke.Tests.SmokeJsonCustomer"),
+            Id = new Model.TypeId("global::SemanticTypeModel.PackageSmoke.Tests.SmokeJsonCustomer"),
             Name = "SmokeJsonCustomer",
-            Kind = Canonical.TypeKind.Object,
-            Nullability = Canonical.Nullability.NonNullable,
-            Annotations = new Canonical.AnnotationBag(),
+            Kind = Model.TypeKind.Object,
+            Nullability = Model.Nullability.NonNullable,
+            Annotations = new Model.AnnotationBag(),
             Properties =
             [
-                new Canonical.PropertyDefinition
+                new Model.PropertyDefinition
                 {
-                    Id = new Canonical.PropertyId("Id"),
+                    Id = new Model.PropertyId("Id"),
                     Name = "smokeId",
-                    Type = new Canonical.TypeRef(scalar.Id),
-                    Cardinality = new Canonical.Cardinality { IsRequired = true },
-                    Mutability = Canonical.Mutability.Mutable,
-                    Constraints = new Canonical.ConstraintSet(),
-                    Annotations = new Canonical.AnnotationBag
+                    Type = new Model.TypeRef(scalar.Id),
+                    Cardinality = new Model.Cardinality { IsRequired = true },
+                    Mutability = Model.Mutability.Mutable,
+                    Constraints = new Model.ConstraintSet(),
+                    Annotations = new Model.AnnotationBag
                     {
                         Items =
                         [
-                            new Canonical.Annotation { Key = new Canonical.AnnotationKey("dotnet.memberName"), Value = "Id", Scope = Canonical.AnnotationScope.Member, Source = Canonical.AnnotationSource.Imported },
-                            new Canonical.Annotation { Key = new Canonical.AnnotationKey(SystemTextJsonAnnotationNames.PropertyName), Value = "smoke_id", Scope = Canonical.AnnotationScope.Member, Source = Canonical.AnnotationSource.Imported },
+                            new Model.Annotation { Key = new Model.AnnotationKey("dotnet.memberName"), Value = "Id", Scope = Model.AnnotationScope.Member, Source = Model.AnnotationSource.Imported },
+                            new Model.Annotation { Key = new Model.AnnotationKey(SystemTextJsonAnnotationNames.PropertyName), Value = "smoke_id", Scope = Model.AnnotationScope.Member, Source = Model.AnnotationSource.Imported },
                         ],
                     },
                 },
@@ -114,32 +114,32 @@ internal sealed class PackageSmokeTests
             Keys = [],
             Relationships = [],
         };
-        return new Canonical.TypeSchemaModel { Id = new Canonical.SchemaModelId(customer.Id.Value), Types = [customer, scalar], TypesById = new Dictionary<Canonical.TypeId, Canonical.TypeDefinition> { [customer.Id] = customer, [scalar.Id] = scalar }, Annotations = new Canonical.AnnotationBag() };
+        return new Model.TypeSchemaModel { Id = new Model.SchemaModelId(customer.Id.Value), Types = [customer, scalar], TypesById = new Dictionary<Model.TypeId, Model.TypeDefinition> { [customer.Id] = customer, [scalar.Id] = scalar }, Annotations = new Model.AnnotationBag() };
     }
 
-    private static Canonical.TypeSchemaModel BuildCanonicalModel()
+    private static Model.TypeSchemaModel BuildCanonicalModel()
     {
-        Canonical.ScalarTypeDefinition scalar = new()
+        Model.ScalarTypeDefinition scalar = new()
         {
-            Id = new Canonical.TypeId("String"),
+            Id = new Model.TypeId("String"),
             Name = "String",
-            Kind = Canonical.TypeKind.Scalar,
-            Nullability = Canonical.Nullability.NonNullable,
-            Annotations = new Canonical.AnnotationBag(),
-            ScalarKind = Canonical.ScalarKind.String,
+            Kind = Model.TypeKind.Scalar,
+            Nullability = Model.Nullability.NonNullable,
+            Annotations = new Model.AnnotationBag(),
+            ScalarKind = Model.ScalarKind.String,
         };
 
-        System.Collections.Generic.Dictionary<Canonical.TypeId, Canonical.TypeDefinition> typesById = new()
+        System.Collections.Generic.Dictionary<Model.TypeId, Model.TypeDefinition> typesById = new()
         {
             [scalar.Id] = scalar,
         };
 
-        return new Canonical.TypeSchemaModel
+        return new Model.TypeSchemaModel
         {
-            Id = new Canonical.SchemaModelId("String"),
+            Id = new Model.SchemaModelId("String"),
             Types = [scalar],
             TypesById = typesById,
-            Annotations = new Canonical.AnnotationBag(),
+            Annotations = new Model.AnnotationBag(),
         };
     }
 }

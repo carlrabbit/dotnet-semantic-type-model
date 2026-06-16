@@ -1,4 +1,4 @@
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Abstractions.Runtime;
 using SemanticTypeModel.Core.Transformation;
 

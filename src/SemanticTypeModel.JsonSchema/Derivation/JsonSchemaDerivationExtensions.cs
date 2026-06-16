@@ -2,7 +2,7 @@ using System.Text.Json;
 using SemanticTypeModel.Core.Semantics;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema.Domain;
-using Canonical = SemanticTypeModel.Abstractions.Canonical;
+using Model = SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.JsonSchema.Derivation;
 
@@ -11,7 +11,7 @@ public static class JsonSchemaDerivationExtensions
 {
     /// <summary>Derives a JSON Schema domain semantic model from a code-first canonical semantic model.</summary>
     public static SemanticDerivationResult<JsonSchemaSemanticModel> DeriveJsonSchemaModel(
-        this Canonical.TypeSchemaModel model,
+        this Model.TypeSchemaModel model,
         Action<JsonSchemaDerivationOptions>? configure = null,
         CancellationToken cancellationToken = default)
     {
@@ -38,22 +38,22 @@ public static class JsonSchemaDerivationExtensions
         };
     }
 
-    private sealed class JsonSchemaDomainMapper(Uri? schemaId, IReadOnlyList<Canonical.SchemaDiagnostic> initialDiagnostics, IReadOnlyDictionary<string, JsonSchemaEnvelopeProjectionPolicy> envelopePolicies)
+    private sealed class JsonSchemaDomainMapper(Uri? schemaId, IReadOnlyList<Model.SchemaDiagnostic> initialDiagnostics, IReadOnlyDictionary<string, JsonSchemaEnvelopeProjectionPolicy> envelopePolicies)
     {
-        private readonly List<Canonical.SchemaDiagnostic> _diagnostics = [.. initialDiagnostics];
-        private Canonical.TypeSchemaModel? _model;
+        private readonly List<Model.SchemaDiagnostic> _diagnostics = [.. initialDiagnostics];
+        private Model.TypeSchemaModel? _model;
 
-        public JsonSchemaSemanticModel Map(Canonical.TypeSchemaModel model)
+        public JsonSchemaSemanticModel Map(Model.TypeSchemaModel model)
         {
             _model = model;
-            Canonical.TypeDefinition rootType = ResolveRoot(model);
-            if (rootType is Canonical.ObjectTypeDefinition rootObject && TryGetEnvelopePolicy(rootObject, out JsonSchemaEnvelopeProjectionPolicy? rootPolicy))
+            Model.TypeDefinition rootType = ResolveRoot(model);
+            if (rootType is Model.ObjectTypeDefinition rootObject && TryGetEnvelopePolicy(rootObject, out JsonSchemaEnvelopeProjectionPolicy? rootPolicy))
             {
                 if (rootPolicy.RootPolicy == JsonSchemaEnvelopeRootPolicy.Ambiguous)
                 {
                     AddDiagnostic("JSONSCHEMA_ENVELOPE_ROOT_AMBIGUOUS", $"Envelope '{rootObject.Name}' selected both envelope and payload roots without explicit policy.", $"/types/{rootObject.Id.Value}");
                 }
-                else if (rootPolicy.RootPolicy == JsonSchemaEnvelopeRootPolicy.PayloadAsRoot && ResolvePayload(rootObject, rootPolicy) is Canonical.PropertyDefinition payload && model.TryGetType(payload.Type.Id) is Canonical.TypeDefinition payloadRoot)
+                else if (rootPolicy.RootPolicy == JsonSchemaEnvelopeRootPolicy.PayloadAsRoot && ResolvePayload(rootObject, rootPolicy) is Model.PropertyDefinition payload && model.TryGetType(payload.Type.Id) is Model.TypeDefinition payloadRoot)
                 {
                     rootType = payloadRoot;
                 }
@@ -61,7 +61,7 @@ public static class JsonSchemaDerivationExtensions
             JsonSchemaNode root = MapType(rootType);
             Dictionary<string, JsonSchemaNode> definitions = new(StringComparer.Ordinal);
 
-            foreach (Canonical.TypeDefinition type in model.Types.OrderBy(static type => type.Id.Value, StringComparer.Ordinal))
+            foreach (Model.TypeDefinition type in model.Types.OrderBy(static type => type.Id.Value, StringComparer.Ordinal))
             {
                 if (type.Id == rootType.Id)
                 {
@@ -81,24 +81,24 @@ public static class JsonSchemaDerivationExtensions
             };
         }
 
-        private static Canonical.TypeDefinition ResolveRoot(Canonical.TypeSchemaModel model)
+        private static Model.TypeDefinition ResolveRoot(Model.TypeSchemaModel model)
         {
-            return model.TryGetType(new Canonical.TypeId(model.Id.Value))
+            return model.TryGetType(new Model.TypeId(model.Id.Value))
                 ?? model.Types.OrderBy(static type => type.Id.Value, StringComparer.Ordinal).FirstOrDefault()
                 ?? throw new InvalidOperationException("Cannot derive a JSON Schema model from an empty semantic model.");
         }
 
-        private JsonSchemaNode MapType(Canonical.TypeDefinition type)
+        private JsonSchemaNode MapType(Model.TypeDefinition type)
         {
             return type switch
             {
-                Canonical.ObjectTypeDefinition obj => MapObject(obj),
-                Canonical.ScalarTypeDefinition scalar => MapScalar(scalar),
-                Canonical.EnumTypeDefinition enumType => MapEnum(enumType),
-                Canonical.ArrayTypeDefinition array => MapArray(array),
-                Canonical.DictionaryTypeDefinition dictionary => MapDictionary(dictionary),
-                Canonical.UnionTypeDefinition union => MapUnion(union),
-                Canonical.ReferenceTypeDefinition reference => new JsonSchemaCompositionNode
+                Model.ObjectTypeDefinition obj => MapObject(obj),
+                Model.ScalarTypeDefinition scalar => MapScalar(scalar),
+                Model.EnumTypeDefinition enumType => MapEnum(enumType),
+                Model.ArrayTypeDefinition array => MapArray(array),
+                Model.DictionaryTypeDefinition dictionary => MapDictionary(dictionary),
+                Model.UnionTypeDefinition union => MapUnion(union),
+                Model.ReferenceTypeDefinition reference => new JsonSchemaCompositionNode
                 {
                     Name = type.Name,
                     Title = type.DisplayName,
@@ -106,12 +106,12 @@ public static class JsonSchemaDerivationExtensions
                     Kind = JsonSchemaCompositionKind.OneOf,
                     Alternatives = [JsonSchemaSchemaRef.FromReference(reference.Target.Id.Value)],
                 },
-                Canonical.IntersectionTypeDefinition intersection => UnsupportedNode(type, "JSONSCHEMA_DERIVE_UNSUPPORTED_ALLOF", $"Intersection '{intersection.Name}' cannot be represented by baseline JSON Schema projection."),
+                Model.IntersectionTypeDefinition intersection => UnsupportedNode(type, "JSONSCHEMA_DERIVE_UNSUPPORTED_ALLOF", $"Intersection '{intersection.Name}' cannot be represented by baseline JSON Schema projection."),
                 _ => UnsupportedNode(type, "JSONSCHEMA_DERIVE_UNSUPPORTED_TYPE", $"Type kind '{type.Kind}' is not supported by baseline JSON Schema projection."),
             };
         }
 
-        private JsonSchemaObjectNode MapObject(Canonical.ObjectTypeDefinition type)
+        private JsonSchemaObjectNode MapObject(Model.ObjectTypeDefinition type)
         {
             var additionalAllowed = true;
             if (GetStringAnnotation(type.Annotations, "runtime.additionalPropertiesAllowed") is { } legacyAdditional)
@@ -130,7 +130,7 @@ public static class JsonSchemaDerivationExtensions
             };
         }
 
-        private JsonSchemaProperty MapProperty(Canonical.ObjectTypeDefinition owner, Canonical.PropertyDefinition property)
+        private JsonSchemaProperty MapProperty(Model.ObjectTypeDefinition owner, Model.PropertyDefinition property)
         {
             JsonSchemaSchemaRef schema = MapReference(property.Type, $"/properties/{property.Name}");
             Dictionary<string, JsonElement> annotations = MapProjectionAnnotations(property.Annotations);
@@ -156,11 +156,11 @@ public static class JsonSchemaDerivationExtensions
             };
         }
 
-        private JsonSchemaSchemaRef MapEnvelopePayloadSchema(Canonical.PropertyDefinition property, JsonSchemaEnvelopeProjectionPolicy policy)
+        private JsonSchemaSchemaRef MapEnvelopePayloadSchema(Model.PropertyDefinition property, JsonSchemaEnvelopeProjectionPolicy policy)
         {
             return policy.PayloadRepresentation switch
             {
-                JsonSchemaEnvelopePayloadRepresentation.Inline when _model?.TryGetType(property.Type.Id) is Canonical.TypeDefinition payloadType => JsonSchemaSchemaRef.FromInline(MapType(payloadType)),
+                JsonSchemaEnvelopePayloadRepresentation.Inline when _model?.TryGetType(property.Type.Id) is Model.TypeDefinition payloadType => JsonSchemaSchemaRef.FromInline(MapType(payloadType)),
                 JsonSchemaEnvelopePayloadRepresentation.JsonDocument => JsonSchemaSchemaRef.FromInline(new JsonSchemaScalarNode { Type = "object" }),
                 JsonSchemaEnvelopePayloadRepresentation.SerializedJsonString => JsonSchemaSchemaRef.FromInline(new JsonSchemaScalarNode { Type = "string" }),
                 JsonSchemaEnvelopePayloadRepresentation.Opaque => JsonSchemaSchemaRef.FromInline(new JsonSchemaScalarNode { Type = "object" }),
@@ -169,52 +169,52 @@ public static class JsonSchemaDerivationExtensions
             };
         }
 
-        private bool TryGetEnvelopePolicy(Canonical.ObjectTypeDefinition envelope, out JsonSchemaEnvelopeProjectionPolicy policy)
+        private bool TryGetEnvelopePolicy(Model.ObjectTypeDefinition envelope, out JsonSchemaEnvelopeProjectionPolicy policy)
         {
             return envelopePolicies.TryGetValue(envelope.Name, out policy!) || envelopePolicies.TryGetValue(envelope.Id.Value, out policy!);
         }
 
-        private static Canonical.PropertyDefinition? ResolvePayload(Canonical.ObjectTypeDefinition envelope, JsonSchemaEnvelopeProjectionPolicy policy)
+        private static Model.PropertyDefinition? ResolvePayload(Model.ObjectTypeDefinition envelope, JsonSchemaEnvelopeProjectionPolicy policy)
         {
             return envelope.Properties.FirstOrDefault(property => string.Equals(property.Name, policy.PayloadPropertyName, StringComparison.Ordinal))
                 ?? envelope.Properties.FirstOrDefault(IsEnvelopePayload);
         }
 
-        private static bool IsEnvelopePayload(Canonical.PropertyDefinition property)
+        private static bool IsEnvelopePayload(Model.PropertyDefinition property)
         {
             return property.Annotations.Items.Any(annotation => string.Equals(annotation.Key.Value, CoreSemanticAnnotationKeys.EnvelopePayload, StringComparison.Ordinal) && Convert.ToString(annotation.Value, System.Globalization.CultureInfo.InvariantCulture)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
         }
 
-        private static JsonSchemaScalarNode MapScalar(Canonical.ScalarTypeDefinition type)
+        private static JsonSchemaScalarNode MapScalar(Model.ScalarTypeDefinition type)
         {
             var jsonType = type.ScalarKind switch
             {
-                Canonical.ScalarKind.Boolean => "boolean",
-                Canonical.ScalarKind.Integer => "integer",
-                Canonical.ScalarKind.Number => "number",
-                Canonical.ScalarKind.Decimal => "number",
-                Canonical.ScalarKind.Json => "object",
-                Canonical.ScalarKind.Unknown => "object",
-                Canonical.ScalarKind.String => "string",
-                Canonical.ScalarKind.Date => "string",
-                Canonical.ScalarKind.Time => "string",
-                Canonical.ScalarKind.DateTime => "string",
-                Canonical.ScalarKind.DateTimeOffset => "string",
-                Canonical.ScalarKind.Duration => "string",
-                Canonical.ScalarKind.Guid => "string",
-                Canonical.ScalarKind.Binary => "string",
+                Model.ScalarKind.Boolean => "boolean",
+                Model.ScalarKind.Integer => "integer",
+                Model.ScalarKind.Number => "number",
+                Model.ScalarKind.Decimal => "number",
+                Model.ScalarKind.Json => "object",
+                Model.ScalarKind.Unknown => "object",
+                Model.ScalarKind.String => "string",
+                Model.ScalarKind.Date => "string",
+                Model.ScalarKind.Time => "string",
+                Model.ScalarKind.DateTime => "string",
+                Model.ScalarKind.DateTimeOffset => "string",
+                Model.ScalarKind.Duration => "string",
+                Model.ScalarKind.Guid => "string",
+                Model.ScalarKind.Binary => "string",
                 _ => "string",
             };
 
             var format = type.Format ?? type.ScalarKind switch
             {
-                Canonical.ScalarKind.Date => "date",
-                Canonical.ScalarKind.Time => "time",
-                Canonical.ScalarKind.DateTime or Canonical.ScalarKind.DateTimeOffset => "date-time",
-                Canonical.ScalarKind.Duration => "duration",
-                Canonical.ScalarKind.Guid => "uuid",
-                Canonical.ScalarKind.Binary => "binary",
-                Canonical.ScalarKind.Boolean or Canonical.ScalarKind.String or Canonical.ScalarKind.Integer or Canonical.ScalarKind.Number or Canonical.ScalarKind.Decimal or Canonical.ScalarKind.Json or Canonical.ScalarKind.Unknown => null,
+                Model.ScalarKind.Date => "date",
+                Model.ScalarKind.Time => "time",
+                Model.ScalarKind.DateTime or Model.ScalarKind.DateTimeOffset => "date-time",
+                Model.ScalarKind.Duration => "duration",
+                Model.ScalarKind.Guid => "uuid",
+                Model.ScalarKind.Binary => "binary",
+                Model.ScalarKind.Boolean or Model.ScalarKind.String or Model.ScalarKind.Integer or Model.ScalarKind.Number or Model.ScalarKind.Decimal or Model.ScalarKind.Json or Model.ScalarKind.Unknown => null,
                 _ => null,
             };
 
@@ -231,7 +231,7 @@ public static class JsonSchemaDerivationExtensions
             };
         }
 
-        private static JsonSchemaEnumNode MapEnum(Canonical.EnumTypeDefinition type)
+        private static JsonSchemaEnumNode MapEnum(Model.EnumTypeDefinition type)
         {
             return new JsonSchemaEnumNode
             {
@@ -243,7 +243,7 @@ public static class JsonSchemaDerivationExtensions
             };
         }
 
-        private JsonSchemaArrayNode MapArray(Canonical.ArrayTypeDefinition type)
+        private JsonSchemaArrayNode MapArray(Model.ArrayTypeDefinition type)
         {
             return new JsonSchemaArrayNode
             {
@@ -256,7 +256,7 @@ public static class JsonSchemaDerivationExtensions
             };
         }
 
-        private JsonSchemaDictionaryNode MapDictionary(Canonical.DictionaryTypeDefinition type)
+        private JsonSchemaDictionaryNode MapDictionary(Model.DictionaryTypeDefinition type)
         {
             return new JsonSchemaDictionaryNode
             {
@@ -268,7 +268,7 @@ public static class JsonSchemaDerivationExtensions
             };
         }
 
-        private JsonSchemaCompositionNode MapUnion(Canonical.UnionTypeDefinition type)
+        private JsonSchemaCompositionNode MapUnion(Model.UnionTypeDefinition type)
         {
             if (type.Options.Count == 0)
             {
@@ -280,13 +280,13 @@ public static class JsonSchemaDerivationExtensions
                 Name = type.Name,
                 Title = type.DisplayName,
                 Description = type.Description,
-                Kind = type.Semantics == Canonical.UnionSemantics.AnyOf ? JsonSchemaCompositionKind.AnyOf : JsonSchemaCompositionKind.OneOf,
+                Kind = type.Semantics == Model.UnionSemantics.AnyOf ? JsonSchemaCompositionKind.AnyOf : JsonSchemaCompositionKind.OneOf,
                 Alternatives = [.. type.Options.OrderBy(static option => option.Id.Value, StringComparer.Ordinal).Select(option => MapReference(option, $"/types/{type.Id.Value}/options"))],
                 Annotations = MapProjectionAnnotations(type.Annotations),
             };
         }
 
-        private JsonSchemaSchemaRef MapReference(Canonical.TypeRef typeRef, string path)
+        private JsonSchemaSchemaRef MapReference(Model.TypeRef typeRef, string path)
         {
             if (_model?.TryGetType(typeRef.Id) is null)
             {
@@ -296,7 +296,7 @@ public static class JsonSchemaDerivationExtensions
             return JsonSchemaSchemaRef.FromReference(typeRef.Id.Value);
         }
 
-        private JsonSchemaScalarNode UnsupportedNode(Canonical.TypeDefinition type, string code, string message)
+        private JsonSchemaScalarNode UnsupportedNode(Model.TypeDefinition type, string code, string message)
         {
             AddDiagnostic(code, message, $"/types/{type.Id.Value}");
             return new JsonSchemaScalarNode
@@ -311,19 +311,19 @@ public static class JsonSchemaDerivationExtensions
 
         private void AddDiagnostic(string code, string message, string path)
         {
-            _diagnostics.Add(new Canonical.SchemaDiagnostic
+            _diagnostics.Add(new Model.SchemaDiagnostic
             {
-                Severity = Canonical.SchemaDiagnosticSeverity.Warning,
+                Severity = Model.SchemaDiagnosticSeverity.Warning,
                 Code = code,
                 Message = message,
-                Stage = Canonical.SchemaDiagnosticStage.Projection,
+                Stage = Model.SchemaDiagnosticStage.Projection,
                 ModelPath = path,
                 Source = path,
-                ProjectionTarget = Canonical.ProjectionTarget.JsonSchema,
+                ProjectionTarget = Model.ProjectionTarget.JsonSchema,
             });
         }
 
-        private static JsonSchemaConstraintSet MapConstraints(Canonical.ConstraintSet constraints)
+        private static JsonSchemaConstraintSet MapConstraints(Model.ConstraintSet constraints)
         {
             return new JsonSchemaConstraintSet
             {
@@ -343,21 +343,21 @@ public static class JsonSchemaDerivationExtensions
             };
         }
 
-        private static Dictionary<string, JsonElement> MapProjectionAnnotations(Canonical.AnnotationBag bag)
+        private static Dictionary<string, JsonElement> MapProjectionAnnotations(Model.AnnotationBag bag)
         {
             return bag.Items
-                .Where(static annotation => annotation.Scope == Canonical.AnnotationScope.Projection || annotation.Key.Value.StartsWith("jsonSchema.keyword.", StringComparison.Ordinal) || annotation.Key.Value.StartsWith("schema.", StringComparison.Ordinal))
+                .Where(static annotation => annotation.Scope == Model.AnnotationScope.Projection || annotation.Key.Value.StartsWith("jsonSchema.keyword.", StringComparison.Ordinal) || annotation.Key.Value.StartsWith("schema.", StringComparison.Ordinal))
                 .OrderBy(static annotation => annotation.Key.Value, StringComparer.Ordinal)
                 .ToDictionary(static annotation => annotation.Key.Value.StartsWith("jsonSchema.keyword.", StringComparison.Ordinal) ? annotation.Key.Value["jsonSchema.keyword.".Length..] : annotation.Key.Value, static annotation => ToJsonElement(annotation.Value), StringComparer.Ordinal);
         }
 
-        private static bool HasBooleanAnnotation(Canonical.AnnotationBag bag, string key)
+        private static bool HasBooleanAnnotation(Model.AnnotationBag bag, string key)
         {
             return bag.Items.Where(annotation => string.Equals(annotation.Key.Value, key, StringComparison.Ordinal)).Select(static annotation => annotation.Value?.ToString()).LastOrDefault(static value => !string.IsNullOrWhiteSpace(value)) is string value
                 && string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static string? GetStringAnnotation(Canonical.AnnotationBag bag, string key)
+        private static string? GetStringAnnotation(Model.AnnotationBag bag, string key)
         {
             return bag.Items.Where(annotation => string.Equals(annotation.Key.Value, key, StringComparison.Ordinal)).Select(static annotation => annotation.Value?.ToString()).LastOrDefault(static value => !string.IsNullOrWhiteSpace(value));
         }

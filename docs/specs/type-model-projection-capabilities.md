@@ -13,7 +13,7 @@ Define projection capability contracts for the canonical semantic model and keep
 
 ## Capability Metadata API
 
-Capability metadata is defined by `SemanticTypeModel.Abstractions.Canonical` contracts:
+Capability metadata is defined by `SemanticTypeModel.Abstractions.Model` contracts:
 
 - `SemanticModelFeature`
 - `ProjectionFeatureSupportLevel`

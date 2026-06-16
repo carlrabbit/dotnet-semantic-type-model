@@ -1,5 +1,5 @@
 using System.Text.Json;
-using SchemaDiagnostic = SemanticTypeModel.Abstractions.Canonical.SchemaDiagnostic;
+using SchemaDiagnostic = SemanticTypeModel.Abstractions.Model.SchemaDiagnostic;
 
 namespace SemanticTypeModel.JsonSchema.Domain;
 

@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Abstractions.Runtime;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema;

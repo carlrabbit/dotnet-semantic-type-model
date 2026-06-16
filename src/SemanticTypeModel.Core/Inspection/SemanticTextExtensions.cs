@@ -1,10 +1,9 @@
 #pragma warning disable IDE0058
 using System.Globalization;
 using System.Text;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Query;
 using SemanticTypeModel.Core.Semantics;
-using LegacyModel = SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.Core.Inspection;
 
@@ -50,42 +49,6 @@ public static class SemanticTextExtensions
             builder.AppendLine();
             builder.AppendLine("Diagnostics:");
             builder.Append(diagnostics.ToDiagnosticText(new DiagnosticTextOptions { Detail = options.Detail }));
-        }
-
-        return Normalize(builder);
-    }
-
-    /// <summary>
-    /// Produces deterministic human-readable text for a legacy semantic type model.
-    /// </summary>
-    public static string ToSemanticText(this LegacyModel.TypeSchemaModel model)
-    {
-        return ToSemanticText(model, new SemanticTextOptions());
-    }
-
-    /// <summary>
-    /// Produces deterministic human-readable text for a legacy semantic type model.
-    /// </summary>
-    public static string ToSemanticText(this LegacyModel.TypeSchemaModel model, SemanticTextOptions options)
-    {
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(options);
-
-        var builder = new StringBuilder();
-        builder.AppendLine("Model TypeSchemaModel");
-        builder.AppendLine(CultureInfo.InvariantCulture, $"Root: {model.RootIdentifier ?? "<none>"}");
-        builder.AppendLine(CultureInfo.InvariantCulture, $"Types: {model.Shapes.Count}");
-
-        if (options.Detail == SemanticTextDetail.Summary)
-        {
-            return Normalize(builder);
-        }
-
-        builder.AppendLine();
-        builder.AppendLine("Types:");
-        foreach ((var id, LegacyModel.TypeShape shape) in model.Shapes.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
-        {
-            AppendLegacyShape(builder, id, shape, options);
         }
 
         return Normalize(builder);
@@ -273,54 +236,6 @@ public static class SemanticTextExtensions
         }
     }
 
-    private static void AppendLegacyShape(StringBuilder builder, string id, LegacyModel.TypeShape shape, SemanticTextOptions options)
-    {
-        builder.Append("  ");
-        builder.Append(id);
-        builder.Append(" (");
-        builder.Append(shape.GetType().Name.Replace("Shape", string.Empty, StringComparison.Ordinal));
-        builder.AppendLine(")");
-
-        if (shape is LegacyModel.ObjectShape obj)
-        {
-            foreach (LegacyModel.PropertyShape property in obj.Properties.OrderBy(static property => property.Name, StringComparer.Ordinal))
-            {
-                builder.Append("    Property ");
-                builder.Append(property.Name);
-                builder.Append(": ");
-                builder.Append(property.Type?.Identifier ?? property.Type?.Inline?.Identifier ?? "<inline>");
-                builder.Append(property.IsRequired ? " required" : " optional");
-                if (property.IsNullable)
-                {
-                    builder.Append(" nullable");
-                }
-
-                builder.AppendLine();
-
-                if (options.IncludeAnnotations || options.Detail == SemanticTextDetail.Detailed)
-                {
-                    AppendLegacyAnnotations(builder, property.Annotations, "      ");
-                }
-            }
-        }
-
-        if (options.IncludeConstraints || options.Detail == SemanticTextDetail.Detailed)
-        {
-            foreach (LegacyModel.ConstraintEntry constraint in shape.Constraints.Entries.OrderBy(static constraint => constraint.Key, StringComparer.Ordinal))
-            {
-                builder.Append("    Constraint ");
-                builder.Append(constraint.Key);
-                builder.Append('=');
-                builder.AppendLine(constraint.Value);
-            }
-        }
-
-        if (options.IncludeAnnotations || options.Detail == SemanticTextDetail.Detailed)
-        {
-            AppendLegacyAnnotations(builder, shape.Annotations, "    ");
-        }
-    }
-
     private static bool HasBooleanAnnotation(AnnotationBag bag, string key)
     {
         return bag.Items
@@ -349,18 +264,6 @@ public static class SemanticTextExtensions
             builder.Append(annotation.Key.Value);
             builder.Append('=');
             builder.AppendLine(Convert.ToString(annotation.Value, CultureInfo.InvariantCulture) ?? string.Empty);
-        }
-    }
-
-    private static void AppendLegacyAnnotations(StringBuilder builder, IReadOnlyList<LegacyModel.SchemaAnnotation> annotations, string indent)
-    {
-        foreach (LegacyModel.SchemaAnnotation annotation in annotations.OrderBy(static annotation => annotation.Key, StringComparer.Ordinal).ThenBy(static annotation => annotation.Value, StringComparer.Ordinal))
-        {
-            builder.Append(indent);
-            builder.Append("Annotation ");
-            builder.Append(annotation.Key);
-            builder.Append('=');
-            builder.AppendLine(annotation.Value);
         }
     }
 

@@ -1,6 +1,6 @@
 #pragma warning disable CS1591
 #pragma warning disable CA1720
-namespace SemanticTypeModel.Abstractions.Canonical;
+namespace SemanticTypeModel.Abstractions.Model;
 
 public readonly record struct SchemaModelId(string Value);
 

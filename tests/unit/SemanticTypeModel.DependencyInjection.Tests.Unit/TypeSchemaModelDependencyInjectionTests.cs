@@ -1,10 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Abstractions.Runtime;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema;
-using RuntimeTypeSchemaModelBuilder = SemanticTypeModel.Abstractions.Canonical.TypeSchemaModelBuilder;
+using RuntimeTypeSchemaModelBuilder = SemanticTypeModel.Abstractions.Model.TypeSchemaModelBuilder;
 
 namespace SemanticTypeModel.DependencyInjection.Tests.Unit;
 

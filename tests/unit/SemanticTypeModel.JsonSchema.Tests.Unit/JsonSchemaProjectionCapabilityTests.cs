@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.JsonSchema.Runtime;
 
 namespace SemanticTypeModel.JsonSchema.Tests.Unit;

@@ -1,79 +1,19 @@
-# Type Schema Model Specification
+# Type Schema Model
 
-## Purpose
+## Status
 
-Define the canonical runtime representation of semantic type information used by this repository.
+Superseded for M0038 model contracts by `docs/specs/model-surface-unification.md`.
 
-The canonical model is authored from annotated .NET code through runtime extraction or compile-time generation, or loaded from a persisted snapshot of such a model.
+## Contract
 
-## Authority
+The canonical semantic type model public contracts are represented by `SemanticTypeModel.Abstractions.Model` after M0038.
 
-This specification is authoritative for:
-- the shape model surface;
-- model invariants;
-- lookup and traversal behavior;
-- failure semantics for model access and model construction.
+The supported model family includes `TypeSchemaModel`, typed identifiers, annotation bags, `TypeDefinition` subtypes, property definitions, key definitions, relationship definitions, constraints, scalar metadata, enum metadata, composition metadata, and typed references.
 
-## Canonical Types
+The legacy shape graph that used `TypeShape`, `ObjectShape`, `PropertyShape`, `ShapeRef`, and `SchemaAnnotation` is removed from shipped source and public API baselines after M0038.
 
-The canonical semantic type model consists of:
-- `TypeSchemaModel`;
-- `TypeShape`;
-- `ScalarShape`;
-- `EnumShape`;
-- `ObjectShape`;
-- `ArrayShape`;
-- `DictionaryShape`;
-- `UnionShape`;
-- `PropertyShape`;
-- `ShapeRef`;
-- `SchemaAnnotation`;
-- `ConstraintSet` and `ConstraintEntry`.
+## Traversal
 
-## Invariants
+Consumers should traverse `TypeSchemaModel.Types` and use `TypeSchemaModel.TypesById`, `TryGetType`, or `GetType` for deterministic lookup by `TypeId`.
 
-- `TypeSchemaModel` is immutable after construction.
-- Consumer-facing runtime editing is unsupported.
-- Builder APIs are construction infrastructure for extraction, generation, transformations, tests, and controlled snapshot loading, not a general-purpose model authoring product.
-- Named shapes are stored in `TypeSchemaModel.Shapes` and are addressable by identifier.
-- `TypeSchemaModel.RootIdentifier` may be null.
-- `TypeSchemaModel.Root` resolves from `RootIdentifier` when one is present.
-- `ShapeRef` represents either a named reference or an inline shape.
-- A named reference must resolve through the containing `TypeSchemaModel`.
-- `TypeSchemaModelBuilder.Build()` must reject unresolved named references.
-- `TypeSchemaModelBuilder.Build()` must reject a missing root shape when `SetRoot` was used.
-- `TypeSchemaModel.TraverseAll()` must visit each named shape at most once.
-- Inline shapes discovered through traversal are included in traversal results.
-
-## Lookup Behavior
-
-- `TryGetShape(identifier)` returns the named shape or null.
-- `GetShape(identifier)` returns the named shape or throws `InvalidOperationException` when absent.
-- `ShapeRef.Resolve(model)` returns the referenced named shape or the inline shape.
-- `ShapeRef.Resolve(model)` throws `InvalidOperationException` when the reference has neither identifier nor inline shape.
-
-## Traversal Behavior
-
-`TypeSchemaModel.TraverseAll()` performs a graph walk over:
-- all named shapes in the model;
-- object property type references;
-- array item references;
-- dictionary value references;
-- union option references.
-
-Traversal order is implementation-defined, but named shapes must not be yielded more than once.
-
-## Constraints and Annotations
-
-- Annotations carry descriptive metadata.
-- Constraints carry named validation values.
-- Shapes and properties may carry annotations.
-- Shapes may carry constraints.
-
-## Related Documents
-
-- [code-first-semantic-model-architecture.md](code-first-semantic-model-architecture.md)
-- [json-schema-adapter.md](json-schema-adapter.md)
-- ../architecture/code-first-domain-projection-pipeline.md
-- ../architecture/canonical-schema-model.md
-- ../architecture/transformation-pipeline.md
+Projection packages should derive target-owned domain semantic models from the unified model surface rather than adapting through the removed legacy shape graph.

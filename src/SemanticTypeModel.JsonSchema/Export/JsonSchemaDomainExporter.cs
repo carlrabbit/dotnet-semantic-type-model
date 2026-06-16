@@ -1,6 +1,6 @@
 using System.Text.Json;
 using SemanticTypeModel.JsonSchema.Domain;
-using Canonical = SemanticTypeModel.Abstractions.Canonical;
+using Model = SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.JsonSchema.Export;
 
@@ -12,7 +12,7 @@ public static class JsonSchemaDomainExporter
     {
         ArgumentNullException.ThrowIfNull(model);
         options ??= JsonSchemaExportOptions.Default;
-        List<Canonical.SchemaDiagnostic> diagnostics = [.. model.Diagnostics];
+        List<Model.SchemaDiagnostic> diagnostics = [.. model.Diagnostics];
 
         using MemoryStream stream = new();
         using Utf8JsonWriter writer = new(stream, new JsonWriterOptions { Indented = true });
@@ -50,7 +50,7 @@ public static class JsonSchemaDomainExporter
         return new JsonSchemaExportResult(JsonDocument.Parse(stream.ToArray()), diagnostics);
     }
 
-    private static void WriteNode(Utf8JsonWriter writer, JsonSchemaNode node, List<Canonical.SchemaDiagnostic> diagnostics, string pointer)
+    private static void WriteNode(Utf8JsonWriter writer, JsonSchemaNode node, List<Model.SchemaDiagnostic> diagnostics, string pointer)
     {
         if (!string.IsNullOrWhiteSpace(node.Title))
         {
@@ -108,7 +108,7 @@ public static class JsonSchemaDomainExporter
         }
     }
 
-    private static void WriteObject(Utf8JsonWriter writer, JsonSchemaObjectNode obj, List<Canonical.SchemaDiagnostic> diagnostics, string pointer)
+    private static void WriteObject(Utf8JsonWriter writer, JsonSchemaObjectNode obj, List<Model.SchemaDiagnostic> diagnostics, string pointer)
     {
         writer.WriteString("type", "object");
         if (obj.Properties.Count > 0)
@@ -206,7 +206,7 @@ public static class JsonSchemaDomainExporter
         WriteConstraints(writer, scalar.Constraints);
     }
 
-    private static void WriteComposition(Utf8JsonWriter writer, JsonSchemaCompositionNode composition, List<Canonical.SchemaDiagnostic> diagnostics, string pointer)
+    private static void WriteComposition(Utf8JsonWriter writer, JsonSchemaCompositionNode composition, List<Model.SchemaDiagnostic> diagnostics, string pointer)
     {
         var keyword = composition.Kind == JsonSchemaCompositionKind.AnyOf ? "anyOf" : "oneOf";
         if (composition.Alternatives.Count == 0)
@@ -225,7 +225,7 @@ public static class JsonSchemaDomainExporter
         writer.WriteEndArray();
     }
 
-    private static void WriteRef(Utf8JsonWriter writer, JsonSchemaSchemaRef schemaRef, List<Canonical.SchemaDiagnostic> diagnostics, string pointer)
+    private static void WriteRef(Utf8JsonWriter writer, JsonSchemaSchemaRef schemaRef, List<Model.SchemaDiagnostic> diagnostics, string pointer)
     {
         if (schemaRef.Reference is not null)
         {
@@ -316,17 +316,17 @@ public static class JsonSchemaDomainExporter
         }
     }
 
-    private static Canonical.SchemaDiagnostic Diagnostic(string code, string message, string pointer)
+    private static Model.SchemaDiagnostic Diagnostic(string code, string message, string pointer)
     {
         return new()
         {
-            Severity = Canonical.SchemaDiagnosticSeverity.Warning,
+            Severity = Model.SchemaDiagnosticSeverity.Warning,
             Code = code,
             Message = message,
-            Stage = Canonical.SchemaDiagnosticStage.Export,
+            Stage = Model.SchemaDiagnosticStage.Export,
             ModelPath = pointer,
             Source = pointer,
-            ProjectionTarget = Canonical.ProjectionTarget.JsonSchema,
+            ProjectionTarget = Model.ProjectionTarget.JsonSchema,
         };
     }
 }

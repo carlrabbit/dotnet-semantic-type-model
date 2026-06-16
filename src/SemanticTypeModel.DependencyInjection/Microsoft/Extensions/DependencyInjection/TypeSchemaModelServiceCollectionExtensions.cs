@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using SemanticTypeModel.Abstractions.Canonical;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Abstractions.Runtime;
-using RuntimeTypeSchemaModel = SemanticTypeModel.Abstractions.Canonical.TypeSchemaModel;
+using RuntimeTypeSchemaModel = SemanticTypeModel.Abstractions.Model.TypeSchemaModel;
 
 // This file intentionally uses the Microsoft.Extensions.DependencyInjection namespace
 // so the registration methods are discoverable as standard IServiceCollection extensions.
