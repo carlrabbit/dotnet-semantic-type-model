@@ -734,12 +734,12 @@ Run before completing implementation work when code changes:
 
 ### Tier 3
 
-Run only if package layout, package README generation, public API baseline, or package consumption behavior changes:
+Run only if package layout, package README generation, public API compatibility documentation, or package consumption behavior changes:
 
 ```sh
 ./eng/package.sh <version>
 ./eng/package-smoke.sh <version>
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/samples.sh
 ```
 

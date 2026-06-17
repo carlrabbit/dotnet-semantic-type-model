@@ -21,5 +21,5 @@ Run release-readiness validation without publishing artifacts.
 3. `./eng/package.sh <version>`
 4. `./eng/package-smoke.sh <version>`
 5. `./eng/samples.sh` when present
-6. `./eng/public-api.sh`
+6. `./eng/public-docs.sh`
 7. `./eng/public-docs.sh`

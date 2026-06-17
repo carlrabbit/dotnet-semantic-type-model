@@ -25,6 +25,8 @@ public-docs/nuget/SemanticTypeModel.DotNet.md
 public-docs/nuget/SemanticTypeModel.Generators.md
 public-docs/nuget/SemanticTypeModel.SystemTextJson.md
 public-docs/nuget/SemanticTypeModel.DependencyInjection.md
+public-docs/nuget/SemanticTypeModel.Configuration.Generators.md
+public-docs/nuget/SemanticTypeModel.Configuration.md
 public-docs/nuget/SemanticTypeModel.PowerBI.md
 public-docs/nuget/SemanticTypeModel.EFCore.md
 public-docs/samples/getting-started.md
@@ -66,6 +68,8 @@ SemanticTypeModel.JsonSchema
 SemanticTypeModel.DotNet
 SemanticTypeModel.Generators
 SemanticTypeModel.DependencyInjection
+SemanticTypeModel.Configuration
+SemanticTypeModel.Configuration.Generators
 SemanticTypeModel.PowerBI
 SemanticTypeModel.EFCore
 SemanticTypeModel.SystemTextJson
@@ -78,6 +82,8 @@ src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj
 src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj
 src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj
 src/SemanticTypeModel.DependencyInjection/SemanticTypeModel.DependencyInjection.csproj
+src/SemanticTypeModel.Configuration/SemanticTypeModel.Configuration.csproj
+src/SemanticTypeModel.Configuration.Generators/SemanticTypeModel.Configuration.Generators.csproj
 src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj
 src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj
 src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj

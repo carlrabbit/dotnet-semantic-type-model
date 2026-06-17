@@ -62,3 +62,4 @@ For each focus area:
 - [M0038 - Collapse Model/Canonical Split and Align Generator Output](milestones/m0038-collapse-model-canonical-split-and-align-generator-output.md)
 - [M0039 - Documentation Synchronization and 2.2.0 Release Preparation](milestones/m0039-documentation-synchronization-and-2-2-0-release-preparation.md)
 - [M0040 - Configuration Domain Model and Options Registration Projection](milestones/m0040-configuration-domain-model-and-options-registration-projection.md)
+- [M0041 - Remove Stale Public API Baselines and Standardize Package Documentation](milestones/m0041-remove-stale-public-api-baselines-and-standardize-package-documentation.md)

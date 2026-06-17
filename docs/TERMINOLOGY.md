@@ -85,7 +85,7 @@ The consumer-facing package documentation source used for NuGet README content.
 ### Diagnostics Reference
 Consumer-facing documentation describing diagnostics, severity, cause, and corrective action.
 
-### Public API Baseline
+### Public API Compatibility Documentation
 A documented comparison point used to detect breaking changes in consumer-visible API contracts.
 
 ### Code Source

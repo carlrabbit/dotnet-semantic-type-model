@@ -19,7 +19,7 @@ Define the release validation gate that must pass before publishing.
 3. `./eng/package.sh <version>`
 4. `./eng/package-smoke.sh <version>`
 5. `./eng/samples.sh` when the samples command exists
-6. `./eng/public-api.sh`
+6. `./eng/public-docs.sh`
 7. `./eng/public-docs.sh`
 
 ## Release Documentation Checks

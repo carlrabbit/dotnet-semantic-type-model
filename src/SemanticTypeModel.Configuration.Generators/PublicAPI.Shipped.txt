@@ -1,1 +1,0 @@
-SemanticTypeModel.Configuration.Generators.Placeholder

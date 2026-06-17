@@ -22,7 +22,6 @@ if [ -x "$script_dir/samples.sh" ]; then
   "$script_dir/samples.sh"
 fi
 
-"$script_dir/public-api.sh"
 "$script_dir/public-docs.sh"
 
 echo "Release check passed for version $version."

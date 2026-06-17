@@ -8,7 +8,7 @@ Planned.
 
 Core architecture implementation for a public package set.
 
-The repository has public packages, public samples, package README sources, public API baselines, and package validation. This milestone introduces the shared transformation and domain-derivation contract that future JSON Schema, EF Core, Power BI, and System.Text.Json domain packages must reuse.
+The repository has public packages, public samples, package README sources, public API compatibility documentation, and package validation. This milestone introduces the shared transformation and domain-derivation contract that future JSON Schema, EF Core, Power BI, and System.Text.Json domain packages must reuse.
 
 ## Task Mode
 

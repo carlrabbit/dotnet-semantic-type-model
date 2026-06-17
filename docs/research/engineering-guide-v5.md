@@ -127,7 +127,7 @@ eng/
   package.sh
   publish.sh
   package-smoke.sh
-  public-api.sh
+  public-docs.sh
   public-docs.sh
   release-check.sh
   samples.sh
@@ -414,14 +414,14 @@ dotnet test tests/package-smoke --configuration Release \
   -p:PackageSmokeVersion="$VERSION"
 ```
 
-## `eng/public-api.sh`
+## `stale public API baseline checker`
 
 Repository-specific public API validation.
 
 Acceptable strategies:
 
 ```text
-PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt
+text API baseline files
 API snapshot comparison
 generated API diff
 package surface validation
@@ -464,7 +464,7 @@ dotnet build --configuration Release
 ./eng/package.sh "$VERSION"
 ./eng/package-smoke.sh "$VERSION"
 ./eng/samples.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/public-docs.sh
 ```
 

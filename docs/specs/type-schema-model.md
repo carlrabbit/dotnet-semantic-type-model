@@ -10,7 +10,7 @@ The canonical semantic type model public contracts are represented by `SemanticT
 
 The supported model family includes `TypeSchemaModel`, typed identifiers, annotation bags, `TypeDefinition` subtypes, property definitions, key definitions, relationship definitions, constraints, scalar metadata, enum metadata, composition metadata, and typed references.
 
-The legacy shape graph that used `TypeShape`, `ObjectShape`, `PropertyShape`, `ShapeRef`, and `SchemaAnnotation` is removed from shipped source and public API baselines after M0038.
+The legacy shape graph that used `TypeShape`, `ObjectShape`, `PropertyShape`, `ShapeRef`, and `SchemaAnnotation` is removed from shipped source and public API compatibility documentation after M0038.
 
 ## Traversal
 

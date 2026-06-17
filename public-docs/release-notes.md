@@ -13,7 +13,7 @@ M0040 introduces initial Configuration domain model support and a projection-neu
 
 ### Compatibility Notes
 
-Human review is required before publishing package naming, diagnostic IDs, public API baselines, generated registration helper ergonomics, cross-domain default behavior, and release-note wording.
+Human review is required before publishing package naming, diagnostic IDs, public API compatibility documentation, generated registration helper ergonomics, cross-domain default behavior, and release-note wording.
 
 ## 2.2.0
 

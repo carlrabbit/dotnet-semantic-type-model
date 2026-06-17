@@ -57,7 +57,7 @@ Human review is still required for public API additions, package naming, diagnos
 - Support the Cold Storage sample scenario.
 - Add diagnostics and inspection support for configuration and conditional constraints.
 - Update JSON Schema, EF Core, Power BI, and System.Text.Json handling for new core conditional constraints.
-- Add tests, samples, public docs, package README sources, public API baselines, and release notes for the feature.
+- Add tests, samples, public docs, package README sources, public API compatibility documentation, and release notes for the feature.
 
 ### Out of Scope
 
@@ -138,7 +138,7 @@ docs/specs/system-text-json-domain-model-and-resolver-projection.md
 docs/specs/system-text-json-contract-integration.md
 ```
 
-Read when modifying public docs, package README sources, public API baselines, samples, or release notes:
+Read when modifying public docs, package README sources, public API compatibility documentation, samples, or release notes:
 
 ```text
 docs/PUBLIC-DOCS.md
@@ -250,7 +250,7 @@ Implementation requirements:
 - Add package README source for new Configuration package(s).
 - Update public guides for core semantics, Configuration, JSON Schema, System.Text.Json, and samples.
 - Update package list and installation docs.
-- Update public API baselines.
+- Update public API compatibility documentation.
 - Update release notes for the next release line.
 - Document explicit non-goals.
 
@@ -317,7 +317,7 @@ Completion gate:
 ./eng/package.sh 0.0.0-m0040
 ./eng/package-smoke.sh 0.0.0-m0040
 ./eng/samples.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/public-docs.sh
 ```
 
@@ -379,7 +379,7 @@ Human review is required for:
 
 - whether `RequiredWhen` is the correct first conditional primitive;
 - public package naming;
-- public API baseline changes;
+- public API compatibility documentation changes;
 - diagnostic ID allocation;
 - generated Options registration API ergonomics;
 - cross-domain default behavior for conditional constraints;

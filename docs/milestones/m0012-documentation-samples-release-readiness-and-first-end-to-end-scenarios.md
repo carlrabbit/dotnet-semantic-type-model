@@ -14,7 +14,7 @@ Introduce the first consumer-facing public documentation, runnable samples, and 
 - New engineering commands:
   - `./eng/public-docs.sh`
   - `./eng/package-smoke.sh <version>`
-  - `./eng/public-api.sh`
+  - `./eng/public-docs.sh`
   - `./eng/release-check.sh <version>`
   - `./eng/samples.sh`
 - Runnable samples for:

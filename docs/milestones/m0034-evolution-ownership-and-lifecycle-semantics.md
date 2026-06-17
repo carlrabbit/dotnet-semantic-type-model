@@ -436,12 +436,12 @@ Run before completing implementation work when code changes:
 
 ### Tier 3
 
-Run only if package layout, public API baselines, samples, package README sources, or release-candidate behavior changes:
+Run only if package layout, public API compatibility documentation, samples, package README sources, or release-candidate behavior changes:
 
 ```sh
 ./eng/package.sh <version>
 ./eng/package-smoke.sh <version>
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/public-docs.sh
 ./eng/samples.sh
 ```

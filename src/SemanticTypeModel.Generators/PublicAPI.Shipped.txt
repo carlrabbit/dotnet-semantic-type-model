@@ -1,2 +1,0 @@
-# Public API baseline for SemanticTypeModel.Generators
-SemanticTypeModel.Generators

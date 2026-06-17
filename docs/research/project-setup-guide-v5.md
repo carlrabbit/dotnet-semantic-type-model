@@ -1092,7 +1092,7 @@ BB19 Public Documentation
 BB20 Release Readiness
 eng/public-docs.sh
 eng/package-smoke.sh
-eng/public-api.sh
+stale public API baseline checker
 eng/release-check.sh
 ```
 

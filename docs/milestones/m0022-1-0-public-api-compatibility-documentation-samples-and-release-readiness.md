@@ -201,7 +201,7 @@ old docs recommending compatibility APIs
 
 The final Power BI public documentation must use only the intended 1.0 API.
 
-If any legacy type is retained, the implementation must document why it is part of the 1.0 contract and add it to public API baselines deliberately.
+If any legacy type is retained, the implementation must document why it is part of the 1.0 contract and add it to public API compatibility documentation deliberately.
 
 ## Public API Stabilization
 
@@ -228,12 +228,12 @@ For each package:
 - make result types consistent;
 - make diagnostic return patterns consistent;
 - ensure public XML documentation exists;
-- update public API baselines;
+- update public API compatibility documentation;
 - ensure package dependencies match the intended layering.
 
-Public API baseline files must be updated intentionally.
+Public API compatibility documentation files must be updated intentionally.
 
-If the repository uses `PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt`, use those files consistently.
+If the repository uses `API review artifacts`, use those files consistently.
 
 ## Compatibility Policy
 
@@ -401,7 +401,7 @@ Required commands:
 
 ```sh
 ./eng/check.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/public-docs.sh
 ./eng/package-smoke.sh 1.0.0-rc.1
 ./eng/release-check.sh 1.0.0-rc.1
@@ -446,7 +446,7 @@ The milestone is complete when:
 - JSON Editor compatibility is documented as a feature of `SemanticTypeModel.JsonSchema`;
 - no public type remains solely for pre-1.0 backward compatibility;
 - Power BI legacy compatibility APIs are removed, internalized, renamed, or explicitly justified as 1.0 contract;
-- public API baselines are updated intentionally;
+- public API compatibility documentation are updated intentionally;
 - diagnostics are stable and documented;
 - annotation keys are stable and documented;
 - projection capability docs match implementation and package boundaries;
@@ -456,7 +456,7 @@ The milestone is complete when:
 - package smoke tests validate the intended package set from package artifacts;
 - `docs/MILESTONES.md` lists M0022 and M0023;
 - `./eng/check.sh` passes;
-- `./eng/public-api.sh` passes;
+- `./eng/public-docs.sh` passes;
 - `./eng/public-docs.sh` passes;
 - `./eng/release-check.sh 1.0.0-rc.1` passes or documented repository-equivalent release validation passes.
 
@@ -468,7 +468,7 @@ When closing this milestone, report:
 - removed packages or package references;
 - removed/internalized legacy public APIs;
 - remaining experimental APIs, if any;
-- public API baseline changes;
+- public API compatibility documentation changes;
 - diagnostic changes;
 - annotation key changes;
 - documentation files updated;
