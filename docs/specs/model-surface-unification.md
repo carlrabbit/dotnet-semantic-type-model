@@ -61,7 +61,7 @@ SchemaAnnotation
 - Generated providers return `SemanticTypeModel.Abstractions.Model.TypeSchemaModel`.
 - Domain derivation entry points accept `SemanticTypeModel.Abstractions.Model.TypeSchemaModel` directly.
 - Projection packages must not require consumers to convert source-generated models before use.
-- `SemanticTypeModel.Abstractions.Model` must not appear in shipped public source or public API baselines after migration.
+- `SemanticTypeModel.Abstractions.Model` must not appear in shipped public source or public API compatibility documentation after migration.
 - Old shape-graph contracts must not remain as active public compatibility contracts.
 - Internal test fixtures may construct model instances directly, but public samples must use the code-first generator path.
 - Public documentation must describe annotated .NET code plus generated provider output as the supported authoring path.
@@ -120,7 +120,7 @@ M0038 is an intentional public surface cleanup for the 2.2.0 line.
 Breaking changes must be reflected in:
 
 ```text
-public API baselines
+public API compatibility documentation
 public-docs/api/compatibility.md
 public-docs/release-notes.md
 package README sources
@@ -146,7 +146,7 @@ source generator output compiles against unified Model contracts
 all projection packages accept generated model output directly
 public samples no longer hand-build canonical models
 old Model shape graph is absent from shipped source
-Canonical namespace is absent from shipped source and public API baselines
-public API baselines are updated intentionally
+Canonical namespace is absent from shipped source and public API compatibility documentation
+public API compatibility documentation are updated intentionally
 public docs and package README sources match the new usage path
 ```

@@ -56,6 +56,8 @@ NuGet package README sources are mapped per package:
 - `SemanticTypeModel.DotNet` -> `public-docs/nuget/SemanticTypeModel.DotNet.md`
 - `SemanticTypeModel.Generators` -> `public-docs/nuget/SemanticTypeModel.Generators.md`
 - `SemanticTypeModel.DependencyInjection` -> `public-docs/nuget/SemanticTypeModel.DependencyInjection.md`
+- `SemanticTypeModel.Configuration` -> `public-docs/nuget/SemanticTypeModel.Configuration.md`
+- `SemanticTypeModel.Configuration.Generators` -> `public-docs/nuget/SemanticTypeModel.Configuration.Generators.md`
 - `SemanticTypeModel.PowerBI` -> `public-docs/nuget/SemanticTypeModel.PowerBI.md`
 - `SemanticTypeModel.EFCore` -> `public-docs/nuget/SemanticTypeModel.EFCore.md`
 - `SemanticTypeModel.SystemTextJson` -> `public-docs/nuget/SemanticTypeModel.SystemTextJson.md`

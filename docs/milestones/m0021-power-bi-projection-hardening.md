@@ -740,7 +740,7 @@ If release scripts exist, implementation must also pass:
 ```sh
 ./eng/package-smoke.sh 0.1.0-alpha
 ./eng/public-docs.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ```
 
 If `./eng/release-check.sh` exists and is expected for milestone validation, run:

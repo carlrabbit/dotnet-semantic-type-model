@@ -134,7 +134,7 @@ Package and release capable repositories may add:
 ./eng/package.sh
 ./eng/publish.sh
 ./eng/package-smoke.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/public-docs.sh
 ./eng/release-check.sh
 ```
@@ -252,7 +252,7 @@ A repository generated from the base blocks should use this layout:
 │  ├─ package.sh
 │  ├─ publish.sh
 │  ├─ package-smoke.sh
-│  ├─ public-api.sh
+│  ├─ public-docs.sh
 │  ├─ public-docs.sh
 │  ├─ release-check.sh
 │  ├─ common.sh
@@ -458,7 +458,7 @@ dotnet test tests/package-smoke --configuration Release \
   -p:PackageSmokeVersion="$VERSION"
 ```
 
-## `eng/public-api.sh`
+## `stale public API baseline checker`
 
 ```sh
 #!/usr/bin/env sh
@@ -466,7 +466,7 @@ set -eu
 
 # Repository-specific implementation.
 # Typical options:
-# - PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt validation
+# - text API baseline files validation
 # - Verify snapshots
 # - generated API diff
 # - package public surface validation
@@ -514,7 +514,7 @@ dotnet build --configuration Release
 ./eng/package.sh "$VERSION"
 ./eng/package-smoke.sh "$VERSION"
 ./eng/samples.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/public-docs.sh
 ```
 
@@ -1519,7 +1519,7 @@ For NuGet libraries preparing for version 1.0, this block is required.
 ```text
 eng/release-check.sh
 eng/package-smoke.sh
-eng/public-api.sh
+stale public API baseline checker
 docs/engineering/release-readiness.md
 docs/workflows/release-check.md
 tests/package-smoke/
@@ -1533,7 +1533,7 @@ tests/package-smoke/
 3. ./eng/package.sh <version>
 4. ./eng/package-smoke.sh <version>
 5. ./eng/samples.sh
-6. ./eng/public-api.sh
+6. ./eng/public-docs.sh
 7. ./eng/public-docs.sh
 ```
 
@@ -1557,8 +1557,8 @@ For public libraries, track public API intentionally.
 Recommended options:
 
 ```text
-PublicAPI.Shipped.txt
-PublicAPI.Unshipped.txt
+text API baseline file
+text API baseline file
 ```
 
 or an equivalent snapshot-based public API check.
@@ -1752,7 +1752,7 @@ docs/engineering/release-readiness.md
 docs/workflows/release-check.md
 eng/release-check.sh
 eng/package-smoke.sh
-eng/public-api.sh
+stale public API baseline checker
 tests/package-smoke/
 ```
 
@@ -1772,7 +1772,7 @@ Add:
 ```text
 ./eng/public-docs.sh
 ./eng/package-smoke.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/release-check.sh <version>
 ```
 
@@ -1808,8 +1808,8 @@ Choose and document a public API validation strategy.
 Examples:
 
 ```text
-PublicAPI.Shipped.txt
-PublicAPI.Unshipped.txt
+text API baseline file
+text API baseline file
 ```
 
 or an equivalent snapshot-based strategy.
@@ -1817,7 +1817,7 @@ or an equivalent snapshot-based strategy.
 Add command:
 
 ```text
-./eng/public-api.sh
+./eng/public-docs.sh
 ```
 
 ## 7. Update samples documentation
@@ -1911,7 +1911,7 @@ It adds the release-oriented surface needed for public NuGet libraries:
 - `docs/PUBLIC-DOCS.md` as synchronization authority;
 - `eng/public-docs.sh` for public documentation validation;
 - `eng/package-smoke.sh` for packed-package consumer validation;
-- `eng/public-api.sh` for public API control;
+- `stale public API baseline checker` for public API control;
 - `eng/release-check.sh` as the release gate;
 - BB19 Public Documentation;
 - BB20 Release Readiness.

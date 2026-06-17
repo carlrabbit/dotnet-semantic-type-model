@@ -19,7 +19,7 @@ Implemented.
 
 Architectural scope correction for a public package set.
 
-The repository has public packages, public samples, public API baselines, package README sources, and package validation. This milestone changes the project’s core product direction and must update authoritative specifications and architecture before implementation agents continue feature work.
+The repository has public packages, public samples, public API compatibility documentation, package README sources, and package validation. This milestone changes the project’s core product direction and must update authoritative specifications and architecture before implementation agents continue feature work.
 
 ## Task Mode
 

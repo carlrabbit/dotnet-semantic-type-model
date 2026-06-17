@@ -62,6 +62,8 @@ Each derivation returns diagnostics and inspection output so unsupported or ambi
 - `SemanticTypeModel.DotNet`
 - `SemanticTypeModel.Generators`
 - `SemanticTypeModel.DependencyInjection`
+- `SemanticTypeModel.Configuration`
+- `SemanticTypeModel.Configuration.Generators`
 - `SemanticTypeModel.PowerBI`
 - `SemanticTypeModel.EFCore`
 - `SemanticTypeModel.SystemTextJson`

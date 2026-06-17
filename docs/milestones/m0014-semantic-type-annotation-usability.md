@@ -849,7 +849,7 @@ Add tests for:
 - valid neutral attributes compile;
 - attributes reject invalid targets where possible;
 - XML documentation exists for public attributes;
-- public API baseline includes intended attributes only.
+- public API compatibility documentation includes intended attributes only.
 
 ### Extraction tests
 

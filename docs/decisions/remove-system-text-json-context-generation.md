@@ -62,7 +62,7 @@ Rejected for M0024 because it would introduce a different build-time architectur
 
 ### Keep the API as No-Op Compatibility Surface
 
-Allowed only as a short compatibility bridge if public API baselines or compatibility policy require it. If retained, the API must be marked obsolete or documented as unsupported and must not imply functional generated context support.
+Allowed only as a short compatibility bridge if public API compatibility documentation or compatibility policy require it. If retained, the API must be marked obsolete or documented as unsupported and must not imply functional generated context support.
 
 ### Require Consumers to Author Contexts
 

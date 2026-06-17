@@ -8,7 +8,7 @@ Planned.
 
 Domain package architecture implementation for a public package set.
 
-The repository has public packages, package README sources, public samples, public API baselines, and package validation. This milestone changes the public role of `SemanticTypeModel.JsonSchema` from a general import/export adapter to the reference implementation of the M0026/M0028 domain semantic model architecture.
+The repository has public packages, package README sources, public samples, public API compatibility documentation, and package validation. This milestone changes the public role of `SemanticTypeModel.JsonSchema` from a general import/export adapter to the reference implementation of the M0026/M0028 domain semantic model architecture.
 
 ## Task Mode
 

@@ -28,3 +28,4 @@ Decision records are not authoritative for:
 | decisions/remove-legacy-model-compatibility-and-hardened-terminology.md | Rationale for removing old model compatibility APIs, stale transition terminology, and System.Text.Json ad hoc model access |
 | decisions/unify-public-model-surface-under-model-namespace.md | Rationale for making `SemanticTypeModel.Abstractions.Model` the sole public model namespace and removing the old shape graph |
 | decisions/configuration-domain-is-options-registration-projection.md | Rationale for adding Configuration as a domain projection while keeping Options registration behavior outside core semantics |
+| decisions/remove-fake-public-api-baselines.md | Rationale for removing stale public API baseline files and script-only baseline checks |

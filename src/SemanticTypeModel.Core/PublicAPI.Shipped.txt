@@ -1,2 +1,0 @@
-# Public API baseline for SemanticTypeModel.Core
-SemanticTypeModel.Core

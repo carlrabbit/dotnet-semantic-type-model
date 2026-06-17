@@ -281,7 +281,7 @@ docs/engineering/release-readiness.md
 - Require human review for:
   - final release notes wording;
   - breaking-change classification;
-  - public API baseline changes;
+  - public API compatibility documentation changes;
   - package version selection;
   - any decision to publish.
 
@@ -445,7 +445,7 @@ Human review is required before declaring 2.1.0 release readiness for:
 
 - final release notes;
 - compatibility and breaking-change classification;
-- public API baseline changes;
+- public API compatibility documentation changes;
 - NuGet package version selection;
 - sample scope and dogfood boundaries;
 - any decision to publish packages;

@@ -23,7 +23,7 @@ Version **2.1.0 is already released**. M0039 targets the **2.2.0** line only.
 | Role | Product repository and capability provider |
 | Profile | `dotnet-library` |
 | Maturity | Post-2.1.0 public package set preparing 2.2.0 |
-| Capability-provider scope | The repository implements model contracts, source generation, transformations, domain projections, samples, public API baselines, package docs, and release validation. |
+| Capability-provider scope | The repository implements model contracts, source generation, transformations, domain projections, samples, public API compatibility documentation, package docs, and release validation. |
 | Consumer/dogfood scope | Samples validate consumer package usage only where bounded by sample engineering policy. |
 
 ## Execution Mode
@@ -86,7 +86,7 @@ Establish the factual basis for documentation and release notes before changing 
 #### Requirements
 
 - Inspect the implemented model surface and confirm the final public namespace and removed namespace behavior.
-- Verify whether `SemanticTypeModel.Abstractions.Canonical` is absent from shipped source, public docs, samples, and public API baselines or explicitly documented as removed.
+- Verify whether `SemanticTypeModel.Abstractions.Canonical` is absent from shipped source, public docs, samples, and public API compatibility documentation or explicitly documented as removed.
 - Verify whether source-generated providers now return the unified model type and can be passed directly to projections.
 - Verify whether samples compile and use generated providers rather than hand-built model instances.
 - Record unresolved implementation/documentation mismatches as release blockers rather than masking them in docs.
@@ -180,7 +180,7 @@ Prepare release-facing documentation for human review and release candidate vali
 - State that 2.2.0 includes the model-surface unification and generator alignment when confirmed by implementation state.
 - Document breaking changes and migration guidance for consumers using old `Canonical` or old shape-graph types.
 - Update `public-docs/versioning.md` only if release/versioning policy changed.
-- Update public API baseline documentation and compatibility docs based on actual `./eng/public-api.sh` output.
+- Update public API compatibility documentation documentation and compatibility docs based on actual `./eng/public-docs.sh` output.
 - Record release blockers rather than presenting unresolved API or sample failures as complete.
 
 #### Validation
@@ -188,7 +188,7 @@ Prepare release-facing documentation for human review and release candidate vali
 - Tier 3:
 
 ```sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/public-docs.sh
 ```
 
@@ -243,12 +243,12 @@ Release-readiness validation completed during M0039:
 - `./eng/package.sh 2.2.0` passed.
 - `./eng/package-smoke.sh 2.2.0` passed.
 - `./eng/samples.sh` passed.
-- `./eng/public-api.sh` passed after `./eng/restore.sh` generated missing assets.
+- `./eng/public-docs.sh` passed after `./eng/restore.sh` generated missing assets.
 - `./eng/release-check.sh 2.2.0` passed.
 
 Release-review items that remain human-owned:
 
-- public API baseline diffs and compatibility wording;
+- public API compatibility documentation diffs and compatibility wording;
 - 2.2.0 release-note wording;
 - sample behavior claims for focused samples that still use local model factories rather than generated providers;
 - the completed 2.2.0 release-readiness validation output before any publish decision.
@@ -356,7 +356,7 @@ Run before completing M0039:
 ./eng/package.sh 2.2.0
 ./eng/package-smoke.sh 2.2.0
 ./eng/samples.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/public-docs.sh
 ./eng/release-check.sh 2.2.0
 ```
@@ -379,7 +379,7 @@ Do not run publish validation or publish commands in M0039 unless a later human 
 - `./eng/public-docs.sh` passes.
 - `./eng/release-check.sh 2.2.0` passes or remaining failures are recorded as release blockers.
 - No source, test, workflow, TBP, issue-template, copied-guide, or non-root README files are introduced.
-- Human review is completed for public API baseline diffs, release notes, compatibility wording, and any remaining release blockers.
+- Human review is completed for public API compatibility documentation diffs, release notes, compatibility wording, and any remaining release blockers.
 
 ## Direct Documentation Impact
 
@@ -407,7 +407,7 @@ After M0039 is complete, remove or archive resolved M0038/M0039 pending hints on
 
 Human review is required for:
 
-- any public API baseline change;
+- any public API compatibility documentation change;
 - breaking-change wording in `public-docs/api/compatibility.md`;
 - `public-docs/release-notes.md` 2.2.0 release notes;
 - sample behavior claims;

@@ -121,7 +121,7 @@ Required local validation:
 
 ```sh
 ./eng/check.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/public-docs.sh
 ./eng/release-check.sh 1.0.0-rc.1
 ```
@@ -159,7 +159,7 @@ Review:
 - package metadata;
 - package README content;
 - symbol package presence where configured;
-- public API baseline diff;
+- public API compatibility documentation diff;
 - diagnostics reference;
 - projection capability docs;
 - release notes;
@@ -187,7 +187,7 @@ A release blocker includes:
 - package cannot be restored;
 - package cannot be installed in a clean project;
 - package smoke tests fail;
-- public API baseline is accidental or inconsistent with M0022 decisions;
+- public API compatibility documentation is accidental or inconsistent with M0022 decisions;
 - package dependency boundaries are wrong;
 - package README is missing or misleading;
 - root README contains obsolete package guidance;
@@ -218,7 +218,7 @@ Required validation:
 
 ```sh
 ./eng/check.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/public-docs.sh
 ./eng/release-check.sh 1.0.0
 ./eng/package.sh 1.0.0
@@ -357,7 +357,7 @@ The milestone is complete when:
 - `SemanticTypeModel.JsonEditor` is not published unless a real package exists and is intentionally included;
 - `1.0.0-rc.1` package artifacts are produced and validated, or an equivalent release-candidate validation is documented;
 - release blockers from RC validation are fixed;
-- public API baseline diff is reviewed and accepted;
+- public API compatibility documentation diff is reviewed and accepted;
 - public docs are frozen for final release;
 - release notes contain `1.0.0-rc.1` and `1.0.0` entries as appropriate;
 - `./eng/release-check.sh 1.0.0` passes;

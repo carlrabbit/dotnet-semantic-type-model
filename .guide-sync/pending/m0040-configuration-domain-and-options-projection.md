@@ -71,7 +71,7 @@ Use documentation and release-readiness validation after synchronization:
 ```sh
 ./eng/public-docs.sh
 ./eng/samples.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ```
 
 Run the full release candidate gate only if the synchronization pass is part of release readiness.

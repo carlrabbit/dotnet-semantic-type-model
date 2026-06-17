@@ -13,7 +13,7 @@ Use validation tiers to keep local feedback focused while preserving reliable co
 | Tier 0 | Static/documentation | `dotnet format --verify-no-changes --include <files>`, `./eng/public-docs.sh` for public docs, shell syntax checks | Documentation-only edits, script edits, and very small static changes. |
 | Tier 1 | Focused validation | `./eng/test-project.sh <project>`, `./eng/test-filter.sh <filter>`, targeted `dotnet test` through canonical wrappers | Inner-loop implementation validation for the affected project or scenario. |
 | Tier 2 | Repository check | `./eng/check.sh` | Standard completion gate for implementation work. Runs restore, build, short-running tests, and format verification. |
-| Tier 3 | Release candidate | `./eng/package.sh <version>`, `./eng/package-smoke.sh <version>`, `./eng/public-api.sh`, `./eng/public-docs.sh`, `./eng/samples.sh`, `./eng/release-check.sh <version>` | Packaging and release-readiness validation before publishing. |
+| Tier 3 | Release candidate | `./eng/package.sh <version>`, `./eng/package-smoke.sh <version>`, `./eng/public-docs.sh`, `./eng/samples.sh`, `./eng/release-check.sh <version>` | Packaging and release-readiness validation before publishing. |
 | Tier 4 | Publish | `./eng/release-check.sh <version>` then `./eng/publish.sh <version>` or the publish workflow | Final release publication. Requires configured credentials and explicit release intent. |
 
 `./eng/check.sh` is Tier 2. It is the normal implementation completion gate, but it is not mandatory for every inner-loop validation run when a narrower Tier 1 command is more appropriate.
@@ -68,6 +68,7 @@ See `docs/specs/diagnostics.md` for the full diagnostic specification.
 | engineering/dotnet.md | .NET engineering profile |
 | engineering/command-contract.md | Canonical repository command contract |
 | engineering/packaging.md | NuGet packaging and publishing policy |
+| engineering/package-documentation.md | Package README and usage-guide documentation expectations |
 | engineering/release-readiness.md | Release gate sequence |
 | engineering/public-documentation.md | Public documentation validation policy |
 | engineering/samples.md | Runnable sample engineering policy |

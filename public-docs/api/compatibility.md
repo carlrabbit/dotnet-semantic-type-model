@@ -2,15 +2,16 @@
 
 ## Public API Compatibility
 
-- Public API baseline is currently documentation-driven and validated by `./eng/public-api.sh` presence checks.
-- Breaking changes require explicit milestone/release documentation.
+- Public API compatibility is reviewed through package smoke tests, runnable samples, public documentation, release notes, compatibility documentation, and human review.
+- Breaking changes require explicit milestone and release documentation.
+- The repository does not currently maintain text API baseline files as release gates.
 - `SemanticTypeModel.SystemTextJson` 1.1.0 removed generated `JsonSerializerContext` support as a documented compatibility correction because the 1.0 design depended on unsupported source-generator chaining.
 - 2.2.0 release-preparation documentation records M0038 as the model-surface cleanup boundary; removed `Canonical` namespace and old shape-graph APIs must not be presented as supported current usage.
 
 ## 2.2.0 Model Surface Compatibility
 
 - `SemanticTypeModel.Abstractions.Model` is the supported public model surface for canonical semantic model contracts.
-- `SemanticTypeModel.Abstractions.Canonical` is removed from shipped source and public API baselines.
+- `SemanticTypeModel.Abstractions.Canonical` is removed from shipped source and compatibility documentation.
 - The old `TypeShape` / `ObjectShape` / `PropertyShape` / `ShapeRef` shape graph is removed rather than retained as a compatibility shim.
 - Source-generated providers return `SemanticTypeModel.Abstractions.Model.TypeSchemaModel` directly for projection packages.
 - JSON Schema import remains compatibility-oriented and is not the supported canonical authoring path; use annotated .NET code plus generated providers for public samples and package guidance.

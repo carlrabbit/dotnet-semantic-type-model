@@ -87,7 +87,7 @@ Before completing M0039, run or record blockers for:
 ./eng/package.sh 2.2.0
 ./eng/package-smoke.sh 2.2.0
 ./eng/samples.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/release-check.sh 2.2.0
 ```
 

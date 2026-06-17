@@ -8,7 +8,7 @@ Planned.
 
 Core product surface implementation for a public package set.
 
-The repository has public packages, public samples, package README sources, and public API baselines. This milestone introduces a new public development-loop surface for querying and inspecting generated semantic models. The feature is foundational for later domain-specific semantic models and must be specified before implementation.
+The repository has public packages, public samples, package README sources, and public API compatibility documentation. This milestone introduces a new public development-loop surface for querying and inspecting generated semantic models. The feature is foundational for later domain-specific semantic models and must be specified before implementation.
 
 ## Task Mode
 

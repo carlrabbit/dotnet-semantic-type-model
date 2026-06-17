@@ -15,7 +15,7 @@ SemanticTypeModel.Abstractions.Model
   is the sole public namespace for canonical semantic model contracts.
 
 SemanticTypeModel.Abstractions.Canonical
-  is removed from shipped source, public docs, and public API baselines or documented only as a removed 2.2.0 compatibility break.
+  is removed from shipped source, public docs, and public API compatibility documentation or documented only as a removed 2.2.0 compatibility break.
 
 SemanticTypeModel.Abstractions.Model.TypeShape / ObjectShape / PropertyShape / ShapeRef
   old shape-graph contracts are removed rather than kept as compatibility shims.
@@ -34,7 +34,7 @@ This milestone targets the **2.2.0** line. Version **2.1.0 is already released**
 | Role | Product repository and capability provider |
 | Profile | `dotnet-library` |
 | Maturity | Post-2.1.0 public package set preparing the 2.2.0 line |
-| Capability-provider scope | The repository implements semantic model contracts, source generation, transformations, domain projections, samples, public API baselines, and package documentation. |
+| Capability-provider scope | The repository implements semantic model contracts, source generation, transformations, domain projections, samples, public API compatibility documentation, and package documentation. |
 | Consumer/dogfood scope | Samples must prove consumer package usage only where bounded by the sample engineering policy. |
 
 ## Execution Mode
@@ -56,7 +56,7 @@ The design authority is clear: the current canonical model contracts must become
 - Update `SemanticTypeModel.Core` transformation, validation, query, and inspection APIs to use the unified model surface.
 - Update JSON Schema, EF Core, Power BI, System.Text.Json, and dependency-injection packages to consume the unified model surface.
 - Replace public samples that manually construct canonical models with code-first generator-backed samples.
-- Update public API baselines and compatibility documentation for the 2.2.0 breaking surface cleanup.
+- Update public API compatibility documentation and compatibility documentation for the 2.2.0 breaking surface cleanup.
 - Update package README sources, public guides, sample docs, and release notes where behavior or usage changes.
 
 ### Out of Scope
@@ -132,7 +132,7 @@ docs/specs/system-text-json-domain-model-and-resolver-projection.md
 docs/specs/system-text-json-contract-integration.md
 ```
 
-Read when modifying public docs, package README sources, sample docs, public API baselines, or release notes:
+Read when modifying public docs, package README sources, sample docs, public API compatibility documentation, or release notes:
 
 ```text
 docs/PUBLIC-DOCS.md
@@ -167,7 +167,7 @@ Make the current canonical contracts the only public model contracts under `Sema
 - Tier 1:
   - focused `SemanticTypeModel.Abstractions` tests;
   - compile of packages referencing model contracts;
-  - public API baseline diff review.
+  - public API compatibility documentation diff review.
 - Tier 2 before completion.
 
 ### Focus Area 2 — Align Source Generator Output
@@ -269,7 +269,7 @@ Make the intentional breaking model-surface cleanup visible to consumers and sta
 
 #### Implementation Requirements
 
-- Update public API baselines for all affected packages.
+- Update public API compatibility documentation for all affected packages.
 - Update compatibility docs to state that the old shape-graph model and `Canonical` namespace are removed in the 2.2.0 line.
 - Update public docs and package README sources so examples show generated code-first models passed directly to projections.
 - Update release notes under a 2.2.0 heading without implying release publication.
@@ -277,7 +277,7 @@ Make the intentional breaking model-surface cleanup visible to consumers and sta
 
 #### Validation
 
-- Tier 0/Tier 1 for documentation and public API baseline checks during editing.
+- Tier 0/Tier 1 for documentation and public API compatibility documentation checks during editing.
 - Tier 3 package/public-doc/sample validation before completion.
 
 ## Implementation Constraints
@@ -353,7 +353,7 @@ Required because this milestone changes public package APIs, samples, and packag
 ./eng/package.sh 0.0.0-m0038
 ./eng/package-smoke.sh 0.0.0-m0038
 ./eng/samples.sh
-./eng/public-api.sh
+./eng/public-docs.sh
 ./eng/public-docs.sh
 ```
 
@@ -363,12 +363,12 @@ Do not run publish commands. Do not require `./eng/release-check.sh 2.2.0` unles
 
 - `SemanticTypeModel.Abstractions.Model` contains the unified canonical semantic model contracts.
 - The old `SemanticTypeModel.Abstractions.Model` shape graph is removed from shipped source.
-- `SemanticTypeModel.Abstractions.Canonical` is removed from shipped source and public API baselines.
+- `SemanticTypeModel.Abstractions.Canonical` is removed from shipped source and public API compatibility documentation.
 - The source generator emits a provider whose `Create()` method returns the unified `Model.TypeSchemaModel`.
 - Generated models are accepted directly by JSON Schema, EF Core, Power BI, System.Text.Json, DI, transformation, query, and inspection APIs.
 - Public samples use generated code-first providers rather than hand-built canonical models.
 - Tests no longer rely on old-shape compatibility except for explicitly removed/negative migration tests if needed.
-- Public API baselines reflect the intentional 2.2.0 breaking cleanup.
+- Public API compatibility documentations reflect the intentional 2.2.0 breaking cleanup.
 - Public docs and release notes describe the cleanup without claiming release publication.
 - Tier 2 and required Tier 3 commands pass, or any environment limitation is explicitly documented by the implementation agent.
 
@@ -431,7 +431,7 @@ Human review is required for:
 - whether any temporary obsolete compatibility shim is acceptable; default answer is no;
 - release-note wording for the 2.2.0 line;
 - sample behavior after replacing hand-built models with generated providers;
-- public API baseline diffs;
+- public API compatibility documentation diffs;
 - any decision to retain test-only model factories.
 
 ## Out-of-Scope Guide Migration Work
