@@ -1,49 +1,69 @@
-# JSON Schema Guide
+# JSON Schema
 
-`SemanticTypeModel.JsonSchema` derives a JSON Schema domain semantic model from the canonical semantic model and exports JSON Schema Draft 2020-12 documents.
+## Goal
 
-Annotated .NET code is the supported authoring source for canonical semantic models. JSON Schema import is not the supported canonical model creation path for new consumers.
+Export deterministic JSON Schema Draft 2020-12 documents from a generated code-first semantic model.
 
-## Usage
+## Prerequisites
+
+- .NET 10 SDK.
+- Annotated .NET types are the canonical authoring source.
+- A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
+- The examples assume package version `2.2.0`.
+
+## Packages
+
+- `SemanticTypeModel.JsonSchema` for derivation and export.
+- `SemanticTypeModel.Generators` and `SemanticTypeModel.DotNet` when the model comes from annotated code.
+- `SemanticTypeModel.Core` for transformations and diagnostics.
+
+## Minimal path
+
+1. Generate a `TypeSchemaModel` from annotated .NET code.
+2. Call `DeriveJsonSchemaModel(options => options.UseDefaultTransformations())`.
+3. Check diagnostics.
+4. Call `JsonSchemaExporter.Export(result.Model)`.
+5. Write or inspect the exported document.
+
+## Full example
 
 ```csharp
-using SemanticTypeModel.JsonSchema;
+using SemanticTypeModel.JsonSchema.Derivation;
+using SemanticTypeModel.JsonSchema.Export;
 
-TypeSchemaModel model = AppSemanticTypeModel.Create();
-
-var result = model.DeriveJsonSchemaModel(options =>
-{
-    options.UseDefaultTransformations();
-});
+var result = AppSemanticTypeModel.Create()
+    .DeriveJsonSchemaModel(options => options.UseDefaultTransformations());
 
 result.Diagnostics.ThrowIfErrors();
-
-JsonSchemaExportResult exported = JsonSchemaExporter.Export(result.Model);
+JsonSchemaExportResult export = JsonSchemaExporter.Export(result.Model);
+Console.WriteLine(export.Document.RootElement.GetRawText());
 ```
 
-## Envelope Projection
+## How it works
 
-Envelope semantics are projection-neutral. JSON Schema policy decides whether the exported root is the envelope wrapper, the payload, or an explicit envelope/payload combination.
+Annotated .NET code is extracted by the generator into a `TypeSchemaModel`. Core transformations normalize projection-neutral semantics. The target package derives a domain semantic model and then exports or applies target-specific output when that target supports it.
 
-Default behavior for an envelope root is to export the envelope object and represent the payload as a structured schema reference.
+## Options and policies
 
-Explicit policies can inline the payload schema, expose a JSON-document payload, expose a serialized JSON string payload, or treat the payload as opaque.
+Choose envelope root or payload root policy, payload representation, reference behavior, strictness for additional properties, UI export mode, and handling for extension data. Keep semantic names and JSON serialization names separate unless a target policy intentionally maps them.
 
-## Evolution and Compatibility Semantics
+## Diagnostics
 
-Version, revision, lifecycle state, temporal validity, ownership, and extension-data semantics affect schema metadata and shape decisions without turning JSON Schema into a runtime validator.
+JSON Schema diagnostics report unresolved type references, unsupported scalar mappings, duplicate projected names, ambiguous envelope payload policy, invalid UI hints, and lossy projection choices. Treat diagnostics as part of the export result, not as console-only messages.
 
-Typical behavior:
+## Common mistakes
 
-- owned objects and collections are exported as structured schemas;
-- revision and lifecycle-state members are exported as normal typed properties with semantic metadata;
-- `ValidFrom` and `ValidTo` are exported as date-time properties;
-- `ExtensionData` controls open-member compatibility through `additionalProperties` or `unevaluatedProperties` policy unless explicitly exposed as a normal property.
+- Treating JSON Schema files as the canonical authoring source for new models.
+- Mixing target-specific metadata with projection-neutral semantics.
+- Skipping diagnostic inspection before using projected output.
+- Using stale pre-2.2 model namespace or shape names in current examples.
 
-## JSON Editor Compatibility
+## Limitations
 
-JSON Editor compatibility is an export mode of this package; see [json-editor-compatibility.md](json-editor-compatibility.md).
+The package does not make JSON Schema import the recommended authoring path for new consumers, does not perform runtime JSON validation, and does not infer application migration behavior from schema differences.
 
-## Non-Goals
+## Related docs
 
-`SemanticTypeModel.JsonSchema` does not make JSON Schema documents the canonical authoring source, does not perform runtime JSON validation, and does not infer application migration behavior from schema differences.
+- [SemanticTypeModel.JsonSchema package](../nuget/SemanticTypeModel.JsonSchema.md)
+- [JSON Editor compatibility](json-editor-compatibility.md)
+- [Code-first JSON Schema sample](../samples/code-first-json-schema.md)

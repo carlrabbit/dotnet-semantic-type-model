@@ -54,3 +54,4 @@ The current stable package set is:
 - [EF Core projection guide](guides/ef-core-projection.md)
 - [Power BI projection guide](guides/power-bi-projection.md)
 - [Projection capability matrix](guides/projection-capabilities.md)
+- [Configuration options projection guide](guides/configuration.md)

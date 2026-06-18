@@ -9,6 +9,7 @@ Define authoritative consumer-facing documentation surfaces and synchronization 
 This document is authoritative for:
 - public documentation surfaces;
 - source-of-truth mapping for package README content;
+- package documentation standards;
 - diagnostics reference mapping;
 - sample documentation mapping;
 - release notes obligations;
@@ -34,15 +35,29 @@ This document is authoritative for:
 - `public-docs/guides/power-bi-projection.md`
 - `public-docs/guides/projection-capabilities.md`
 - `public-docs/guides/system-text-json.md`
+- `public-docs/guides/configuration.md`
 - `public-docs/nuget/*.md`
 - `public-docs/samples/*.md`
 - `public-docs/diagnostics/*.md`
+
+## Documentation Type Standards
+
+`docs/engineering/package-documentation.md` defines the repository standard for:
+
+- NuGet package descriptions;
+- NuGet package README sources;
+- usage guides;
+- compatibility documentation;
+- release notes;
+- specs.
 
 ## Synchronization Rules
 
 - Public behavior and installation guidance must be updated in both `README.md` and `public-docs/` when consumer-facing behavior changes.
 - `README.md` remains the repository entry page; `public-docs/` remains the detailed source set.
-- Public API and compatibility statements must align with current shipped assemblies.
+- Package README sources must follow `docs/engineering/package-documentation.md`.
+- Usage guides must follow `docs/engineering/package-documentation.md`.
+- Public API and compatibility statements must align with current shipped assemblies and actual repository validation practice.
 - Diagnostics references must avoid claiming stable IDs unless stability is explicitly guaranteed.
 - Public docs must distinguish semantic meaning from projection-specific representation.
 
@@ -81,5 +96,5 @@ For each release candidate and release:
 - update `public-docs/release-notes.md`;
 - verify `README.md` and `public-docs/getting-started.md` are current;
 - verify per-package README sources;
-- verify API/compatibility and diagnostics pages;
+- verify compatibility and diagnostics pages;
 - verify sample documentation links and command snippets.

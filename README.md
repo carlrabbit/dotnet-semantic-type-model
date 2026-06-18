@@ -104,6 +104,7 @@ Prepare local packages, then run all package-based samples:
 - [public-docs/guides/power-bi-projection.md](public-docs/guides/power-bi-projection.md)
 - [public-docs/guides/projection-capabilities.md](public-docs/guides/projection-capabilities.md)
 - [public-docs/guides/system-text-json.md](public-docs/guides/system-text-json.md)
+- [public-docs/guides/configuration.md](public-docs/guides/configuration.md)
 - [public-docs/versioning.md](public-docs/versioning.md)
 - [public-docs/release-notes.md](public-docs/release-notes.md)
 

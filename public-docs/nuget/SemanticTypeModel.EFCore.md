@@ -1,36 +1,57 @@
 # SemanticTypeModel.EFCore
 
-`SemanticTypeModel.EFCore` derives an EF Core domain semantic model from canonical SemanticTypeModel metadata and applies provider-neutral configuration to EF Core `ModelBuilder`.
+## What this package does
+
+`SemanticTypeModel.EFCore` provides EF Core domain-model derivation and provider-neutral ModelBuilder projection from semantic models.
+
+## Install
 
 ```sh
 dotnet add package SemanticTypeModel.EFCore --version 2.2.0
 ```
 
-This package is part of the stable package set. Public APIs follow the compatibility policy.
+## Use when
 
-## Quick usage
+- Install this package when you need EF Core domain-model derivation and provider-neutral ModelBuilder projection from semantic models.
+- Keep package boundaries explicit in an application or library.
+- Pair generated semantic models with the target runtime you are configuring.
+- Apply semantic metadata inside DbContext.OnModelCreating.
+
+## Minimal example
 
 ```csharp
-using Microsoft.EntityFrameworkCore;
 using SemanticTypeModel.EFCore;
 
-TypeSchemaModel model = AppSemanticTypeModel.Create();
-
-var result = model.DeriveEfCoreModel(options =>
-{
-    options.UseDefaultTransformations();
-});
-
+var result = AppSemanticTypeModel.Create().DeriveEfCoreModel();
 result.Diagnostics.ThrowIfErrors();
-
-var modelBuilder = new ModelBuilder(new Microsoft.EntityFrameworkCore.Metadata.Conventions.ConventionSet());
 modelBuilder.ApplyEfCoreSemanticModel(result.Model);
 ```
 
-## Supported scope
+## Main APIs
 
-The package supports semantic mapping for entities, properties, keys, alternate keys, indexes, requiredness/nullability, conversions, explicit simple relationships, explicit owned/value-object mapping, explicit inheritance strategy mapping, envelope payload storage policies, and projection of evolution/lifecycle semantics as provider-neutral metadata.
+| API | Purpose |
+| --- | --- |
+| `DeriveEfCoreModel` | Derives EF Core semantic metadata. |
+| `ApplyEfCoreSemanticModel` | Applies provider-neutral metadata to ModelBuilder. |
+| `ApplySemanticTypeModel` | Projects directly from a TypeSchemaModel to ModelBuilder. |
+| `EfCoreDerivationOptions` | Controls derivation and projection policies. |
 
-It does not create databases, generate migrations, discover or generate `DbContext` types, configure providers, validate a runtime database, configure global query filters, enable temporal tables, or tune provider-specific JSON behavior.
+## Works with
 
-More details: `public-docs/guides/ef-core-projection.md`.
+- Microsoft.EntityFrameworkCore, SemanticTypeModel.Core, and generated model providers.
+- `SemanticTypeModel.Abstractions.Model` for the current unified model surface.
+- `public-docs/samples/` projects that demonstrate package-based usage.
+
+## Does not do
+
+- It does not create DbContext types, run migrations, select database providers, or tune provider-specific SQL.
+- It does not make milestone plans or historical research documents part of the public API.
+- It does not change compatibility rules described in the compatibility documentation.
+
+## More documentation
+
+- [Package list](../packages.md)
+- [Getting started](../getting-started.md)
+- [Compatibility](../api/compatibility.md)
+- [EF Core projection guide](../guides/ef-core-projection.md)
+- [Core semantics guide](../guides/core-semantics.md)

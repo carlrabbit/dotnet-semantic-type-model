@@ -1,57 +1,72 @@
 # System.Text.Json Integration
 
-`SemanticTypeModel.SystemTextJson` imports serializer-contract metadata into namespaced annotations while keeping the canonical semantic model projection-neutral.
+## Goal
 
-## Install
+Use semantic metadata to customize System.Text.Json resolver behavior while preserving user-owned serializer contexts and converters.
 
-```sh
-dotnet add package SemanticTypeModel.SystemTextJson --version 2.2.0
-```
+## Prerequisites
 
-## Attribute Import
+- .NET 10 SDK.
+- Annotated .NET types are the canonical authoring source.
+- A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
+- The examples assume package version `2.2.0`.
 
-Enable import during compile-time extraction with MSBuild:
+## Packages
 
-```xml
-<PropertyGroup>
-  <SemanticTypeModelImportSystemTextJsonAttributes>true</SemanticTypeModelImportSystemTextJsonAttributes>
-</PropertyGroup>
-```
+- `SemanticTypeModel.SystemTextJson` for derivation and resolver helpers.
+- `SemanticTypeModel.DotNet` and `SemanticTypeModel.Generators` for code-first model generation.
+- `System.Text.Json` for runtime serialization.
 
-`[JsonPropertyName("customer_id")]` becomes `systemTextJson.propertyName=customer_id`. It does not replace the semantic member name unless `SemanticTypeModelUseJsonPropertyNameAsSemanticName=true` is explicitly configured.
+## Minimal path
 
-`[JsonExtensionData]` can be imported as System.Text.Json metadata and, where supported by the current core semantic vocabulary, normalized to extension-data semantics by explicit extraction or derivation behavior.
+1. Keep or create your own `JsonSerializerContext` when source generation is needed.
+2. Generate the semantic model.
+3. Derive System.Text.Json metadata or wrap an existing resolver.
+4. Choose the property-name source explicitly.
+5. Check diagnostics for duplicate final JSON names.
 
-## Source Generation
-
-`SemanticTypeModel` does not generate `JsonSerializerContext` declarations. Consumers who want `System.Text.Json` source generation own the context declaration:
+## Full example
 
 ```csharp
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using SemanticTypeModel.SystemTextJson;
+
 [JsonSerializable(typeof(Customer))]
 internal partial class AppJsonContext : JsonSerializerContext
 {
 }
-```
 
-Generated context output from SemanticTypeModel remains unsupported because source generators are not an ordered transformation pipeline.
-
-## Runtime Helpers
-
-`JsonSerializerOptions.AddSemanticTypeModelJson(model)` installs a conservative resolver that wraps the existing `TypeInfoResolver` when one is already configured, or uses the default resolver when none is present. It does not attempt to emulate arbitrary custom converter behavior.
-
-Existing resolvers and user-authored source-generated contexts can be wrapped directly:
-
-```csharp
 IJsonTypeInfoResolver resolver =
     AppJsonContext.Default.WithSemanticTypeModelJson(
         AppSemanticTypeModel.Create(),
-        options => options.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName);
+        options => options.PropertyNameSource = SemanticJsonPropertyNameSource.SystemTextJsonPropertyNameAnnotation);
 ```
 
-The `PropertyNameSource` option controls whether customization preserves the existing JSON contract, uses the imported `systemTextJson.propertyName` annotation, or uses semantic property names as JSON property names. Duplicate final JSON property names fail deterministically.
+## How it works
 
-## Domain Projection Alignment
+Annotated .NET code is extracted by the generator into a `TypeSchemaModel`. Core transformations normalize projection-neutral semantics. The target package derives a domain semantic model and then exports or applies target-specific output when that target supports it.
 
-The supported consumer concept is resolver-centered integration: canonical semantic model metadata is used to produce deterministic resolver customization behavior through the same canonical-model-to-domain-model pattern as JSON Schema, EF Core, and Power BI.
+## Options and policies
 
-Consumers can derive the System.Text.Json semantic model from the unified `TypeSchemaModel` and wrap an existing resolver or user-authored context; SemanticTypeModel still does not generate `JsonSerializerContext` declarations.
+`SemanticJsonPropertyNameSource` can preserve the existing JSON contract, use imported `systemTextJson.propertyName` annotations, or use semantic property names. Existing resolvers are wrapped rather than replaced.
+
+## Diagnostics
+
+Diagnostics report duplicate projected property names, missing type metadata, unsupported resolver customization, and metadata that cannot be safely applied to the existing JSON contract.
+
+## Common mistakes
+
+- Treating JSON Schema files as the canonical authoring source for new models.
+- Mixing target-specific metadata with projection-neutral semantics.
+- Skipping diagnostic inspection before using projected output.
+- Using stale pre-2.2 model namespace or shape names in current examples.
+
+## Limitations
+
+The package does not generate `JsonSerializerContext` declarations, emulate arbitrary converters, or make semantic names replace JSON names by default.
+
+## Related docs
+
+- [SemanticTypeModel.SystemTextJson package](../nuget/SemanticTypeModel.SystemTextJson.md)
+- [System.Text.Json resolver sample](../samples/system-text-json-resolver.md)
