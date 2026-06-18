@@ -1,73 +1,68 @@
-# Power BI Projection Guide
+# Power BI Projection
 
-`SemanticTypeModel.PowerBI` derives a Power BI domain semantic model from the canonical `TypeSchemaModel` and exports deterministic local analytical metadata.
+## Goal
 
-## Boundary
+Derive local analytical metadata from a semantic model so reporting shape can be inspected before external Power BI tooling uses it.
 
-The package owns semantic analytical metadata derivation and local deterministic output. It does not publish to the Power BI Service, authenticate, manage workspaces, generate PBIX files, schedule refresh, call XMLA endpoints, orchestrate REST APIs, or provide full Tabular Object Model parity.
+## Prerequisites
 
-## Usage
+- .NET 10 SDK.
+- Annotated .NET types are the canonical authoring source.
+- A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
+- The examples assume package version `2.2.0`.
+
+## Packages
+
+- `SemanticTypeModel.PowerBI` for derivation and local metadata export.
+- `SemanticTypeModel.Generators` and `SemanticTypeModel.DotNet` for code-first model generation.
+
+## Minimal path
+
+1. Generate the semantic model.
+2. Derive the Power BI semantic model.
+3. Add explicit measures or calculated tables through options when needed.
+4. Check diagnostics.
+5. Export deterministic local metadata.
+
+## Full example
 
 ```csharp
 using SemanticTypeModel.PowerBI;
 
-TypeSchemaModel model = AppSemanticTypeModel.Create();
-
-var result = model.DerivePowerBiModel(options =>
+var result = AppSemanticTypeModel.Create().DerivePowerBiModel(options =>
 {
-    options.UseDefaultTransformations();
-
-    options.Measures.Add<Order>(
-        name: "Total Sales",
-        dax: "SUM(Orders[Amount])");
+    options.Measures.Add<Order>("Total Sales", "SUM(Orders[Amount])");
 });
 
 result.Diagnostics.ThrowIfErrors();
-PowerBiLocalMetadataExporter.Export(result.Model, "artifacts/powerbi");
+PowerBiLocalMetadataExporter.ExportJson(result.Model, "artifacts/powerbi/model.json");
 ```
 
-## Supported Metadata
+## How it works
 
-The Power BI projection includes:
+Annotated .NET code is extracted by the generator into a `TypeSchemaModel`. Core transformations normalize projection-neutral semantics. The target package derives a domain semantic model and then exports or applies target-specific output when that target supports it.
 
-- tables and columns;
-- relationships;
-- explicit measures;
-- explicit calculated tables;
-- display folders;
-- hidden/visible flags;
-- data categories;
-- summarization hints;
-- format strings;
-- sort-by-column metadata;
-- basic explicit hierarchies when modeled;
-- deterministic inspection and local metadata output.
+## Options and policies
 
-## Envelope and Ownership Projection
-
-Envelope semantics default to an envelope metadata table. Payload body projection is opt-in because arbitrary payload graphs can create unstable analytical shapes.
-
-Supported policy concepts include:
-
-- metadata only;
-- metadata with payload summary;
-- flattened payload;
-- payload as separate tables;
-- payload as root;
-- ignored payload.
-
-Ownership semantics can flatten owned objects into an owner table or project owned collections as child tables when explicitly useful for analysis.
-
-## Evolution and Lifecycle Semantics
-
-Version, revision, current-version, lifecycle-state, and temporal-validity members project as analytical columns. They can be used as slicers, grouping columns, timeline columns, or effective-date metadata.
-
-`ExtensionData` is ignored by default. It can be projected as summary metadata such as `HasExtensionData`, `ExtensionDataCount`, or known extension-key metadata when explicitly configured.
-
-## Extension Points
-
-Users can extend derivation through options, measure builders, calculated-table builders, post-derive model configuration hooks, custom transformations, and custom annotations consumed by custom transformations.
+Configure table visibility, display folders, data categories, summarization hints, format strings, sort-by-column metadata, explicit measures, calculated tables, ownership flattening, and envelope payload policy.
 
 ## Diagnostics
 
-Unsupported or ambiguous metadata emits diagnostics instead of being silently dropped. Typical cases include unsupported nested shapes, invalid annotation values, lossy scalar mappings, duplicate projected names, unsupported expression languages, unresolved sort-by-column references, ambiguous relationship endpoints, unsupported envelope payload policies, and unstable extension-data flattening.
+Power BI diagnostics report duplicate table or column names, unsupported nested shapes, lossy scalar mappings, unresolved sort-by-column references, ambiguous relationships, unsupported expression languages, and unstable extension-data flattening.
+
+## Common mistakes
+
+- Treating JSON Schema files as the canonical authoring source for new models.
+- Mixing target-specific metadata with projection-neutral semantics.
+- Skipping diagnostic inspection before using projected output.
+- Using stale pre-2.2 model namespace or shape names in current examples.
+
+## Limitations
+
+The package does not publish datasets, authenticate with Power BI, create PBIX files, manage workspaces, schedule refresh, call REST or XMLA endpoints, or provide full TOM parity.
+
+## Related docs
+
+- [SemanticTypeModel.PowerBI package](../nuget/SemanticTypeModel.PowerBI.md)
+- [Code-first Power BI sample](../samples/code-first-powerbi.md)
+- [Projection capabilities](projection-capabilities.md)

@@ -1,138 +1,83 @@
-# Core Semantics Guide
+# Core Semantics
 
-Core semantics describe projection-neutral meaning in annotated .NET code. They are the concepts the canonical semantic model carries before any JSON Schema, EF Core, Power BI, or System.Text.Json target is selected.
+## Goal
 
-## Use Core Semantics For Meaning
+Model domain meaning once so JSON Schema, EF Core, Power BI, System.Text.Json, and configuration projections can make target-specific decisions from the same generated semantic model.
 
-Use core semantics when the meaning is true across targets:
+## Prerequisites
 
-| Meaning | Core semantic |
-|---|---|
-| Type has identity and lifecycle | Entity |
-| Type is value-based | ValueObject |
-| Property identifies an entity | Key |
-| Property associates two types | Relationship |
-| Property must be present | Required |
-| Value may be null | Nullable |
-| User-facing label | DisplayName |
-| Domain description | Description |
-| Projection-neutral scalar format | Format |
-| Wrapper boundary with distinguished payload | Envelope + EnvelopePayload |
-| Lifecycle containment | Ownership / OwnedObject / OwnedCollection |
-| Instance or contract evolution | Versioned / Version / Revision / CurrentVersion |
-| Effective interval | TemporalValidity / ValidFrom / ValidTo |
-| Status or lifecycle phase | LifecycleState |
-| Unknown compatibility members | ExtensionData |
+- .NET 10 SDK.
+- Annotated .NET types are the canonical authoring source.
+- A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
+- The examples assume package version `2.2.0`.
 
-Use target-specific metadata when the meaning belongs to one target only:
+## Packages
 
-| Target-specific intent | Use |
-|---|---|
-| EF Core table name | `efCore.tableName` |
-| EF Core index | `efCore.index` |
-| Power BI display folder | `powerBi.displayFolder` |
-| DAX measure | Power BI measure metadata or measure builder |
-| JSON Schema-only keyword override | `jsonSchema.*` metadata |
-| System.Text.Json serialization name | `systemTextJson.propertyName` metadata |
+- `SemanticTypeModel.DotNet` for semantic attributes.
+- `SemanticTypeModel.Generators` for compile-time provider generation.
+- `SemanticTypeModel.Core` for core vocabulary, transformations, diagnostics, and inspection.
 
-## Envelope
+## Minimal path
 
-Use an envelope when a wrapper type carries, manages, versions, transports, persists, audits, authorizes, caches, or contextualizes one distinguished payload.
+1. Add `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, and `SemanticTypeModel.Core`.
+2. Mark entities, keys, value objects, ownership, envelopes, lifecycle, and extension data with semantic attributes.
+3. Build the project so the provider is generated.
+4. Call `AppSemanticTypeModel.Create()` and inspect diagnostics.
+5. Pass the model to the projection package needed by your scenario.
+
+## Full example
 
 ```csharp
-[SemanticEnvelope("management")]
-public sealed class ManagedSpecificationEnvelope<TSpecification>
-{
-    [SemanticEnvelopePayload]
-    public required TSpecification Specification { get; init; }
+using SemanticTypeModel;
+using SemanticTypeModel.Abstractions.Model;
 
-    [SemanticEnvelopeMetadata]
-    public required long Revision { get; init; }
-
-    [SemanticEnvelopeMetadata]
-    public required string ModifiedBy { get; init; }
-}
-```
-
-Envelope rules:
-
-- An envelope normally has exactly one payload.
-- Envelope metadata describes the wrapper lifecycle or context, not the payload's domain state.
-- Envelope semantics do not erase payload semantics.
-- Projection policy decides whether the envelope or payload is the root for a target.
-
-## Ownership
-
-Use ownership when an object-valued or collection-valued member is part of the containing owner's composition boundary and does not stand independently by default.
-
-```csharp
-[SemanticEntity]
-public sealed class Customer
+[SemanticType(SemanticTypeRole.Entity)]
+public sealed partial class Customer
 {
     [SemanticKey]
     public required string Id { get; init; }
 
+    [SemanticName("Customer name")]
+    public required string Name { get; init; }
+
     [SemanticOwnedObject]
     public required Address BillingAddress { get; init; }
-
-    [SemanticOwnedCollection]
-    public IReadOnlyList<ContactMethod> ContactMethods { get; init; } = [];
 }
-```
 
-Ownership is not the same as an envelope. An envelope identifies wrapper/payload semantics. Ownership identifies lifecycle containment.
-
-## Evolution and Lifecycle
-
-Use evolution and lifecycle semantics when a type or member participates in versioning, revision history, effective dating, lifecycle state, or compatibility preservation.
-
-```csharp
-[SemanticVersioned]
-public sealed class WorkflowSpecification
+[SemanticType(SemanticTypeRole.ValueObject)]
+public sealed partial class Address
 {
-    [SemanticRevision]
-    public required long Revision { get; init; }
-
-    [SemanticLifecycleState]
-    public required string State { get; init; }
-
-    [SemanticValidFrom]
-    public required DateTimeOffset ValidFrom { get; init; }
-
-    [SemanticValidTo]
-    public DateTimeOffset? ValidTo { get; init; }
-
-    [SemanticExtensionData]
-    public Dictionary<string, JsonElement>? ExtensionData { get; init; }
+    public required string City { get; init; }
 }
+
+TypeSchemaModel model = AppSemanticTypeModel.Create();
 ```
 
-`ExtensionData` represents instance-level unknown or forward-compatible data. It is different from annotations, which are metadata about the model.
+## How it works
 
-## Projection Implications
+Annotated .NET code is extracted by the generator into a `TypeSchemaModel`. Core transformations normalize projection-neutral semantics. The target package derives a domain semantic model and then exports or applies target-specific output when that target supports it.
 
-### JSON Schema
+## Options and policies
 
-JSON Schema can export the envelope as the root wrapper object or export only the payload schema. Payload representation can be inline, referenced, serialized, or opaque depending on target policy.
-
-Ownership usually exports owned values as structured nested schemas or local references. `ExtensionData` usually controls `additionalProperties` or `unevaluatedProperties` rather than appearing as a normal modeled property.
-
-### EF Core
-
-EF Core can map the envelope as the persistence/cache entity and metadata as columns. The payload can be mapped as owned, serialized, converted, ignored, or separately mapped by explicit policy.
-
-Ownership maps to owned reference or owned collection policies. Version/revision, lifecycle state, and temporal-validity members map as regular scalar members with optional configured keys or indexes. `ExtensionData` is ignored by default unless configured as serialized JSON or summary metadata.
-
-### Power BI
-
-Power BI can expose envelope metadata as reporting columns and treat the payload as ignored, flattened, referenced, serialized, or opaque by analytical policy.
-
-Ownership can flatten owned objects or project owned collections as child tables. Version, revision, lifecycle state, and temporal-validity members are useful analytical columns. `ExtensionData` is ignored by default unless configured as summary fields such as `HasExtensionData` or `ExtensionDataCount`.
-
-### System.Text.Json
-
-System.Text.Json metadata remains projection-specific. Semantic names and JSON property names remain separate unless a resolver customization policy explicitly uses semantic names as JSON serialization names.
+Use projection-neutral attributes for entity identity, value objects, requiredness, ownership, envelope payloads, lifecycle state, temporal validity, and extension data. Use target annotations only for representation choices such as JSON Schema keywords, EF Core table names, Power BI display folders, or System.Text.Json property names.
 
 ## Diagnostics
 
-Unsupported or ambiguous semantic usage is diagnostic. Common cases include missing envelope payloads, multiple payloads without policy, ownership cycles, invalid temporal endpoints, duplicate lifecycle state members, invalid extension-data property types, and ambiguous target projection policies.
+Core diagnostics report ambiguous semantics such as missing envelope payloads, duplicate semantic members, invalid temporal endpoints, unsupported extension-data shapes, and ownership cycles. Fix the source annotations first, then rerun target derivation.
+
+## Common mistakes
+
+- Treating JSON Schema files as the canonical authoring source for new models.
+- Mixing target-specific metadata with projection-neutral semantics.
+- Skipping diagnostic inspection before using projected output.
+- Using stale pre-2.2 model namespace or shape names in current examples.
+
+## Limitations
+
+Core semantics do not create target output by themselves. They do not choose database providers, publish analytical models, validate JSON documents at runtime, or generate serializer contexts.
+
+## Related docs
+
+- [SemanticTypeModel.Core package](../nuget/SemanticTypeModel.Core.md)
+- [SemanticTypeModel.DotNet package](../nuget/SemanticTypeModel.DotNet.md)
+- [Projection capabilities](projection-capabilities.md)

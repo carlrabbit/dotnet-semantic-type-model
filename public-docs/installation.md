@@ -12,6 +12,7 @@ For runtime composition, add dependency injection support explicitly:
 
 ```sh
 dotnet add package SemanticTypeModel.DependencyInjection --version 2.2.0
+dotnet add package SemanticTypeModel.Configuration --version 2.2.0
 ```
 
 For projection targets, add the package that owns the target:

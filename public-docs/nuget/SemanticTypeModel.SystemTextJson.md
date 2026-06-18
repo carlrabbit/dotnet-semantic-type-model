@@ -1,27 +1,56 @@
 # SemanticTypeModel.SystemTextJson
 
-System.Text.Json contract integration for SemanticTypeModel.
+## What this package does
+
+`SemanticTypeModel.SystemTextJson` provides System.Text.Json metadata projection and resolver customization from semantic models.
+
+## Install
 
 ```sh
 dotnet add package SemanticTypeModel.SystemTextJson --version 2.2.0
 ```
 
-## What it does
+## Use when
 
-- Publishes `systemTextJson.*` annotation constants.
-- Provides `SystemTextJsonProjectionOptions` and `SemanticJsonPropertyNameSource`.
-- Enables `.NET` extraction options through `UseSystemTextJson()`.
-- Provides conservative `JsonSerializerOptions` and `IJsonTypeInfoResolver` helpers that preserve an existing resolver or user-authored `JsonSerializerContext`.
-- Can apply imported `systemTextJson.propertyName` values or semantic property names as JSON serialization names when explicitly configured.
+- Install this package when you need System.Text.Json metadata projection and resolver customization from semantic models.
+- Keep package boundaries explicit in an application or library.
+- Pair generated semantic models with the target runtime you are configuring.
 
-Semantic names and JSON property names remain separate by default. The default resolver behavior preserves the existing System.Text.Json contract.
+## Minimal example
 
-## Generated contexts
+```csharp
+using SemanticTypeModel.SystemTextJson;
 
-`SemanticTypeModel.SystemTextJson` does not generate `JsonSerializerContext` declarations. Consumers own the context when source generation is needed, then wrap it with `WithSemanticTypeModelJson(...)`.
+var result = AppSemanticTypeModel.Create()
+    .DeriveSystemTextJsonModel(options =>
+        options.PropertyNameSource = SemanticJsonPropertyNameSource.ExistingJsonContract);
+result.Diagnostics.ThrowIfErrors();
+```
 
-## Projection alignment
+## Main APIs
 
-The repository architecture treats System.Text.Json as a domain projection target. Consumers can derive resolver customization metadata from the unified `TypeSchemaModel` and apply it to `JsonSerializerOptions` or an existing `IJsonTypeInfoResolver`.
+| API | Purpose |
+| --- | --- |
+| `DeriveSystemTextJsonModel` | Derives resolver customization metadata. |
+| `SemanticJsonPropertyNameSource` | Selects projected JSON name source. |
+| `WithSemanticTypeModelJson` | Wraps an existing resolver or context. |
+| `AddSemanticTypeModelJson` | Adds conservative resolver customization to options. |
 
-More details: `public-docs/guides/system-text-json.md`.
+## Works with
+
+- SemanticTypeModel.DotNet, SemanticTypeModel.Generators, and user-authored JsonSerializerContext types.
+- `SemanticTypeModel.Abstractions.Model` for the current unified model surface.
+- `public-docs/samples/` projects that demonstrate package-based usage.
+
+## Does not do
+
+- It does not generate JsonSerializerContext declarations or replace custom converters.
+- It does not make milestone plans or historical research documents part of the public API.
+- It does not change compatibility rules described in the compatibility documentation.
+
+## More documentation
+
+- [Package list](../packages.md)
+- [Getting started](../getting-started.md)
+- [Compatibility](../api/compatibility.md)
+- [System.Text.Json guide](../guides/system-text-json.md)

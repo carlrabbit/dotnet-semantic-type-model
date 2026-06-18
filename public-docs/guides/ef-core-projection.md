@@ -1,71 +1,72 @@
-# EF Core Projection Guide
+# EF Core Projection
 
-`SemanticTypeModel.EFCore` derives an EF Core domain semantic model from the canonical `TypeSchemaModel` and applies provider-neutral configuration to EF Core `ModelBuilder`.
+## Goal
 
-## Boundary
+Apply semantic metadata to EF Core `ModelBuilder` while leaving provider setup, migrations, and database operations under application control.
 
-The package owns semantic mapping into `ModelBuilder`. It does not create databases, generate migrations, discover or generate `DbContext` types, perform provider-specific SQL Server/PostgreSQL configuration, validate a runtime database, or configure global query filters.
+## Prerequisites
 
-## Usage
+- .NET 10 SDK.
+- Annotated .NET types are the canonical authoring source.
+- A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
+- The examples assume package version `2.2.0`.
+
+## Packages
+
+- `SemanticTypeModel.EFCore` for derivation and `ModelBuilder` projection.
+- `Microsoft.EntityFrameworkCore` for EF Core metadata APIs.
+- `SemanticTypeModel.Generators` and `SemanticTypeModel.DotNet` for code-first model generation.
+
+## Minimal path
+
+1. Generate the semantic model.
+2. Derive the EF Core semantic model.
+3. Check diagnostics.
+4. Call `modelBuilder.ApplyEfCoreSemanticModel(result.Model)` inside `OnModelCreating`.
+5. Add provider-specific EF Core configuration separately.
+
+## Full example
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
 using SemanticTypeModel.EFCore;
 
-TypeSchemaModel model = AppSemanticTypeModel.Create();
-
-var result = model.DeriveEfCoreModel(options =>
+public sealed class AppDbContext : DbContext
 {
-    options.UseDefaultTransformations();
-});
-
-result.Diagnostics.ThrowIfErrors();
-
-protected override void OnModelCreating(ModelBuilder modelBuilder)
-{
-    modelBuilder.ApplyEfCoreSemanticModel(result.Model);
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        var result = AppSemanticTypeModel.Create().DeriveEfCoreModel();
+        result.Diagnostics.ThrowIfErrors();
+        modelBuilder.ApplyEfCoreSemanticModel(result.Model);
+    }
 }
 ```
 
-## Supported Mapping
+## How it works
 
-The EF Core projection supports provider-neutral metadata for:
+Annotated .NET code is extracted by the generator into a `TypeSchemaModel`. Core transformations normalize projection-neutral semantics. The target package derives a domain semantic model and then exports or applies target-specific output when that target supports it.
 
-- entities and properties;
-- table and column names;
-- primary keys and alternate keys;
-- single-column, composite, and unique indexes;
-- requiredness and nullability;
-- max length and precision/scale;
-- explicit value converters or provider CLR type metadata;
-- explicit simple relationships;
-- explicit owned/value-object mapping;
-- explicit user-selected inheritance strategies: TPH, TPT, and TPC.
+## Options and policies
 
-## Envelope Payload Storage
-
-Envelope metadata maps as normal scalar columns. Envelope payload storage is target-specific EF Core policy.
-
-Supported policy concepts include:
-
-- serialized JSON column;
-- owned JSON mapping where the EF Core/provider shape supports it;
-- owned same-table columns for owned reference payloads;
-- owned separate table mapping where explicitly configured;
-- ignored payload.
-
-The default envelope payload storage policy is serialized JSON. Provider-specific JSON column types, JSON path indexes, computed columns, and database tuning remain user-owned EF Core configuration.
-
-## Ownership and Evolution Semantics
-
-Ownership semantics map to owned reference or owned collection policies. Version/revision, lifecycle state, and temporal validity members map as regular scalar members with optional configured indexes or alternate keys. `ExtensionData` is ignored by default unless configured as serialized JSON or summary metadata.
-
-The package does not automatically replace primary keys, add global query filters, enable SQL Server temporal tables, or generate migrations from these semantics.
+Configure projection policy for unannotated objects, keys, table and column naming, owned values, inheritance strategy, relationships, converters, and envelope payload storage. Use EF Core provider APIs for provider-specific database behavior.
 
 ## Diagnostics
 
-Unsupported or ambiguous mapping emits diagnostics. Typical cases include missing keys, unresolved relationship endpoints, invalid converter metadata, duplicate projected names, unsupported owned collections, unsupported many-to-many skip navigations, ambiguous inheritance strategy, unsupported envelope payload storage, invalid extension-data storage policy, and ambiguous ownership configuration.
+EF Core diagnostics report missing keys, unresolved relationship endpoints, duplicate projected names, invalid converter metadata, ambiguous inheritance, unsupported ownership shapes, and unsupported envelope payload storage policy.
 
-## Non-Goals
+## Common mistakes
 
-This package does not replace EF Core application configuration. Users still own provider configuration, migrations, database creation, connection strings, transactions, seed data, runtime validation, and deployment.
+- Treating JSON Schema files as the canonical authoring source for new models.
+- Mixing target-specific metadata with projection-neutral semantics.
+- Skipping diagnostic inspection before using projected output.
+- Using stale pre-2.2 model namespace or shape names in current examples.
+
+## Limitations
+
+The package does not create `DbContext` types, choose a database provider, run migrations, create databases, enable temporal tables, configure query filters, or tune provider-specific JSON behavior.
+
+## Related docs
+
+- [SemanticTypeModel.EFCore package](../nuget/SemanticTypeModel.EFCore.md)
+- [Code-first EF Core sample](../samples/code-first-ef-core.md)
+- [Projection capabilities](projection-capabilities.md)

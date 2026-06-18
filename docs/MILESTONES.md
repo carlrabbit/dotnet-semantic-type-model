@@ -49,7 +49,7 @@ For each focus area:
 - [M0025 - Consumer-Facing Samples and Package-Based Sample Validation](milestones/m0025-consumer-facing-package-based-samples.md)
 - [M0026 - Code-First Semantic Model Architecture Realignment](milestones/m0026-code-first-semantic-model-architecture-realignment.md)
 - [M0027 - Query and Inspection API for Code-First Semantic Models](milestones/m0027-query-and-inspection-api-for-code-first-semantic-models.md)
-- [M0028 - Transformation Pipeline and Domain Model Derivation](milestones/m0028-transformation-pipeline-and-domain-model-derivation.md)
+- [M0028 - Transformation Pipeline and Domain Model Derivation](milestones/m0028-transformation-pipeline-and-domain-derivation.md)
 - [M0029 - JSON Schema as Code-First Projection Only](milestones/m0029-json-schema-as-code-first-projection-only.md)
 - [M0030 - EF Core Domain Semantic Model and ModelBuilder Projection](milestones/m0030-ef-core-domain-semantic-model-and-modelbuilder-projection.md)
 - [M0031 - Power BI Domain Semantic Model and Local Metadata Projection](milestones/m0031-power-bi-domain-semantic-model-and-local-metadata-projection.md)
@@ -63,3 +63,4 @@ For each focus area:
 - [M0039 - Documentation Synchronization and 2.2.0 Release Preparation](milestones/m0039-documentation-synchronization-and-2-2-0-release-preparation.md)
 - [M0040 - Configuration Domain Model and Options Registration Projection](milestones/m0040-configuration-domain-model-and-options-registration-projection.md)
 - [M0041 - Remove Stale Public API Baselines and Standardize Package Documentation](milestones/m0041-remove-stale-public-api-baselines-and-standardize-package-documentation.md)
+- [M0042 - Rewrite Package READMEs and Usage Guides to Documentation Standard](milestones/m0042-rewrite-package-readmes-and-usage-guides-to-documentation-standard.md)
