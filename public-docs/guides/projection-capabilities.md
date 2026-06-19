@@ -13,7 +13,7 @@ Decide whether a semantic feature is supported directly, supported with options,
 
 ## Packages
 
-- Projection packages such as `SemanticTypeModel.JsonSchema`, `SemanticTypeModel.EFCore`, and `SemanticTypeModel.PowerBI`.
+- Projection packages such as `SemanticTypeModel.JsonSchema`, `SemanticTypeModel.EFCore`, `SemanticTypeModel.PowerBI`, `SemanticTypeModel.SystemTextJson`, and `SemanticTypeModel.Configuration`.
 - `SemanticTypeModel.Core` for shared capability concepts and diagnostics.
 
 ## Minimal path
@@ -30,34 +30,66 @@ Decide whether a semantic feature is supported directly, supported with options,
 var json = AppSemanticTypeModel.Create().DeriveJsonSchemaModel();
 var ef = AppSemanticTypeModel.Create().DeriveEfCoreModel();
 var powerBi = AppSemanticTypeModel.Create().DerivePowerBiModel();
+var configuration = AppSemanticTypeModel.Create().DeriveConfigurationModel();
 
 json.Diagnostics.ThrowIfErrors();
 ef.Diagnostics.ThrowIfErrors();
 powerBi.Diagnostics.ThrowIfErrors();
+configuration.Diagnostics.ThrowIfErrors();
 ```
 
 ## How it works
 
-Annotated .NET code is extracted by the generator into a `TypeSchemaModel`. Core transformations normalize projection-neutral semantics. The target package derives a domain semantic model and then exports or applies target-specific output when that target supports it.
+Projection packages consume the same generated semantic model but apply target-specific policies. A value of `supported with policy` means users must select or review a target option; it does not mean every shape is lossless.
 
 ## Options and policies
 
-Capability handling is target-specific. JSON Schema can choose schema shape policies, EF Core can choose mapping policies, and Power BI can choose analytical projection policies. Diagnostics should explain unsupported or lossy cases.
+| Item / policy | Default | Allowed values / supported items | Effect | Diagnostics / unsupported cases |
+|---|---|---|---|---|
+| Capability status vocabulary | No default | `supported`, `supported with policy`, `preserved as metadata`, `ignored by default`, `unsupported with diagnostics`, `planned`, `not applicable` | Keeps cross-guide support statements consistent | Vague prose should be replaced by one of these statuses. |
+| Diagnostics review | Required after each projection | Target diagnostics collection | Shows feature loss or unsupported values | Skipping diagnostics can hide lossy output. |
+| Target policy | Target default | Projection-specific options | Changes representation per target | Unsupported combinations must be diagnosed. |
+
+## Capability matrix
+
+| Capability | Core semantic? | JSON Schema | EF Core | Power BI | System.Text.Json | Configuration | Default behavior | Diagnostics |
+|---|---|---|---|---|---|---|---|---|
+| Entity | yes | supported | supported with key policy | supported as table | preserved as metadata | ignored by default | Entity roles inform target defaults | Missing key for EF is diagnostic. |
+| ValueObject | yes | supported | supported with policy | supported with policy | preserved as metadata | supported for nested options | EF flattens; Power BI diagnoses by default | Unsupported nested shapes diagnosed. |
+| Configuration | yes | preserved as metadata | ignored by default | ignored by default | ignored by default | supported | Requires section metadata for binding | Missing section is diagnostic. |
+| Required / Nullable | yes | supported | supported | preserved as metadata | supported with resolver metadata | supported validation | Mapped from CLR/semantic metadata | Contradictions diagnosed by target. |
+| Constraint | yes | supported when representable | preserved as metadata | preserved as metadata | not applicable | supported when representable | JSON Schema emits validation keywords | Unsupported constraints diagnosed. |
+| RequiredWhen | yes | supported with policy | unsupported with diagnostics | unsupported with diagnostics | not applicable | supported | Equality conditions only | STM1020-STM1024 style diagnostics. |
+| Enum | yes | supported | supported with policy | supported with policy | supported by existing contract | supported validation | Names by default for schema/Power BI; strings for EF | Unsupported numeric assumptions diagnosed. |
+| Format | yes | supported | preserved as metadata | supported/preserved | not applicable | preserved/validation hint | Emits target metadata where meaningful | Unknown formats may be hints only. |
+| DisplayName / Description | yes | supported | supported with naming option | supported | ignored by default | preserved for diagnostics/docs | Labels/descriptions flow to docs/output | Name collisions diagnosed. |
+| Ownership | yes | supported as nested schema | supported with policy | supported with policy | preserved by contract shape | supported for nested binding | EF flattens; Power BI diagnoses by default | Cycles/unsupported collections diagnosed. |
+| Envelope payload | yes | supported with root/payload policy | supported with storage policy | supported with analytical policy | preserved by contract shape | not applicable | Target-specific policy required for non-default shape | Missing/multiple payload diagnostic. |
+| Version / Revision | yes | preserved as metadata | preserved as metadata | preserved as metadata | preserved by contract shape | preserved | No automatic migration/concurrency | Misuse as target behavior is not enforced. |
+| Temporal validity | yes | preserved as metadata | preserved as metadata | preserved as metadata | preserved by contract shape | not applicable | No EF temporal tables by default | Invalid endpoints diagnosed in core. |
+| Lifecycle state | yes | supported as property/metadata | supported as property/metadata | supported as categorical metadata | preserved by contract shape | preserved | No workflow behavior | Unsupported enum/state shape diagnosed by target. |
+| Extension data | yes | supported with additionalProperties policy | unsupported with diagnostics or JSON policy | unsupported with diagnostics | supported when resolver has extension data | supported/planned as unknown-key policy | Dictionary-like members only | Non-dictionary shapes diagnosed. |
+| Target-specific metadata | no | supported in JSON Schema namespace | supported in EF namespace | supported in Power BI namespace | supported in STJ namespace | supported in Configuration namespace | Ignored by other targets | Invalid target values diagnosed by target. |
 
 ## Diagnostics
 
-Projection diagnostics are the compatibility signal for feature loss. Review IDs, message text, target path, and suggested policy changes before accepting output.
+| Symptom / diagnostic | Likely cause | Fix |
+|---|---|---|
+| Capability marked unsupported | Target cannot represent the semantic safely | Change source semantics, choose a target policy, or handle manually. |
+| Capability marked preserved only | Target keeps metadata but does not enforce behavior | Do not claim runtime behavior; add target-specific code if needed. |
+| Lossy projection warning | Target maps a richer semantic to a simpler construct | Accept explicitly or change the model/policy. |
+| Name collision | Target naming policy maps two items to one name | Change names or select suffix behavior where available. |
 
 ## Common mistakes
 
-- Treating JSON Schema files as the canonical authoring source for new models.
-- Mixing target-specific metadata with projection-neutral semantics.
-- Skipping diagnostic inspection before using projected output.
-- Using stale pre-2.2 model namespace or shape names in current examples.
+- Reading `supported with policy` as “always automatic.”
+- Assuming one target’s default is shared by every projection.
+- Treating preserved metadata as runtime enforcement.
+- Ignoring warnings because export still produced output.
 
 ## Limitations
 
-A capability matrix is not a promise that every source model shape maps losslessly to every target. Provider-specific EF Core features, Power BI service behavior, and JSON Editor runtime behavior remain outside the shared model.
+The matrix is a decision aid, not a lossless-shape guarantee. Provider-specific EF Core features, Power BI service behavior, JSON Editor runtime behavior, and host configuration provider behavior remain outside the shared model.
 
 ## Related docs
 
