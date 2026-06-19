@@ -21,8 +21,8 @@ Use semantic metadata to customize System.Text.Json resolver behavior while pres
 
 1. Keep or create your own `JsonSerializerContext` when source generation is needed.
 2. Generate the semantic model.
-3. Derive System.Text.Json metadata or wrap an existing resolver.
-4. Choose the property-name source explicitly.
+3. Wrap an existing resolver.
+4. Choose `PropertyNameSource` explicitly.
 5. Check diagnostics for duplicate final JSON names.
 
 ## Full example
@@ -40,31 +40,44 @@ internal partial class AppJsonContext : JsonSerializerContext
 IJsonTypeInfoResolver resolver =
     AppJsonContext.Default.WithSemanticTypeModelJson(
         AppSemanticTypeModel.Create(),
-        options => options.PropertyNameSource = SemanticJsonPropertyNameSource.SystemTextJsonPropertyNameAnnotation);
+        options => options.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName);
 ```
 
 ## How it works
 
-Annotated .NET code is extracted by the generator into a `TypeSchemaModel`. Core transformations normalize projection-neutral semantics. The target package derives a domain semantic model and then exports or applies target-specific output when that target supports it.
+The package wraps an existing `IJsonTypeInfoResolver`. It customizes metadata that System.Text.Json already exposes for the type. It does not replace user converters, does not generate a `JsonSerializerContext`, and does not create metadata for types absent from the wrapped resolver.
 
 ## Options and policies
 
-`SemanticJsonPropertyNameSource` can preserve the existing JSON contract, use imported `systemTextJson.propertyName` annotations, or use semantic property names. Existing resolvers are wrapped rather than replaced.
+| Item / policy | Default | Allowed values / supported items | Effect | Diagnostics / unsupported cases |
+|---|---|---|---|---|
+| `PropertyNameSource` | `ExistingJsonContract` | `ExistingJsonContract`, `SystemTextJsonPropertyNameAnnotation`, `SemanticPropertyName` | Keeps existing names, uses imported `[JsonPropertyName]`, or uses semantic member names | Duplicate final names are diagnostics. |
+| Resolver wrapping order | Existing resolver first | Any `IJsonTypeInfoResolver` supplied by the app | Preserves app-owned context and then applies semantic metadata | Missing type metadata cannot be invented. |
+| Required marker handling | Preserve existing contract unless semantic metadata is applicable | C# required/STJ required plus semantic requiredness | Can mark required members when safely represented | Unsupported required metadata is diagnostic. |
+| Ignored members | Preserve existing ignore behavior | `[JsonIgnore]` and resolver-produced metadata | Ignored members stay outside the final JSON contract | Semantic metadata on ignored members may not affect output. |
+| Extension data | Preserve resolver extension-data member | `[JsonExtensionData]` plus semantic extension data | Keeps unknown JSON member handling | Multiple or incompatible extension-data members are diagnostic. |
+| Existing `JsonSerializerContext` | Required for source-generated contracts | Any user context/resolver | SemanticTypeModel wraps, not owns, context generation | Generated-context creation is unsupported. |
+| Converter boundaries | User converters win | App-supplied converters/resolver metadata | Semantic changes do not emulate arbitrary converter behavior | Converter-controlled members may not be safely customized. |
 
 ## Diagnostics
 
-Diagnostics report duplicate projected property names, missing type metadata, unsupported resolver customization, and metadata that cannot be safely applied to the existing JSON contract.
+| Symptom / diagnostic | Likely cause | Fix |
+|---|---|---|
+| Duplicate final JSON name | Selected property-name source maps two CLR members to one JSON name | Use `ExistingJsonContract`, change `[JsonPropertyName]`, or change semantic names. |
+| Missing type metadata | Wrapped resolver does not know the type | Add the type to your `JsonSerializerContext` or resolver chain. |
+| Unsupported resolver customization | Converter or metadata kind prevents safe mutation | Keep existing contract names or customize the converter manually. |
+| Required marker not applied | Member is ignored, converter-owned, or unavailable in metadata | Move requiredness to the active contract or remove unsupported customization. |
 
 ## Common mistakes
 
-- Treating JSON Schema files as the canonical authoring source for new models.
-- Mixing target-specific metadata with projection-neutral semantics.
-- Skipping diagnostic inspection before using projected output.
-- Using stale pre-2.2 model namespace or shape names in current examples.
+- Expecting SemanticTypeModel to generate `JsonSerializerContext` declarations.
+- Switching to `SemanticPropertyName` without checking duplicate JSON names.
+- Assuming semantic names replace `[JsonPropertyName]` by default.
+- Trying to override behavior hidden inside custom converters.
 
 ## Limitations
 
-The package does not generate `JsonSerializerContext` declarations, emulate arbitrary converters, or make semantic names replace JSON names by default.
+The package does not generate serializer contexts, emulate arbitrary converters, validate JSON payloads, or make semantic names replace JSON names by default.
 
 ## Related docs
 
