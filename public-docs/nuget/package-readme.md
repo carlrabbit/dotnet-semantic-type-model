@@ -7,7 +7,7 @@ This page is the generic package README source used for repository-level package
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.Core --version 2.2.0
+dotnet add package SemanticTypeModel.Core --version 2.3.0
 ```
 
 ## Use when

@@ -55,8 +55,3 @@ The current stable package set is:
 - [Power BI projection guide](guides/power-bi-projection.md)
 - [Projection capability matrix](guides/projection-capabilities.md)
 - [Configuration options projection guide](guides/configuration.md)
-
-
-## M0044 Configuration registration note
-
-SemanticTypeModel.Configuration now uses explicit `AddSemanticOptions<TOptions>` registration; generated helpers are optional wrappers over the runtime adapter.

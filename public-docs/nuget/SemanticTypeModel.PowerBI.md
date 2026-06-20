@@ -7,7 +7,7 @@
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.PowerBI --version 2.2.0
+dotnet add package SemanticTypeModel.PowerBI --version 2.3.0
 ```
 
 ## Use when

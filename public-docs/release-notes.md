@@ -1,19 +1,42 @@
 # Release Notes
 
-## 2.3.0-preview M0040
+## 2.3.0
 
-M0040 introduces initial Configuration domain model support and a projection-neutral Required When conditional constraint.
+2.3.0 is the Configuration release-candidate line prepared by M0040 through M0045. It introduces the Configuration domain model, runtime options registration adapter, source-generator helper package, projection-neutral `RequiredWhen`, and documentation updates needed to validate the package set before human-approved publication.
 
 ### Highlights
 
-- Added `SemanticTypeModel.Configuration` package surface for deriving inspectable configuration options metadata from the canonical model.
-- Added initial `RequiredWhen` annotation keys for projection-neutral conditional requiredness.
-- Added .NET attributes for configuration sections, data-annotation validation, startup validation, generated registration markers, and `RequiredWhen` authoring.
-- Added package documentation placeholders for Configuration and Configuration.Generators.
+- Added `SemanticTypeModel.Configuration` for deriving inspectable Configuration metadata from the canonical model and registering selected options types with Microsoft.Extensions.Options.
+- Added `SemanticTypeModel.Configuration.Generators` for generated registration helpers that delegate to the runtime `AddSemanticOptions<TOptions>` adapter.
+- Added explicit per-type options registration through `AddSemanticOptions<TOptions>`; applications opt in each selected options type instead of automatically registering every Configuration type in a complete model.
+- Added selected-type derivation through `DeriveConfigurationType<TOptions>` so one complete semantic model can be reused across multiple services while unselected Configuration types remain unregistered.
+- Added `ConfigurationSectionPresence.Optional` as the compatibility default and `ConfigurationSectionPresence.Required` for provider-independent required section data checks.
+- Added required-section validation that runs through Options validation; `ValidateOnStart` moves missing required-section, DataAnnotations, and `RequiredWhen` failures to host startup.
+- Added support for named options, call-site section overrides, and call-site strengthening from optional to required section presence.
+- Added projection-neutral `RequiredWhen` metadata and Configuration-specific attributes for section binding, DataAnnotations validation, startup validation, and generated registration helpers.
+- Removed stale fake public API baseline files from the release process; compatibility is reviewed through package smoke tests, samples, documentation, release notes, and human review.
+- Updated package READMEs, usage guides, diagnostics, samples, versioning, compatibility, and release-readiness documentation for the 2.3.0 package inventory.
 
 ### Compatibility Notes
 
-Human review is required before publishing package naming, diagnostic IDs, public API compatibility documentation, generated registration helper ergonomics, cross-domain default behavior, and release-note wording.
+- Configuration application registration is explicit per options type. Use `services.AddSemanticOptions<TOptions>(configuration, model)` or a generated helper that delegates to that adapter.
+- Complete-model Configuration derivation remains useful for inspection and tooling. Complete-model application registration through `AddSemanticConfigurationOptions(ConfigurationSemanticModel)` is obsolete and retained only for compatibility pending human review.
+- `ConfigurationSectionPresence.Optional` preserves prior optional-section behavior. `Required` validates that effective configuration data exists under the selected section; an empty section with no value and no children fails when required.
+- Required section presence without a section name, with root binding, or with disabled binding is a registration-time model/programming error. Missing deployed values, DataAnnotations failures, and `RequiredWhen` failures are options-validation failures.
+- Diagnostics remain compatibility-reviewed as part of the 2.3.0 release candidate. Human review is required before publication.
+
+### Upgrade Guidance
+
+- Replace model-wide Configuration startup registration with one `AddSemanticOptions<TOptions>` call per options type used by the service.
+- If a service needs more than one options type from the same generated model, reuse the complete model and call `AddSemanticOptions<TOptions>` for each selected type.
+- Use `[SemanticConfigurationSection(..., Presence = SemanticConfigurationSectionPresence.Required)]` or equivalent metadata for required sections, and add `[SemanticValidateOnStart]` when startup-time validation is desired.
+- Use `SemanticOptionsRegistration` for deployment-specific options name, section path, `ValidateOnStart`, or optional-to-required section-presence overrides.
+
+### Known Limitations and Publication Status
+
+- Model-wide Configuration application registration is obsolete rather than removed in this compatibility boundary.
+- Generated Configuration helpers are ergonomic wrappers, not a separate behavior source; the runtime adapter is canonical.
+- 2.3.0 packages are prepared as a release candidate only. Publication, tag creation, and GitHub release creation require separate human approval.
 
 ## 2.2.0
 
@@ -122,8 +145,3 @@ First stable SemanticTypeModel release.
 - Projection targets intentionally expose repository-defined metadata and do not provision external services.
 - JSON Editor compatibility is an export mode in `SemanticTypeModel.JsonSchema`, not a complete JSON Editor runtime.
 - Power BI projection does not authenticate with Power BI, publish datasets, create PBIX files, or manage service resources.
-
-
-## M0044 Configuration registration note
-
-M0044 adds explicit per-type Configuration registration, selected-type derivation, required section presence, and an obsolete marker for model-wide Configuration registration pending human compatibility review.
