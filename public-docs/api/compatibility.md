@@ -7,6 +7,7 @@
 - The repository does not currently maintain text API baseline files as release gates.
 - `SemanticTypeModel.SystemTextJson` 1.1.0 removed generated `JsonSerializerContext` support as a documented compatibility correction because the 1.0 design depended on unsupported source-generator chaining.
 - 2.2.0 release-preparation documentation records M0038 as the model-surface cleanup boundary; removed `Canonical` namespace and old shape-graph APIs must not be presented as supported current usage.
+- 2.3.0 release-preparation documentation records Configuration as explicit per-options-type registration; model-wide Configuration application registration is obsolete pending human compatibility review.
 
 ## 2.2.0 Model Surface Compatibility
 
@@ -27,9 +28,12 @@
   - root namespace `SemanticTypeModel`
   - package prefix `SemanticTypeModel.*`
 
-## M0044 Configuration Registration Compatibility
+## 2.3.0 Configuration Registration Compatibility
 
 - Configuration application registration is explicit per options type through `AddSemanticOptions<TOptions>`.
 - Complete-model Configuration derivation remains available for inspection and tooling, but complete-model application registration is obsolete.
 - Generated Configuration helpers are optional convenience APIs and must delegate to the runtime adapter.
 - Human review is required before removing the obsolete model-wide registration API in a future compatibility boundary.
+
+- `ConfigurationSectionPresence.Optional` is the compatibility default; `Required` adds provider-independent effective-data validation under the selected section.
+- Required-section, DataAnnotations, and `RequiredWhen` deployed-value failures are options-validation failures; invalid or ambiguous model metadata fails during registration.

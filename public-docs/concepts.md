@@ -34,4 +34,4 @@ Semantic member names identify model concepts. `System.Text.Json` property names
 
 ## Stable Release Status
 
-`2.2.0` is the current release-preparation documentation target. It includes the unified model surface under `SemanticTypeModel.Abstractions.Model`; `2.0.0` remains the code-first semantic model release baseline. Documented public APIs, diagnostics, annotation keys, and package boundaries follow the compatibility policy unless explicitly marked preview.
+`2.3.0` is the current release-preparation documentation target. It includes the Configuration runtime and generator packages, explicit per-options-type Configuration registration, and the unified model surface under `SemanticTypeModel.Abstractions.Model`; `2.0.0` remains the code-first semantic model release baseline. Documented public APIs, diagnostics, annotation keys, and package boundaries follow the compatibility policy unless explicitly marked preview.

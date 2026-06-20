@@ -9,7 +9,7 @@ Use semantic metadata to customize System.Text.Json resolver behavior while pres
 - .NET 10 SDK.
 - Annotated .NET types are the canonical authoring source.
 - A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
-- The examples assume package version `2.2.0`.
+- The examples assume package version `2.3.0`.
 
 ## Packages
 

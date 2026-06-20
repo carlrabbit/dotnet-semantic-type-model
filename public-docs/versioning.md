@@ -13,3 +13,7 @@
 ## Compatibility
 
 Public API compatibility expectations are tracked in [api/compatibility.md](api/compatibility.md).
+
+## Current Release Candidate
+
+`2.3.0` is the current release-preparation target. It includes the Configuration packages, explicit per-type options registration, selected-type Configuration derivation, required section presence validation, generated-helper delegation guidance, and documentation synchronization for package publication review. Publication, tag creation, and GitHub release creation remain separate human-approved actions.

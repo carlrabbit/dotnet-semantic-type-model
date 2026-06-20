@@ -7,7 +7,7 @@
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.EFCore --version 2.2.0
+dotnet add package SemanticTypeModel.EFCore --version 2.3.0
 ```
 
 ## Use when

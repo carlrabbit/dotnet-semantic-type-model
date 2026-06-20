@@ -4,7 +4,7 @@
     <RootNamespace>SemanticTypeModel.Configuration.Generators</RootNamespace>
     <PackageId>SemanticTypeModel.Configuration.Generators</PackageId>
     <Title>SemanticTypeModel.Configuration.Generators</Title>
-    <Description>Source generators for SemanticTypeModel configuration options registration helpers.</Description>
+    <Description>Placeholder package and documentation for future SemanticTypeModel configuration options registration helpers.</Description>
     <Authors>SemanticTypeModel Contributors</Authors>
     <RepositoryUrl>https://github.com/carlrabbit/dotnet-semantic-type-model</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

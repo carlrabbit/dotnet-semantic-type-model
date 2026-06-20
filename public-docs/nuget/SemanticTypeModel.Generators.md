@@ -7,7 +7,7 @@
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.Generators --version 2.2.0
+dotnet add package SemanticTypeModel.Generators --version 2.3.0
 ```
 
 ## Use when
@@ -20,7 +20,7 @@ dotnet add package SemanticTypeModel.Generators --version 2.2.0
 
 ```csharp
 <ItemGroup>
-  <PackageReference Include="SemanticTypeModel.Generators" Version="2.2.0" PrivateAssets="all" />
+  <PackageReference Include="SemanticTypeModel.Generators" Version="2.3.0" PrivateAssets="all" />
 </ItemGroup>
 
 TypeSchemaModel model = AppSemanticTypeModel.Create();

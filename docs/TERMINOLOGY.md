@@ -201,3 +201,18 @@ Deferred documentation-synchronization metadata stored under `.guide-sync/` for 
 
 ### Guide Migration
 A repository-local migration that adopts external guide-system conventions while keeping operational project authority inside the target repository.
+
+### Configuration Section Presence
+A Configuration policy declaring whether effective data under a selected options section is optional or required.
+
+### Explicit Per-Type Options Registration
+The Configuration application-registration pattern in which a service calls `AddSemanticOptions<TOptions>` once for each options type it chooses to use.
+
+### Selected-Type Configuration Derivation
+The Configuration derivation mode in which `DeriveConfigurationType<TOptions>` selects one options type from a complete canonical model and ignores other Configuration candidates for that registration.
+
+### Runtime Registration Adapter
+The `SemanticTypeModel.Configuration` runtime API that binds one selected options type, attaches validation, applies registration overrides, and returns `OptionsBuilder<TOptions>`.
+
+### Generated Registration Helper
+A source-generated convenience method that calls the runtime registration adapter instead of implementing independent Configuration binding or validation behavior.
