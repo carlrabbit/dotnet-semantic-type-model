@@ -2,7 +2,7 @@
 
 ## What this package does
 
-`SemanticTypeModel.Configuration.Generators` provides source-generator support for deterministic configuration options registration helpers.
+`SemanticTypeModel.Configuration.Generators` provides source-generator support for deterministic configuration options registration helpers that delegate to the runtime `AddSemanticOptions<TOptions>` adapter.
 
 ## Install
 
@@ -12,10 +12,10 @@ dotnet add package SemanticTypeModel.Configuration.Generators --version 2.2.0
 
 ## Use when
 
-- Install this package when you need source-generator support for deterministic configuration options registration helpers.
+- Install this package when you need source-generator support for deterministic configuration options registration helpers that delegate to the runtime `AddSemanticOptions<TOptions>` adapter.
 - Keep package boundaries explicit in an application or library.
 - Pair generated semantic models with the target runtime you are configuring.
-- Derive Microsoft.Extensions.Options registrations from configuration semantics.
+- Generate optional convenience methods only when a configuration type explicitly requests them.
 
 ## Minimal example
 
@@ -24,7 +24,9 @@ dotnet add package SemanticTypeModel.Configuration.Generators --version 2.2.0
   <PackageReference Include="SemanticTypeModel.Configuration.Generators" Version="2.2.0" PrivateAssets="all" />
 </ItemGroup>
 
-// Build the project to emit deterministic options registration helpers.
+// Build the project to emit explicitly requested helpers such as:
+// services.AddColdStorageOptions(configuration);
+// The generated helper delegates to services.AddSemanticOptions<ColdStorageOptions>(configuration, AppSemanticTypeModel.Create()).
 ```
 
 ## Main APIs
@@ -43,7 +45,7 @@ dotnet add package SemanticTypeModel.Configuration.Generators --version 2.2.0
 
 ## Does not do
 
-- It does not define configuration semantics or bind options without the runtime configuration package.
+- It does not define configuration semantics, bind options without the runtime configuration package, register every Configuration type automatically, or maintain skip/exclude lists.
 - It does not make milestone plans or historical research documents part of the public API.
 - It does not change compatibility rules described in the compatibility documentation.
 

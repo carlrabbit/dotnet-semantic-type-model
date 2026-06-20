@@ -29,3 +29,4 @@ Decision records are not authoritative for:
 | decisions/unify-public-model-surface-under-model-namespace.md | Rationale for making `SemanticTypeModel.Abstractions.Model` the sole public model namespace and removing the old shape graph |
 | decisions/configuration-domain-is-options-registration-projection.md | Rationale for adding Configuration as a domain projection while keeping Options registration behavior outside core semantics |
 | decisions/remove-fake-public-api-baselines.md | Rationale for removing stale public API baseline files and script-only baseline checks |
+| decisions/configuration-registration-is-explicit-per-options-type.md | Rationale for explicit per-type Configuration registration, runtime-adapter ownership, and Configuration-specific section presence |

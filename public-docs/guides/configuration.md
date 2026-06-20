@@ -21,9 +21,9 @@ Derive Microsoft.Extensions.Options registrations from configuration semantics w
 
 1. Mark options types with configuration annotations.
 2. Generate the semantic model.
-3. Call `DeriveConfigurationModel()`.
-4. Check model diagnostics.
-5. Register options from the derived metadata or write the equivalent `AddOptions<T>().Bind(...).Validate...` code.
+3. Call `services.AddSemanticOptions<TOptions>(configuration, model)` once for each options type used by the service.
+4. Use `DeriveConfigurationModel()` only for inspection, tooling, or bulk analysis.
+5. Check diagnostics and let Options validation report deployed configuration errors.
 
 ## Full example
 
@@ -57,23 +57,19 @@ public sealed class ColdStorageOptions
     public string? TargetFilePath { get; init; }
 }
 
-ConfigurationSemanticModel configurationModel = AppSemanticTypeModel.Create()
-    .DeriveConfigurationModel();
+TypeSchemaModel model = AppSemanticTypeModel.Create();
 
-configurationModel.Diagnostics.ThrowIfErrors();
+OptionsBuilder<ColdStorageOptions> options = builder.Services.AddSemanticOptions<ColdStorageOptions>(
+    builder.Configuration,
+    model);
 
-// Runtime registration path supported by SemanticTypeModel.Configuration metadata.
-builder.Services
-    .AddOptions<ColdStorageOptions>()
-    .Bind(builder.Configuration.GetSection(ColdStorageOptions.SectionName))
-    .ValidateDataAnnotations()
-    .Validate(options =>
-        options.Provider != ColdStorageProvider.File ||
-        !string.IsNullOrWhiteSpace(options.TargetFilePath),
-        "TargetFilePath is required when ColdStorage:Provider is File.")
-    .ValidateOnStart();
+// Register a second selected type from the same complete model when this service uses it.
+builder.Services.AddSemanticOptions<QueueOptions>(builder.Configuration, model);
 
-// Planned generated-helper shape when SemanticTypeModel.Configuration.Generators emits it:
+// A third Configuration type in the model remains unregistered until the application calls
+// AddSemanticOptions<ThatType>(builder.Configuration, model).
+
+// Generated helpers, when explicitly requested, delegate to the same runtime adapter:
 // builder.Services.AddColdStorageOptions(builder.Configuration);
 ```
 
@@ -81,16 +77,17 @@ builder.Services
 
 The configuration projection reads configuration-specific annotations and relevant core semantics from the generated `TypeSchemaModel`. It derives a `ConfigurationSemanticModel` containing options CLR types, section names, bind policy, validation flags, generated-helper intent, and conditional validation rules. The package does not choose configuration providers, load `appsettings.json`, or own secret management.
 
-The generated helper, when available, must be equivalent to the explicit runtime registration: `AddOptions<ColdStorageOptions>()`, bind to `ColdStorage`, apply data-annotations validation, add the `RequiredWhen` validation delegate, and call `ValidateOnStart()`. Until the generator emits that helper in your build, keep the explicit runtime registration in application startup.
+`AddSemanticOptions<TOptions>` derives only the selected `TOptions`, binds the selected section, applies required-section validation when configured, applies DataAnnotations and `RequiredWhen`, enables `ValidateOnStart` when configured, and returns `OptionsBuilder<TOptions>` for normal Options composition. Generated helpers, when available, must delegate to `AddSemanticOptions<TOptions>` rather than reimplementing binding or validation.
 
 ## Options and policies
 
 | Item / policy | Default | Allowed values / supported items | Effect | Diagnostics / unsupported cases |
 |---|---|---|---|---|
 | Configuration options marker | No type is an options type by default | `SemanticTypeRole.Configuration` or configuration metadata | Makes the type a configuration options candidate | Non-options object types are ignored by default. |
-| Section name | No default when section binding is required | `SemanticConfigurationSection("Name")` or equivalent metadata | Selects `IConfiguration.GetSection("Name")` for binding | Missing, empty, duplicate, or invalid section paths are diagnostic conditions. |
+| Section name | No default when section binding is required | `SemanticConfigurationSection("Name")` or equivalent metadata; call-site section override | Selects `IConfiguration.GetSection("Name")` for binding | Missing, empty, duplicate, or invalid section paths are diagnostic conditions. |
+| Section presence | `Optional` | `ConfigurationSectionPresence.Optional` or `Required`; `configuration.section.presence`; call site may strengthen Optional to Required | Required presence validates that effective configuration data exists beneath the selected section | Required presence without a section name, with root binding, or with disabled binding is a diagnostic/registration error. |
 | Bind policy | `Section` | Current public behavior binds a named section; other policies are not documented as shipped | Determines the source section for `Bind(...)` | Unsupported bind policies must be diagnosed rather than silently ignored. |
-| Named options | No named options | `configuration.namedOptions.name` metadata when present | Registers a named options instance | Duplicate or invalid names are reported by configuration diagnostics. |
+| Named options | No named options | `configuration.namedOptions.name` metadata or call-site name override | Registers a named options instance | Duplicate or invalid names are reported by configuration diagnostics. |
 | Data annotations validation | Disabled | `SemanticValidateDataAnnotations` | Adds `ValidateDataAnnotations()` to equivalent registration | Unsupported validation metadata remains a diagnostic or must be handled manually. |
 | Validate on start | Disabled | `SemanticValidateOnStart` | Adds `ValidateOnStart()` to equivalent registration | `ValidateOnStart` without a bindable options type is diagnostic. |
 | Generated extension method | Planned; not emitted by the placeholder generator package | `SemanticGenerateOptionsRegistration`, optional `ExtensionMethodName` | Requests a helper such as `AddColdStorageOptions` | Treat the helper as planned unless generated code exists in your build; collisions are diagnostic. |
@@ -112,6 +109,8 @@ The generated helper, when available, must be equivalent to the explicit runtime
 - Forgetting that `ColdStorageOptions.SectionName` is only a CLR constant unless configuration metadata points to the same value.
 - Treating `RequiredWhen` as a JSON Schema-only rule; Configuration uses it as options validation.
 - Expecting SemanticTypeModel to add configuration providers or read secrets.
+- Calling model-wide registration for application startup instead of explicitly selecting each options type.
+- Expecting an unselected Configuration type in the complete model to be registered automatically.
 
 ## Limitations
 

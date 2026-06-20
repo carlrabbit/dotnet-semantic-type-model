@@ -122,3 +122,8 @@ First stable SemanticTypeModel release.
 - Projection targets intentionally expose repository-defined metadata and do not provision external services.
 - JSON Editor compatibility is an export mode in `SemanticTypeModel.JsonSchema`, not a complete JSON Editor runtime.
 - Power BI projection does not authenticate with Power BI, publish datasets, create PBIX files, or manage service resources.
+
+
+## M0044 Configuration registration note
+
+M0044 adds explicit per-type Configuration registration, selected-type derivation, required section presence, and an obsolete marker for model-wide Configuration registration pending human compatibility review.
