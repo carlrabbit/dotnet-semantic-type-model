@@ -26,3 +26,10 @@
   - solution `SemanticTypeModel.slnx`
   - root namespace `SemanticTypeModel`
   - package prefix `SemanticTypeModel.*`
+
+## M0044 Configuration Registration Compatibility
+
+- Configuration application registration is explicit per options type through `AddSemanticOptions<TOptions>`.
+- Complete-model Configuration derivation remains available for inspection and tooling, but complete-model application registration is obsolete.
+- Generated Configuration helpers are optional convenience APIs and must delegate to the runtime adapter.
+- Human review is required before removing the obsolete model-wide registration API in a future compatibility boundary.

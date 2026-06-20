@@ -37,7 +37,7 @@ For each focus area:
 - [M0012 - Documentation, Samples, Release Readiness, and First End-to-End Scenarios](milestones/m0012-documentation-samples-release-readiness-and-first-end-to-end-scenarios.md)
 - [M0014 - Semantic Type Annotation Usability](milestones/m0014-semantic-type-annotation-usability.md)
 - [M0015 - EF Core Projection Hardening](milestones/m0015-ef-core-projection-hardening.md)
-- [M0016 - End-to-End Code-First Schema Authoring Samples](milestones/m0016-end-to-end-code-first-schema-authoring-samples.md)
+- [M0016 - End-to-End Code-First Schema Authoring Samples](milestones/m0016-end-to-end-schema-authoring-samples.md)
 - [M0017 - JSON Schema Projection Hardening for Code-First Models](milestones/m0017-json-schema-projection-hardening-for-code-first-models.md)
 - [M0018 - Diagnostics Documentation and Analyzer Experience](milestones/m0018-diagnostics-documentation-and-analyzer-experience.md)
 - [M0019 - Projection Capability Matrix and Compatibility Contracts](milestones/m0019-projection-capability-matrix-and-compatibility-contracts.md)
@@ -65,3 +65,4 @@ For each focus area:
 - [M0041 - Remove Stale Public API Baselines and Standardize Package Documentation](milestones/m0041-remove-stale-public-api-baselines-and-standardize-package-documentation.md)
 - [M0042 - Rewrite Package READMEs and Usage Guides to Documentation Standard](milestones/m0042-rewrite-package-readmes-and-usage-guides-to-documentation-standard.md)
 - [M0043 - Expand Usage Guides with Concrete Options, Policies, and Supported Items](milestones/m0043-expand-usage-guides-with-concrete-options-policies-and-supported-items.md)
+- [M0044 - Explicit Per-Type Configuration Registration and Required Section Presence](milestones/m0044-explicit-per-type-configuration-registration-and-required-section-presence.md)

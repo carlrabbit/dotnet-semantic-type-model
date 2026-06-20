@@ -717,6 +717,13 @@ public sealed class RoslynDotNetTypeExtractor
                 annotations["configuration.options"] = "true";
                 annotations["configuration.section"] = "true";
                 annotations["configuration.section.name"] = GetFirstConstructorArgument(attribute);
+                foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
+                {
+                    if (string.Equals(key, "Presence", StringComparison.Ordinal) && value.Value is int presenceValue)
+                    {
+                        annotations["configuration.section.presence"] = presenceValue == 1 ? "Required" : "Optional";
+                    }
+                }
             }
             else if (string.Equals(metadataName, SemanticValidateDataAnnotationsAttributeMetadataName, StringComparison.Ordinal))
             {

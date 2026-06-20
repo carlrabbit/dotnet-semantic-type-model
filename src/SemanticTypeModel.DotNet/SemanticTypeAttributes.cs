@@ -677,6 +677,19 @@ public sealed class SemanticLifecycleStateAttribute : Attribute;
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
 public sealed class SemanticExtensionDataAttribute : Attribute;
 
+
+/// <summary>
+/// Represents Configuration section presence requirements.
+/// </summary>
+public enum SemanticConfigurationSectionPresence
+{
+    /// <summary>Section data is optional.</summary>
+    Optional,
+
+    /// <summary>Section data must be present in effective configuration.</summary>
+    Required,
+}
+
 /// <summary>
 /// Declares a configuration section name for an options type.
 /// </summary>
@@ -685,6 +698,9 @@ public sealed class SemanticConfigurationSectionAttribute(string sectionName) : 
 {
     /// <summary>Gets the configuration section name.</summary>
     public string SectionName { get; } = sectionName;
+
+    /// <summary>Gets or sets the required effective section data policy.</summary>
+    public SemanticConfigurationSectionPresence Presence { get; init; } = SemanticConfigurationSectionPresence.Optional;
 }
 
 /// <summary>

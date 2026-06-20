@@ -22,3 +22,8 @@ Prepare local packages, then run package-based sample validation:
 ```
 
 `./eng/samples.sh` restores SemanticTypeModel packages from `artifacts/nuget` and keeps public feeds available for third-party dependencies.
+
+
+## M0044 Configuration registration note
+
+Configuration samples should register each selected options type explicitly with `AddSemanticOptions<TOptions>`; unselected Configuration types in the model remain unregistered.
