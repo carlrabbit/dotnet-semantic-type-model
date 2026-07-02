@@ -7,7 +7,7 @@
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.Core --version 2.3.0
+dotnet add package SemanticTypeModel.Core --version 2.4.0
 ```
 
 ## Use when

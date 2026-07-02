@@ -2,7 +2,7 @@
 
 ## Status
 
-Pending until M0046 completes.
+Resolved by M0048 documentation synchronization; retained as historical synchronization evidence.
 
 ## Purpose
 
@@ -53,3 +53,7 @@ next patch-release readiness
 ./eng/samples.sh
 ./eng/public-docs.sh
 ```
+
+## M0048 Resolution
+
+M0048 synchronized the active specifications, public documentation, samples guidance, compatibility documentation, package README sources, version guidance, and release notes for this hint. Remaining work is human review and publication follow-up only.

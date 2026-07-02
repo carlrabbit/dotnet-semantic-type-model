@@ -9,7 +9,7 @@ Export deterministic JSON Schema Draft 2020-12 documents from a generated code-f
 - .NET 10 SDK.
 - Annotated .NET types are the canonical authoring source.
 - A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
-- The examples assume package version `2.3.0`.
+- The examples assume package version `2.4.0`.
 
 ## Packages
 
@@ -103,3 +103,7 @@ The package does not perform runtime JSON validation, does not make schema impor
 ### Shared sample editing contract
 
 The shared Order Fulfillment JSON Schema sample exports an editable Customer contract from the same semantic model used by EF Core, Power BI, and System.Text.Json samples. Optional nullable fields remain distinct from required fields in the exported schema.
+
+### Audience-specific descriptions
+
+JSON Schema maps `UserDescription` to the schema `description` keyword. XML `<summary>` contributes only `TechnicalDescription` and does not silently populate user-facing schema descriptions. If technical text is needed in exported JSON Schema, set the technical-description extension option to an `x-*` extension name and review that extension with downstream consumers.
