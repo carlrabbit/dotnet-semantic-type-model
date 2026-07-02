@@ -82,8 +82,7 @@ M0010 adds analyzer/MSBuild `build_property` options with `SemanticTypeModel*` p
 - `SemanticTypeModelNamingPolicy`
 - `SemanticTypeModelInferKeys`
 - `SemanticTypeModelInferRelationships`
-- `SemanticTypeModelIncludeXmlDocumentation`
-- `SemanticTypeModelRequireXmlDocumentation`
+- `SemanticTypeModelRequireTechnicalDescription`
 
 When both attribute and analyzer/MSBuild options are present, extraction still merges assembly attribute options and resolved analyzer options deterministically.
 

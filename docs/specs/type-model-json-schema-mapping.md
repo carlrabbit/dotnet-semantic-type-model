@@ -121,7 +121,7 @@ When preserved, unsupported keyword annotations use reserved namespaces such as 
 - `ui.*` annotation keys may be emitted as JSON Schema extension keywords using `ui:*` names.
 - downstream-specific keywords are emitted only when explicit JSON-editor compatibility mode is enabled.
 - export defaults to standard JSON Schema semantics without downstream keyword emission.
-- display text export precedence is `ui.title` -> `schema.title`/`title` and `ui.description` -> `schema.description`/`description`.
+- display text export precedence is `ui.title` -> `schema.title`/`title` and `ui.description` -> `schema.userDescription`/target `description`.
 - UI hints are non-semantic projection hints and must not alter canonical requiredness/nullability semantics.
 
 ## Legacy/Internal Import Boundary

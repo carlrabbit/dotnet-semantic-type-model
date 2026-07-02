@@ -5,7 +5,7 @@ namespace SemanticTypeModel.Samples.CodeFirstJsonSchema;
 // Consumers mark normal application types with SemanticTypeModel.DotNet attributes.
 [SemanticType(SemanticTypeRole.Entity)]
 [SemanticName("Customer")]
-[SemanticDescription("A customer account exported by the code-first JSON Schema sample.")]
+[SemanticUserDescription("A customer account exported by the code-first JSON Schema sample.")]
 public sealed class Customer
 {
     // SemanticKey marks the identity member in the generated semantic model.
@@ -14,7 +14,7 @@ public sealed class Customer
 
     // SemanticName changes the semantic property name that projections see.
     [SemanticName("emailAddress")]
-    [SemanticDescription("Primary contact email address.")]
+    [SemanticUserDescription("Primary contact email address.")]
     public required string Email { get; init; }
 
     public Address BillingAddress { get; init; } = new();

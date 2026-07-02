@@ -155,19 +155,18 @@ public static class SemanticTypeModelEfCoreExtensions
     private static void ApplyTable(EntityTypeBuilder entityBuilder, EfEntityTypeDefinition entity, string? defaultSchema)
     {
         var schemaName = entity.SchemaName ?? defaultSchema;
-        if (!string.IsNullOrWhiteSpace(entity.TableName))
+        var tableName = string.IsNullOrWhiteSpace(entity.TableName) ? entity.Name : entity.TableName;
+        if (string.IsNullOrWhiteSpace(schemaName))
         {
-            _ = !string.IsNullOrWhiteSpace(schemaName)
-                ? entityBuilder.ToTable(entity.TableName, schemaName)
-                : entityBuilder.ToTable(entity.TableName);
-
+            _ = string.IsNullOrWhiteSpace(entity.Comment)
+                ? entityBuilder.ToTable(tableName)
+                : entityBuilder.ToTable(tableName, table => table.HasComment(entity.Comment));
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(defaultSchema))
-        {
-            _ = entityBuilder.ToTable(entity.Name, defaultSchema);
-        }
+        _ = string.IsNullOrWhiteSpace(entity.Comment)
+            ? entityBuilder.ToTable(tableName, schemaName)
+            : entityBuilder.ToTable(tableName, schemaName, table => table.HasComment(entity.Comment));
     }
 
     private static void ApplyProperties(EntityTypeBuilder entityBuilder, IReadOnlyList<EfPropertyDefinition> properties)
@@ -180,6 +179,11 @@ public static class SemanticTypeModelEfCoreExtensions
             if (property.MaxLength is int maxLength)
             {
                 _ = propertyBuilder.HasMaxLength(maxLength);
+            }
+
+            if (!string.IsNullOrWhiteSpace(property.Comment))
+            {
+                _ = propertyBuilder.HasComment(property.Comment);
             }
 
             if (!string.IsNullOrWhiteSpace(property.ColumnName) && !string.Equals(property.ColumnName, property.Name, StringComparison.Ordinal))

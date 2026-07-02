@@ -301,12 +301,14 @@ public sealed class NormalizeDisplayMetadataTransformation : ISemanticModelTrans
     private static TypeDefinition NormalizeType(TypeDefinition type, List<string> changes)
     {
         var title = NormalizeSemanticAliasesTransformation.GetStringAnnotation(type.Annotations, "schema.title");
-        var description = NormalizeSemanticAliasesTransformation.GetStringAnnotation(type.Annotations, "schema.description");
+        var userDescription = NormalizeSemanticAliasesTransformation.GetStringAnnotation(type.Annotations, "schema.userDescription");
+        var technicalDescription = NormalizeSemanticAliasesTransformation.GetStringAnnotation(type.Annotations, "schema.technicalDescription");
 
         TypeDefinition next = type with
         {
             DisplayName = string.IsNullOrWhiteSpace(type.DisplayName) ? title : type.DisplayName,
-            Description = string.IsNullOrWhiteSpace(type.Description) ? description : type.Description,
+            UserDescription = string.IsNullOrWhiteSpace(type.UserDescription) ? userDescription : type.UserDescription,
+            TechnicalDescription = string.IsNullOrWhiteSpace(type.TechnicalDescription) ? technicalDescription : type.TechnicalDescription,
         };
 
         if (!string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(type.DisplayName))
@@ -314,9 +316,14 @@ public sealed class NormalizeDisplayMetadataTransformation : ISemanticModelTrans
             changes.Add($"{ModelPath.ForType(type.Id)}/displayName -> {title}");
         }
 
-        if (!string.IsNullOrWhiteSpace(description) && string.IsNullOrWhiteSpace(type.Description))
+        if (!string.IsNullOrWhiteSpace(userDescription) && string.IsNullOrWhiteSpace(type.UserDescription))
         {
-            changes.Add($"{ModelPath.ForType(type.Id)}/description -> annotation");
+            changes.Add($"{ModelPath.ForType(type.Id)}/userDescription -> annotation");
+        }
+
+        if (!string.IsNullOrWhiteSpace(technicalDescription) && string.IsNullOrWhiteSpace(type.TechnicalDescription))
+        {
+            changes.Add($"{ModelPath.ForType(type.Id)}/technicalDescription -> annotation");
         }
 
         return next switch
@@ -329,22 +336,29 @@ public sealed class NormalizeDisplayMetadataTransformation : ISemanticModelTrans
     private static PropertyDefinition NormalizeProperty(ObjectTypeDefinition type, PropertyDefinition property, List<string> changes)
     {
         var title = NormalizeSemanticAliasesTransformation.GetStringAnnotation(property.Annotations, "schema.title");
-        var description = NormalizeSemanticAliasesTransformation.GetStringAnnotation(property.Annotations, "schema.description");
+        var userDescription = NormalizeSemanticAliasesTransformation.GetStringAnnotation(property.Annotations, "schema.userDescription");
+        var technicalDescription = NormalizeSemanticAliasesTransformation.GetStringAnnotation(property.Annotations, "schema.technicalDescription");
 
         if (!string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(property.DisplayName))
         {
             changes.Add($"{ModelPath.ForProperty(type.Id, property.Id.Value)}/displayName -> {title}");
         }
 
-        if (!string.IsNullOrWhiteSpace(description) && string.IsNullOrWhiteSpace(property.Description))
+        if (!string.IsNullOrWhiteSpace(userDescription) && string.IsNullOrWhiteSpace(property.UserDescription))
         {
-            changes.Add($"{ModelPath.ForProperty(type.Id, property.Id.Value)}/description -> annotation");
+            changes.Add($"{ModelPath.ForProperty(type.Id, property.Id.Value)}/userDescription -> annotation");
+        }
+
+        if (!string.IsNullOrWhiteSpace(technicalDescription) && string.IsNullOrWhiteSpace(property.TechnicalDescription))
+        {
+            changes.Add($"{ModelPath.ForProperty(type.Id, property.Id.Value)}/technicalDescription -> annotation");
         }
 
         return property with
         {
             DisplayName = string.IsNullOrWhiteSpace(property.DisplayName) ? title : property.DisplayName,
-            Description = string.IsNullOrWhiteSpace(property.Description) ? description : property.Description,
+            UserDescription = string.IsNullOrWhiteSpace(property.UserDescription) ? userDescription : property.UserDescription,
+            TechnicalDescription = string.IsNullOrWhiteSpace(property.TechnicalDescription) ? technicalDescription : property.TechnicalDescription,
         };
     }
 }

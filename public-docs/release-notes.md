@@ -150,3 +150,7 @@ First stable SemanticTypeModel release.
 
 - Added shared Order Fulfillment samples so EF Core, JSON Schema, Power BI, System.Text.Json, runtime DI, and Configuration examples all consume one generated semantic model while each projection selects only the target metadata it needs.
 - Fixed EF Core nullable value-type projection so nullable scalar and numeric enum properties are represented as `Nullable<T>` in both projected EF metadata and applied EF Core `IProperty` metadata. This hardens the 2.3.0 compatibility gap where nullable value types could be projected with non-nullable CLR types.
+
+## 2.4.0 migration note: audience-specific descriptions
+
+SemanticTypeModel 2.4.0 intentionally replaces the former general description API with two explicit audiences: `SemanticUserDescriptionAttribute` for business/user-facing text and `SemanticTechnicalDescriptionAttribute` or XML `<summary>` fallback for technical text. The old `SemanticDescriptionAttribute`, XML documentation inclusion switches, and XML documentation requirement switches are removed. JSON Schema and Power BI use user descriptions by default and do not fall back to technical summaries; EF Core maps technical descriptions to table and column comments. Existing description text must be classified manually because its intended audience cannot be inferred safely.

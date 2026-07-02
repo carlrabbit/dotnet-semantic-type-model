@@ -53,14 +53,9 @@ public sealed record DotNetExtractionOptions
     public bool InferRelationships { get; init; }
 
     /// <summary>
-    /// Gets a value indicating whether XML documentation summaries are included as descriptions when explicit descriptions are absent.
+    /// Gets a value indicating whether a technical description is required.
     /// </summary>
-    public bool IncludeXmlDocumentation { get; init; }
-
-    /// <summary>
-    /// Gets a value indicating whether XML documentation is required.
-    /// </summary>
-    public bool RequireXmlDocumentation { get; init; }
+    public bool RequireTechnicalDescription { get; init; }
 
     /// <summary>
     /// Gets the generated provider namespace.

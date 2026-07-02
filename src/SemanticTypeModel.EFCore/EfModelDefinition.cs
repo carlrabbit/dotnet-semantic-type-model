@@ -84,6 +84,9 @@ public sealed record EfEntityTypeDefinition
     /// </summary>
     public string? SchemaName { get; init; }
 
+    /// <summary>Gets the provider-neutral table comment projected from the technical description.</summary>
+    public string? Comment { get; init; }
+
     /// <summary>
     /// Gets projected scalar, enum, flattened, serialized, or owned-navigation properties.
     /// </summary>
@@ -155,6 +158,9 @@ public sealed record EfPropertyDefinition
     /// Gets the projected column name when applicable.
     /// </summary>
     public string? ColumnName { get; init; }
+
+    /// <summary>Gets the provider-neutral column comment projected from the technical description.</summary>
+    public string? Comment { get; init; }
 
     /// <summary>
     /// Gets optional conversion metadata.

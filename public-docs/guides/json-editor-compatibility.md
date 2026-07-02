@@ -57,7 +57,7 @@ JSON Editor compatibility is an export mode of `SemanticTypeModel.JsonSchema`. I
 | `IncludeJsonEditorCompatibilityAnnotations` | `false` | `true`, `false` | Emits selected JSON Editor-compatible annotations | Unsupported widgets are diagnostics. |
 | `IncludeGenericUiAnnotations` | `false` | `true`, `false` | Emits generic `ui:*` extension annotations | Unknown hints may be diagnostics under strict mode. |
 | Title mapping | Display name unless UI title is preferred | `SemanticDisplayName`, `SemanticName`, `ui.title` | Emits `title` | Duplicate UI names can collide. |
-| Description mapping | Semantic description | `SemanticDescription` / documentation metadata | Emits `description` | Missing descriptions simply omit text. |
+| Description mapping | User description | `SemanticUserDescription` | Emits `description`; XML summaries do not populate user descriptions | Missing descriptions simply omit text. |
 | Ordering metadata | No default | `SemanticOrder` or UI order annotations | Emits deterministic property ordering annotations | Invalid order values are diagnostics. |
 | Enum labels | Enum names | `SemanticEnumValue(DisplayName=...)` | Emits display labels usable by editors | Labels without enum values are ignored/diagnosed. |
 | Widget hints | None | Supported JSON Editor widget names through UI annotations | Emits widget annotation | Unsupported widgets are diagnostics; no custom plugin guarantee. |

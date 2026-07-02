@@ -35,7 +35,7 @@ public sealed class PowerBiModelProjectionTests
             Id = new TypeId("DimCustomer"),
             Name = "DimCustomer",
             DisplayName = "Customer",
-            Description = "Customer dimension",
+            UserDescription = "Customer dimension",
             Kind = TypeKind.Object,
             Nullability = Nullability.NonNullable,
             Annotations = Annotation(("powerBi.tableRole", "Dimension"), ("powerBi.displayFolder", "Reference")),

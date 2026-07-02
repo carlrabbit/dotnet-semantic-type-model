@@ -89,7 +89,7 @@ Core semantics has no target-output option that changes JSON Schema, EF Core, Po
 | Enum | Closed set of named values | CLR enum, `SemanticEnumValue` | Enumerated domain value | JSON enum, EF/Power BI storage policy, schema labels | Depending on numeric values without policy. |
 | Format | Well-known scalar format | `SemanticFormat` | Formatting/validation hint | JSON Schema `format`; Power BI format metadata | Using format as custom parsing code. |
 | DisplayName | User-facing name | `SemanticDisplayName` / `SemanticName` | Label, not identity | Titles, table/column labels, UI text | Replacing stable member names with labels. |
-| Description | Human explanation | `SemanticDescription` | Documentation text | Schema descriptions, Power BI descriptions, diagnostics | Putting machine policy in prose. |
+| UserDescription / TechnicalDescription | Audience-specific explanations | `SemanticUserDescription` / `SemanticTechnicalDescription` plus XML summaries for technical fallback | User-facing and technical text | JSON Schema/Power BI user descriptions; EF Core comments and inspection technical descriptions | Assuming one description fits every audience. |
 | Category | Grouping label | `SemanticCategory` | Logical grouping | UI groups, Power BI display folders/categories | Expecting storage changes. |
 | Order | Display order | `SemanticOrder` | Deterministic ordering hint | JSON/UI property order and docs | Treating it as sort-by-column data. |
 | Ownership | Containment/lifecycle dependency | `SemanticOwned` | Owned member follows owner lifecycle | EF owned mapping; Power BI flatten/diagnose | Marking shared entities as owned. |

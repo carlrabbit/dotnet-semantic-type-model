@@ -199,7 +199,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
                 Columns = columns,
                 Measures = measures,
                 DisplayName = objectType.DisplayName,
-                Description = objectType.Description,
+                Description = objectType.UserDescription,
                 DisplayFolder = displayFolder,
                 Role = ResolveTableRole(objectType, tablePath, diagnostics),
                 IsHidden = ResolveBooleanAnnotation(objectType.Annotations, tablePath, diagnostics, PowerBiAnnotationNames.Hidden, "powerBi.hidden") ?? false,
@@ -308,7 +308,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         {
             return
             [
-                CreateColumn(columnName, property.DisplayName, MapScalarDataType(scalar, propertyPath, diagnostics), isNullable, isKey, isHidden, property.Description, summarization, property.Id, dataCategory, formatString, sortByColumn, property.Annotations),
+                CreateColumn(columnName, property.DisplayName, MapScalarDataType(scalar, propertyPath, diagnostics), isNullable, isKey, isHidden, property.UserDescription, summarization, property.Id, dataCategory, formatString, sortByColumn, property.Annotations),
             ];
         }
 
@@ -316,7 +316,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         {
             return
             [
-                CreateColumn(columnName, property.DisplayName, MapEnumDataType(enumType), isNullable, isKey, isHidden, property.Description, summarization, property.Id, dataCategory, formatString, sortByColumn, property.Annotations),
+                CreateColumn(columnName, property.DisplayName, MapEnumDataType(enumType), isNullable, isKey, isHidden, property.UserDescription, summarization, property.Id, dataCategory, formatString, sortByColumn, property.Annotations),
             ];
         }
 
@@ -447,7 +447,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
                     property.Cardinality.AllowsNull || valueObjectType.Nullability.AllowsNull,
                     isKey,
                     isHidden,
-                    property.Description,
+                    property.UserDescription,
                     PowerBiSummarization.None,
                     property.Id,
                     ResolveStringAnnotation(property.Annotations, propertyPath, diagnostics, PowerBiAnnotationNames.DataCategory),
@@ -526,7 +526,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
                 nestedProperty.Cardinality.AllowsNull,
                 false,
                 false,
-                nestedProperty.Description,
+                nestedProperty.UserDescription,
                 PowerBiSummarization.None,
                 nestedProperty.Id,
                 ResolveStringAnnotation(nestedProperty.Annotations, nestedPath, diagnostics, PowerBiAnnotationNames.DataCategory),
@@ -552,7 +552,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
                 propertyPath);
             return
             [
-                CreateColumn(property.Name, property.DisplayName, PowerBiDataType.String, true, false, false, property.Description, PowerBiSummarization.None, property.Id, null, null, null, property.Annotations),
+                CreateColumn(property.Name, property.DisplayName, PowerBiDataType.String, true, false, false, property.UserDescription, PowerBiSummarization.None, property.Id, null, null, null, property.Annotations),
             ];
         }
 
@@ -697,7 +697,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
                 ExpressionLanguage = member.Expression.Language,
                 DisplayFolder = ResolveStringAnnotation(member.Annotations, memberPath, diagnostics, "powerBi.displayFolder", "ui.category"),
                 FormatString = ResolveStringAnnotation(member.Annotations, memberPath, diagnostics, "tom.measureFormatString", "powerBi.formatString"),
-                Description = ResolveStringAnnotation(member.Annotations, memberPath, diagnostics, "schema.description"),
+                Description = ResolveStringAnnotation(member.Annotations, memberPath, diagnostics, "schema.userDescription"),
             });
         }
 

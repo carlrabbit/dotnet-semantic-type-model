@@ -27,7 +27,7 @@ public static class JsonSchemaDerivationExtensions
         }
 
         SemanticModelTransformationResult transformed = options.Transformations.Run(model, options.PipelineOptions, cancellationToken);
-        JsonSchemaDomainMapper mapper = new(options.SchemaId, transformed.Diagnostics, options.Envelopes.Policies);
+        JsonSchemaDomainMapper mapper = new(options.SchemaId, transformed.Diagnostics, options.Envelopes.Policies, options.TechnicalDescriptionExtensionName);
         JsonSchemaSemanticModel domainModel = mapper.Map(transformed.Model);
 
         return new SemanticDerivationResult<JsonSchemaSemanticModel>
@@ -38,7 +38,7 @@ public static class JsonSchemaDerivationExtensions
         };
     }
 
-    private sealed class JsonSchemaDomainMapper(Uri? schemaId, IReadOnlyList<Model.SchemaDiagnostic> initialDiagnostics, IReadOnlyDictionary<string, JsonSchemaEnvelopeProjectionPolicy> envelopePolicies)
+    private sealed class JsonSchemaDomainMapper(Uri? schemaId, IReadOnlyList<Model.SchemaDiagnostic> initialDiagnostics, IReadOnlyDictionary<string, JsonSchemaEnvelopeProjectionPolicy> envelopePolicies, string? technicalDescriptionExtensionName)
     {
         private readonly List<Model.SchemaDiagnostic> _diagnostics = [.. initialDiagnostics];
         private Model.TypeSchemaModel? _model;
@@ -102,7 +102,7 @@ public static class JsonSchemaDerivationExtensions
                 {
                     Name = type.Name,
                     Title = type.DisplayName,
-                    Description = type.Description,
+                    Description = type.UserDescription,
                     Kind = JsonSchemaCompositionKind.OneOf,
                     Alternatives = [JsonSchemaSchemaRef.FromReference(reference.Target.Id.Value)],
                 },
@@ -123,10 +123,10 @@ public static class JsonSchemaDerivationExtensions
             {
                 Name = type.Name,
                 Title = type.DisplayName ?? GetStringAnnotation(type.Annotations, "schema.title") ?? GetStringAnnotation(type.Annotations, "title"),
-                Description = type.Description ?? GetStringAnnotation(type.Annotations, "schema.description") ?? GetStringAnnotation(type.Annotations, "description"),
+                Description = type.UserDescription,
                 AdditionalPropertiesAllowed = additionalAllowed,
                 Properties = [.. type.Properties.Where(static property => !HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData)).OrderBy(static property => property.Name, StringComparer.Ordinal).Select(property => MapProperty(type, property))],
-                Annotations = MapProjectionAnnotations(type.Annotations),
+                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
             };
         }
 
@@ -134,6 +134,7 @@ public static class JsonSchemaDerivationExtensions
         {
             JsonSchemaSchemaRef schema = MapReference(property.Type, $"/properties/{property.Name}");
             Dictionary<string, JsonElement> annotations = MapProjectionAnnotations(property.Annotations);
+            _ = AddTechnicalDescriptionExtension(annotations, property.TechnicalDescription);
             if (IsEnvelopePayload(property) && TryGetEnvelopePolicy(owner, out JsonSchemaEnvelopeProjectionPolicy? policy))
             {
                 schema = MapEnvelopePayloadSchema(property, policy);
@@ -150,10 +151,27 @@ public static class JsonSchemaDerivationExtensions
                 IsRequired = property.Cardinality.IsRequired,
                 IsNullable = property.Cardinality.AllowsNull,
                 Title = property.DisplayName ?? GetStringAnnotation(property.Annotations, "schema.title") ?? GetStringAnnotation(property.Annotations, "title"),
-                Description = property.Description ?? GetStringAnnotation(property.Annotations, "schema.description") ?? GetStringAnnotation(property.Annotations, "description"),
+                Description = property.UserDescription,
                 Constraints = MapConstraints(property.Constraints),
                 Annotations = annotations,
             };
+        }
+
+        private Dictionary<string, JsonElement> AddTechnicalDescriptionExtension(Dictionary<string, JsonElement> annotations, string? technicalDescription)
+        {
+            if (string.IsNullOrWhiteSpace(technicalDescriptionExtensionName) || string.IsNullOrWhiteSpace(technicalDescription))
+            {
+                return annotations;
+            }
+
+            if (!technicalDescriptionExtensionName.StartsWith("x-", StringComparison.Ordinal) || technicalDescriptionExtensionName.Any(char.IsWhiteSpace))
+            {
+                AddDiagnostic("JSONSCHEMA_INVALID_TECHNICAL_DESCRIPTION_EXTENSION", $"JSON Schema technical description extension '{technicalDescriptionExtensionName}' must start with 'x-' and contain no whitespace.", "/options/technicalDescriptionExtensionName");
+                return annotations;
+            }
+
+            annotations[technicalDescriptionExtensionName] = ToJsonElement(technicalDescription);
+            return annotations;
         }
 
         private JsonSchemaSchemaRef MapEnvelopePayloadSchema(Model.PropertyDefinition property, JsonSchemaEnvelopeProjectionPolicy policy)
@@ -185,7 +203,7 @@ public static class JsonSchemaDerivationExtensions
             return property.Annotations.Items.Any(annotation => string.Equals(annotation.Key.Value, CoreSemanticAnnotationKeys.EnvelopePayload, StringComparison.Ordinal) && Convert.ToString(annotation.Value, System.Globalization.CultureInfo.InvariantCulture)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
         }
 
-        private static JsonSchemaScalarNode MapScalar(Model.ScalarTypeDefinition type)
+        private JsonSchemaScalarNode MapScalar(Model.ScalarTypeDefinition type)
         {
             var jsonType = type.ScalarKind switch
             {
@@ -222,24 +240,24 @@ public static class JsonSchemaDerivationExtensions
             {
                 Name = type.Name,
                 Title = type.DisplayName,
-                Description = type.Description,
+                Description = type.UserDescription,
                 Type = jsonType,
                 Format = format,
                 IsNullable = type.Nullability.AllowsNull,
                 Constraints = new JsonSchemaConstraintSet(),
-                Annotations = MapProjectionAnnotations(type.Annotations),
+                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
             };
         }
 
-        private static JsonSchemaEnumNode MapEnum(Model.EnumTypeDefinition type)
+        private JsonSchemaEnumNode MapEnum(Model.EnumTypeDefinition type)
         {
             return new JsonSchemaEnumNode
             {
                 Name = type.Name,
                 Title = type.DisplayName,
-                Description = type.Description,
+                Description = type.UserDescription,
                 Values = [.. type.Values.Select(static value => ToJsonElement(value.Value))],
-                Annotations = MapProjectionAnnotations(type.Annotations),
+                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
             };
         }
 
@@ -249,10 +267,10 @@ public static class JsonSchemaDerivationExtensions
             {
                 Name = type.Name,
                 Title = type.DisplayName,
-                Description = type.Description,
+                Description = type.UserDescription,
                 Items = MapReference(type.ItemType, $"/types/{type.Id.Value}/items"),
                 Constraints = new JsonSchemaConstraintSet { MinItems = type.MinItems, MaxItems = type.MaxItems, UniqueItems = type.UniqueItems },
-                Annotations = MapProjectionAnnotations(type.Annotations),
+                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
             };
         }
 
@@ -262,9 +280,9 @@ public static class JsonSchemaDerivationExtensions
             {
                 Name = type.Name,
                 Title = type.DisplayName,
-                Description = type.Description,
+                Description = type.UserDescription,
                 Values = MapReference(type.ValueType, $"/types/{type.Id.Value}/values"),
-                Annotations = MapProjectionAnnotations(type.Annotations),
+                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
             };
         }
 
@@ -279,10 +297,10 @@ public static class JsonSchemaDerivationExtensions
             {
                 Name = type.Name,
                 Title = type.DisplayName,
-                Description = type.Description,
+                Description = type.UserDescription,
                 Kind = type.Semantics == Model.UnionSemantics.AnyOf ? JsonSchemaCompositionKind.AnyOf : JsonSchemaCompositionKind.OneOf,
                 Alternatives = [.. type.Options.OrderBy(static option => option.Id.Value, StringComparer.Ordinal).Select(option => MapReference(option, $"/types/{type.Id.Value}/options"))],
-                Annotations = MapProjectionAnnotations(type.Annotations),
+                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
             };
         }
 
@@ -303,9 +321,9 @@ public static class JsonSchemaDerivationExtensions
             {
                 Name = type.Name,
                 Title = type.DisplayName,
-                Description = type.Description,
+                Description = type.UserDescription,
                 Type = "object",
-                Annotations = MapProjectionAnnotations(type.Annotations),
+                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
             };
         }
 

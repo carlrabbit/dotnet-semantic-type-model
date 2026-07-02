@@ -41,11 +41,11 @@ Custom attributes do not mutate the canonical model directly. Extraction preserv
   - maps member/enum output names for properties and enum values;
   - overrides naming policy.
 
-### `SemanticDescriptionAttribute`
+### `SemanticUserDescriptionAttribute` and `SemanticTechnicalDescriptionAttribute`
 
 - Targets: class, struct, enum, property, field.
 - Semantics:
-  - maps to `schema.description`;
+  - maps to `schema.userDescription` or `schema.technicalDescription`;
   - overrides XML documentation summaries.
 
 ### `SemanticDisplayNameAttribute`
@@ -187,7 +187,7 @@ public sealed class ManagedSpecificationEnvelope<TSpecification>
 Concrete precedence examples:
 
 - `[SemanticName]` overrides naming policy.
-- `[SemanticDescription]` overrides XML summary extraction.
+- `[SemanticTechnicalDescription]` overrides XML summary technical fallback; `[SemanticUserDescription]` is independent.
 - `[SemanticIgnore]` overrides convention discovery inclusion.
 - `[SemanticKey]` overrides key inference.
 - `[SemanticRelationship]` overrides relationship inference.

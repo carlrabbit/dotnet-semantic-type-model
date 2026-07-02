@@ -89,14 +89,9 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             options = options with { InferRelationships = inferRelationships };
         }
 
-        if (TryParseBoolOption(globalOptions, "SemanticTypeModelIncludeXmlDocumentation", out bool includeXmlDocumentation))
+        if (TryParseBoolOption(globalOptions, "SemanticTypeModelRequireTechnicalDescription", out bool requireTechnicalDescription))
         {
-            options = options with { IncludeXmlDocumentation = includeXmlDocumentation };
-        }
-
-        if (TryParseBoolOption(globalOptions, "SemanticTypeModelRequireXmlDocumentation", out bool requireXmlDocumentation))
-        {
-            options = options with { RequireXmlDocumentation = requireXmlDocumentation };
+            options = options with { RequireTechnicalDescription = requireTechnicalDescription };
         }
 
         SystemTextJsonExtractionOptions systemTextJson = options.SystemTextJson;
@@ -317,6 +312,8 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             source.AppendLine($"{indent}            Type = new global::SemanticTypeModel.Abstractions.Model.TypeRef(new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(property.TypeId)}\")),");
             source.AppendLine($"{indent}            Cardinality = new global::SemanticTypeModel.Abstractions.Model.Cardinality {{ IsRequired = {property.IsRequired.ToString().ToLowerInvariant()}, AllowsNull = {property.IsNullable.ToString().ToLowerInvariant()} }},");
             source.AppendLine($"{indent}            Mutability = global::SemanticTypeModel.Abstractions.Model.Mutability.Mutable,");
+            source.AppendLine($"{indent}            UserDescription = {Literal(GetAnnotationValue(property.Annotations, "schema.userDescription"))},");
+            source.AppendLine($"{indent}            TechnicalDescription = {Literal(GetAnnotationValue(property.Annotations, "schema.technicalDescription"))},");
             source.AppendLine($"{indent}            Constraints = new global::SemanticTypeModel.Abstractions.Model.ConstraintSet(),");
             AppendAnnotationBag(source, property.Annotations, indentationLevel + 3, "Annotations");
             source.AppendLine($"{indent}        }},");
@@ -405,9 +402,21 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         string indent = new(' ', indentationLevel * 4);
         source.AppendLine($"{indent}Id = new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(id)}\"),");
         source.AppendLine($"{indent}Name = \"{EscapeString(name)}\",");
+        source.AppendLine($"{indent}UserDescription = {Literal(GetAnnotationValue(annotations, "schema.userDescription"))},");
+        source.AppendLine($"{indent}TechnicalDescription = {Literal(GetAnnotationValue(annotations, "schema.technicalDescription"))},");
         source.AppendLine($"{indent}Kind = global::SemanticTypeModel.Abstractions.Model.TypeKind.{kind},");
         source.AppendLine($"{indent}Nullability = global::SemanticTypeModel.Abstractions.Model.Nullability.{(allowsNull ? "Nullable" : "NonNullable")},");
         AppendAnnotationBag(source, annotations, indentationLevel, "Annotations");
+    }
+
+    private static string? GetAnnotationValue(IReadOnlyDictionary<string, string> annotations, string key)
+    {
+        return annotations.TryGetValue(key, out string? value) && !string.IsNullOrWhiteSpace(value) ? value : null;
+    }
+
+    private static string Literal(string? value)
+    {
+        return value is null ? "null" : $"\"{EscapeString(value)}\"";
     }
 
     private static void AppendAnnotationBag(StringBuilder source, IReadOnlyDictionary<string, string> annotations, int indentationLevel, string memberName)

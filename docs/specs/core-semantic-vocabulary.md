@@ -80,7 +80,8 @@ The following canonical annotation keys preserve authoring intent before or afte
 | `schema.relationship.foreignKey` | Member | Names the foreign-key member when explicitly supplied. |
 | `schema.relationship.cardinality` | Member | Declares relationship cardinality. |
 | `schema.title` | Type/member | Projection-neutral display name. |
-| `schema.description` | Type/member | Projection-neutral description. |
+| `schema.userDescription` | Type/member | User-facing projection-neutral description. |
+| `schema.technicalDescription` | Type/member | Technical projection-neutral description. |
 | `schema.format` | Type/member | Projection-neutral scalar format. |
 | `schema.minLength`, `schema.maxLength`, `schema.pattern` | Member | String constraints. |
 | `schema.minimum`, `schema.maximum`, `schema.exclusiveMinimum`, `schema.exclusiveMaximum`, `schema.multipleOf` | Member | Numeric constraints. |
@@ -513,7 +514,7 @@ public string Name { get; init; } = string.Empty;
 **Example:**
 
 ```csharp
-[SemanticDescription("The customer-facing display name.")]
+[SemanticUserDescription("The customer-facing display name.")]
 public string Name { get; init; } = string.Empty;
 ```
 

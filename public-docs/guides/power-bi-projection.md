@@ -55,7 +55,7 @@ Power BI projection produces deterministic local metadata: tables, columns, rela
 |---|---|---|---|---|
 | Dimension | Role metadata | `SemanticTypeRole.Dimension` or Power BI table role annotation | Projects a dimension table role | Invalid table-role annotation is diagnostic. |
 | Fact | Role metadata | `SemanticTypeRole.Fact` | Projects a fact table role and numeric summarization candidates | Missing relationships reduce analytical usefulness. |
-| DisplayName/Description | Preserve semantic metadata | `SemanticDisplayName`, `SemanticDescription` | Sets table/column labels and descriptions | Duplicate display names can collide under display-name naming. |
+| DisplayName/Description | Preserve semantic metadata | `SemanticDisplayName`, `SemanticUserDescription` | Sets table/column labels and user-facing descriptions | Duplicate display names can collide under display-name naming. |
 | Format | No default format string | Format annotations / Power BI format metadata | Emits local format metadata | Unsupported format strings are preserved/diagnosed depending metadata. |
 | Enums | `Name` | `Name`, `DisplayName`, `NumericWhenAvailable` | Chooses categorical column values | Numeric mode requires compatible metadata. |
 | Relationships | Semantic relationships | Cardinalities and endpoint metadata | Emits Power BI relationship metadata | Ambiguous/incomplete relationships are warnings or errors when required. |
