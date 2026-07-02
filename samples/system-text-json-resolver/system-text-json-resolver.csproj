@@ -10,4 +10,7 @@
     <PackageReference Include="SemanticTypeModel.DotNet" />
     <PackageReference Include="SemanticTypeModel.SystemTextJson" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../OrderFulfillment.Domain/OrderFulfillment.Domain.csproj" />
+  </ItemGroup>
 </Project>

@@ -1,26 +1,20 @@
 using SemanticTypeModel.Abstractions.Model;
-using SemanticTypeModel.DotNet;
-using SemanticTypeModel.Generated;
 using SemanticTypeModel.PowerBI;
+using SemanticTypeModel.Samples.OrderFulfillment.Domain;
 
-TypeSchemaModel model = AppSemanticTypeModel.Create();
-var result = model.DerivePowerBiModel(options =>
-{
-    _ = options.UseDefaultTransformations();
-    options.Projection.ProjectUnannotatedObjectsAsTables = true;
-});
-
-Console.WriteLine($"root: {model.Id.Value}");
-Console.WriteLine($"tables: {result.Model.Tables.Count}");
-Console.WriteLine($"calculated tables: {result.Model.CalculatedTables.Count}");
-Console.WriteLine($"diagnostics: {result.Diagnostics.Count}");
+TypeSchemaModel model = OrderFulfillmentSemanticModel.Create();
+var result = model.DerivePowerBiModel(options => _ = options.UseDefaultTransformations());
+Require(result.Model.Tables.Any(t => t.Name == "Customer"), "Customer dimension is projected.");
+Require(result.Model.Tables.Any(t => t.Name == "Product"), "Product dimension is projected.");
+Require(result.Model.Tables.Any(t => t.Name == "Order"), "Order fact table is projected.");
+Require(result.Model.Tables.Any(t => t.Name == "OrderLine"), "OrderLine fact table is projected.");
+Require(!result.Diagnostics.Any(d => d.Severity.ToString() == "Error"), "No Power BI errors are produced.");
+Console.WriteLine($"Power BI sample passed: {result.Model.Tables.Count} tables from {model.Id.Value}.");
 Console.WriteLine(PowerBiLocalMetadataExporter.Inspect(result.Model));
-
-[SemanticType(Name = "SalesRecord")]
-public sealed partial class SalesRecord
+static void Require(bool condition, string message)
 {
-    [SemanticKey]
-    public required string Id { get; init; }
-
-    public decimal Amount { get; init; }
+    if (!condition)
+    {
+        throw new InvalidOperationException(message);
+    }
 }

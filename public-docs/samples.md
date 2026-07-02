@@ -22,3 +22,7 @@ Prepare local packages, then run package-based sample validation:
 ```
 
 `./eng/samples.sh` restores SemanticTypeModel packages from `artifacts/nuget` and keeps public feeds available for third-party dependencies.
+
+### Shared Order Fulfillment sample model
+
+The code-first projection samples now share `samples/OrderFulfillment.Domain`. Each executable creates `OrderFulfillmentSemanticModel.Create()` and then applies only its own projection. This demonstrates that a complete semantic model can contain EF Core entities, JSON Schema editing contracts, Power BI analytical tables, System.Text.Json envelope serialization types, runtime DI registration, and Configuration option types without requiring every consumer to consume every type.

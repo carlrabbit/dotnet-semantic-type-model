@@ -97,3 +97,7 @@ The package does not publish datasets, authenticate with Power BI, create PBIX f
 - [SemanticTypeModel.PowerBI package](../nuget/SemanticTypeModel.PowerBI.md)
 - [Code-first Power BI sample](../samples/code-first-powerbi.md)
 - [Projection capabilities](projection-capabilities.md)
+
+### Shared sample analytical selection
+
+The Power BI sample consumes the shared Order Fulfillment model and validates Customer/Product dimensions plus Order/OrderLine tables. The sample demonstrates target-specific consumption from a complete canonical model.

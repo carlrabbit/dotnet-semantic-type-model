@@ -6,166 +6,104 @@ Authoritative engineering policy for public samples.
 
 ## Purpose
 
-Define constraints and validation for runnable samples used as executable public documentation.
+Define package-based public samples as executable documentation and representative compatibility canaries. Samples do not replace exhaustive tests.
 
-Samples must show how a consumer uses SemanticTypeModel packages. They are not a place for repository-internal generator harnesses, source-tree integration experiments, or unit-test substitutes.
-
-## Validation Command
-
-Primary sample validation is performed through:
+## Validation
 
 ```sh
 ./eng/samples.sh
 ```
 
-When samples consume locally prepared packages, sample validation must be run after the required packages have been packed into the configured local package source.
+Samples validate locally packed SemanticTypeModel packages. Missing local packages must fail validation.
 
-If a versioned sample command is introduced, the command contract must document it and `./eng/samples.sh` must route to or explain the versioned command.
+## Core Rules
 
-## Public Sample Rules
+- Public samples live under `samples/`.
+- `SemanticTypeModel.*` dependencies use `PackageReference`.
+- No sample references `src/*`.
+- Generator usage occurs through normal MSBuild/NuGet behavior.
+- No manual Roslyn driver, source-string compilation, reflection-based generated-provider invocation, external service, secret, database, or network dependency.
+- No local README files; docs live under `public-docs/samples/`.
+- Samples are deterministic.
+- Samples inspect representative output and fail on broken invariants; printing counts alone is insufficient.
 
-Public samples live under `samples/` and must satisfy these rules:
+## Shared Domain
 
-- Samples are standalone consumer projects.
-- Samples are runnable and deterministic.
-- Samples consume SemanticTypeModel through `PackageReference`, not `ProjectReference` to `src/*`.
-- Samples restore SemanticTypeModel packages from locally prepared package artifacts during repository validation.
-- Samples may use public package feeds for third-party dependencies.
-- Samples must not manually invoke Roslyn source-generator APIs.
-- Samples must not compile C# source strings to demonstrate normal source-generator usage.
-- Samples that use `SemanticTypeModel.Generators` must let the generator run through normal MSBuild/NuGet package behavior.
-- Samples must not require secrets, network services, cloud accounts, external databases, Power BI service access, or timing-dependent behavior.
-- Samples must not introduce local README files.
-- Sample documentation lives under `public-docs/samples/`.
-- Samples do not replace tests; tests remain responsible for exhaustive behavior and regression coverage.
-
-## Internal Harnesses
-
-Internal development harnesses must not be presented as public samples.
-
-Examples of internal harness behavior:
+Code-first samples use:
 
 ```text
-manual CSharpCompilation construction
-manual CSharpGeneratorDriver execution
-source strings used as the primary sample model
-in-memory assembly emission
-reflection used to invoke generated providers
-direct references to source projects for normal package scenarios
+samples/OrderFulfillment.Domain/
 ```
 
-Such code belongs in tests or tooling, not in public samples.
+The shared domain owns annotated types and generator configuration, contains no projection execution code, is not published, and consumes authoring/generator packages normally.
 
-## Required Public Sample Set
+Projection samples may reference it:
 
-The public sample set should cover the main consumer workflows:
+```xml
+<ProjectReference Include="../OrderFulfillment.Domain/OrderFulfillment.Domain.csproj" />
+```
 
-| Sample scenario | Purpose |
+This does not replace package-based consumption of SemanticTypeModel libraries.
+
+## Overlap
+
+At minimum:
+
+| Concept | Required use |
 |---|---|
-| JSON Schema roundtrip | Import and export JSON Schema through supported public APIs. |
-| Code-first JSON Schema | Annotated C# model, packaged generator, generated provider, JSON Schema export. |
-| Code-first EF Core | Annotated C# model, packaged generator, generated provider, EF Core projection. |
-| Code-first Power BI | Annotated C# model, packaged generator, generated provider, Power BI projection metadata. |
-| System.Text.Json resolver | User-authored `JsonSerializerContext` and SemanticTypeModel resolver customization. |
-| Runtime DI | Consumer-style dependency-injection registration and projection usage. |
+| Customer | EF Core, JSON Schema/editing, System.Text.Json, Power BI |
+| Product | EF Core, Power BI, JSON Schema where useful |
+| Order/OrderLine | EF Core, JSON Schema, Power BI |
+| Address/value objects | EF Core and JSON Schema |
+| Lifecycle enums | Multiple projections |
+| Nullable values | EF Core, JSON Schema, Power BI |
+| Configuration types | Explicit Configuration registration |
+| Event/envelope types | JSON Schema and/or System.Text.Json |
 
-Sample directory names may differ, but public documentation must clearly map scenario names to project paths.
+## Selection
 
+Each executable uses the complete generated model but invokes only its target projection. Configuration explicitly selects option types through `AddSemanticOptions<TOptions>` and verifies unrelated types remain unregistered. Do not add exclusion lists for the canonical model.
 
-## Current Public Sample Set and Classification
+## Composition
 
-All projects currently under `samples/` are public consumer samples. The M0025 classification is:
+Do not create a universal base class solely for reuse. Prefer composition and value objects. Use inheritance only when meaningful and intentionally demonstrated.
 
-| Project path | Classification | Consumer scenario |
-|---|---|---|
-| `samples/json-schema-roundtrip` | Keep public sample | JSON Schema import, transformation, validation, and export. |
-| `samples/code-first-json-schema` | Rewrite public sample | Normal packaged generator usage with JSON Schema export. |
-| `samples/code-first-ef-core` | Rewrite public sample | Normal packaged generator usage with EF Core projection metadata. |
-| `samples/code-first-powerbi` | Rewrite public sample | Normal packaged generator usage with Power BI projection metadata. |
-| `samples/system-text-json-resolver` | Rewrite public sample | User-authored `JsonSerializerContext` with resolver customization. |
-| `samples/runtime-di` | Rewrite public sample | Consumer-style dependency-injection registration and projection usage. |
+## Canary Assertions
 
-The former generator-driver/source-string harnesses and source-project projection samples are removed from the public sample set rather than retained as internal examples under `samples/`.
+- EF Core: entity, key, relationship, nullable scalar, required scalar.
+- JSON Schema: editable Customer contract, required field, optional nullable field, enum, owned object.
+- System.Text.Json: resolver wrapping, naming, nullable values, shared Customer/Order type.
+- Power BI: facts, dimensions, relationships, nullable analytical field.
+- Configuration: explicit registration, required section, nullable value, unrelated options unregistered.
 
-## Source Generator Sample Contract
+Exhaustive scalar/nullability matrices belong in tests.
 
-A source-generator sample must use the normal consumer path:
+## Required Sample Set
 
-```text
-PackageReference to SemanticTypeModel.Generators.
-Domain model files included in the project.
-Generator options configured through supported project properties or assembly attributes.
-Generated provider consumed directly from generated source.
-No manual generator driver.
-No source-string compilation.
-No reflection over generated providers.
-```
-
-Example consumer shape:
-
-```csharp
-TypeSchemaModel model = AppSemanticTypeModel.Create();
-```
-
-The exact generated namespace and provider name depend on sample configuration.
-
-## Package-Based Restore Contract
-
-Repository sample validation must exercise packaged artifacts.
-
-The sample validation setup must ensure:
-
-- SemanticTypeModel packages come from locally prepared `artifacts/nuget` or an equivalent configured local package source.
-- Public package feeds remain available for third-party dependencies.
-- Missing local SemanticTypeModel packages cause sample validation to fail.
-- Analyzer/source-generator package assets are exercised through package restore and build.
-- Sample projects remain runnable as consumer projects outside the repository when pointed at an appropriate package source.
-
-## Code Comment Guidance
-
-Samples should include comments that teach consumer usage.
-
-Use comments to explain:
-
-- package or project configuration that enables a feature;
-- why a semantic annotation is present;
-- where generated provider code comes from;
-- what the projection output represents;
-- how local artifacts are produced;
-- why a `JsonSerializerContext` is user-authored;
-- where sample output is written.
-
-Do not use comments that merely restate the syntax.
+| Scenario | Purpose |
+|---|---|
+| JSON Schema roundtrip | Supported import/export workflow. |
+| Code-first JSON Schema | Editable contracts from shared model. |
+| Code-first EF Core | Provider-neutral EF metadata from shared model. |
+| Code-first Power BI | Facts/dimensions from shared model. |
+| System.Text.Json resolver | Resolver customization for shared contracts. |
+| Runtime DI | Consumer model/provider composition. |
+| Configuration options | Explicit options registration from complete model. |
 
 ## Documentation Contract
 
-When sample policy or sample projects change, review and update:
-
-```text
-public-docs/samples.md
-public-docs/samples/*.md
-eng/samples.sh
-docs/engineering/command-contract.md when commands change
-```
-
-Public sample documentation must state:
-
-- scenario goal;
-- package references used;
-- run command;
-- expected output;
-- consumer pattern demonstrated;
-- non-goals;
-- sample project path.
+Review `README.md`, `public-docs/samples.md`, `public-docs/samples/*.md`, affected guides, `eng/samples.sh`, and the command contract. Sample docs state goal, shared-domain slice, packages, run command, expected output, representative assertions, consumer pattern, non-goals, and project path.
 
 ## Validation Tiers
 
-Use the repository validation tiers.
-
-| Tier | Use for samples |
+| Tier | Use |
 |---|---|
-| Tier 0 | Sample documentation changes and sample policy text. |
-| Tier 1 | Affected sample build/run, package-based restore validation, affected sample command changes. |
-| Tier 2 | Completion gate for sample implementation changes. |
-| Tier 3 | Package preparation and package-smoke validation when package artifacts or package-based sample validation are involved. |
-| Tier 4 | Not used for sample implementation unless explicit publish work is in scope. |
+| 0 | Docs and policy |
+| 1 | Affected sample and focused projection tests |
+| 2 | Repository completion gate |
+| 3 | Package, smoke, all samples, public docs |
+| 4 | Only explicit publication work |
+
+## M0046 shared sample-domain canaries
+
+The Order Fulfillment sample domain is the shared package-based source for code-first projection samples. Executable samples must assert representative invariants instead of printing counts only, while exhaustive nullability matrices remain in unit tests.

@@ -99,3 +99,7 @@ The package does not perform runtime JSON validation, does not make schema impor
 - [SemanticTypeModel.JsonSchema package](../nuget/SemanticTypeModel.JsonSchema.md)
 - [JSON Editor compatibility](json-editor-compatibility.md)
 - [Code-first JSON Schema sample](../samples/code-first-json-schema.md)
+
+### Shared sample editing contract
+
+The shared Order Fulfillment JSON Schema sample exports an editable Customer contract from the same semantic model used by EF Core, Power BI, and System.Text.Json samples. Optional nullable fields remain distinct from required fields in the exported schema.
