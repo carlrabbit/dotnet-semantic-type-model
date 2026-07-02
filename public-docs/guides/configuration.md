@@ -9,7 +9,7 @@ Derive Microsoft.Extensions.Options registrations from configuration semantics w
 - .NET 10 SDK.
 - Annotated .NET types are the canonical authoring source.
 - A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
-- The examples assume package version `2.3.0`.
+- The examples assume package version `2.4.0`.
 
 ## Packages
 
@@ -125,3 +125,7 @@ Configuration projection is limited to options-registration metadata and equival
 ### Explicit selection from shared models
 
 The Configuration sample uses `AddSemanticOptions<OrderProcessingOptions>(configuration, model)` against the shared Order Fulfillment model and verifies unrelated configuration types remain unregistered until the application explicitly selects them.
+
+### Audience-specific descriptions
+
+Configuration derivation preserves both `UserDescription` and `TechnicalDescription` for inspection and generated output. Runtime options registration behavior is driven by configuration metadata, validation metadata, and selected-type registration; it does not infer user-facing configuration documentation from technical summaries.

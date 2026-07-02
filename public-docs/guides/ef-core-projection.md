@@ -9,7 +9,7 @@ Apply semantic metadata to EF Core `ModelBuilder` while leaving provider setup, 
 - .NET 10 SDK.
 - Annotated .NET types are the canonical authoring source.
 - A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
-- The examples assume package version `2.3.0`.
+- The examples assume package version `2.4.0`.
 
 ## Packages
 
@@ -110,3 +110,7 @@ The package does not create `DbContext` types, choose a database provider, run m
 ### Nullable value-type projection
 
 EF Core projection preserves nullable scalar value types as `Nullable<T>` in the projected EF model and in the applied EF Core `IProperty` metadata. Use tests, not public samples, for exhaustive nullable scalar matrices.
+
+### Audience-specific descriptions
+
+EF Core maps `TechnicalDescription` to provider-neutral table and column comments. XML `<summary>` is a technical-description fallback, so it can become an EF Core comment. `UserDescription` is retained for user-facing projections and is not used as a silent EF Core comment fallback.

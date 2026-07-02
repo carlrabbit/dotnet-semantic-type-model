@@ -7,7 +7,7 @@
 - The repository does not currently maintain text API baseline files as release gates.
 - `SemanticTypeModel.SystemTextJson` 1.1.0 removed generated `JsonSerializerContext` support as a documented compatibility correction because the 1.0 design depended on unsupported source-generator chaining.
 - 2.2.0 release-preparation documentation records M0038 as the model-surface cleanup boundary; removed `Canonical` namespace and old shape-graph APIs must not be presented as supported current usage.
-- 2.3.0 release-preparation documentation records Configuration as explicit per-options-type registration; model-wide Configuration application registration is obsolete pending human compatibility review.
+- 2.4.0 release-preparation documentation records Configuration as explicit per-options-type registration; model-wide Configuration application registration is obsolete pending human compatibility review.
 
 ## 2.2.0 Model Surface Compatibility
 
@@ -28,7 +28,7 @@
   - root namespace `SemanticTypeModel`
   - package prefix `SemanticTypeModel.*`
 
-## 2.3.0 Configuration Registration Compatibility
+## 2.4.0 Configuration Registration Compatibility
 
 - Configuration application registration is explicit per options type through `AddSemanticOptions<TOptions>`.
 - Complete-model Configuration derivation remains available for inspection and tooling, but complete-model application registration is obsolete.
@@ -41,3 +41,13 @@
 ### M0046 EF Core nullable value-type compatibility
 
 EF Core projection preserves canonical nullability for nullable value-type scalars by using `Nullable<T>` for the projected property CLR type and for the applied EF Core model-builder property type. The regression coverage includes nullable integer, long, decimal, Boolean, date/time, GUID, numeric enum storage, and required non-nullable control values.
+
+## 2.4.0 Audience-Specific Description Compatibility
+
+- `UserDescription` and `TechnicalDescription` replace the former general description concept in the public model contracts.
+- `SemanticUserDescriptionAttribute` supplies user-facing text for projections such as JSON Schema `description` and Power BI descriptions.
+- `SemanticTechnicalDescriptionAttribute` supplies technical text; XML `<summary>` is an automatic technical-description fallback when no explicit technical description exists.
+- EF Core maps technical descriptions to table and column comments.
+- JSON Schema technical descriptions are emitted only through the opt-in technical-description extension name.
+- `SemanticDescriptionAttribute`, the generic canonical `Description`, XML include switches, and XML requirement switches are removed; use `RequireTechnicalDescription` for technical-description enforcement.
+- Existing general description text must be classified manually because user-facing versus technical audience intent cannot be inferred safely.

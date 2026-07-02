@@ -1,42 +1,41 @@
 # Release Notes
 
-## 2.3.0
+## 2.4.0
 
-2.3.0 is the Configuration release-candidate line prepared by M0040 through M0045. It introduces the Configuration domain model, runtime options registration adapter, source-generator helper package, projection-neutral `RequiredWhen`, and documentation updates needed to validate the package set before human-approved publication.
+2.4.0 is the documentation-synchronization and release-preparation line for the shared Order Fulfillment samples, scalar/nullability compatibility hardening, Configuration package documentation, and audience-specific descriptions. Packages are prepared as a release candidate only; publication, tag creation, and GitHub release creation require separate human approval.
 
 ### Highlights
 
-- Added `SemanticTypeModel.Configuration` for deriving inspectable Configuration metadata from the canonical model and registering selected options types with Microsoft.Extensions.Options.
-- Added `SemanticTypeModel.Configuration.Generators` for generated registration helpers that delegate to the runtime `AddSemanticOptions<TOptions>` adapter.
-- Added explicit per-type options registration through `AddSemanticOptions<TOptions>`; applications opt in each selected options type instead of automatically registering every Configuration type in a complete model.
-- Added selected-type derivation through `DeriveConfigurationType<TOptions>` so one complete semantic model can be reused across multiple services while unselected Configuration types remain unregistered.
-- Added `ConfigurationSectionPresence.Optional` as the compatibility default and `ConfigurationSectionPresence.Required` for provider-independent required section data checks.
-- Added required-section validation that runs through Options validation; `ValidateOnStart` moves missing required-section, DataAnnotations, and `RequiredWhen` failures to host startup.
-- Added support for named options, call-site section overrides, and call-site strengthening from optional to required section presence.
-- Added projection-neutral `RequiredWhen` metadata and Configuration-specific attributes for section binding, DataAnnotations validation, startup validation, and generated registration helpers.
-- Removed stale fake public API baseline files from the release process; compatibility is reviewed through package smoke tests, samples, documentation, release notes, and human review.
-- Updated package READMEs, usage guides, diagnostics, samples, versioning, compatibility, and release-readiness documentation for the 2.3.0 package inventory.
+- Added shared Order Fulfillment sample coverage so JSON Schema, EF Core, Power BI, System.Text.Json, runtime DI, and Configuration examples consume one complete generated semantic model while each projection selects only its target-specific metadata.
+- Documented deliberate cross-sample overlap: samples are representative package canaries, while unit tests and package smoke tests provide exhaustive compatibility coverage for scalar and nullability combinations.
+- Fixed EF Core nullable value-type projection so nullable scalar and numeric enum properties remain `Nullable<T>` in projected EF metadata and applied EF Core `IProperty` metadata.
+- Retained 2.3.0 Configuration behavior in the 2.4.0 package set: explicit per-options-type registration, selected-type derivation, required section presence, and generated-helper delegation to runtime registration.
+- Replaced the former general description contract with `UserDescription` and `TechnicalDescription` across model contracts, generated output, query/inspection text, and projection documentation.
+- Added `SemanticUserDescriptionAttribute` for user-facing text and `SemanticTechnicalDescriptionAttribute` for technical text; XML `<summary>` is an automatic technical-description fallback only.
+- JSON Schema uses user descriptions for `description` and can emit technical descriptions through an opt-in `x-*` extension; Power BI uses user descriptions; EF Core maps technical descriptions to table and column comments.
+- Configuration, query, and inspection output expose audience-specific descriptions instead of one generic description field.
 
-### Compatibility Notes
+### Compatibility and Migration Notes
 
-- Configuration application registration is explicit per options type. Use `services.AddSemanticOptions<TOptions>(configuration, model)` or a generated helper that delegates to that adapter.
-- Complete-model Configuration derivation remains useful for inspection and tooling. Complete-model application registration through `AddSemanticConfigurationOptions(ConfigurationSemanticModel)` is obsolete and retained only for compatibility pending human review.
-- `ConfigurationSectionPresence.Optional` preserves prior optional-section behavior. `Required` validates that effective configuration data exists under the selected section; an empty section with no value and no children fails when required.
-- Required section presence without a section name, with root binding, or with disabled binding is a registration-time model/programming error. Missing deployed values, DataAnnotations failures, and `RequiredWhen` failures are options-validation failures.
-- Diagnostics remain compatibility-reviewed as part of the 2.3.0 release candidate. Human review is required before publication.
+- `SemanticDescriptionAttribute`, the generic canonical `Description`, `IncludeXmlDocumentation`, `SemanticTypeModelIncludeXmlDocumentation`, and `RequireXmlDocumentation` are removed and unsupported in 2.4.0.
+- Use `RequireTechnicalDescription` when generator validation must require either an explicit technical description or XML `<summary>` fallback.
+- User-facing projections do not silently fall back to technical descriptions, and technical projections do not silently fall back to user descriptions.
+- Existing general description text requires manual classification as user-facing text, technical text, or both because audience intent cannot be inferred safely.
+- The Order Fulfillment sample's `Customer.Name` demonstrates the mapping: XML `<summary>` becomes `TechnicalDescription` and EF Core column comment, while `SemanticUserDescription` becomes `UserDescription`, JSON Schema `description`, and Power BI description.
 
-### Upgrade Guidance
+### Package Inventory
 
-- Replace model-wide Configuration startup registration with one `AddSemanticOptions<TOptions>` call per options type used by the service.
-- If a service needs more than one options type from the same generated model, reuse the complete model and call `AddSemanticOptions<TOptions>` for each selected type.
-- Use `[SemanticConfigurationSection(..., Presence = SemanticConfigurationSectionPresence.Required)]` or equivalent metadata for required sections, and add `[SemanticValidateOnStart]` when startup-time validation is desired.
-- Use `SemanticOptionsRegistration` for deployment-specific options name, section path, `ValidateOnStart`, or optional-to-required section-presence overrides.
+The intended 2.4.0 package set is resolved from packable projects during release validation and is expected to include `SemanticTypeModel.Abstractions`, `SemanticTypeModel.Core`, `SemanticTypeModel.JsonSchema`, `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, `SemanticTypeModel.DependencyInjection`, `SemanticTypeModel.Configuration`, `SemanticTypeModel.Configuration.Generators`, `SemanticTypeModel.PowerBI`, `SemanticTypeModel.EFCore`, and `SemanticTypeModel.SystemTextJson`. Human review is required for the final produced package inventory and archive contents.
 
 ### Known Limitations and Publication Status
 
-- Model-wide Configuration application registration is obsolete rather than removed in this compatibility boundary.
-- Generated Configuration helpers are ergonomic wrappers, not a separate behavior source; the runtime adapter is canonical.
-- 2.3.0 packages are prepared as a release candidate only. Publication, tag creation, and GitHub release creation require separate human approval.
+- 2.4.0 is release-preparation documentation until human-approved publication completes.
+- The Configuration generator package remains a package-inventory/documentation-alignment package unless generated helper output is present in the consuming build.
+- Human review is required for breaking compatibility wording, migration guidance, XML-summary fallback wording, projection description mappings, diagnostics, package contents, release evidence, publication approval, tag creation, and GitHub release creation.
+
+## 2.3.0
+
+2.3.0 was the Configuration release-preparation line prepared by M0040 through M0045. It introduced the Configuration domain model, runtime options registration adapter, source-generator helper package, projection-neutral `RequiredWhen`, explicit per-options-type registration, selected-type derivation, required section presence validation, and package documentation standardization.
 
 ## 2.2.0
 
@@ -145,12 +144,3 @@ First stable SemanticTypeModel release.
 - Projection targets intentionally expose repository-defined metadata and do not provision external services.
 - JSON Editor compatibility is an export mode in `SemanticTypeModel.JsonSchema`, not a complete JSON Editor runtime.
 - Power BI projection does not authenticate with Power BI, publish datasets, create PBIX files, or manage service resources.
-
-## 0.0.0-m0046 preview
-
-- Added shared Order Fulfillment samples so EF Core, JSON Schema, Power BI, System.Text.Json, runtime DI, and Configuration examples all consume one generated semantic model while each projection selects only the target metadata it needs.
-- Fixed EF Core nullable value-type projection so nullable scalar and numeric enum properties are represented as `Nullable<T>` in both projected EF metadata and applied EF Core `IProperty` metadata. This hardens the 2.3.0 compatibility gap where nullable value types could be projected with non-nullable CLR types.
-
-## 2.4.0 migration note: audience-specific descriptions
-
-SemanticTypeModel 2.4.0 intentionally replaces the former general description API with two explicit audiences: `SemanticUserDescriptionAttribute` for business/user-facing text and `SemanticTechnicalDescriptionAttribute` or XML `<summary>` fallback for technical text. The old `SemanticDescriptionAttribute`, XML documentation inclusion switches, and XML documentation requirement switches are removed. JSON Schema and Power BI use user descriptions by default and do not fall back to technical summaries; EF Core maps technical descriptions to table and column comments. Existing description text must be classified manually because its intended audience cannot be inferred safely.

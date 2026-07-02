@@ -9,7 +9,7 @@ Derive local analytical metadata from a semantic model so reporting shape can be
 - .NET 10 SDK.
 - Annotated .NET types are the canonical authoring source.
 - A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
-- The examples assume package version `2.3.0`.
+- The examples assume package version `2.4.0`.
 
 ## Packages
 
@@ -101,3 +101,7 @@ The package does not publish datasets, authenticate with Power BI, create PBIX f
 ### Shared sample analytical selection
 
 The Power BI sample consumes the shared Order Fulfillment model and validates Customer/Product dimensions plus Order/OrderLine tables. The sample demonstrates target-specific consumption from a complete canonical model.
+
+### Audience-specific descriptions
+
+Power BI maps `UserDescription` to table and column descriptions for report authors and analysts. Technical descriptions, including XML `<summary>` fallback text, do not silently replace missing user descriptions.

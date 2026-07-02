@@ -7,7 +7,7 @@
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.SystemTextJson --version 2.3.0
+dotnet add package SemanticTypeModel.SystemTextJson --version 2.4.0
 ```
 
 ## Use when
