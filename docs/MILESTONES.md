@@ -67,3 +67,4 @@ For each focus area:
 - [M0043 - Expand Usage Guides with Concrete Options, Policies, and Supported Items](milestones/m0043-expand-usage-guides-with-concrete-options-policies-and-supported-items.md)
 - [M0044 - Explicit Per-Type Configuration Registration and Required Section Presence](milestones/m0044-explicit-per-type-configuration-registration-and-required-section-presence.md)
 - [M0045 - Documentation Synchronization and 2.3.0 Release Preparation](milestones/m0045-documentation-synchronization-and-2-3-0-release-preparation.md)
+- [M0046 - Shared Order Fulfillment Samples and Scalar Nullability Compatibility Hardening](milestones/m0046-shared-order-fulfillment-samples-and-scalar-nullability-compatibility-hardening.md)

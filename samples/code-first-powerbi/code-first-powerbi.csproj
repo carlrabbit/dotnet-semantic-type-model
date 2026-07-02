@@ -11,4 +11,7 @@
     <PackageReference Include="SemanticTypeModel.Generators" PrivateAssets="all" />
     <PackageReference Include="SemanticTypeModel.PowerBI" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../OrderFulfillment.Domain/OrderFulfillment.Domain.csproj" />
+  </ItemGroup>
 </Project>

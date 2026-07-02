@@ -37,3 +37,7 @@
 
 - `ConfigurationSectionPresence.Optional` is the compatibility default; `Required` adds provider-independent effective-data validation under the selected section.
 - Required-section, DataAnnotations, and `RequiredWhen` deployed-value failures are options-validation failures; invalid or ambiguous model metadata fails during registration.
+
+### M0046 EF Core nullable value-type compatibility
+
+EF Core projection preserves canonical nullability for nullable value-type scalars by using `Nullable<T>` for the projected property CLR type and for the applied EF Core model-builder property type. The regression coverage includes nullable integer, long, decimal, Boolean, date/time, GUID, numeric enum storage, and required non-nullable control values.
