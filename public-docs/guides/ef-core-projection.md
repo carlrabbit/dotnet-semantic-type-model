@@ -106,3 +106,7 @@ The package does not create `DbContext` types, choose a database provider, run m
 - [SemanticTypeModel.EFCore package](../nuget/SemanticTypeModel.EFCore.md)
 - [Code-first EF Core sample](../samples/code-first-ef-core.md)
 - [Projection capabilities](projection-capabilities.md)
+
+### Nullable value-type projection
+
+EF Core projection preserves nullable scalar value types as `Nullable<T>` in the projected EF model and in the applied EF Core `IProperty` metadata. Use tests, not public samples, for exhaustive nullable scalar matrices.

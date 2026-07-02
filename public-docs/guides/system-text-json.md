@@ -83,3 +83,7 @@ The package does not generate serializer contexts, emulate arbitrary converters,
 
 - [SemanticTypeModel.SystemTextJson package](../nuget/SemanticTypeModel.SystemTextJson.md)
 - [System.Text.Json resolver sample](../samples/system-text-json-resolver.md)
+
+### Shared sample resolver contract
+
+The System.Text.Json sample wraps the user-authored serializer context with semantic metadata from the shared Order Fulfillment model and verifies Customer and order-submitted envelope serialization without replacing the consumer resolver.

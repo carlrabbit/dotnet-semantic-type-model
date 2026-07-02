@@ -526,3 +526,7 @@ query filters
 interceptors
 compiled models
 ```
+
+## Nullable value-type CLR metadata
+
+When an EF Core property is nullable and the selected projected CLR type is a non-nullable value type, the EF Core projection must use `Nullable<T>` for `EfPropertyDefinition.ClrType`. Runtime `ModelBuilder` application must use that same CLR type so `EfPropertyDefinition.ClrType` and EF Core `IProperty.ClrType` agree with `IsNullable` metadata.

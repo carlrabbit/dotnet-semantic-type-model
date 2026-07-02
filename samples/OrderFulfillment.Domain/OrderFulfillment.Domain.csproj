@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SemanticTypeModel.Samples.OrderFulfillment.Domain</RootNamespace>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SemanticTypeModel.Abstractions" />
+    <PackageReference Include="SemanticTypeModel.DotNet" />
+    <PackageReference Include="SemanticTypeModel.Generators" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

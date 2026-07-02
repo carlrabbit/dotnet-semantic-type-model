@@ -114,3 +114,7 @@ Prepare local packages, then run all package-based samples:
 - [docs/ENGINEERING.md](docs/ENGINEERING.md)
 - [docs/MILESTONES.md](docs/MILESTONES.md)
 - [docs/PUBLIC-DOCS.md](docs/PUBLIC-DOCS.md)
+
+### Shared Order Fulfillment samples
+
+The code-first sample suite includes a shared Order Fulfillment domain under `samples/OrderFulfillment.Domain`. Projection samples call `OrderFulfillmentSemanticModel.Create()` and then run their own EF Core, JSON Schema, Power BI, System.Text.Json, runtime DI, or Configuration adapter checks against representative output.

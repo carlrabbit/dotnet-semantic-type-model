@@ -2,26 +2,36 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Transformation;
-using SemanticTypeModel.DotNet;
 using SemanticTypeModel.EFCore;
-using SemanticTypeModel.Generated;
+using SemanticTypeModel.Samples.OrderFulfillment.Domain;
 
-TypeSchemaModel model = AppSemanticTypeModel.Create();
-SemanticDerivationResult<EfCoreSemanticModel> derived = model.DeriveEfCoreModel(options => options.Projection = options.Projection with { ProjectUnannotatedObjectsAsEntities = true });
-
+TypeSchemaModel model = OrderFulfillmentSemanticModel.Create();
+SemanticDerivationResult<EfCoreSemanticModel> derived = model.DeriveEfCoreModel();
 var modelBuilder = new ModelBuilder(new ConventionSet());
-modelBuilder.ApplyEfCoreSemanticModel(derived.Model, defaultSchema: "sample");
+modelBuilder.ApplyEfCoreSemanticModel(derived.Model, defaultSchema: "fulfillment");
+var efModel = modelBuilder.Model;
 
-Console.WriteLine($"root: {model.Id.Value}");
-Console.WriteLine($"derivation diagnostics: {derived.Diagnostics.Count}");
-Console.WriteLine($"modelBuilder entities: {derived.Model.EntityTypes.Count}");
-Console.WriteLine($"trace steps: {derived.Trace.Entries.Count}");
-
-[SemanticType(Name = "Customer")]
-public sealed partial class Customer
+Require(derived.Model.EntityTypes.Any(e => e.Name == "Customer"), "Customer entity is projected.");
+Require(derived.Model.EntityTypes.Any(e => e.Name == "Order"), "Order entity is projected.");
+Require(derived.Model.EntityTypes.Any(e => e.Name == "OrderLine"), "OrderLine entity is projected.");
+var orderLine = derived.Model.EntityTypes.Single(e => e.Name == "OrderLine");
+Require(orderLine.Keys.Any(k => k.PropertyNames.Contains("OrderId") && k.PropertyNames.Contains("LineNumber")), "OrderLine composite key is projected.");
+var probe = derived.Model.EntityTypes.Single(e => e.Name == "ProjectionProbe");
+foreach (var name in new[] { "OptionalInt", "OptionalLong", "OptionalDecimal", "OptionalBool", "OptionalDateTime", "OptionalDateTimeOffset", "OptionalGuid" })
 {
-    [SemanticKey]
-    public required string Id { get; init; }
+    var property = probe.Properties.Single(p => p.Name == name);
+    Require(property.IsNullable && Nullable.GetUnderlyingType(property.ClrType) is not null, $"{name} uses Nullable<T> in EF domain metadata.");
+    var runtimeProperty = efModel.FindEntityType("ProjectionProbe")!.FindProperty(name)!;
+    Require(runtimeProperty.IsNullable && runtimeProperty.ClrType == property.ClrType, $"{name} runtime EF metadata matches projection metadata.");
+}
+Require(probe.Properties.Single(p => p.Name == "RequiredInt").ClrType == typeof(long), "Required value-type control remains non-nullable.");
+Require(efModel.FindEntityType("Customer")!.FindProperty("BillingAddress_Line1") is not null, "Customer owned Address is flattened.");
+Console.WriteLine($"EF Core sample passed: {derived.Model.EntityTypes.Count} entities from {model.Id.Value}.");
 
-    public required string Name { get; init; }
+static void Require(bool condition, string message)
+{
+    if (!condition)
+    {
+        throw new InvalidOperationException(message);
+    }
 }

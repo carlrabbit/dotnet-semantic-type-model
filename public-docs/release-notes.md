@@ -145,3 +145,8 @@ First stable SemanticTypeModel release.
 - Projection targets intentionally expose repository-defined metadata and do not provision external services.
 - JSON Editor compatibility is an export mode in `SemanticTypeModel.JsonSchema`, not a complete JSON Editor runtime.
 - Power BI projection does not authenticate with Power BI, publish datasets, create PBIX files, or manage service resources.
+
+## 0.0.0-m0046 preview
+
+- Added shared Order Fulfillment samples so EF Core, JSON Schema, Power BI, System.Text.Json, runtime DI, and Configuration examples all consume one generated semantic model while each projection selects only the target metadata it needs.
+- Fixed EF Core nullable value-type projection so nullable scalar and numeric enum properties are represented as `Nullable<T>` in both projected EF metadata and applied EF Core `IProperty` metadata. This hardens the 2.3.0 compatibility gap where nullable value types could be projected with non-nullable CLR types.

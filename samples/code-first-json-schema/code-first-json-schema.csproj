@@ -9,4 +9,7 @@
     <PackageReference Include="SemanticTypeModel.Generators" PrivateAssets="all" />
     <PackageReference Include="SemanticTypeModel.JsonSchema" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../OrderFulfillment.Domain/OrderFulfillment.Domain.csproj" />
+  </ItemGroup>
 </Project>

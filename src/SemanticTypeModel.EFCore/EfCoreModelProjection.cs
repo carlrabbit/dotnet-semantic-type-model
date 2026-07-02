@@ -879,11 +879,15 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
         bool isGenerated,
         AnnotationBag annotations)
     {
+        Type effectiveClrType = isNullable && clrType.IsValueType && Nullable.GetUnderlyingType(clrType) is null
+            ? typeof(Nullable<>).MakeGenericType(clrType)
+            : clrType;
+
         return new EfPropertyDefinition
         {
             Name = name,
             ColumnName = columnName,
-            ClrType = clrType,
+            ClrType = effectiveClrType,
             IsRequired = isRequired,
             IsNullable = isNullable,
             MaxLength = maxLength,

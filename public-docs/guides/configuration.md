@@ -121,3 +121,7 @@ Configuration projection is limited to options-registration metadata and equival
 - [SemanticTypeModel.Configuration package](../nuget/SemanticTypeModel.Configuration.md)
 - [SemanticTypeModel.Configuration.Generators package](../nuget/SemanticTypeModel.Configuration.Generators.md)
 - [Packages](../packages.md)
+
+### Explicit selection from shared models
+
+The Configuration sample uses `AddSemanticOptions<OrderProcessingOptions>(configuration, model)` against the shared Order Fulfillment model and verifies unrelated configuration types remain unregistered until the application explicitly selects them.
