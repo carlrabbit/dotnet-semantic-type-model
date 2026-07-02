@@ -14,7 +14,8 @@ public sealed class RoslynDotNetTypeExtractor
     private const string SemanticTypeAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticTypeAttribute";
     private const string SemanticIgnoreAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticIgnoreAttribute";
     private const string SemanticNameAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticNameAttribute";
-    private const string SemanticDescriptionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticDescriptionAttribute";
+    private const string SemanticUserDescriptionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticUserDescriptionAttribute";
+    private const string SemanticTechnicalDescriptionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticTechnicalDescriptionAttribute";
     private const string SemanticDisplayNameAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticDisplayNameAttribute";
     private const string SemanticCategoryAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticCategoryAttribute";
     private const string SemanticOrderAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticOrderAttribute";
@@ -157,8 +158,7 @@ public sealed class RoslynDotNetTypeExtractor
 
         bool includeInternal = fallback.IncludeInternalTypes;
         bool includeInternalMembers = fallback.IncludeInternalMembers;
-        bool requireXml = fallback.RequireXmlDocumentation;
-        bool includeXml = fallback.IncludeXmlDocumentation;
+        bool requireTechnicalDescription = fallback.RequireTechnicalDescription;
         bool inferKeys = fallback.InferKeys;
         bool inferRelationships = fallback.InferRelationships;
         DotNetTypeDiscoveryMode discoveryMode = fallback.DiscoveryMode;
@@ -173,13 +173,9 @@ public sealed class RoslynDotNetTypeExtractor
             {
                 includeInternal = value.Value is bool boolValue && boolValue;
             }
-            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.RequireXmlDocumentation), StringComparison.Ordinal))
+            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.RequireTechnicalDescription), StringComparison.Ordinal))
             {
-                requireXml = value.Value is bool boolValue && boolValue;
-            }
-            else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.IncludeXmlDocumentation), StringComparison.Ordinal))
-            {
-                includeXml = value.Value is bool boolValue && boolValue;
+                requireTechnicalDescription = value.Value is bool boolValue && boolValue;
             }
             else if (string.Equals(key, nameof(SemanticTypeModelGeneratorOptionsAttribute.InferKeys), StringComparison.Ordinal))
             {
@@ -231,8 +227,7 @@ public sealed class RoslynDotNetTypeExtractor
             ProviderName = string.IsNullOrWhiteSpace(providerName) ? fallback.ProviderName : providerName!,
             IncludeInternalTypes = includeInternal,
             IncludeInternalMembers = includeInternalMembers,
-            RequireXmlDocumentation = requireXml,
-            IncludeXmlDocumentation = includeXml,
+            RequireTechnicalDescription = requireTechnicalDescription,
             InferKeys = inferKeys,
             InferRelationships = inferRelationships,
             DiscoveryMode = discoveryMode,
@@ -555,10 +550,10 @@ public sealed class RoslynDotNetTypeExtractor
         var annotations = new Dictionary<string, string>(StringComparer.Ordinal);
         ImmutableArray<AttributeData> typeAttributes = type.GetAttributes();
 
-        TryAddNameAndDescriptionAnnotations(typeAttributes, annotations, type);
+        TryAddNameAndAudienceDescriptionAnnotations(typeAttributes, annotations, type);
         TryAddDisplayCategoryOrderAnnotations(typeAttributes, annotations, type);
         TryAddCustomAnnotations(typeAttributes, annotations, type);
-        TryAddXmlDescriptionAnnotation(type, typeAttributes, annotations);
+        TryAddXmlTechnicalDescriptionAnnotation(type, typeAttributes, annotations);
         TryAddSemanticTypeOverrides(typeAttributes, annotations);
         TryAddSystemTextJsonTypeAnnotations(typeAttributes, annotations, type);
         TryAddRoleAnnotation(typeAttributes, annotations, type.Locations.FirstOrDefault());
@@ -567,7 +562,7 @@ public sealed class RoslynDotNetTypeExtractor
         TryAddConfigurationTypeAnnotations(typeAttributes, annotations);
         ValidateTypeAttributeUsage(typeAttributes, type);
         AddInheritanceAnnotations(type, annotations, cancellationToken);
-        DiagnoseMissingXmlDocumentationIfRequired(type, type.Locations.FirstOrDefault());
+        DiagnoseMissingTechnicalDescriptionIfRequired(type, type.Locations.FirstOrDefault());
 
         string expectedPrimaryKeyName = type.Name + "Id";
         var conventionPrimaryKeyCandidates = new List<string>();
@@ -594,16 +589,16 @@ public sealed class RoslynDotNetTypeExtractor
             ImmutableArray<AttributeData> memberAttributes = property.GetAttributes();
             string propertyName = GetPropertyName(property);
             TryAddSystemTextJsonAnnotations(memberAttributes, memberAnnotations, property, ref propertyName);
-            TryAddNameAndDescriptionAnnotations(memberAttributes, memberAnnotations, property);
+            TryAddNameAndAudienceDescriptionAnnotations(memberAttributes, memberAnnotations, property);
             TryAddDisplayCategoryOrderAnnotations(memberAttributes, memberAnnotations, property);
             TryAddCustomAnnotations(memberAttributes, memberAnnotations, property);
             TryAddFormatAndConstraintAnnotations(memberAttributes, memberType, memberAnnotations, property);
-            TryAddXmlDescriptionAnnotation(property, memberAttributes, memberAnnotations);
+            TryAddXmlTechnicalDescriptionAnnotation(property, memberAttributes, memberAnnotations);
             TryAddEnvelopeMemberAnnotations(memberAttributes, memberAnnotations);
             TryAddEvolutionMemberAnnotations(memberAttributes, memberType, memberAnnotations);
             TryAddRequiredWhenAnnotations(memberAttributes, memberAnnotations);
             ValidateMemberAttributeUsage(memberAttributes, property);
-            DiagnoseMissingXmlDocumentationIfRequired(property, property.Locations.FirstOrDefault());
+            DiagnoseMissingTechnicalDescriptionIfRequired(property, property.Locations.FirstOrDefault());
 
             if (!TryAddKeyAnnotations(memberAttributes, property, memberAnnotations, compositeKeyGroups))
             {
@@ -1003,13 +998,13 @@ public sealed class RoslynDotNetTypeExtractor
         var seenNumeric = new Dictionary<long, string>();
         var annotations = new Dictionary<string, string>(StringComparer.Ordinal);
         ImmutableArray<AttributeData> typeAttributes = enumType.GetAttributes();
-        TryAddNameAndDescriptionAnnotations(typeAttributes, annotations, enumType);
+        TryAddNameAndAudienceDescriptionAnnotations(typeAttributes, annotations, enumType);
         TryAddDisplayCategoryOrderAnnotations(typeAttributes, annotations, enumType);
         TryAddCustomAnnotations(typeAttributes, annotations, enumType);
-        TryAddXmlDescriptionAnnotation(enumType, typeAttributes, annotations);
+        TryAddXmlTechnicalDescriptionAnnotation(enumType, typeAttributes, annotations);
         TryAddSystemTextJsonTypeAnnotations(typeAttributes, annotations, enumType);
         ValidateTypeAttributeUsage(typeAttributes, enumType);
-        DiagnoseMissingXmlDocumentationIfRequired(enumType, enumType.Locations.FirstOrDefault());
+        DiagnoseMissingTechnicalDescriptionIfRequired(enumType, enumType.Locations.FirstOrDefault());
 
         var enumDisplayNames = new Dictionary<string, string>(StringComparer.Ordinal);
         var enumDescriptions = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -1748,10 +1743,11 @@ public sealed class RoslynDotNetTypeExtractor
         }
     }
 
-    private void TryAddNameAndDescriptionAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations, ISymbol symbol)
+    private void TryAddNameAndAudienceDescriptionAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations, ISymbol symbol)
     {
         var nameCount = 0;
-        var descriptionCount = 0;
+        var userDescriptionCount = 0;
+        var technicalDescriptionCount = 0;
 
         foreach (AttributeData attribute in attributes)
         {
@@ -1762,7 +1758,7 @@ public sealed class RoslynDotNetTypeExtractor
                 nameCount++;
                 if (attribute.ConstructorArguments[0].Value is string title && !string.IsNullOrWhiteSpace(title))
                 {
-                    annotations["schema.title"] = title;
+                    annotations["schema.title"] = NormalizeDescriptionText(title)!;
                 }
                 else
                 {
@@ -1773,29 +1769,41 @@ public sealed class RoslynDotNetTypeExtractor
                 }
             }
 
-            if (string.Equals(metadataName, SemanticDescriptionAttributeMetadataName, StringComparison.Ordinal)
+            if ((string.Equals(metadataName, SemanticUserDescriptionAttributeMetadataName, StringComparison.Ordinal)
+                    || string.Equals(metadataName, SemanticTechnicalDescriptionAttributeMetadataName, StringComparison.Ordinal))
                 && attribute.ConstructorArguments.Length == 1)
             {
-                descriptionCount++;
-                if (attribute.ConstructorArguments[0].Value is string description && !string.IsNullOrWhiteSpace(description))
+                bool isUserDescription = string.Equals(metadataName, SemanticUserDescriptionAttributeMetadataName, StringComparison.Ordinal);
+                if (isUserDescription)
                 {
-                    annotations["schema.description"] = description;
+                    userDescriptionCount++;
+                }
+                else
+                {
+                    technicalDescriptionCount++;
+                }
+
+                string attributeName = isUserDescription ? "SemanticUserDescription" : "SemanticTechnicalDescription";
+                string key = isUserDescription ? "schema.userDescription" : "schema.technicalDescription";
+                if (attribute.ConstructorArguments[0].Value is string description && NormalizeDescriptionText(description) is { } normalized)
+                {
+                    annotations[key] = normalized;
                 }
                 else
                 {
                     _diagnostics.Add(new DotNetExtractionDiagnostic(
                         "STM5017",
-                        $"[SemanticDescription] on '{symbol.ToDisplayString()}' requires a non-empty string argument.",
+                        $"[{attributeName}] on '{symbol.ToDisplayString()}' requires a non-empty string argument.",
                         attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
                 }
             }
         }
 
-        if (nameCount > 1 || descriptionCount > 1)
+        if (nameCount > 1 || userDescriptionCount > 1 || technicalDescriptionCount > 1)
         {
             _diagnostics.Add(new DotNetExtractionDiagnostic(
                 "STM5002",
-                $"Symbol '{symbol.ToDisplayString()}' has conflicting semantic name/description attributes.",
+                $"Symbol '{symbol.ToDisplayString()}' has conflicting semantic name/user-description/technical-description attributes.",
                 symbol.Locations.FirstOrDefault()));
         }
     }
@@ -1980,23 +1988,37 @@ public sealed class RoslynDotNetTypeExtractor
         }
     }
 
-    private void TryAddXmlDescriptionAnnotation(ISymbol symbol, ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
+    private void TryAddXmlTechnicalDescriptionAnnotation(ISymbol symbol, ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
     {
-        if (HasAttribute(attributes, SemanticDescriptionAttributeMetadataName))
-        {
-            return;
-        }
-
-        if (!_options.IncludeXmlDocumentation)
+        if (HasAttribute(attributes, SemanticTechnicalDescriptionAttributeMetadataName))
         {
             return;
         }
 
         string? summary = GetXmlSummary(symbol.GetDocumentationCommentXml());
-        if (!string.IsNullOrWhiteSpace(summary))
+        if (NormalizeDescriptionText(summary) is { } normalized)
         {
-            annotations["schema.description"] = summary!;
+            annotations["schema.technicalDescription"] = normalized;
         }
+    }
+
+    private static string? NormalizeDescriptionText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        string normalized = value.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Trim();
+        string[] lines = normalized.Split('\n');
+        int indent = lines.Where(static line => !string.IsNullOrWhiteSpace(line)).Select(static line => line.TakeWhile(char.IsWhiteSpace).Count()).DefaultIfEmpty(0).Min();
+        normalized = string.Join("\n", lines.Select(line => line.Length >= indent ? line[indent..].TrimEnd() : line.TrimEnd())).Trim();
+        while (normalized.Contains("\n\n\n", StringComparison.Ordinal))
+        {
+            normalized = normalized.Replace("\n\n\n", "\n\n", StringComparison.Ordinal);
+        }
+
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
     }
 
     private string GetPropertyName(IPropertySymbol property)
@@ -2449,21 +2471,27 @@ public sealed class RoslynDotNetTypeExtractor
             .Replace("\n", "\\n", StringComparison.Ordinal);
     }
 
-    private void DiagnoseMissingXmlDocumentationIfRequired(ISymbol symbol, Location? location)
+    private void DiagnoseMissingTechnicalDescriptionIfRequired(ISymbol symbol, Location? location)
     {
-        if (!_options.RequireXmlDocumentation)
+        if (!_options.RequireTechnicalDescription)
         {
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(symbol.GetDocumentationCommentXml()))
+        bool hasExplicit = symbol.GetAttributes().Any(attribute => string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticTechnicalDescriptionAttributeMetadataName, StringComparison.Ordinal)
+            && attribute.ConstructorArguments.Length == 1
+            && attribute.ConstructorArguments[0].Value is string value
+            && NormalizeDescriptionText(value) is not null);
+        bool hasXml = NormalizeDescriptionText(GetXmlSummary(symbol.GetDocumentationCommentXml())) is not null;
+        if (hasExplicit || hasXml)
         {
             return;
         }
 
         _diagnostics.Add(new DotNetExtractionDiagnostic(
             "STM5012",
-            $"XML documentation is required but missing for '{symbol.ToDisplayString()}'.",
+            $"Technical description is required but missing for '{symbol.ToDisplayString()}'.",
             location));
     }
+
 }

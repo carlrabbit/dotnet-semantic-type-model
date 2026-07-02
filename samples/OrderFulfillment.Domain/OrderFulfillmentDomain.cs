@@ -12,12 +12,20 @@ public static class OrderFulfillmentSemanticModel
 }
 
 [SemanticType(SemanticTypeRole.Entity, Name = "Customer")]
-[SemanticDescription("Customer account shared by fulfillment projections.")]
+[SemanticUserDescription("Customer account shared by fulfillment projections.")]
 public sealed class Customer
 {
     [SemanticKey]
     public required string CustomerId { get; init; }
+    /// <summary>
+    /// Stored in the customer_name column and indexed for prefix search.
+    /// </summary>
+    [SemanticUserDescription("The name shown for this customer.")]
     public required string DisplayName { get; init; }
+    /// <summary>
+    /// Stored as the normalized customer contact email for integrations.
+    /// </summary>
+    [SemanticUserDescription("The email address used to contact this customer.")]
     public required string EmailAddress { get; init; }
     public string? LoyaltyTier { get; init; }
     [SemanticOwned]

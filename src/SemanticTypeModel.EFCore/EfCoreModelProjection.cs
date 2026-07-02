@@ -190,6 +190,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
             EntityName = entityName,
             TableName = tableName,
             SchemaName = schemaName,
+            Comment = objectType.TechnicalDescription,
             IsOwned = isOwned,
             Properties = properties,
             Keys = keys,
@@ -275,7 +276,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
                     scalar.Precision,
                     conversion,
                     valueGenerated,
-                    BuildPropertyAnnotations(property, effectiveNullability)) with { ConverterType = converterType, ProviderClrType = providerClrType },
+                    BuildPropertyAnnotations(property, effectiveNullability), property.TechnicalDescription) with { ConverterType = converterType, ProviderClrType = providerClrType },
             ];
         }
 
@@ -293,7 +294,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
                     null,
                     ResolveEnumConversion(enumType, property, propertyPath, diagnostics, conversion),
                     valueGenerated,
-                    BuildPropertyAnnotations(property, effectiveNullability)) with { ConverterType = converterType, ProviderClrType = providerClrType },
+                    BuildPropertyAnnotations(property, effectiveNullability), property.TechnicalDescription) with { ConverterType = converterType, ProviderClrType = providerClrType },
             ];
         }
 
@@ -877,7 +878,8 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
         NumericPrecision? precision,
         string? conversion,
         bool isGenerated,
-        AnnotationBag annotations)
+        AnnotationBag annotations,
+        string? comment = null)
     {
         Type effectiveClrType = isNullable && clrType.IsValueType && Nullable.GetUnderlyingType(clrType) is null
             ? typeof(Nullable<>).MakeGenericType(clrType)
@@ -893,6 +895,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
             MaxLength = maxLength,
             Precision = precision,
             Conversion = conversion,
+            Comment = comment,
             IsGenerated = isGenerated,
             Annotations = annotations,
         };
@@ -1458,6 +1461,8 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
 
         public string? SchemaName { get; init; }
 
+        public string? Comment { get; init; }
+
         public bool IsOwned { get; init; }
 
         public required List<EfPropertyDefinition> Properties { get; init; }
@@ -1486,6 +1491,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
                 Name = EntityName,
                 TableName = TableName,
                 SchemaName = SchemaName,
+                Comment = Comment,
                 Properties = Properties.ToArray(),
                 Keys = Keys,
                 Relationships = Relationships.ToArray(),

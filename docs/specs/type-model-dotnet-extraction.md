@@ -46,7 +46,8 @@ Baseline extraction attributes:
 - `[SemanticType]`
 - `[SemanticIgnore]`
 - `[SemanticName]`
-- `[SemanticDescription]`
+- `[SemanticUserDescription]`
+- `[SemanticTechnicalDescription]`
 - `[SemanticRole]`
 - `[SemanticKey]`
 - `[SemanticRelationship]`

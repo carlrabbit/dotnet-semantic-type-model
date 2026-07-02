@@ -52,14 +52,22 @@ public sealed class SemanticNameAttribute(string name) : Attribute
 }
 
 /// <summary>
-/// Declares semantic description metadata for a type or member.
+/// Declares user-facing semantic description metadata for a type or member.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
-public sealed class SemanticDescriptionAttribute(string description) : Attribute
+public sealed class SemanticUserDescriptionAttribute(string description) : Attribute
 {
-    /// <summary>
-    /// Gets the declared semantic description.
-    /// </summary>
+    /// <summary>Gets the declared user-facing semantic description.</summary>
+    public string Description { get; } = description;
+}
+
+/// <summary>
+/// Declares technical semantic description metadata for a type or member.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticTechnicalDescriptionAttribute(string description) : Attribute
+{
+    /// <summary>Gets the declared technical semantic description.</summary>
     public string Description { get; } = description;
 }
 
@@ -194,9 +202,9 @@ public sealed class SemanticTypeModelGeneratorOptionsAttribute : Attribute
     public bool IncludeInternalTypes { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether XML documentation extraction is required.
+    /// Gets or sets a value indicating whether a technical description is required.
     /// </summary>
-    public bool RequireXmlDocumentation { get; set; }
+    public bool RequireTechnicalDescription { get; set; }
 
     /// <summary>
     /// Gets or sets the type discovery mode.
@@ -233,10 +241,6 @@ public sealed class SemanticTypeModelGeneratorOptionsAttribute : Attribute
     /// </summary>
     public bool InferRelationships { get; set; }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether XML documentation descriptions are included.
-    /// </summary>
-    public bool IncludeXmlDocumentation { get; set; }
 }
 
 /// <summary>

@@ -156,7 +156,8 @@ public static class SemanticTextExtensions
         {
             AppendOptional(builder, "    Name", type.Name);
             AppendOptional(builder, "    DisplayName", type.DisplayName);
-            AppendOptional(builder, "    Description", type.Description);
+            AppendOptional(builder, "    User description", type.UserDescription);
+            AppendOptional(builder, "    Technical description", type.TechnicalDescription);
         }
 
         if (type is ObjectTypeDefinition obj)
@@ -205,6 +206,12 @@ public static class SemanticTextExtensions
                 AppendSemanticFlag(builder, property.Annotations, CoreSemanticAnnotationKeys.ExtensionData, "extensionData");
 
                 builder.AppendLine();
+
+                if (options.Detail == SemanticTextDetail.Detailed)
+                {
+                    AppendOptional(builder, "      User description", property.UserDescription);
+                    AppendOptional(builder, "      Technical description", property.TechnicalDescription);
+                }
 
                 if (options.IncludeConstraints || options.Detail == SemanticTextDetail.Detailed)
                 {

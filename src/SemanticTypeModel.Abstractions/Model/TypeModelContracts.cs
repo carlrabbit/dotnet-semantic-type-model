@@ -76,7 +76,8 @@ public abstract record TypeDefinition
     public required TypeId Id { get; init; }
     public required string Name { get; init; }
     public string? DisplayName { get; init; }
-    public string? Description { get; init; }
+    public string? UserDescription { get; init; }
+    public string? TechnicalDescription { get; init; }
     public required TypeKind Kind { get; init; }
     public required Nullability Nullability { get; init; }
     public required AnnotationBag Annotations { get; init; }
@@ -114,7 +115,8 @@ public sealed record PropertyDefinition
     public required Cardinality Cardinality { get; init; }
     public required Mutability Mutability { get; init; }
     public string? DisplayName { get; init; }
-    public string? Description { get; init; }
+    public string? UserDescription { get; init; }
+    public string? TechnicalDescription { get; init; }
     public required ConstraintSet Constraints { get; init; }
     public required AnnotationBag Annotations { get; init; }
 }
@@ -187,7 +189,8 @@ public sealed record EnumValueDefinition
     public required string Name { get; init; }
     public required object Value { get; init; }
     public string? DisplayName { get; init; }
-    public string? Description { get; init; }
+    public string? UserDescription { get; init; }
+    public string? TechnicalDescription { get; init; }
     public required AnnotationBag Annotations { get; init; }
 }
 

@@ -4,13 +4,7 @@
 
 Specs define behavioral truth.
 
-Specs are authoritative for:
-- behavior;
-- invariants;
-- contracts;
-- inputs and outputs;
-- failure semantics;
-- validation expectations.
+Specs are authoritative for behavior, invariants, contracts, inputs and outputs, failure semantics, and validation expectations.
 
 ## Rules
 
@@ -23,30 +17,31 @@ Specs are authoritative for:
 
 | Spec | Purpose |
 |---|---|
-| specs/configuration-domain-model-and-options-projection.md | Configuration domain semantic model, Microsoft.Extensions.Options registration projection, validation behavior, and diagnostics |
-| specs/core-conditional-constraint-semantics.md | Projection-neutral conditional constraint semantics such as Required When and their cross-domain obligations |
-| specs/model-surface-unification.md | Unified public model namespace, old shape-graph removal, source-generator output, projection input, and sample contract for M0038 |
-| specs/current-canonical-model-surface.md | Current canonical semantic model surface, legacy-removal boundary, and active terminology rules |
-| specs/type-schema-model.md | Canonical semantic type model contracts, invariants, and traversal behavior |
-| specs/type-model-core.md | Canonical type model layers, contracts, invariants, and diagnostics model |
-| specs/core-semantic-vocabulary.md | Projection-neutral core semantic vocabulary, usage guidance, and envelope/evolution semantics |
-| specs/type-model-annotations.md | Annotation namespace policy, preservation rules, and projection separation |
-| specs/type-model-json-schema-mapping.md | JSON Schema Draft 2020-12 mapping baseline for code-first semantic models |
-| specs/json-schema-domain-model-and-export.md | JSON Schema domain semantic model derivation and deterministic export behavior |
-| specs/envelope-projection-policies.md | Envelope projection policies for JSON Schema, EF Core, and Power BI, including payload representation/storage defaults |
-| specs/evolution-ownership-and-lifecycle-semantics.md | Ownership, versioning, temporal validity, lifecycle state, and extension-data semantics and projection implications |
-| specs/type-model-dotnet-extraction.md | Roslyn-based .NET type-system discovery and extraction baseline into canonical model contracts |
-| specs/type-model-dotnet-attributes.md | Stable attribute vocabulary, including envelope and evolution attributes, precedence, and diagnostics for .NET extraction |
-| specs/type-model-dotnet-conventions.md | Deterministic discovery, naming, inference, and configuration conventions for .NET extraction |
-| specs/type-model-compile-time-generator.md | Incremental generator baseline for deterministic compile-time model-provider generation |
-| specs/type-model-runtime-api.md | Runtime model provider, service, result, caching, and diagnostics contracts |
-| specs/type-model-di-integration.md | Dependency-injection registration, lifetime, and projection integration pattern for runtime model services |
-| specs/type-model-query-and-inspection.md | Query and inspection API behavior for canonical and domain semantic models |
-| specs/type-model-transformation-and-domain-derivation.md | Transformation pipeline, domain derivation, diagnostics, and trace behavior |
-| specs/type-model-ui-hints.md | Generic UI hint vocabulary, normalization, and JSON-editor compatibility mapping |
-| specs/type-model-projection-capabilities.md | Projection capability matrix, compatibility contracts, and capability metadata API across targets |
-| specs/type-model-powerbi-tom-projection.md | Power BI domain semantic model derivation and local deterministic metadata projection |
-| specs/type-model-ef-core-projection.md | EF Core domain semantic model derivation and provider-neutral `ModelBuilder` projection |
-| specs/system-text-json-contract-integration.md | System.Text.Json contract metadata import, annotation keys, resolver customization, unsupported generated-context behavior, and diagnostics |
-| specs/system-text-json-domain-model-and-resolver-projection.md | System.Text.Json domain semantic model derivation and resolver customization projection |
-| specs/diagnostics.md | Diagnostic ID, severity, stability, and public documentation rules |
+| specs/audience-specific-description-semantics.md | Projection-neutral user and technical descriptions, XML-summary derivation, precedence, target obligations, diagnostics, and breaking compatibility boundary |
+| specs/configuration-domain-model-and-options-projection.md | Configuration domain semantic model, Options registration, validation, and diagnostics |
+| specs/core-conditional-constraint-semantics.md | Projection-neutral conditional constraints |
+| specs/model-surface-unification.md | Unified public model surface |
+| specs/current-canonical-model-surface.md | Current canonical semantic model surface |
+| specs/type-schema-model.md | Canonical type schema contracts |
+| specs/type-model-core.md | Core type model contracts |
+| specs/core-semantic-vocabulary.md | Projection-neutral semantic vocabulary |
+| specs/type-model-annotations.md | Annotation namespace and preservation policy |
+| specs/type-model-json-schema-mapping.md | JSON Schema mapping baseline |
+| specs/json-schema-domain-model-and-export.md | JSON Schema domain model and export |
+| specs/envelope-projection-policies.md | Target-specific envelope policies |
+| specs/evolution-ownership-and-lifecycle-semantics.md | Evolution, ownership, and lifecycle semantics |
+| specs/type-model-dotnet-extraction.md | Roslyn .NET extraction |
+| specs/type-model-dotnet-attributes.md | .NET attribute vocabulary |
+| specs/type-model-dotnet-conventions.md | .NET extraction conventions |
+| specs/type-model-compile-time-generator.md | Compile-time model generation |
+| specs/type-model-runtime-api.md | Runtime model APIs |
+| specs/type-model-di-integration.md | Dependency-injection integration |
+| specs/type-model-query-and-inspection.md | Query and inspection APIs |
+| specs/type-model-transformation-and-domain-derivation.md | Transformations and domain derivation |
+| specs/type-model-ui-hints.md | UI hint vocabulary |
+| specs/type-model-projection-capabilities.md | Projection capability matrix |
+| specs/type-model-powerbi-tom-projection.md | Power BI projection |
+| specs/type-model-ef-core-projection.md | EF Core projection |
+| specs/system-text-json-contract-integration.md | System.Text.Json metadata import |
+| specs/system-text-json-domain-model-and-resolver-projection.md | System.Text.Json domain projection |
+| specs/diagnostics.md | Diagnostic policy |

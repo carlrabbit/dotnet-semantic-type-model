@@ -90,11 +90,9 @@ Target validation:
 
 ## XML Documentation Convention
 
-When `IncludeXmlDocumentation=true`:
+XML documentation summaries are always technical-description fallback sources.
 
-- type/property summaries map to `schema.description` if no explicit semantic description exists.
-
-When `RequireXmlDocumentation=true`:
+When `RequireTechnicalDescription=true`:
 
 - missing XML docs emit `STM5012`.
 
@@ -110,7 +108,6 @@ Convention and generation options are supported through analyzer/MSBuild propert
 - `SemanticTypeModelNamingPolicy`
 - `SemanticTypeModelInferKeys`
 - `SemanticTypeModelInferRelationships`
-- `SemanticTypeModelIncludeXmlDocumentation`
-- `SemanticTypeModelRequireXmlDocumentation`
+- `SemanticTypeModelRequireTechnicalDescription`
 - `SemanticTypeModelGeneratedNamespace`
 - `SemanticTypeModelGeneratedProviderName`
