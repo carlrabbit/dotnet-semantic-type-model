@@ -51,3 +51,10 @@ EF Core projection preserves canonical nullability for nullable value-type scala
 - JSON Schema technical descriptions are emitted only through the opt-in technical-description extension name.
 - `SemanticDescriptionAttribute`, the generic canonical `Description`, XML include switches, and XML requirement switches are removed; use `RequireTechnicalDescription` for technical-description enforcement.
 - Existing general description text must be classified manually because user-facing versus technical audience intent cannot be inferred safely.
+
+## 2.4.1 Dictionary Extraction Compatibility
+
+- 2.4.1 preserves canonical validation strictness for `STM0002`; unresolved dictionary key or value references remain validation errors.
+- The patch changes .NET extraction and generated providers so supported dictionary key and value types are registered before validation.
+- The affected 2.4.0 scenario was valid extension data such as `[SemanticExtensionData] Dictionary<string, JsonElement>?`; consumers should upgrade to 2.4.1 rather than hiding the member from the canonical model.
+- EF Core continues to ignore extension data by default and now applies that ignore policy before EF-specific property type resolution.

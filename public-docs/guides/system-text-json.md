@@ -87,3 +87,7 @@ The package does not generate serializer contexts, emulate arbitrary converters,
 ### Shared sample resolver contract
 
 The System.Text.Json sample wraps the user-authored serializer context with semantic metadata from the shared Order Fulfillment model and verifies Customer and order-submitted envelope serialization without replacing the consumer resolver.
+
+## 2.4.1 Extension-Data Dictionary Note
+
+2.4.1 corrects a 2.4.0 extraction defect for dictionary-backed extension data. Valid extension-data dictionaries such as `Dictionary<string, JsonElement>` are preserved in the canonical model with resolvable key and value types; projection-specific behavior remains unchanged.

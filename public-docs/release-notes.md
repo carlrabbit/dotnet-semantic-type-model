@@ -1,5 +1,21 @@
 # Release Notes
 
+## 2.4.1
+
+2.4.1 is an emergency patch release-preparation line for the dictionary type extraction defect introduced in the 2.4.0 package set. Packages are prepared as a release candidate only; publication, tag creation, and GitHub release creation require separate human approval.
+
+### Correction
+
+- Fixed the 2.4.0 .NET extraction defect where dictionary key type definitions could be omitted while dictionary descriptors still referenced the key type.
+- The most visible affected scenario was `[SemanticExtensionData] Dictionary<string, JsonElement>?`, where the generated dictionary shape referenced a string key type that was not registered and canonical validation reported `STM0002`.
+- Dictionary key and value types are now both normalized, extracted, registered, and emitted into generated providers so canonical validation succeeds without weakening `STM0002`.
+- EF Core now ignores extension-data properties before property type lookup and dictionary shape diagnostics, preserving the existing default that extension data is not projected into EF properties.
+- Regression coverage now proves valid extension-data dictionaries and ordinary dictionaries register supported key/value type definitions, and malformed dictionary references still produce `STM0002`.
+
+### Package Inventory
+
+The intended 2.4.1 package set is resolved from packable projects during release validation and is expected to include the same package family as 2.4.0. Human review is required for the final produced package inventory and archive contents.
+
 ## 2.4.0
 
 2.4.0 is the documentation-synchronization and release-preparation line for the shared Order Fulfillment samples, scalar/nullability compatibility hardening, Configuration package documentation, and audience-specific descriptions. Packages are prepared as a release candidate only; publication, tag creation, and GitHub release creation require separate human approval.

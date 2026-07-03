@@ -123,6 +123,70 @@ public sealed class DiagnosticIdStabilityTests
         _ = await Assert.That(stm5018!.Severity).IsEqualTo(DiagnosticSeverity.Warning);
     }
 
+    [Test]
+    public async Task Extractor_should_register_dictionary_key_and_value_types_for_extension_data()
+    {
+        const string source = """
+            using System;
+            using System.Collections.Generic;
+            using System.Text.Json;
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType(SemanticTypeRole.Entity)]
+            public sealed class ExternalRecord
+            {
+                [SemanticKey]
+                public required Guid Id { get; init; }
+
+                [SemanticExtensionData]
+                public Dictionary<string, JsonElement>? ExtensionData { get; init; }
+            }
+            """;
+
+        DotNetExtractionResult extraction = Extract(source);
+
+        DotNetDictionaryTypeDescriptor dictionary = extraction.TypesById.Values
+            .OfType<DotNetDictionaryTypeDescriptor>()
+            .Single(static descriptor => descriptor.Id.Contains("Dictionary", StringComparison.Ordinal));
+
+        _ = await Assert.That(dictionary.KeyTypeId).IsEqualTo("string");
+        _ = await Assert.That(dictionary.ValueTypeId).IsEqualTo("global::System.Text.Json.JsonElement");
+        _ = await Assert.That(extraction.TypesById.ContainsKey(dictionary.KeyTypeId)).IsTrue()
+            .Because("the 2.4.0 defect referenced global::System.String as a dictionary key without registering it, which later produced STM0002.");
+        _ = await Assert.That(extraction.TypesById.ContainsKey(dictionary.ValueTypeId)).IsTrue();
+    }
+
+    [Test]
+    public async Task Extractor_should_register_supported_ordinary_dictionary_key_types()
+    {
+        const string source = """
+            using System;
+            using System.Collections.Generic;
+            using System.Text.Json;
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType(SemanticTypeRole.Entity)]
+            public sealed class DictionaryRecord
+            {
+                [SemanticKey]
+                public required Guid Id { get; init; }
+
+                public Dictionary<string, string> TextByName { get; init; } = new();
+                public Dictionary<int, decimal> AmountByNumber { get; init; } = new();
+                public Dictionary<Guid, JsonElement> DataById { get; init; } = new();
+            }
+            """;
+
+        DotNetExtractionResult extraction = Extract(source);
+
+        _ = await Assert.That(extraction.Diagnostics).IsEmpty();
+        _ = await Assert.That(extraction.TypesById.ContainsKey("string")).IsTrue();
+        _ = await Assert.That(extraction.TypesById.ContainsKey("int")).IsTrue();
+        _ = await Assert.That(extraction.TypesById.ContainsKey("global::System.Guid")).IsTrue();
+        _ = await Assert.That(extraction.TypesById.ContainsKey("decimal")).IsTrue();
+        _ = await Assert.That(extraction.TypesById.ContainsKey("global::System.Text.Json.JsonElement")).IsTrue();
+    }
+
     private static Diagnostic[] RunGeneratorForDiagnostics(
         string source,
         IReadOnlyDictionary<string, string>? options = null)
@@ -165,6 +229,33 @@ public sealed class DiagnosticIdStabilityTests
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out ImmutableArray<Diagnostic> _);
         GeneratorDriverRunResult runResult = driver.GetRunResult();
         return runResult.Results.SelectMany(static result => result.Diagnostics).ToArray();
+    }
+
+    private static DotNetExtractionResult Extract(string source)
+    {
+        SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Preview));
+
+        string trustedAssemblies = (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")
+            ?? throw new InvalidOperationException("Trusted platform assemblies are unavailable.");
+
+        var references = new Dictionary<string, PortableExecutableReference>(StringComparer.Ordinal);
+        foreach (string path in trustedAssemblies.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+        {
+            references[path] = MetadataReference.CreateFromFile(path);
+        }
+
+        AddAssemblyReference(references, typeof(object).Assembly);
+        AddAssemblyReference(references, typeof(Enumerable).Assembly);
+        AddAssemblyReference(references, typeof(SemanticTypeAttribute).Assembly);
+        AddAssemblyReference(references, typeof(System.Text.Json.JsonElement).Assembly);
+
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            assemblyName: $"SemanticTypeModel.ExtractionTest_{Guid.NewGuid():N}",
+            syntaxTrees: [syntaxTree],
+            references: [.. references.Values],
+            options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+
+        return new RoslynDotNetTypeExtractor().Extract(compilation);
     }
 
     private static void AddAssemblyReference(Dictionary<string, PortableExecutableReference> references, Assembly assembly)
@@ -219,4 +310,3 @@ public sealed class DiagnosticIdStabilityTests
         }
     }
 }
-

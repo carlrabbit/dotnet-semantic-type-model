@@ -26,3 +26,7 @@ Prepare local packages, then run package-based sample validation:
 ### Shared Order Fulfillment sample model
 
 The code-first projection samples now share `samples/OrderFulfillment.Domain`. Each executable creates `OrderFulfillmentSemanticModel.Create()` and then applies only its own projection. This demonstrates that a complete semantic model can contain EF Core entities, JSON Schema editing contracts, Power BI analytical tables, System.Text.Json envelope serialization types, runtime DI registration, and Configuration option types without requiring every consumer to consume every type.
+
+## 2.4.1 Sample Canary
+
+Package-based samples should continue to validate generated canonical models when shared contracts include dictionary-backed extension data. The 2.4.1 patch release uses the Order Fulfillment sample suite as a canary for the former `STM0002` dictionary-key extraction regression.

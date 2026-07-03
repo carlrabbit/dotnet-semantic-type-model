@@ -366,3 +366,7 @@ Diagnostics
 ```
 
 Inspection output must be stable enough for snapshot testing.
+
+## M0049 Extension Data Dictionary Shape
+
+Extension data remains projection-neutral instance-level compatibility data. When represented by supported dictionary shapes, both dictionary key and value type references MUST be present in the canonical model so target projections can apply their existing extension-data policies.

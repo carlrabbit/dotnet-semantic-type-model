@@ -530,3 +530,7 @@ compiled models
 ## Nullable value-type CLR metadata
 
 When an EF Core property is nullable and the selected projected CLR type is a non-nullable value type, the EF Core projection must use `Nullable<T>` for `EfPropertyDefinition.ClrType`. Runtime `ModelBuilder` application must use that same CLR type so `EfPropertyDefinition.ClrType` and EF Core `IProperty.ClrType` agree with `IsNullable` metadata.
+
+## M0049 Extension Data Ordering
+
+EF Core projection MUST apply the default extension-data ignore policy before property type lookup, nullability resolution, converter processing, and unsupported dictionary-shape diagnostics. Ignored extension data MUST NOT create an EF property.

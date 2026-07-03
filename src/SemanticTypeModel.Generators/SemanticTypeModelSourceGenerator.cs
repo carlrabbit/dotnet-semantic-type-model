@@ -382,7 +382,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         source.AppendLine($"{indent}new global::SemanticTypeModel.Abstractions.Model.DictionaryTypeDefinition");
         source.AppendLine($"{indent}{{");
         AppendCommonTypeMembers(source, descriptor.Id, descriptor.Name, "Dictionary", false, descriptor.Annotations, indentationLevel + 1);
-        source.AppendLine($"{indent}    KeyType = new global::SemanticTypeModel.Abstractions.Model.TypeRef(new global::SemanticTypeModel.Abstractions.Model.TypeId(\"global::System.String\")),");
+        source.AppendLine($"{indent}    KeyType = new global::SemanticTypeModel.Abstractions.Model.TypeRef(new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(descriptor.KeyTypeId)}\")),");
         source.AppendLine($"{indent}    ValueType = new global::SemanticTypeModel.Abstractions.Model.TypeRef(new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(descriptor.ValueTypeId)}\")),");
         source.AppendLine($"{indent}}}");
     }

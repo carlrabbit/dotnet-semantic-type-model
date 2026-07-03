@@ -140,3 +140,7 @@ Extraction diagnostics use `STM5xxx` range and include at least:
 - unsupported dictionary key type;
 - enum numeric ambiguity;
 - unresolved/deferred extraction cases.
+
+## M0049 Dictionary Type Extraction Invariant
+
+Dictionary extraction MUST normalize and extract both key and value type arguments before creating the dictionary type definition. The dictionary `KeyType` and `ValueType` references MUST resolve in the canonical model for supported dictionary key types, including extension-data dictionaries.

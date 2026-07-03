@@ -1145,9 +1145,11 @@ public sealed class RoslynDotNetTypeExtractor
                 type.Locations.FirstOrDefault()));
         }
 
+        string keyTypeId = GetNormalizedTypeId(keyType, out _);
         string valueTypeId = GetNormalizedTypeId(valueType, out _);
+        ExtractType(keyType, cancellationToken);
         ExtractType(valueType, cancellationToken);
-        descriptor = new DotNetDictionaryTypeDescriptor { Id = id, Name = type.Name, ValueTypeId = valueTypeId };
+        descriptor = new DotNetDictionaryTypeDescriptor { Id = id, Name = type.Name, KeyTypeId = keyTypeId, ValueTypeId = valueTypeId };
         return true;
     }
 

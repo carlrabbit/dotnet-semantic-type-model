@@ -65,6 +65,26 @@ public sealed class TypeModelValidationTests
     }
 
     [Test]
+    public async Task Validator_should_report_unresolved_type_ref_on_dictionary_key()
+    {
+        var dictionary = new DictionaryTypeDefinition
+        {
+            Id = new TypeId("Dictionary"),
+            Name = "Dictionary",
+            Kind = TypeKind.Dictionary,
+            Nullability = Nullability.NonNullable,
+            Annotations = EmptyAnnotations,
+            KeyType = new TypeRef(new TypeId("MissingKey")),
+            ValueType = new TypeRef(new TypeId("String")),
+        };
+        ScalarTypeDefinition stringType = Scalar("String");
+
+        IReadOnlyList<SchemaDiagnostic> diagnostics = TypeSchemaModelValidator.Validate(BuildModel(dictionary, stringType));
+
+        await AssertDiagnostic(diagnostics, "STM0002", SchemaDiagnosticSeverity.Error, $"{ModelPath.ForType(dictionary.Id)}/keyType", SchemaDiagnosticStage.Validation);
+    }
+
+    [Test]
     public async Task Validator_should_not_report_errors_for_clean_model()
     {
         ScalarTypeDefinition stringType = Scalar("String");
