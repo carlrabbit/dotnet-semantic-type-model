@@ -217,6 +217,12 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
     {
         sourcePropertyName = property.Name;
         var propertyPath = ModelPath.ForProperty(owner.Id, property.Name);
+        if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData))
+        {
+            sourcePropertyName = null;
+            return [];
+        }
+
         if (model.TryGetType(property.Type.Id) is not TypeDefinition propertyType)
         {
             Report(
@@ -238,11 +244,6 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
 
         PreserveSchemaOptionality(property, effectiveNullability, propertyPath, diagnostics);
         ReportConstraintPreservation(property, propertyPath, diagnostics);
-
-        if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData))
-        {
-            return [];
-        }
 
         if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.OwnedCollection))
         {

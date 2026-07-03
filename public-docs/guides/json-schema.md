@@ -107,3 +107,7 @@ The shared Order Fulfillment JSON Schema sample exports an editable Customer con
 ### Audience-specific descriptions
 
 JSON Schema maps `UserDescription` to the schema `description` keyword. XML `<summary>` contributes only `TechnicalDescription` and does not silently populate user-facing schema descriptions. If technical text is needed in exported JSON Schema, set the technical-description extension option to an `x-*` extension name and review that extension with downstream consumers.
+
+## 2.4.1 Extension-Data Dictionary Note
+
+2.4.1 corrects a 2.4.0 extraction defect for dictionary-backed extension data. Valid extension-data dictionaries such as `Dictionary<string, JsonElement>` are preserved in the canonical model with resolvable key and value types; projection-specific behavior remains unchanged.

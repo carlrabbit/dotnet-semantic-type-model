@@ -256,6 +256,11 @@ public sealed record DotNetArrayTypeDescriptor : DotNetTypeDescriptor
 public sealed record DotNetDictionaryTypeDescriptor : DotNetTypeDescriptor
 {
     /// <summary>
+    /// Gets the dictionary key type id.
+    /// </summary>
+    public required string KeyTypeId { get; init; }
+
+    /// <summary>
     /// Gets the dictionary value type id.
     /// </summary>
     public required string ValueTypeId { get; init; }

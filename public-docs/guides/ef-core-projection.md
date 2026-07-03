@@ -114,3 +114,7 @@ EF Core projection preserves nullable scalar value types as `Nullable<T>` in the
 ### Audience-specific descriptions
 
 EF Core maps `TechnicalDescription` to provider-neutral table and column comments. XML `<summary>` is a technical-description fallback, so it can become an EF Core comment. `UserDescription` is retained for user-facing projections and is not used as a silent EF Core comment fallback.
+
+## 2.4.1 Extension-Data Dictionary Note
+
+2.4.1 corrects a 2.4.0 extraction defect for dictionary-backed extension data. Valid extension-data dictionaries such as `Dictionary<string, JsonElement>` are preserved in the canonical model with resolvable key and value types; projection-specific behavior remains unchanged.

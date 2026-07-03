@@ -128,3 +128,7 @@ Core semantics does not create target output by itself. It does not choose datab
 - [SemanticTypeModel.Core package](../nuget/SemanticTypeModel.Core.md)
 - [SemanticTypeModel.DotNet package](../nuget/SemanticTypeModel.DotNet.md)
 - [Projection capabilities](projection-capabilities.md)
+
+## 2.4.1 Extension-Data Dictionary Note
+
+2.4.1 corrects a 2.4.0 extraction defect for dictionary-backed extension data. Valid extension-data dictionaries such as `Dictionary<string, JsonElement>` are preserved in the canonical model with resolvable key and value types; projection-specific behavior remains unchanged.
