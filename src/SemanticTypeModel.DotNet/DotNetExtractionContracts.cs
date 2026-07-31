@@ -226,6 +226,11 @@ public sealed record DotNetScalarTypeDescriptor : DotNetTypeDescriptor
     /// Gets the logical scalar kind.
     /// </summary>
     public required DotNetScalarKind ScalarKind { get; init; }
+
+    /// <summary>
+    /// Gets the inferred projection-neutral scalar format, when one is implied by the CLR type.
+    /// </summary>
+    public string? Format { get; init; }
 }
 
 /// <summary>

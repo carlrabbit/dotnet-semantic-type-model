@@ -187,6 +187,40 @@ public sealed class DiagnosticIdStabilityTests
         _ = await Assert.That(extraction.TypesById.ContainsKey("global::System.Text.Json.JsonElement")).IsTrue();
     }
 
+    [Test]
+    public async Task Extractor_should_support_Uri_as_a_default_formatted_scalar_and_preserve_STM5025()
+    {
+        const string source = """
+            using System;
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType(SemanticTypeRole.Entity)]
+            public sealed class WebsiteRecord
+            {
+                [SemanticKey]
+                public required Guid Id { get; init; }
+                public required Uri Website { get; init; }
+                [SemanticFormat(SemanticScalarFormat.Uri)]
+                public Uri? OptionalWebsite { get; init; }
+                [SemanticFormat(SemanticScalarFormat.Uri)]
+                public required string WebsiteText { get; init; }
+                [SemanticFormat(SemanticScalarFormat.Uri)]
+                public int InvalidWebsite { get; init; }
+            }
+            """;
+
+        DotNetExtractionResult extraction = Extract(source);
+        DotNetObjectTypeDescriptor record = extraction.TypesById.Values.OfType<DotNetObjectTypeDescriptor>().Single(static type => type.Name == "WebsiteRecord");
+
+        _ = await Assert.That(extraction.TypesById.Values.OfType<DotNetScalarTypeDescriptor>().Any(static type => type.Name == "Uri" && type.ScalarKind == DotNetScalarKind.String && type.Format == "uri")).IsTrue();
+        _ = await Assert.That(record.Properties.Single(static property => property.Name == "Website").Annotations["schema.format"]).IsEqualTo("uri");
+        _ = await Assert.That(record.Properties.Single(static property => property.Name == "OptionalWebsite").IsNullable).IsTrue();
+        _ = await Assert.That(record.Properties.Single(static property => property.Name == "OptionalWebsite").TypeId).IsEqualTo("global::System.Uri");
+        _ = await Assert.That(record.Properties.Single(static property => property.Name == "OptionalWebsite").Annotations["schema.format"]).IsEqualTo("uri");
+        _ = await Assert.That(record.Properties.Single(static property => property.Name == "WebsiteText").Annotations["schema.format"]).IsEqualTo("uri");
+        _ = await Assert.That(extraction.Diagnostics.Count(static diagnostic => diagnostic.Code == "STM5025")).IsEqualTo(1);
+    }
+
     private static Diagnostic[] RunGeneratorForDiagnostics(
         string source,
         IReadOnlyDictionary<string, string>? options = null)

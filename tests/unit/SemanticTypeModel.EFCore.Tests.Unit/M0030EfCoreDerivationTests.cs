@@ -71,6 +71,67 @@ public sealed class M0030EfCoreDerivationTests
         _ = await Assert.That(projection.Diagnostics.Any(static diagnostic => diagnostic.Code == "EFCORE_INHERITANCE_STRATEGY_REQUIRED")).IsTrue();
     }
 
+    [Test]
+    [Arguments(ValueObjectEfProjectionMode.Flatten)]
+    [Arguments(ValueObjectEfProjectionMode.SerializeJson)]
+    public async Task Owned_value_object_should_respect_value_object_projection_mode(ValueObjectEfProjectionMode mode)
+    {
+        ScalarTypeDefinition stringType = Scalar("String", ScalarKind.String);
+        ObjectTypeDefinition address = ValueObject("Address", [Property("street", "Address.Street", stringType.Id, true, false)]);
+        ObjectTypeDefinition order = Entity(
+            "Order",
+            [
+                Property("id", "Order.Id", stringType.Id, true, false),
+                Property("shippingAddress", "Order.ShippingAddress", address.Id, true, false, Annotation((Core.Semantics.CoreSemanticAnnotationKeys.OwnedObject, true))),
+            ],
+            [Key("PK_Order", KeyKind.Primary, "Order.Id")]);
+
+        EfModelDefinition projection = new EfCoreModelProjection(new EfCoreProjectionOptions { ValueObjectProjectionMode = mode }).Project(BuildModel(stringType, address, order), new SchemaProjectionContext { Target = ProjectionTarget.EfCore });
+        EfEntityTypeDefinition entity = projection.EntityTypes.Single(static candidate => candidate.Name == "Order");
+
+        if (mode == ValueObjectEfProjectionMode.SerializeJson)
+        {
+            EfPropertyDefinition json = entity.Properties.Single(static property => property.Name == "shippingAddress");
+            _ = await Assert.That(json.ClrType).IsEqualTo(typeof(string));
+            _ = await Assert.That(json.Conversion).IsEqualTo("Json");
+            _ = await Assert.That(entity.Properties.Any(static property => property.Name == "shippingAddress_street")).IsFalse();
+        }
+        else
+        {
+            _ = await Assert.That(entity.Properties.Single(static property => property.Name == "shippingAddress_street").ClrType).IsEqualTo(typeof(string));
+        }
+    }
+
+    [Test]
+    public async Task Owned_object_and_true_owned_navigation_should_be_diagnosed_without_fake_metadata()
+    {
+        ScalarTypeDefinition stringType = Scalar("String", ScalarKind.String);
+        ObjectTypeDefinition audit = new()
+        {
+            Id = new TypeId("Audit"),
+            Name = "Audit",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = EmptyAnnotations,
+            Semantics = new EntitySemantics { Role = EntityRole.Unspecified },
+            Properties = [Property("source", "Audit.Source", stringType.Id, false, true)],
+            Keys = [],
+            Relationships = [],
+        };
+        ObjectTypeDefinition address = ValueObject("Address", [Property("street", "Address.Street", stringType.Id, true, false)]);
+        ObjectTypeDefinition order = Entity("Order", [
+            Property("id", "Order.Id", stringType.Id, true, false),
+            Property("audit", "Order.Audit", audit.Id, false, true, Annotation((Core.Semantics.CoreSemanticAnnotationKeys.OwnedObject, true))),
+            Property("address", "Order.Address", address.Id, true, false, Annotation((Core.Semantics.CoreSemanticAnnotationKeys.OwnedObject, true))),
+        ], [Key("PK_Order", KeyKind.Primary, "Order.Id")]);
+
+        EfModelDefinition projection = new EfCoreModelProjection(new EfCoreProjectionOptions { ValueObjectProjectionMode = ValueObjectEfProjectionMode.Owned }).Project(BuildModel(stringType, audit, address, order), new SchemaProjectionContext { Target = ProjectionTarget.EfCore });
+
+        _ = await Assert.That(projection.Diagnostics.Any(static diagnostic => diagnostic.Code == "EFCORE_OWNED_OBJECT_POLICY_REQUIRED")).IsTrue();
+        _ = await Assert.That(projection.Diagnostics.Any(static diagnostic => diagnostic.Code == "EFCORE_TRUE_OWNED_NAVIGATION_NOT_SUPPORTED")).IsTrue();
+        _ = await Assert.That(projection.EntityTypes.Single(static entity => entity.Name == "Order").Properties.Any(static property => property.Conversion == "Owned")).IsFalse();
+    }
+
     private static TypeSchemaModel BuildCustomerOrderModel()
     {
         ScalarTypeDefinition intType = Scalar("Int64", ScalarKind.Integer);
@@ -156,6 +217,22 @@ public sealed class M0030EfCoreDerivationTests
             Properties = properties,
             Keys = keys,
             Relationships = relationships ?? [],
+        };
+    }
+
+    private static ObjectTypeDefinition ValueObject(string name, IReadOnlyList<PropertyDefinition> properties)
+    {
+        return new ObjectTypeDefinition
+        {
+            Id = new TypeId(name),
+            Name = name,
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = EmptyAnnotations,
+            Semantics = new EntitySemantics { Role = EntityRole.ValueObject, IsValueObject = true },
+            Properties = properties,
+            Keys = [],
+            Relationships = [],
         };
     }
 

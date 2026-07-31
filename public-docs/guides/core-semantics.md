@@ -132,3 +132,7 @@ Core semantics does not create target output by itself. It does not choose datab
 ## 2.4.1 Extension-Data Dictionary Note
 
 2.4.1 corrects a 2.4.0 extraction defect for dictionary-backed extension data. Valid extension-data dictionaries such as `Dictionary<string, JsonElement>` are preserved in the canonical model with resolvable key and value types; projection-specific behavior remains unchanged.
+
+## URI scalars and ownership
+
+`System.Uri` properties are supported string-compatible scalars and receive URI format semantics by default. An explicit `SemanticFormat` remains available for string and other supported format-compatible scalars. Ownership describes lifecycle containment only; each target projection chooses storage separately.

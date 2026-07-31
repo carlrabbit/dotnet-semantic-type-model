@@ -111,3 +111,7 @@ JSON Schema maps `UserDescription` to the schema `description` keyword. XML `<su
 ## 2.4.1 Extension-Data Dictionary Note
 
 2.4.1 corrects a 2.4.0 extraction defect for dictionary-backed extension data. Valid extension-data dictionaries such as `Dictionary<string, JsonElement>` are preserved in the canonical model with resolvable key and value types; projection-specific behavior remains unchanged.
+
+## URI properties
+
+A `System.Uri` or nullable `System.Uri` property exports as JSON Schema `type: string` with `format: uri` by default. Applying `SemanticFormat(Uri)` to `string` is also supported; applying formats to incompatible targets remains diagnostic.

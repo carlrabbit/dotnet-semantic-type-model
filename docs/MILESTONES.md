@@ -71,3 +71,4 @@ For each focus area:
 - [M0047 - Audience-Specific Descriptions and Projection Description Policies](milestones/m0047-audience-specific-descriptions-and-projection-description-policies.md)
 - [M0048 - Documentation Synchronization and 2.4.0 Release Preparation](milestones/m0048-documentation-synchronization-and-2-4-0-release-preparation.md)
 - [M0049 - Emergency Dictionary Type Extraction Fix and 2.4.1 Patch Release](milestones/m0049-emergency-dictionary-type-extraction-fix-and-2-4-1-patch-release.md)
+- [M0050 - Format-Compatible Scalar Support and Role-Aware EF Owned Storage](milestones/m0050-format-compatible-scalar-support-and-role-aware-ef-owned-storage.md)

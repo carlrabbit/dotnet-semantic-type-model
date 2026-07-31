@@ -1,5 +1,21 @@
 # Release Notes
 
+## 2.4.2
+
+2.4.2 is a non-publishing patch release candidate correcting two 2.4.1 behavior gaps. Publication, tagging, and GitHub release creation require separate human approval.
+
+### Corrections
+
+- `System.Uri` and nullable `Uri` members are supported as string-compatible canonical scalars. `Uri` implies the `uri` semantic format by default, while an explicit supported format can override that convention. JSON Schema emits string/`uri`, Power BI emits text, System.Text.Json retains normal `Uri` handling, and provider-neutral EF Core stores the scalar as a string.
+- `STM5025` remains strict for formats applied to unsupported targets such as integer, object, collection, dictionary, and enum members.
+- EF Core now classifies semantic ownership by ownership kind, target role, and target shape before choosing storage. Owned value objects respect `ValueObjectProjectionMode`: `Flatten` emits scalar/enum columns and `SerializeJson` emits one string JSON column.
+- Object-role owned members, entity-role owned members, and owned collections require explicit policies and are diagnosed rather than silently flattened or serialized.
+- True EF owned navigation remains deferred: selecting `Owned` emits `EFCORE_TRUE_OWNED_NAVIGATION_NOT_SUPPORTED` and creates no fake `OwnsOne` domain metadata.
+
+### Release status
+
+Packages are prepared and validated as a 2.4.2 release candidate only. Human review is required for policy names, diagnostics, samples, package inventory, wording, and publication approval.
+
 ## 2.4.1
 
 2.4.1 is an emergency patch release-preparation line for the dictionary type extraction defect introduced in the 2.4.0 package set. Packages are prepared as a release candidate only; publication, tag creation, and GitHub release creation require separate human approval.

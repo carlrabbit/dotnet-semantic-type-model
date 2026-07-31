@@ -27,6 +27,8 @@ public sealed class Customer
     /// </summary>
     [SemanticUserDescription("The email address used to contact this customer.")]
     public required string EmailAddress { get; init; }
+    [SemanticFormat(SemanticScalarFormat.Uri)]
+    public Uri? Website { get; init; }
     public string? LoyaltyTier { get; init; }
     [SemanticOwned]
     public Address BillingAddress { get; init; } = new() { Line1 = string.Empty, City = string.Empty, CountryCode = string.Empty };

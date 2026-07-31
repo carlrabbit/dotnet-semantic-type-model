@@ -118,3 +118,7 @@ EF Core maps `TechnicalDescription` to provider-neutral table and column comment
 ## 2.4.1 Extension-Data Dictionary Note
 
 2.4.1 corrects a 2.4.0 extraction defect for dictionary-backed extension data. Valid extension-data dictionaries such as `Dictionary<string, JsonElement>` are preserved in the canonical model with resolvable key and value types; projection-specific behavior remains unchanged.
+
+## 2.4.2 role-aware owned storage
+
+`SemanticOwned` no longer means “flatten.” EF Core first considers ownership kind, target role, and target shape. Owned value objects follow `ValueObjectProjectionMode`: `Flatten` creates scalar/enum columns and `SerializeJson` creates one provider-neutral string JSON column. `Owned` is explicitly diagnosed because true `OwnsOne` application is not yet implemented. Object-role owned members, entity-role owned members, and owned collections require explicit policies and are not silently flattened or serialized. `Uri` scalars project as strings in the provider-neutral model.

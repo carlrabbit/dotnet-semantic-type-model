@@ -251,11 +251,27 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
             return [];
         }
 
-        if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.OwnedObject) && propertyType is ObjectTypeDefinition ownedObject)
+        if (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.OwnedObject))
         {
-            return FlattenValueObject(model, owner, property, ownedObject, projectedName, diagnostics)
-                .Select(projected => projected with { Annotations = AppendAnnotations(projected.Annotations, CreateAnnotation("efCore.ownership", "OwnsOne", AnnotationScope.Projection, AnnotationSource.Generated)) })
-                .ToArray();
+            if (propertyType is not ObjectTypeDefinition ownedObject)
+            {
+                Report(diagnostics, SchemaDiagnosticSeverity.Warning, "EFCORE_OWNED_TARGET_SHAPE_UNSUPPORTED", $"Owned property '{owner.Name}.{property.Name}' targets unsupported shape '{propertyType.Kind}'.", propertyPath);
+                return [];
+            }
+
+            if (IsValueObject(ownedObject, propertyPath, diagnostics))
+            {
+                return ProjectValueObject(model, owner, property, ownedObject, projectedName, effectiveNullability, valueGenerated, diagnostics);
+            }
+
+            if (ownedObject.Semantics.Role == EntityRole.Entity)
+            {
+                Report(diagnostics, SchemaDiagnosticSeverity.Warning, "EFCORE_OWNED_ENTITY_POLICY_REQUIRED", $"Owned entity '{ownedObject.Name}' requires an explicit aggregate-owned entity storage policy.", propertyPath);
+                return [];
+            }
+
+            Report(diagnostics, SchemaDiagnosticSeverity.Warning, "EFCORE_OWNED_OBJECT_POLICY_REQUIRED", $"Owned object '{ownedObject.Name}' requires an explicit owned-object storage policy; value-object flattening and JSON policies are not applied to object-role targets.", propertyPath);
+            return [];
         }
 
         if (IsEnvelopePayload(owner, property))
@@ -301,7 +317,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
 
         if (propertyType is ObjectTypeDefinition nestedObject && IsValueObject(nestedObject, propertyPath, diagnostics))
         {
-            return ProjectValueObject(model, owner, ownerEntityName, property, nestedObject, projectedName, effectiveNullability, valueGenerated, entityInfos, entityNames, diagnostics);
+            return ProjectValueObject(model, owner, property, nestedObject, projectedName, effectiveNullability, valueGenerated, diagnostics);
         }
 
         if (propertyType is ArrayTypeDefinition)
@@ -669,14 +685,11 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
     private IReadOnlyList<EfPropertyDefinition> ProjectValueObject(
         TypeSchemaModel model,
         ObjectTypeDefinition owner,
-        string ownerEntityName,
         PropertyDefinition property,
         ObjectTypeDefinition valueObjectType,
         string projectedName,
         bool isNullable,
         bool isGenerated,
-        List<ProjectedEntityInfo> entityInfos,
-        HashSet<string> entityNames,
         IList<SchemaDiagnostic> diagnostics)
     {
         var propertyPath = ModelPath.ForProperty(owner.Id, property.Name);
@@ -717,29 +730,13 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
                 return FlattenValueObject(model, owner, property, valueObjectType, projectedName, diagnostics);
 
             case ValueObjectEfProjectionMode.Owned:
-                var ownedName = ResolveUniqueName($"{ownerEntityName}_{projectedName}", entityNames, "entity", propertyPath, diagnostics);
-                if (ownedName is null)
-                {
-                    return [];
-                }
-
-                entityInfos.Add(ProjectEntity(model, valueObjectType, ownedName, true, entityInfos, entityNames, diagnostics));
-                return
-                [
-                    CreateProperty(
-                        projectedName,
-                        null,
-                        typeof(object),
-                        property.Cardinality.IsRequired,
-                        isNullable,
-                        null,
-                        null,
-                        "Owned",
-                        isGenerated,
-                        AppendAnnotations(
-                            BuildPropertyAnnotations(property, isNullable),
-                            CreateAnnotation("efCore.ownedTypeName", ownedName, AnnotationScope.Projection, AnnotationSource.Generated))),
-                ];
+                Report(
+                    diagnostics,
+                    SchemaDiagnosticSeverity.Warning,
+                    "EFCORE_TRUE_OWNED_NAVIGATION_NOT_SUPPORTED",
+                    $"Value object '{valueObjectType.Name}' selected true EF owned navigation, which is not implemented by the provider-neutral ModelBuilder projection.",
+                    propertyPath);
+                return [];
 
             default:
                 return [];
