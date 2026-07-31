@@ -22,7 +22,11 @@ public sealed class EfCoreModelBuilderProjectionTests
 
         EfCoreModelBuilderProjectionResult result = modelBuilder.ApplySemanticTypeModel(
             model,
-            options => options.DefaultSchema = "app");
+            options =>
+            {
+                options.ApplicationMode = EfCoreApplicationMode.SharedTypeProjection;
+                options.DefaultSchema = "app";
+            });
 
         IMutableEntityType? entityType = modelBuilder.Model.FindEntityType("Customer");
 
@@ -42,7 +46,11 @@ public sealed class EfCoreModelBuilderProjectionTests
 
         EfCoreModelBuilderProjectionResult result = modelBuilder.ApplySemanticTypeModel(
             model,
-            options => options.ProjectUnannotatedObjectsAsEntities = true);
+            options =>
+            {
+                options.ApplicationMode = EfCoreApplicationMode.SharedTypeProjection;
+                options.ProjectUnannotatedObjectsAsEntities = true;
+            });
 
         _ = await Assert.That(result.Model.EntityTypes.Count).IsEqualTo(1);
         _ = await Assert.That(modelBuilder.Model.FindEntityType("Customer")).IsNotNull();
@@ -54,7 +62,7 @@ public sealed class EfCoreModelBuilderProjectionTests
         TypeSchemaModel model = BuildSimpleEntityModel(withEntityRole: true, keyTypeId: new TypeId("MissingType"));
         var modelBuilder = new ModelBuilder(new ConventionSet());
 
-        EfCoreModelBuilderProjectionResult result = modelBuilder.ApplySemanticTypeModel(model);
+        EfCoreModelBuilderProjectionResult result = modelBuilder.ApplySemanticTypeModel(model, options => options.ApplicationMode = EfCoreApplicationMode.SharedTypeProjection);
 
         _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Code == "EFCORE_PROPERTY_TYPE_NOT_FOUND")).IsTrue();
     }

@@ -55,3 +55,7 @@ modelBuilder.ApplyEfCoreSemanticModel(result.Model);
 - [Compatibility](../api/compatibility.md)
 - [EF Core projection guide](../guides/ef-core-projection.md)
 - [Core semantics guide](../guides/core-semantics.md)
+
+## EF application modes
+
+`ApplySemanticTypeModel` defaults to CLR-backed convention augmentation for `DbSet<TEntity>` contexts: it suppresses `[SemanticExtensionData]`, configures reachable owned value objects, and rejects value objects as root entities. Set `EfCoreModelBuilderProjectionOptions.ApplicationMode` to `SharedTypeProjection` when STM should instead create the provider-neutral shared-type shape. See the EF Core projection guide for boundaries and fallback workarounds.

@@ -72,3 +72,4 @@ For each focus area:
 - [M0048 - Documentation Synchronization and 2.4.0 Release Preparation](milestones/m0048-documentation-synchronization-and-2-4-0-release-preparation.md)
 - [M0049 - Emergency Dictionary Type Extraction Fix and 2.4.1 Patch Release](milestones/m0049-emergency-dictionary-type-extraction-fix-and-2-4-1-patch-release.md)
 - [M0050 - Format-Compatible Scalar Support and Role-Aware EF Owned Storage](milestones/m0050-format-compatible-scalar-support-and-role-aware-ef-owned-storage.md)
+- [M0051 - EF CLR Convention Suppression and ValueObject Boundary Hardening](milestones/m0051-ef-clr-convention-suppression-and-valueobject-boundary-hardening.md)

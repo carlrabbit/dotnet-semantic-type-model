@@ -148,3 +148,7 @@ Dictionary extraction MUST normalize and extract both key and value type argumen
 ## M0050 URI Scalar Compatibility
 
 `System.Uri` and nullable `System.Uri` members MUST extract as string-compatible scalar definitions. A `Uri` member implies `schema.format=uri` unless an explicit supported format annotation overrides the convention. `STM5025` remains required for formats on unsupported member shapes.
+
+## M0051 inherited semantic members
+
+Extraction includes inherited public properties on semantic derived types. A non-semantic or abstract base type may therefore contribute `[SemanticExtensionData]` to a derived semantic value object without itself becoming a semantic root. Hidden derived properties take precedence by CLR member name.

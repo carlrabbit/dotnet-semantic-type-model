@@ -176,3 +176,9 @@ First stable SemanticTypeModel release.
 - Projection targets intentionally expose repository-defined metadata and do not provision external services.
 - JSON Editor compatibility is an export mode in `SemanticTypeModel.JsonSchema`, not a complete JSON Editor runtime.
 - Power BI projection does not authenticate with Power BI, publish datasets, create PBIX files, or manage service resources.
+
+## 2.4.3
+
+- Corrects a 2.4.2 interop issue where EF Core conventions could discover directly declared or inherited `[SemanticExtensionData]` dictionaries on reachable semantic value-object CLR types and fail relationship discovery.
+- Adds explicit CLR-backed convention augmentation and STM-owned shared-type projection modes. CLR-backed augmentation is the default `ApplySemanticTypeModel` mode and suppresses semantic extension data only from EF mapping.
+- Rejects semantic `ValueObject` CLR types used as root `DbSet<T>` entities while preserving owned reachability, canonical extension-data semantics, M0049 dictionary extraction, and M0050 role-aware owned storage behavior.

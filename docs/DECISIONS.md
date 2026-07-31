@@ -8,6 +8,8 @@ Decision records are authoritative for reasoning, alternatives, and constraints.
 
 ## Available Decisions
 
+- [Separate STM-owned EF projection from CLR EF convention augmentation](decisions/separate-stm-ef-projection-from-clr-ef-convention-augmentation.md)
+
 | Decision | Purpose |
 |---|---|
 | decisions/json-schema-as-primary-dialect.md | JSON Schema dialect choice |

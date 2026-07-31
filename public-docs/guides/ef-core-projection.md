@@ -122,3 +122,18 @@ EF Core maps `TechnicalDescription` to provider-neutral table and column comment
 ## 2.4.2 role-aware owned storage
 
 `SemanticOwned` no longer means “flatten.” EF Core first considers ownership kind, target role, and target shape. Owned value objects follow `ValueObjectProjectionMode`: `Flatten` creates scalar/enum columns and `SerializeJson` creates one provider-neutral string JSON column. `Owned` is explicitly diagnosed because true `OwnsOne` application is not yet implemented. Object-role owned members, entity-role owned members, and owned collections require explicit policies and are not silently flattened or serialized. `Uri` scalars project as strings in the provider-neutral model.
+
+## 2.4.3 EF integration modes
+
+`ApplySemanticTypeModel` defaults to **CLR-backed EF convention augmentation** for normal `DbSet<TEntity>` contexts. EF discovers CLR entities, then STM configures semantic owned value objects and suppresses `[SemanticExtensionData]`, including nullable dictionaries inherited from non-semantic abstract base classes. Extension data remains in the canonical model and remains available to JSON/System.Text.Json; only EF mapping is suppressed.
+
+Select **STM-owned shared-type projection** explicitly when STM owns the complete provider-neutral EF shape:
+
+```csharp
+modelBuilder.ApplySemanticTypeModel(AppSemanticTypeModel.Create(), options =>
+    options.ApplicationMode = EfCoreApplicationMode.SharedTypeProjection);
+```
+
+Do not expose the same CLR types as `DbSet<T>` in shared-type mode. In CLR-backed mode, `DbSet<T>` roots must have semantic entity or aggregate-root meaning. A semantic `ValueObject` is reachable only through its owner and is rejected as a root `DbSet<T>`.
+
+EF conventions do not understand STM attributes without this integration call. If CLR metadata is unavailable, suppression is disabled, or an unsupported mapping path is configured, `[NotMapped]` or `modelBuilder.Entity<T>().Ignore(...)` is a workaround; it is not required for the supported CLR-backed path.
