@@ -7,7 +7,7 @@
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.EFCore --version 2.4.0
+dotnet add package SemanticTypeModel.EFCore --version 2.4.4
 ```
 
 ## Use when
@@ -58,4 +58,4 @@ modelBuilder.ApplyEfCoreSemanticModel(result.Model);
 
 ## EF application modes
 
-`ApplySemanticTypeModel` defaults to CLR-backed convention augmentation for `DbSet<TEntity>` contexts: it suppresses `[SemanticExtensionData]`, configures reachable owned value objects, and rejects value objects as root entities. Set `EfCoreModelBuilderProjectionOptions.ApplicationMode` to `SharedTypeProjection` when STM should instead create the provider-neutral shared-type shape. See the EF Core projection guide for boundaries and fallback workarounds.
+Closed CLR application is the default. `ApplySemanticTypeModel` is a convenience wrapper over derivation plus `ApplyEfCoreSemanticModel`; the latter consumes source lineage and suppression metadata from `EfCoreSemanticModel`. Use `ApplyEfCoreSemanticModelAsSharedTypes` only when explicitly choosing provider-neutral shared types. A lineage-free closed application reports `EFCORE_SOURCE_LINEAGE_REQUIRED`.

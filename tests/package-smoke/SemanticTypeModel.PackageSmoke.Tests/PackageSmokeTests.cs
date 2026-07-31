@@ -39,7 +39,11 @@ internal sealed class PackageSmokeTests
         EfModelDefinition efCoreProjection = new EfCoreModelProjection().Project(canonicalModel, efCoreContext);
         _ = await Assert.That(efCoreProjection).IsNotNull();
         var modelBuilder = new ModelBuilder(new ConventionSet());
-        EfCoreModelBuilderProjectionResult efCoreApplyResult = modelBuilder.ApplySemanticTypeModel(canonicalModel, options => options.ProjectUnannotatedObjectsAsEntities = true);
+        EfCoreModelBuilderProjectionResult efCoreApplyResult = modelBuilder.ApplySemanticTypeModel(canonicalModel, options =>
+        {
+            options.ApplicationMode = EfCoreApplicationMode.SharedTypeModel;
+            options.ProjectUnannotatedObjectsAsEntities = true;
+        });
         _ = await Assert.That(efCoreApplyResult.Model).IsNotNull();
 
         using ServiceProvider provider = new ServiceCollection()

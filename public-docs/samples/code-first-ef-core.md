@@ -28,7 +28,7 @@ The sample prints generated model information, EF Core derivation diagnostics, a
 
 ## Consumer Pattern Demonstrated
 
-A consumer lets the packaged generator produce `AppSemanticTypeModel.Create()`, derives `EfCoreSemanticModel`, checks diagnostics, and applies it to a local `ModelBuilder`.
+A consumer lets the packaged generator produce `AppSemanticTypeModel.Create()`, derives `EfCoreSemanticModel`, checks diagnostics, and registers CLR entity roots and applies its closed contract to a local `ModelBuilder` through `ApplyEfCoreSemanticModel`.
 
 ## Non-Goals
 

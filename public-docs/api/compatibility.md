@@ -66,6 +66,8 @@ EF Core projection preserves canonical nullability for nullable value-type scala
 - Owned object-role and entity-role targets and owned collections now produce policy-required diagnostics rather than silent mappings.
 - `Owned` mode is not represented as `OwnsOne` metadata because provider-neutral true EF owned-navigation application remains deferred.
 
-## EF Core 2.4.3 boundary
+## EF Core 2.4.4 closed-model boundary
 
-`EfCoreModelBuilderProjectionOptions.ApplicationMode` explicitly selects `ClrConventionAugmentation` (the default for `DbSet<TEntity>` contexts) or `SharedTypeProjection`. CLR-backed augmentation suppresses `[SemanticExtensionData]` where CLR metadata is resolvable and rejects semantic value objects used as root `DbSet<T>` types. Shared-type projection remains available explicitly and continues to exclude value objects from root STM entities.
+`EfCoreApplicationMode.ClosedClrModel` is the default. `ApplySemanticTypeModel` derives a lineage-preserving `EfCoreSemanticModel` and delegates to `ApplyEfCoreSemanticModel`; both therefore enforce the same closed CLR behavior. Convention-discovered members absent from the model are suppressed, semantic value objects cannot be root entities, and missing lineage produces `EFCORE_SOURCE_LINEAGE_REQUIRED`.
+
+`SharedTypeModel` and `ApplyEfCoreSemanticModelAsSharedTypes` provide explicit secondary shared-type application. `ClrConventionAugmentation` and `SharedTypeProjection` are obsolete source-compatible aliases for the corrected modes; applications should migrate names because EF conventions are not model authority.
