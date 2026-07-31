@@ -177,6 +177,15 @@ First stable SemanticTypeModel release.
 - JSON Editor compatibility is an export mode in `SemanticTypeModel.JsonSchema`, not a complete JSON Editor runtime.
 - Power BI projection does not authenticate with Power BI, publish datasets, create PBIX files, or manage service resources.
 
+## 2.4.4
+
+- Corrects the 2.4.3 authority model: EF CLR convention augmentation partially treated EF conventions as a source to augment rather than behavior to constrain.
+- Makes `EfCoreSemanticModel` the complete, lineage-preserving EF application contract and makes closed CLR application the default.
+- Makes `ApplySemanticTypeModel` a convenience wrapper over the same closed application engine used by `ApplyEfCoreSemanticModel`.
+- Adds explicit `EFCORE_SOURCE_LINEAGE_REQUIRED` failure for lineage-free closed application and keeps shared-type application explicit through `SharedTypeModel` / `ApplyEfCoreSemanticModelAsSharedTypes`.
+- Obsoletes the `ClrConventionAugmentation` and `SharedTypeProjection` names as compatibility aliases.
+- Preserves inherited extension-data suppression, value-object root rejection, dictionary extraction, `Uri` scalar handling, and role-aware owned-storage projection.
+
 ## 2.4.3
 
 - Corrects a 2.4.2 interop issue where EF Core conventions could discover directly declared or inherited `[SemanticExtensionData]` dictionaries on reachable semantic value-object CLR types and fail relationship discovery.

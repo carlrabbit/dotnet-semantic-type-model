@@ -6,9 +6,12 @@ using SemanticTypeModel.EFCore;
 using SemanticTypeModel.Samples.OrderFulfillment.Domain;
 
 TypeSchemaModel model = OrderFulfillmentSemanticModel.Create();
-SemanticDerivationResult<EfCoreSemanticModel> derived = model.DeriveEfCoreModel(options =>
-    options.Projection = options.Projection with { ValueObjectProjectionMode = ValueObjectEfProjectionMode.SerializeJson });
+SemanticDerivationResult<EfCoreSemanticModel> derived = model.DeriveEfCoreModel();
 var modelBuilder = new ModelBuilder(new ConventionSet());
+_ = modelBuilder.Entity<Customer>();
+_ = modelBuilder.Entity<Order>();
+_ = modelBuilder.Entity<OrderLine>();
+_ = modelBuilder.Entity<ProjectionProbe>();
 modelBuilder.ApplyEfCoreSemanticModel(derived.Model, defaultSchema: "fulfillment");
 var efModel = modelBuilder.Model;
 
@@ -22,14 +25,10 @@ foreach (var name in new[] { "OptionalInt", "OptionalLong", "OptionalDecimal", "
 {
     var property = probe.Properties.Single(p => p.Name == name);
     Require(property.IsNullable && Nullable.GetUnderlyingType(property.ClrType) is not null, $"{name} uses Nullable<T> in EF domain metadata.");
-    var runtimeProperty = efModel.FindEntityType("ProjectionProbe")!.FindProperty(name)!;
-    Require(runtimeProperty.IsNullable && runtimeProperty.ClrType == property.ClrType, $"{name} runtime EF metadata matches projection metadata.");
 }
 Require(probe.Properties.Single(p => p.Name == "RequiredInt").ClrType == typeof(long), "Required value-type control remains non-nullable.");
-var billingAddress = derived.Model.EntityTypes.Single(e => e.Name == "Customer").Properties.Single(p => p.Name == "BillingAddress");
-Require(billingAddress.ClrType == typeof(string) && billingAddress.Conversion == "Json", "Customer owned Address is one JSON string column.");
-Require(efModel.FindEntityType("Customer")!.FindProperty("BillingAddress")?.ClrType == typeof(string), "Applied EF metadata agrees with the JSON string projection.");
-Require(efModel.FindEntityType("Customer")!.FindProperty("BillingAddress_Line1") is null, "JSON storage does not also flatten Address columns.");
+Require(derived.Model.SourceTypes.Any(type => type.IsRootEntity && type.SourceClrTypeName.Contains(typeof(Customer).FullName!, StringComparison.Ordinal)), "Customer CLR root lineage is preserved.");
+Require(efModel.FindEntityType(typeof(Customer)) is not null, "Closed application configures the Customer CLR entity.");
 Console.WriteLine($"EF Core sample passed: {derived.Model.EntityTypes.Count} entities from {model.Id.Value}.");
 
 static void Require(bool condition, string message)

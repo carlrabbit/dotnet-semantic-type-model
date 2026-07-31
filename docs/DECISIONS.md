@@ -12,6 +12,7 @@ Decision records are authoritative for reasoning, alternatives, and constraints.
 
 | Decision | Purpose |
 |---|---|
+| decisions/efcore-semantic-model-is-the-ef-application-contract.md | EF semantic model application authority |
 | decisions/json-schema-as-primary-dialect.md | JSON Schema dialect choice |
 | decisions/remove-system-text-json-context-generation.md | Resolver-centered System.Text.Json integration |
 | decisions/consumer-facing-package-based-samples.md | Package-based public samples |
