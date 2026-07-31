@@ -58,3 +58,10 @@ EF Core projection preserves canonical nullability for nullable value-type scala
 - The patch changes .NET extraction and generated providers so supported dictionary key and value types are registered before validation.
 - The affected 2.4.0 scenario was valid extension data such as `[SemanticExtensionData] Dictionary<string, JsonElement>?`; consumers should upgrade to 2.4.1 rather than hiding the member from the canonical model.
 - EF Core continues to ignore extension data by default and now applies that ignore policy before EF-specific property type resolution.
+
+## 2.4.2 URI and EF owned-storage compatibility
+
+- `System.Uri` is now a supported string-compatible scalar and implies URI format by default; this corrects 2.4.1 behavior without weakening `STM5025`.
+- EF owned value objects now respect `ValueObjectProjectionMode`. Consumers relying on implicit owned flattening should select `Flatten` explicitly.
+- Owned object-role and entity-role targets and owned collections now produce policy-required diagnostics rather than silent mappings.
+- `Owned` mode is not represented as `OwnsOne` metadata because provider-neutral true EF owned-navigation application remains deferred.

@@ -586,6 +586,13 @@ public sealed class RoslynDotNetTypeExtractor
             {
                 ["dotnet.memberName"] = property.Name,
             };
+            if (IsSystemUri(memberType))
+            {
+                // Uri is a string-compatible scalar whose semantic meaning is stable
+                // across the supported projections. An explicit compatible format
+                // attribute below is still allowed to override this convention.
+                memberAnnotations["schema.format"] = "uri";
+            }
             ImmutableArray<AttributeData> memberAttributes = property.GetAttributes();
             string propertyName = GetPropertyName(property);
             TryAddSystemTextJsonAnnotations(memberAttributes, memberAnnotations, property, ref propertyName);
@@ -1070,17 +1077,19 @@ public sealed class RoslynDotNetTypeExtractor
 
         if (scalarKind is null)
         {
-            scalarKind = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) switch
-            {
-                "DateOnly" => DotNetScalarKind.Date,
-                "TimeOnly" => DotNetScalarKind.Time,
-                "DateTime" => DotNetScalarKind.DateTime,
-                "DateTimeOffset" => DotNetScalarKind.DateTimeOffset,
-                "TimeSpan" => DotNetScalarKind.Duration,
-                "Guid" => DotNetScalarKind.Guid,
-                "JsonDocument" or "JsonElement" or "JsonNode" => DotNetScalarKind.Json,
-                _ => null,
-            };
+            scalarKind = IsSystemUri(type)
+                ? DotNetScalarKind.String
+                : type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) switch
+                {
+                    "DateOnly" => DotNetScalarKind.Date,
+                    "TimeOnly" => DotNetScalarKind.Time,
+                    "DateTime" => DotNetScalarKind.DateTime,
+                    "DateTimeOffset" => DotNetScalarKind.DateTimeOffset,
+                    "TimeSpan" => DotNetScalarKind.Duration,
+                    "Guid" => DotNetScalarKind.Guid,
+                    "JsonDocument" or "JsonElement" or "JsonNode" => DotNetScalarKind.Json,
+                    _ => null,
+                };
         }
 
         if (scalarKind is null)
@@ -1093,6 +1102,7 @@ public sealed class RoslynDotNetTypeExtractor
             Id = id,
             Name = type.Name,
             ScalarKind = scalarKind.Value,
+            Format = IsSystemUri(type) ? "uri" : null,
         };
         return true;
     }
@@ -1256,7 +1266,7 @@ public sealed class RoslynDotNetTypeExtractor
         {
             _diagnostics.Add(new DotNetExtractionDiagnostic(
                 "STM5025",
-                $"[SemanticFormat] is not supported on '{symbol.ToDisplayString()}'. Apply it to string-like scalar members only.",
+                $"[SemanticFormat] is not supported on '{symbol.ToDisplayString()}'. Apply it only to string-like or format-compatible scalar members.",
                 attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? symbol.Locations.FirstOrDefault()));
             return;
         }
@@ -1547,7 +1557,14 @@ public sealed class RoslynDotNetTypeExtractor
             return false;
         }
 
-        return type.Name is "Guid" or "DateOnly" or "TimeOnly" or "DateTime" or "DateTimeOffset" or "TimeSpan";
+        return type.Name is "Uri" or "Guid" or "DateOnly" or "TimeOnly" or "DateTime" or "DateTimeOffset" or "TimeSpan";
+    }
+
+    private static bool IsSystemUri(ITypeSymbol type)
+    {
+        (ITypeSymbol normalizedType, _) = NormalizeNullability(type);
+        return normalizedType.Name == "Uri"
+            && string.Equals(normalizedType.ContainingNamespace?.ToDisplayString(), "System", StringComparison.Ordinal);
     }
 
     private static string? GetSemanticFormatValue(object? value)
@@ -2446,7 +2463,7 @@ public sealed class RoslynDotNetTypeExtractor
         bool allowsNull = type.IsReferenceType
             ? annotation != NullableAnnotation.NotAnnotated
             : false;
-        return (type, allowsNull);
+        return (type.IsReferenceType ? type.WithNullableAnnotation(NullableAnnotation.NotAnnotated) : type, allowsNull);
     }
 
     private string GetNormalizedTypeId(ITypeSymbol type, out bool allowsNull)

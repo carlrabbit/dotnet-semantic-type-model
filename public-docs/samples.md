@@ -30,3 +30,7 @@ The code-first projection samples now share `samples/OrderFulfillment.Domain`. E
 ## 2.4.1 Sample Canary
 
 Package-based samples should continue to validate generated canonical models when shared contracts include dictionary-backed extension data. The 2.4.1 patch release uses the Order Fulfillment sample suite as a canary for the former `STM0002` dictionary-key extraction regression.
+
+## 2.4.2 URI and EF owned-value-object scenario
+
+The shared Order Fulfillment `Customer` includes a nullable `Uri` website with URI format semantics. The EF Core sample selects `ValueObjectProjectionMode.SerializeJson` and verifies that the owned `BillingAddress` value object becomes exactly one string property with JSON conversion metadata in both the EF domain model and applied `ModelBuilder` metadata.

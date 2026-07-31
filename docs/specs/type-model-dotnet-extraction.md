@@ -144,3 +144,7 @@ Extraction diagnostics use `STM5xxx` range and include at least:
 ## M0049 Dictionary Type Extraction Invariant
 
 Dictionary extraction MUST normalize and extract both key and value type arguments before creating the dictionary type definition. The dictionary `KeyType` and `ValueType` references MUST resolve in the canonical model for supported dictionary key types, including extension-data dictionaries.
+
+## M0050 URI Scalar Compatibility
+
+`System.Uri` and nullable `System.Uri` members MUST extract as string-compatible scalar definitions. A `Uri` member implies `schema.format=uri` unless an explicit supported format annotation overrides the convention. `STM5025` remains required for formats on unsupported member shapes.

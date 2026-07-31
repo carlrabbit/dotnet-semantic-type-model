@@ -346,6 +346,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         source.AppendLine($"{indent}{{");
         AppendCommonTypeMembers(source, descriptor.Id, descriptor.Name, "Scalar", false, descriptor.Annotations, indentationLevel + 1);
         source.AppendLine($"{indent}    ScalarKind = global::SemanticTypeModel.Abstractions.Model.ScalarKind.{kind},");
+        source.AppendLine($"{indent}    Format = {Literal(descriptor.Format)},");
         source.AppendLine($"{indent}}}");
     }
 

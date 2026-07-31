@@ -6,7 +6,8 @@ using SemanticTypeModel.EFCore;
 using SemanticTypeModel.Samples.OrderFulfillment.Domain;
 
 TypeSchemaModel model = OrderFulfillmentSemanticModel.Create();
-SemanticDerivationResult<EfCoreSemanticModel> derived = model.DeriveEfCoreModel();
+SemanticDerivationResult<EfCoreSemanticModel> derived = model.DeriveEfCoreModel(options =>
+    options.Projection = options.Projection with { ValueObjectProjectionMode = ValueObjectEfProjectionMode.SerializeJson });
 var modelBuilder = new ModelBuilder(new ConventionSet());
 modelBuilder.ApplyEfCoreSemanticModel(derived.Model, defaultSchema: "fulfillment");
 var efModel = modelBuilder.Model;
@@ -25,7 +26,10 @@ foreach (var name in new[] { "OptionalInt", "OptionalLong", "OptionalDecimal", "
     Require(runtimeProperty.IsNullable && runtimeProperty.ClrType == property.ClrType, $"{name} runtime EF metadata matches projection metadata.");
 }
 Require(probe.Properties.Single(p => p.Name == "RequiredInt").ClrType == typeof(long), "Required value-type control remains non-nullable.");
-Require(efModel.FindEntityType("Customer")!.FindProperty("BillingAddress_Line1") is not null, "Customer owned Address is flattened.");
+var billingAddress = derived.Model.EntityTypes.Single(e => e.Name == "Customer").Properties.Single(p => p.Name == "BillingAddress");
+Require(billingAddress.ClrType == typeof(string) && billingAddress.Conversion == "Json", "Customer owned Address is one JSON string column.");
+Require(efModel.FindEntityType("Customer")!.FindProperty("BillingAddress")?.ClrType == typeof(string), "Applied EF metadata agrees with the JSON string projection.");
+Require(efModel.FindEntityType("Customer")!.FindProperty("BillingAddress_Line1") is null, "JSON storage does not also flatten Address columns.");
 Console.WriteLine($"EF Core sample passed: {derived.Model.EntityTypes.Count} entities from {model.Id.Value}.");
 
 static void Require(bool condition, string message)

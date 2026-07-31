@@ -232,3 +232,7 @@ M0034 semantics can be authored with projection-neutral attributes in `SemanticT
 
 `SemanticOwnedAttribute.Kind` may explicitly select `Object` or `Collection`; `Inferred` derives the kind from the property shape.
 System.Text.Json `[JsonExtensionData]` import also normalizes to `schema.extensionData=true` when System.Text.Json attribute import is enabled.
+
+## M0050 SemanticFormat Compatibility
+
+`SemanticFormat` supports `string`, `Uri`, `Guid`, `DateOnly`, `TimeOnly`, `DateTime`, `DateTimeOffset`, and `TimeSpan`. `System.Uri` implies URI format by convention. `STM5025` MUST continue to diagnose integer, decimal, Boolean, collection, dictionary, object, and enum targets.

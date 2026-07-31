@@ -534,3 +534,7 @@ When an EF Core property is nullable and the selected projected CLR type is a no
 ## M0049 Extension Data Ordering
 
 EF Core projection MUST apply the default extension-data ignore policy before property type lookup, nullability resolution, converter processing, and unsupported dictionary-shape diagnostics. Ignored extension data MUST NOT create an EF property.
+
+## M0050 Role-Aware Owned Storage
+
+EF Core MUST classify ownership kind, target semantic role, and target shape before applying storage policy. Owned value objects use `ValueObjectProjectionMode`: `Flatten` emits scalar/enum columns, `SerializeJson` emits one string property with JSON conversion metadata, `Diagnose` skips with a diagnostic, and `Owned` emits `EFCORE_TRUE_OWNED_NAVIGATION_NOT_SUPPORTED` until true `ModelBuilder` ownership is implemented. Object-role and entity-role owned targets and owned collections require explicit policy and MUST NOT be silently flattened or serialized.
