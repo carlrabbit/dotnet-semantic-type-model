@@ -1,4 +1,6 @@
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SemanticTypeModel.Abstractions.Model;
 
@@ -9,6 +11,8 @@ namespace SemanticTypeModel.EFCore;
 /// </summary>
 public sealed class EfCoreModelBuilderProjectionOptions
 {
+    /// <summary>Gets or sets the EF integration mode.</summary>
+    public EfCoreApplicationMode ApplicationMode { get; set; } = EfCoreApplicationMode.ClrConventionAugmentation;
     /// <summary>
     /// Gets or sets the default database schema applied when projected entity definitions do not declare one.
     /// </summary>
@@ -78,6 +82,16 @@ public sealed class EfCoreModelBuilderProjectionOptions
     }
 }
 
+/// <summary>Identifies who owns the EF Core model shape.</summary>
+public enum EfCoreApplicationMode
+{
+    /// <summary>STM creates provider-neutral shared-type entity metadata.</summary>
+    SharedTypeProjection,
+
+    /// <summary>EF discovers CLR types and STM suppresses semantic-only CLR members.</summary>
+    ClrConventionAugmentation,
+}
+
 /// <summary>
 /// Represents the EF Core <see cref="ModelBuilder"/> projection result.
 /// </summary>
@@ -119,13 +133,104 @@ public static class SemanticTypeModelEfCoreExtensions
 
         var projectionContext = new SchemaProjectionContext { Target = ProjectionTarget.EfCore };
         EfModelDefinition projectedModel = new EfCoreModelProjection(options.ToProjectionOptions()).Project(model, projectionContext);
-        ApplyProjectedModel(modelBuilder, projectedModel, options.DefaultSchema);
+        if (options.ApplicationMode == EfCoreApplicationMode.SharedTypeProjection)
+        {
+            ApplyProjectedModel(modelBuilder, projectedModel, options.DefaultSchema);
+        }
+        else
+        {
+            ApplyClrConventionAugmentation(modelBuilder, model);
+        }
 
         return new EfCoreModelBuilderProjectionResult
         {
             Model = projectedModel,
             Diagnostics = projectedModel.Diagnostics,
         };
+    }
+
+    private static void ApplyClrConventionAugmentation(ModelBuilder modelBuilder, TypeSchemaModel model)
+    {
+        var semanticTypes = model.Types
+            .OfType<ObjectTypeDefinition>()
+            .Select(type => (ClrType: ResolveClrType(type), SemanticType: type))
+            .Where(static pair => pair.ClrType is not null)
+            .ToDictionary(static pair => pair.ClrType!, static pair => pair.SemanticType);
+
+        foreach ((Type ownerClrType, ObjectTypeDefinition owner) in semanticTypes)
+        {
+            if (modelBuilder.Model.FindEntityType(ownerClrType) is null)
+            {
+                continue;
+            }
+
+            foreach (PropertyDefinition property in owner.Properties.Where(IsOwnedObject))
+            {
+                if (model.TypesById.TryGetValue(property.Type.Id, out TypeDefinition? target)
+                    && target is ObjectTypeDefinition targetObject
+                    && ResolveClrType(targetObject) is Type targetClrType
+                    && (targetObject.Semantics.IsValueObject || targetObject.Semantics.Role == EntityRole.ValueObject))
+                {
+                    var memberName = GetMemberName(property);
+                    OwnedNavigationBuilder owned = modelBuilder.Entity(ownerClrType).OwnsOne(targetClrType, memberName);
+                    foreach (PropertyInfo extensionData in GetSemanticExtensionDataProperties(targetClrType))
+                    {
+                        _ = owned.Ignore(extensionData.Name);
+                    }
+                }
+            }
+        }
+
+        foreach (IMutableEntityType? entityType in modelBuilder.Model.GetEntityTypes().ToArray())
+        {
+            Type clrType = entityType.ClrType;
+            if (semanticTypes.TryGetValue(clrType, out ObjectTypeDefinition? semanticType)
+                && (semanticType.Semantics.IsValueObject || semanticType.Semantics.Role == EntityRole.ValueObject)
+                && !entityType.IsOwned())
+            {
+                throw new InvalidOperationException($"Semantic value object '{clrType.FullName}' cannot be used as a root EF entity or DbSet<T>. Map it through a semantic entity owner instead.");
+            }
+
+            if (entityType.IsOwned())
+            {
+                continue;
+            }
+
+            EntityTypeBuilder builder = modelBuilder.Entity(entityType.Name);
+            foreach (PropertyInfo property in GetSemanticExtensionDataProperties(clrType))
+            {
+                _ = builder.Ignore(property.Name);
+            }
+        }
+    }
+
+    private static bool IsOwnedObject(PropertyDefinition property)
+    {
+        return property.Annotations.Items.Any(static annotation =>
+            (annotation.Key.Value == "schema.ownedObject" || annotation.Key.Value == "schema.ownership")
+            && string.Equals(annotation.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string GetMemberName(PropertyDefinition property)
+    {
+        return property.Annotations.Items.FirstOrDefault(static annotation => annotation.Key.Value == "dotnet.memberName")?.Value?.ToString()
+            ?? property.Name;
+    }
+
+    private static IEnumerable<PropertyInfo> GetSemanticExtensionDataProperties(Type clrType)
+    {
+        const string attributeName = "SemanticTypeModel.DotNet.SemanticExtensionDataAttribute";
+        return clrType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .Where(property => property.CustomAttributes.Any(attribute => string.Equals(attribute.AttributeType.FullName, attributeName, StringComparison.Ordinal)));
+    }
+
+    private static Type? ResolveClrType(ObjectTypeDefinition type)
+    {
+        var annotatedName = type.Annotations.Items
+            .FirstOrDefault(static annotation => annotation.Key.Value == "dotnet.clrType")?.Value?.ToString();
+        var name = string.IsNullOrWhiteSpace(annotatedName) ? type.Id.Value : annotatedName;
+        return Type.GetType(name, throwOnError: false)
+            ?? AppDomain.CurrentDomain.GetAssemblies().Select(assembly => assembly.GetType(name, throwOnError: false)).FirstOrDefault(static candidate => candidate is not null);
     }
 
     /// <summary>

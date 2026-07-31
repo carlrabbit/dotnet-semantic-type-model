@@ -570,7 +570,7 @@ public sealed class RoslynDotNetTypeExtractor
         var seenMemberNames = new Dictionary<string, string>(StringComparer.Ordinal);
         var compositeKeyGroups = new Dictionary<string, List<(string PropertyName, int? Order)>>(StringComparer.Ordinal);
 
-        foreach (ISymbol member in type.GetMembers())
+        foreach (ISymbol member in GetMembersIncludingInheritedProperties(type))
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (member is not IPropertySymbol property || !ShouldIncludeProperty(property, _options))
@@ -707,6 +707,26 @@ public sealed class RoslynDotNetTypeExtractor
             Properties = properties,
             Annotations = annotations,
         };
+    }
+
+    private static Dictionary<string, IPropertySymbol>.ValueCollection GetMembersIncludingInheritedProperties(INamedTypeSymbol type)
+    {
+        var hierarchy = new Stack<INamedTypeSymbol>();
+        for (INamedTypeSymbol? current = type; current is { SpecialType: not SpecialType.System_Object }; current = current.BaseType)
+        {
+            hierarchy.Push(current);
+        }
+
+        var properties = new Dictionary<string, IPropertySymbol>(StringComparer.Ordinal);
+        while (hierarchy.Count > 0)
+        {
+            foreach (IPropertySymbol property in hierarchy.Pop().GetMembers().OfType<IPropertySymbol>())
+            {
+                properties[property.Name] = property;
+            }
+        }
+
+        return properties.Values;
     }
 
     private static void TryAddConfigurationTypeAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)

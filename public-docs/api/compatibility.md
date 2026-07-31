@@ -65,3 +65,7 @@ EF Core projection preserves canonical nullability for nullable value-type scala
 - EF owned value objects now respect `ValueObjectProjectionMode`. Consumers relying on implicit owned flattening should select `Flatten` explicitly.
 - Owned object-role and entity-role targets and owned collections now produce policy-required diagnostics rather than silent mappings.
 - `Owned` mode is not represented as `OwnsOne` metadata because provider-neutral true EF owned-navigation application remains deferred.
+
+## EF Core 2.4.3 boundary
+
+`EfCoreModelBuilderProjectionOptions.ApplicationMode` explicitly selects `ClrConventionAugmentation` (the default for `DbSet<TEntity>` contexts) or `SharedTypeProjection`. CLR-backed augmentation suppresses `[SemanticExtensionData]` where CLR metadata is resolvable and rejects semantic value objects used as root `DbSet<T>` types. Shared-type projection remains available explicitly and continues to exclude value objects from root STM entities.

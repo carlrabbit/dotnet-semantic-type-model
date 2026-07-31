@@ -34,3 +34,7 @@ Package-based samples should continue to validate generated canonical models whe
 ## 2.4.2 URI and EF owned-value-object scenario
 
 The shared Order Fulfillment `Customer` includes a nullable `Uri` website with URI format semantics. The EF Core sample selects `ValueObjectProjectionMode.SerializeJson` and verifies that the owned `BillingAddress` value object becomes exactly one string property with JSON conversion metadata in both the EF domain model and applied `ModelBuilder` metadata.
+
+## 2.4.3 EF CLR-backed scenario
+
+The EF regression suite complements the package sample with a real `DbContext`/`DbSet<TEntity>` constellation. It verifies inherited nullable extension-data suppression and the semantic value-object root boundary. The existing package sample remains the shared-type/domain-projection demonstration and continues to validate M0050 storage policies.
