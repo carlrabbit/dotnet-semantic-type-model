@@ -54,7 +54,7 @@ public sealed class M0030EfCoreDerivationTests
         SemanticDerivationResult<EfCoreSemanticModel> result = model.DeriveEfCoreModel(options => options.Projection = options.Projection with { ProjectUnannotatedObjectsAsEntities = false });
         var modelBuilder = new Microsoft.EntityFrameworkCore.ModelBuilder(new ConventionSet());
 
-        modelBuilder.ApplyEfCoreSemanticModel(result.Model);
+        modelBuilder.ApplyEfCoreSemanticModelAsSharedTypes(result.Model);
 
         _ = await Assert.That(modelBuilder.Model.FindEntityType("Customer")).IsNotNull();
         _ = await Assert.That(modelBuilder.Model.FindEntityType("Order")!.GetIndexes()).Count().IsEqualTo(1);

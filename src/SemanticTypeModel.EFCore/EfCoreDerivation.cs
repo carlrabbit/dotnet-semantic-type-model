@@ -60,7 +60,7 @@ public static class EfCoreDerivationExtensions
 
         return new SemanticDerivationResult<EfCoreSemanticModel>
         {
-            Model = EfCoreSemanticModel.FromDefinition(projected with { Diagnostics = diagnostics }),
+            Model = EfCoreSemanticModel.FromDefinition(projected with { Diagnostics = diagnostics }, transformed.Model),
             Diagnostics = diagnostics,
             Trace = transformed.Trace,
         };

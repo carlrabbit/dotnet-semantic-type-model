@@ -47,6 +47,7 @@ cleanup() {
   rm -rf "$tmp_root"
 }
 trap cleanup EXIT INT TERM
+export NUGET_PACKAGES="$tmp_root/packages"
 
 consumer_dir="$tmp_root/consumer"
 mkdir -p "$consumer_dir"
@@ -111,7 +112,11 @@ internal static class Program
 
         Model.TypeSchemaModel canonicalModel = BuildCanonicalModel();
         var modelBuilder = new ModelBuilder(new ConventionSet());
-        _ = modelBuilder.ApplySemanticTypeModel(canonicalModel, options => options.ProjectUnannotatedObjectsAsEntities = true);
+        _ = modelBuilder.ApplySemanticTypeModel(canonicalModel, options =>
+        {
+            options.ApplicationMode = EfCoreApplicationMode.SharedTypeModel;
+            options.ProjectUnannotatedObjectsAsEntities = true;
+        });
 
         _ = typeof(SemanticTypeAttribute);
 

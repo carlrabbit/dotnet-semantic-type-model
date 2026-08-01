@@ -12,7 +12,7 @@ namespace SemanticTypeModel.EFCore;
 public sealed class EfCoreModelBuilderProjectionOptions
 {
     /// <summary>Gets or sets the EF integration mode.</summary>
-    public EfCoreApplicationMode ApplicationMode { get; set; } = EfCoreApplicationMode.ClrConventionAugmentation;
+    public EfCoreApplicationMode ApplicationMode { get; set; } = EfCoreApplicationMode.ClosedClrModel;
     /// <summary>
     /// Gets or sets the default database schema applied when projected entity definitions do not declare one.
     /// </summary>
@@ -85,11 +85,19 @@ public sealed class EfCoreModelBuilderProjectionOptions
 /// <summary>Identifies who owns the EF Core model shape.</summary>
 public enum EfCoreApplicationMode
 {
-    /// <summary>STM creates provider-neutral shared-type entity metadata.</summary>
-    SharedTypeProjection,
+    /// <summary>STM applies a closed CLR-backed model and constrains EF conventions.</summary>
+    ClosedClrModel,
 
-    /// <summary>EF discovers CLR types and STM suppresses semantic-only CLR members.</summary>
-    ClrConventionAugmentation,
+    /// <summary>STM creates provider-neutral shared-type entity metadata explicitly.</summary>
+    SharedTypeModel,
+
+    /// <summary>Compatibility alias for <see cref="SharedTypeModel"/>.</summary>
+    [Obsolete("Use SharedTypeModel. Shared-type application must be selected explicitly.")]
+    SharedTypeProjection = SharedTypeModel,
+
+    /// <summary>Compatibility alias that now uses closed CLR model application.</summary>
+    [Obsolete("Use ClosedClrModel. EF conventions are not semantic model authority.")]
+    ClrConventionAugmentation = ClosedClrModel,
 }
 
 /// <summary>
@@ -133,13 +141,14 @@ public static class SemanticTypeModelEfCoreExtensions
 
         var projectionContext = new SchemaProjectionContext { Target = ProjectionTarget.EfCore };
         EfModelDefinition projectedModel = new EfCoreModelProjection(options.ToProjectionOptions()).Project(model, projectionContext);
-        if (options.ApplicationMode == EfCoreApplicationMode.SharedTypeProjection)
+        EfCoreSemanticModel efModel = EfCoreSemanticModel.FromDefinition(projectedModel, model) with { ApplicationPolicy = options.ApplicationMode };
+        if (options.ApplicationMode == EfCoreApplicationMode.SharedTypeModel)
         {
-            ApplyProjectedModel(modelBuilder, projectedModel, options.DefaultSchema);
+            modelBuilder.ApplyEfCoreSemanticModelAsSharedTypes(efModel, options.DefaultSchema);
         }
         else
         {
-            ApplyClrConventionAugmentation(modelBuilder, model);
+            modelBuilder.ApplyEfCoreSemanticModel(efModel, options.DefaultSchema);
         }
 
         return new EfCoreModelBuilderProjectionResult
@@ -149,34 +158,29 @@ public static class SemanticTypeModelEfCoreExtensions
         };
     }
 
-    private static void ApplyClrConventionAugmentation(ModelBuilder modelBuilder, TypeSchemaModel model)
+    private static void ApplyClosedClrModel(ModelBuilder modelBuilder, EfCoreSemanticModel model)
     {
-        var semanticTypes = model.Types
-            .OfType<ObjectTypeDefinition>()
-            .Select(type => (ClrType: ResolveClrType(type), SemanticType: type))
+        var semanticTypes = model.SourceTypes
+            .Select(type => (ClrType: EfCoreSourceLineage.Resolve(type.SourceClrTypeName), SemanticType: type))
             .Where(static pair => pair.ClrType is not null)
             .ToDictionary(static pair => pair.ClrType!, static pair => pair.SemanticType);
 
-        foreach ((Type ownerClrType, ObjectTypeDefinition owner) in semanticTypes)
+        foreach ((Type ownerClrType, EfCoreSourceTypeMapping owner) in semanticTypes)
         {
-            if (modelBuilder.Model.FindEntityType(ownerClrType) is null)
+            if (!owner.IsRootEntity || modelBuilder.Model.FindEntityType(ownerClrType) is null)
             {
                 continue;
             }
 
-            foreach (PropertyDefinition property in owner.Properties.Where(IsOwnedObject))
+            EntityTypeBuilder root = modelBuilder.Entity(ownerClrType);
+            SuppressUnpermittedMembers(root, ownerClrType, owner);
+            foreach (EfCoreOwnedMapping mapping in owner.OwnedMappings)
             {
-                if (model.TypesById.TryGetValue(property.Type.Id, out TypeDefinition? target)
-                    && target is ObjectTypeDefinition targetObject
-                    && ResolveClrType(targetObject) is Type targetClrType
-                    && (targetObject.Semantics.IsValueObject || targetObject.Semantics.Role == EntityRole.ValueObject))
+                if (EfCoreSourceLineage.Resolve(mapping.TargetClrTypeName) is Type targetClrType
+                    && model.SourceTypes.FirstOrDefault(type => type.SourceSemanticTypeId == mapping.TargetSourceTypeId) is { IsValueObject: true } target)
                 {
-                    var memberName = GetMemberName(property);
-                    OwnedNavigationBuilder owned = modelBuilder.Entity(ownerClrType).OwnsOne(targetClrType, memberName);
-                    foreach (PropertyInfo extensionData in GetSemanticExtensionDataProperties(targetClrType))
-                    {
-                        _ = owned.Ignore(extensionData.Name);
-                    }
+                    OwnedNavigationBuilder owned = root.OwnsOne(targetClrType, mapping.NavigationName);
+                    SuppressUnpermittedMembers(owned, targetClrType, target);
                 }
             }
         }
@@ -184,11 +188,21 @@ public static class SemanticTypeModelEfCoreExtensions
         foreach (IMutableEntityType? entityType in modelBuilder.Model.GetEntityTypes().ToArray())
         {
             Type clrType = entityType.ClrType;
-            if (semanticTypes.TryGetValue(clrType, out ObjectTypeDefinition? semanticType)
-                && (semanticType.Semantics.IsValueObject || semanticType.Semantics.Role == EntityRole.ValueObject)
-                && !entityType.IsOwned())
+            if (!semanticTypes.TryGetValue(clrType, out EfCoreSourceTypeMapping? semanticType))
+            {
+                _ = modelBuilder.Model.RemoveEntityType(entityType);
+                continue;
+            }
+
+            if (semanticType.IsValueObject && !entityType.IsOwned())
             {
                 throw new InvalidOperationException($"Semantic value object '{clrType.FullName}' cannot be used as a root EF entity or DbSet<T>. Map it through a semantic entity owner instead.");
+            }
+
+            if (!semanticType.IsRootEntity && !entityType.IsOwned())
+            {
+                _ = modelBuilder.Model.RemoveEntityType(entityType);
+                continue;
             }
 
             if (entityType.IsOwned())
@@ -196,41 +210,7 @@ public static class SemanticTypeModelEfCoreExtensions
                 continue;
             }
 
-            EntityTypeBuilder builder = modelBuilder.Entity(entityType.Name);
-            foreach (PropertyInfo property in GetSemanticExtensionDataProperties(clrType))
-            {
-                _ = builder.Ignore(property.Name);
-            }
         }
-    }
-
-    private static bool IsOwnedObject(PropertyDefinition property)
-    {
-        return property.Annotations.Items.Any(static annotation =>
-            (annotation.Key.Value == "schema.ownedObject" || annotation.Key.Value == "schema.ownership")
-            && string.Equals(annotation.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static string GetMemberName(PropertyDefinition property)
-    {
-        return property.Annotations.Items.FirstOrDefault(static annotation => annotation.Key.Value == "dotnet.memberName")?.Value?.ToString()
-            ?? property.Name;
-    }
-
-    private static IEnumerable<PropertyInfo> GetSemanticExtensionDataProperties(Type clrType)
-    {
-        const string attributeName = "SemanticTypeModel.DotNet.SemanticExtensionDataAttribute";
-        return clrType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-            .Where(property => property.CustomAttributes.Any(attribute => string.Equals(attribute.AttributeType.FullName, attributeName, StringComparison.Ordinal)));
-    }
-
-    private static Type? ResolveClrType(ObjectTypeDefinition type)
-    {
-        var annotatedName = type.Annotations.Items
-            .FirstOrDefault(static annotation => annotation.Key.Value == "dotnet.clrType")?.Value?.ToString();
-        var name = string.IsNullOrWhiteSpace(annotatedName) ? type.Id.Value : annotatedName;
-        return Type.GetType(name, throwOnError: false)
-            ?? AppDomain.CurrentDomain.GetAssemblies().Select(assembly => assembly.GetType(name, throwOnError: false)).FirstOrDefault(static candidate => candidate is not null);
     }
 
     /// <summary>
@@ -241,7 +221,49 @@ public static class SemanticTypeModelEfCoreExtensions
         ArgumentNullException.ThrowIfNull(modelBuilder);
         ArgumentNullException.ThrowIfNull(model);
 
+        if (string.IsNullOrWhiteSpace(model.SourceModelId) || model.SourceTypes.Count == 0)
+        {
+            throw new InvalidOperationException("EFCORE_SOURCE_LINEAGE_REQUIRED: Closed CLR application requires an EfCoreSemanticModel derived with source CLR lineage. Derive the model with DeriveEfCoreModel(...) or call ApplySemanticTypeModel(...). Select shared-type application explicitly for lineage-free models.");
+        }
+
+        _ = defaultSchema;
+        ApplyClosedClrModel(modelBuilder, model);
+    }
+
+    /// <summary>Applies the provider-neutral model explicitly as EF shared types.</summary>
+    public static void ApplyEfCoreSemanticModelAsSharedTypes(this ModelBuilder modelBuilder, EfCoreSemanticModel model, string? defaultSchema = null)
+    {
+        ArgumentNullException.ThrowIfNull(modelBuilder);
+        ArgumentNullException.ThrowIfNull(model);
         ApplyProjectedModel(modelBuilder, model.ToDefinition(), defaultSchema);
+    }
+
+    private static void SuppressUnpermittedMembers(EntityTypeBuilder builder, Type clrType, EfCoreSourceTypeMapping source)
+    {
+        var permitted = source.Properties.Where(static property => property.SemanticOnlyKind == EfCoreSemanticOnlyKind.None)
+            .Select(static property => property.SourceMemberName).ToHashSet(StringComparer.Ordinal);
+        foreach (PropertyInfo property in clrType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(property => !permitted.Contains(property.Name)))
+        {
+            _ = builder.Ignore(property.Name);
+        }
+        foreach (EfCoreSuppressedMember member in source.SuppressedMembers)
+        {
+            _ = builder.Ignore(member.SourceMemberName);
+        }
+    }
+
+    private static void SuppressUnpermittedMembers(OwnedNavigationBuilder builder, Type clrType, EfCoreSourceTypeMapping source)
+    {
+        var permitted = source.Properties.Where(static property => property.SemanticOnlyKind == EfCoreSemanticOnlyKind.None)
+            .Select(static property => property.SourceMemberName).ToHashSet(StringComparer.Ordinal);
+        foreach (PropertyInfo property in clrType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(property => !permitted.Contains(property.Name)))
+        {
+            _ = builder.Ignore(property.Name);
+        }
+        foreach (EfCoreSuppressedMember member in source.SuppressedMembers)
+        {
+            _ = builder.Ignore(member.SourceMemberName);
+        }
     }
 
     private static void ApplyProjectedModel(ModelBuilder modelBuilder, EfModelDefinition model, string? defaultSchema)

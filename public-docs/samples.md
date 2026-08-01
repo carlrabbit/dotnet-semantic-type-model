@@ -35,6 +35,6 @@ Package-based samples should continue to validate generated canonical models whe
 
 The shared Order Fulfillment `Customer` includes a nullable `Uri` website with URI format semantics. The EF Core sample selects `ValueObjectProjectionMode.SerializeJson` and verifies that the owned `BillingAddress` value object becomes exactly one string property with JSON conversion metadata in both the EF domain model and applied `ModelBuilder` metadata.
 
-## 2.4.3 EF CLR-backed scenario
+## 2.4.4 closed EF scenario
 
-The EF regression suite complements the package sample with a real `DbContext`/`DbSet<TEntity>` constellation. It verifies inherited nullable extension-data suppression and the semantic value-object root boundary. The existing package sample remains the shared-type/domain-projection demonstration and continues to validate M0050 storage policies.
+The package-based EF sample derives a lineage-preserving `EfCoreSemanticModel`, registers the application-selected CLR roots, and applies the closed model through `ApplyEfCoreSemanticModel`. It demonstrates that STM constrains EF conventions rather than augmenting a convention-owned semantic model. Shared-type projection remains an explicit secondary API.

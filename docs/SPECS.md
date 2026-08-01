@@ -42,6 +42,7 @@ Specs are authoritative for behavior, invariants, contracts, inputs and outputs,
 | specs/type-model-projection-capabilities.md | Projection capability matrix |
 | specs/type-model-powerbi-tom-projection.md | Power BI projection |
 | specs/type-model-ef-core-projection.md | EF Core projection |
+| specs/ef-core-closed-modelbuilder-application.md | Closed, lineage-preserving EF ModelBuilder application |
 | specs/ef-core-clr-convention-suppression.md | EF Core CLR convention suppression and value-object root boundaries |
 | specs/system-text-json-contract-integration.md | System.Text.Json metadata import |
 | specs/system-text-json-domain-model-and-resolver-projection.md | System.Text.Json domain projection |

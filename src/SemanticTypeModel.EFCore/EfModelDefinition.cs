@@ -10,6 +10,14 @@ namespace SemanticTypeModel.EFCore;
 /// </summary>
 public sealed record EfCoreSemanticModel
 {
+    /// <summary>Gets the stable identifier of the canonical model from which this model was derived.</summary>
+    public string? SourceModelId { get; init; }
+
+    /// <summary>Gets the closed application policy carried by this model.</summary>
+    public EfCoreApplicationMode ApplicationPolicy { get; init; } = EfCoreApplicationMode.ClosedClrModel;
+
+    /// <summary>Gets source CLR and semantic lineage used by closed application.</summary>
+    public IReadOnlyList<EfCoreSourceTypeMapping> SourceTypes { get; init; } = [];
     /// <summary>Gets the projected model name.</summary>
     public required string Name { get; init; }
 
@@ -31,6 +39,16 @@ public sealed record EfCoreSemanticModel
         };
     }
 
+    internal static EfCoreSemanticModel FromDefinition(EfModelDefinition definition, TypeSchemaModel source)
+    {
+        EfCoreSemanticModel model = FromDefinition(definition);
+        return model with
+        {
+            SourceModelId = source.Id.Value,
+            SourceTypes = EfCoreSourceLineage.Create(source),
+        };
+    }
+
     /// <summary>Creates a legacy EF model definition view of this domain semantic model.</summary>
     public EfModelDefinition ToDefinition()
     {
@@ -41,6 +59,100 @@ public sealed record EfCoreSemanticModel
             Diagnostics = Diagnostics,
         };
     }
+}
+
+/// <summary>Describes the source identity and semantic classification of a CLR type.</summary>
+public sealed record EfCoreSourceTypeMapping
+{
+    /// <summary>Gets the source semantic type identifier.</summary>
+    public required string SourceSemanticTypeId { get; init; }
+    /// <summary>Gets the assembly-qualified source CLR type name.</summary>
+    public required string SourceClrTypeName { get; init; }
+    /// <summary>Gets the semantic role.</summary>
+    public required EntityRole SemanticRole { get; init; }
+    /// <summary>Gets whether the type is an independent EF root.</summary>
+    public bool IsRootEntity { get; init; }
+    /// <summary>Gets whether the type is a semantic value object.</summary>
+    public bool IsValueObject { get; init; }
+    /// <summary>Gets whether the type is reached through semantic ownership.</summary>
+    public bool IsOwned { get; init; }
+    /// <summary>Gets source member lineage.</summary>
+    public IReadOnlyList<EfCoreSourcePropertyMapping> Properties { get; init; } = [];
+    /// <summary>Gets members that closed application must suppress.</summary>
+    public IReadOnlyList<EfCoreSuppressedMember> SuppressedMembers { get; init; } = [];
+    /// <summary>Gets ownership edges declared by the source type.</summary>
+    public IReadOnlyList<EfCoreOwnedMapping> OwnedMappings { get; init; } = [];
+}
+
+/// <summary>Describes source identity and storage policy for a semantic property.</summary>
+public sealed record EfCoreSourcePropertyMapping
+{
+    /// <summary>Gets the source property identifier.</summary>
+    public required string SourcePropertyId { get; init; }
+    /// <summary>Gets the source CLR member name.</summary>
+    public required string SourceMemberName { get; init; }
+    /// <summary>Gets the CLR type that declares the member when known.</summary>
+    public required string SourceDeclaringClrTypeName { get; init; }
+    /// <summary>Gets the deterministic storage classification.</summary>
+    public required EfCoreStorageKind StorageKind { get; init; }
+    /// <summary>Gets the semantic-only classification, when the member is not persisted by EF.</summary>
+    public EfCoreSemanticOnlyKind SemanticOnlyKind { get; init; }
+}
+
+/// <summary>Describes a source ownership edge.</summary>
+public sealed record EfCoreOwnedMapping
+{
+    /// <summary>Gets the owner semantic type identifier.</summary>
+    public required string OwnerSourceTypeId { get; init; }
+    /// <summary>Gets the owner CLR type name.</summary>
+    public required string OwnerClrTypeName { get; init; }
+    /// <summary>Gets the CLR navigation name.</summary>
+    public required string NavigationName { get; init; }
+    /// <summary>Gets the target semantic type identifier.</summary>
+    public required string TargetSourceTypeId { get; init; }
+    /// <summary>Gets the target CLR type name.</summary>
+    public required string TargetClrTypeName { get; init; }
+    /// <summary>Gets the target semantic role.</summary>
+    public required EntityRole TargetSemanticRole { get; init; }
+    /// <summary>Gets the selected storage policy.</summary>
+    public required EfCoreStorageKind StorageKind { get; init; }
+}
+
+/// <summary>Describes a CLR member excluded from the closed EF model.</summary>
+public sealed record EfCoreSuppressedMember
+{
+    /// <summary>Gets the source CLR member name.</summary>
+    public required string SourceMemberName { get; init; }
+    /// <summary>Gets the CLR type that declares the member.</summary>
+    public required string SourceDeclaringClrTypeName { get; init; }
+    /// <summary>Gets the suppression reason.</summary>
+    public required string Reason { get; init; }
+    /// <summary>Gets the semantic-only classification.</summary>
+    public required EfCoreSemanticOnlyKind SemanticOnlyKind { get; init; }
+}
+
+/// <summary>Identifies provider-neutral EF storage intent.</summary>
+public enum EfCoreStorageKind
+{
+    /// <summary>A directly persisted scalar.</summary>
+    Scalar,
+    /// <summary>An EF owned navigation.</summary>
+    OwnedNavigation,
+    /// <summary>Properties flattened into owner columns.</summary>
+    Flattened,
+    /// <summary>A provider-neutral JSON value.</summary>
+    Json,
+    /// <summary>A member excluded from EF storage.</summary>
+    Suppressed,
+}
+
+/// <summary>Identifies members that exist in the semantic model but not in EF storage.</summary>
+public enum EfCoreSemanticOnlyKind
+{
+    /// <summary>The member participates in EF storage.</summary>
+    None,
+    /// <summary>The member carries semantic extension data.</summary>
+    ExtensionData,
 }
 
 /// <summary>

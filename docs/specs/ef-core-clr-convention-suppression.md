@@ -31,7 +31,7 @@ STM owns EF shape.
 TypeSchemaModel -> EfModelDefinition -> shared-type EF metadata
 ```
 
-The consumer should not simultaneously expose the same CLR semantic types as root `DbSet<T>` entities unless CLR-backed augmentation is also configured.
+The consumer should not simultaneously expose the same CLR semantic types as root `DbSet<T>` entities unless closed CLR application is configured.
 
 ### CLR-Backed Convention Augmentation
 
@@ -40,7 +40,7 @@ EF discovers CLR types first. STM augments the EF model.
 ```text
 DbSet<T> / modelBuilder.Entity<T>
   -> EF convention model
-  -> STM semantic suppression and augmentation
+  -> STM closed semantic application
 ```
 
 In this mode, STM must suppress semantic-only members from EF conventions and apply semantic projection behavior where source CLR metadata is available.
@@ -121,7 +121,7 @@ Required diagnostic categories:
 DbSet<ValueObject> unsupported
 semantic-only member suppression unavailable because CLR metadata is missing
 conflicting suppression/configuration for the same member
-CLR-backed augmentation mode not enabled while CLR convention types are detected, if detectable
+closed CLR application not enabled while CLR convention types are detected, if detectable
 ```
 
 ## Documentation Requirements
@@ -129,7 +129,7 @@ CLR-backed augmentation mode not enabled while CLR convention types are detected
 Documentation must state:
 
 - EF conventions do not understand STM annotations by themselves.
-- Shared-type projection and CLR-backed convention augmentation are distinct.
+- Shared-type projection and closed CLR application are distinct.
 - `[NotMapped]` or manual `Ignore` is a workaround when CLR-backed suppression is unavailable or disabled.
 - `DbSet<T>` is intended for semantic entity / aggregate-root roles, not value-object roles.
 
@@ -140,3 +140,7 @@ Documentation must state:
 - General dictionary persistence.
 - Extension-data storage in EF.
 - Supporting value objects as independent root entities.
+
+## M0052 closed-model correction
+
+`EfCoreSemanticModel` is the authority for CLR application. Closed application suppresses convention-discovered members not represented or explicitly permitted by its lineage contract. `ApplySemanticTypeModel` and `ApplyEfCoreSemanticModel` use the same closed engine; shared-type application is explicit and secondary. The legacy augmentation name is not an authority mode.

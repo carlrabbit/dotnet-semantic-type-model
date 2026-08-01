@@ -137,6 +137,6 @@ Core semantics does not create target output by itself. It does not choose datab
 
 `System.Uri` properties are supported string-compatible scalars and receive URI format semantics by default. An explicit `SemanticFormat` remains available for string and other supported format-compatible scalars. Ownership describes lifecycle containment only; each target projection chooses storage separately.
 
-## 2.4.3 extension-data inheritance
+## 2.4.4 extension-data inheritance
 
-Semantic types inherit semantic extension-data members declared by CLR base classes, including abstract base classes that do not have `[SemanticType]`. The member remains canonical extension data for JSON-oriented projections. EF Core CLR-backed augmentation suppresses the member from EF mapping without turning the base class or value object into an independent EF root.
+Semantic types inherit semantic extension-data members declared by CLR base classes, including abstract base classes that do not have `[SemanticType]`. The member remains canonical extension data for JSON-oriented projections. EF Core closed application suppresses the member from EF mapping according to `EfCoreSemanticModel` lineage without turning the base class or value object into an independent EF root.

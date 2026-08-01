@@ -6,6 +6,12 @@ set -eu
 require_command dotnet
 
 package_dir="artifacts/nuget"
+tmp_root="$(mktemp -d)"
+cleanup() {
+  rm -rf "$tmp_root"
+}
+trap cleanup EXIT INT TERM
+export NUGET_PACKAGES="$tmp_root/packages"
 
 if [ ! -d "$package_dir" ]; then
   echo "Sample validation requires local SemanticTypeModel packages in $package_dir." >&2

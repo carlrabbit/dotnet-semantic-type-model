@@ -18,7 +18,7 @@ public sealed class EfCoreNullableValueTypeProjectionTests
         TypeSchemaModel model = BuildModel();
         EfModelDefinition projection = new EfCoreModelProjection(new EfCoreProjectionOptions { ProjectUnannotatedObjectsAsEntities = true }).Project(model, new SchemaProjectionContext { Target = ProjectionTarget.EfCore });
         var builder = new ModelBuilder(new ConventionSet());
-        EfCoreModelBuilderProjectionResult applied = builder.ApplySemanticTypeModel(model, o => { o.ApplicationMode = EfCoreApplicationMode.SharedTypeProjection; o.ProjectUnannotatedObjectsAsEntities = true; });
+        EfCoreModelBuilderProjectionResult applied = builder.ApplySemanticTypeModel(model, o => { o.ApplicationMode = EfCoreApplicationMode.SharedTypeModel; o.ProjectUnannotatedObjectsAsEntities = true; });
 
         EfEntityTypeDefinition entity = projection.EntityTypes.Single(e => e.Name == "NullableMatrix");
         foreach ((string Name, Type Type) expected in new[]

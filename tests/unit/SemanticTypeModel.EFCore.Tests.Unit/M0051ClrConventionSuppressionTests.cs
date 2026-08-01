@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using SemanticTypeModel.Abstractions.Model;
+using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.DotNet;
 
 namespace SemanticTypeModel.EFCore.Tests.Unit;
@@ -12,7 +13,44 @@ namespace SemanticTypeModel.EFCore.Tests.Unit;
 public sealed class M0051ClrConventionSuppressionTests
 {
     [Test]
-    public async Task ClrConventionAugmentation_suppresses_inherited_extension_data_in_real_DbContext()
+    public async Task EfCoreSemanticModel_preserves_closed_application_lineage()
+    {
+        SemanticDerivationResult<EfCoreSemanticModel> result = AppSemanticTypeModel.Create().DeriveEfCoreModel();
+        EfCoreSourceTypeMapping money = result.Model.SourceTypes.Single(type => type.SourceSemanticTypeId == typeof(Money).FullName);
+        EfCoreSourcePropertyMapping extensionData = money.Properties.Single(property => property.SourceMemberName == nameof(ExtensibleObject.ExtensionData));
+
+        _ = await Assert.That(result.Model.SourceModelId).IsEqualTo("M0051");
+        _ = await Assert.That(money.IsValueObject).IsTrue();
+        _ = await Assert.That(money.IsOwned).IsTrue();
+        _ = await Assert.That(extensionData.SourceDeclaringClrTypeName).Contains(typeof(ExtensibleObject).FullName!);
+        _ = await Assert.That(extensionData.SemanticOnlyKind).IsEqualTo(EfCoreSemanticOnlyKind.ExtensionData);
+        _ = await Assert.That(result.Model.SourceTypes.Single(type => type.IsRootEntity).OwnedMappings.Single().TargetSourceTypeId).IsEqualTo(typeof(Money).FullName);
+    }
+
+    [Test]
+    public async Task ApplyEfCoreSemanticModel_requires_source_lineage_for_closed_application()
+    {
+        var builder = new ModelBuilder();
+        var model = new EfCoreSemanticModel { Name = "lossy", EntityTypes = [], Diagnostics = [] };
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => builder.ApplyEfCoreSemanticModel(model));
+        _ = await Assert.That(error.Message).Contains("EFCORE_SOURCE_LINEAGE_REQUIRED");
+    }
+
+    [Test]
+    public async Task ApplyEfCoreSemanticModel_uses_same_closed_application_as_convenience_path()
+    {
+        var builder = new ModelBuilder();
+        _ = builder.Entity<Order>();
+        EfCoreSemanticModel model = AppSemanticTypeModel.Create().DeriveEfCoreModel().Model;
+        builder.ApplyEfCoreSemanticModel(model);
+
+        IMutableEntityType money = builder.Model.FindEntityType(typeof(Money))!;
+        _ = await Assert.That(money.IsOwned()).IsTrue();
+        _ = await Assert.That(money.FindProperty(nameof(ExtensibleObject.ExtensionData))).IsNull();
+    }
+
+    [Test]
+    public async Task ClosedModelBuilder_suppresses_inherited_extension_data_in_real_DbContext()
     {
         await using var context = new AppDbContext();
         IModel model = context.Model;
@@ -32,7 +70,7 @@ public sealed class M0051ClrConventionSuppressionTests
     }
 
     [Test]
-    public async Task ClrConventionAugmentation_rejects_ValueObject_DbSet_root()
+    public async Task ClosedModelBuilder_rejects_ValueObject_DbSet_root()
     {
         await using var context = new InvalidValueObjectDbContext();
         InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => _ = context.Model);
@@ -142,7 +180,7 @@ public sealed class M0051ClrConventionSuppressionTests
 
         private static AnnotationBag Clr(Type type)
         {
-            return new() { Items = [new Annotation { Key = new("dotnet.clrType"), Value = type.AssemblyQualifiedName, Scope = AnnotationScope.Type, Source = AnnotationSource.Declared }] };
+            return new() { Items = [new Annotation { Key = new("dotnet.clrType"), Value = $"global::{type.FullName}", Scope = AnnotationScope.Type, Source = AnnotationSource.Declared }] };
         }
     }
 }

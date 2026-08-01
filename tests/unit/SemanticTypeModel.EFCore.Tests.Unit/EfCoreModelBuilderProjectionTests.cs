@@ -24,7 +24,7 @@ public sealed class EfCoreModelBuilderProjectionTests
             model,
             options =>
             {
-                options.ApplicationMode = EfCoreApplicationMode.SharedTypeProjection;
+                options.ApplicationMode = EfCoreApplicationMode.SharedTypeModel;
                 options.DefaultSchema = "app";
             });
 
@@ -48,7 +48,7 @@ public sealed class EfCoreModelBuilderProjectionTests
             model,
             options =>
             {
-                options.ApplicationMode = EfCoreApplicationMode.SharedTypeProjection;
+                options.ApplicationMode = EfCoreApplicationMode.SharedTypeModel;
                 options.ProjectUnannotatedObjectsAsEntities = true;
             });
 
@@ -62,7 +62,7 @@ public sealed class EfCoreModelBuilderProjectionTests
         TypeSchemaModel model = BuildSimpleEntityModel(withEntityRole: true, keyTypeId: new TypeId("MissingType"));
         var modelBuilder = new ModelBuilder(new ConventionSet());
 
-        EfCoreModelBuilderProjectionResult result = modelBuilder.ApplySemanticTypeModel(model, options => options.ApplicationMode = EfCoreApplicationMode.SharedTypeProjection);
+        EfCoreModelBuilderProjectionResult result = modelBuilder.ApplySemanticTypeModel(model, options => options.ApplicationMode = EfCoreApplicationMode.SharedTypeModel);
 
         _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Code == "EFCORE_PROPERTY_TYPE_NOT_FOUND")).IsTrue();
     }
