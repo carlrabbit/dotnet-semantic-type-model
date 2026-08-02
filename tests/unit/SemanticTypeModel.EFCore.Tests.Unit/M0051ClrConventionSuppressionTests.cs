@@ -180,7 +180,7 @@ public sealed class M0051ClrConventionSuppressionTests
 
         private static AnnotationBag Clr(Type type)
         {
-            return new() { Items = [new Annotation { Key = new("dotnet.clrType"), Value = type.AssemblyQualifiedName, Scope = AnnotationScope.Type, Source = AnnotationSource.Declared }] };
+            return new() { Items = [new Annotation { Key = new("dotnet.clrType"), Value = $"global::{type.FullName}", Scope = AnnotationScope.Type, Source = AnnotationSource.Declared }] };
         }
     }
 }

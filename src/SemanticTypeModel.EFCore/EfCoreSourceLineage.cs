@@ -93,6 +93,8 @@ internal static class EfCoreSourceLineage
 
     internal static Type? Resolve(string name)
     {
-        return Type.GetType(name, false) ?? AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType(name, false)).FirstOrDefault(static type => type is not null);
+        const string globalPrefix = "global::";
+        var normalizedName = name.StartsWith(globalPrefix, StringComparison.Ordinal) ? name[globalPrefix.Length..] : name;
+        return Type.GetType(normalizedName, false) ?? AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType(normalizedName, false)).FirstOrDefault(static type => type is not null);
     }
 }
