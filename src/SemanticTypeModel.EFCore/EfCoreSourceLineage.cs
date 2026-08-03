@@ -11,14 +11,15 @@ internal sealed record EfCoreSourceLineageResult
 
 internal static class EfCoreSourceLineage
 {
-    public static EfCoreSourceLineageResult Create(TypeSchemaModel model, EfCoreApplicationMode applicationMode)
+    public static EfCoreSourceLineageResult Create(TypeSchemaModel model, EfModelDefinition projection, EfCoreApplicationMode applicationMode)
     {
         ObjectTypeDefinition[] objects = [.. model.Types.OfType<ObjectTypeDefinition>()];
         var diagnostics = new List<SchemaDiagnostic>();
         var ownedTargetIds = new HashSet<TypeId>();
         var sourceTypes = new List<EfCoreSourceTypeMapping>();
 
-        foreach (ObjectTypeDefinition type in objects)
+        HashSet<TypeId> scope = BuildProjectionScope(objects, projection);
+        foreach (ObjectTypeDefinition type in objects.Where(type => scope.Contains(type.Id)))
         {
             var clrName = GetAnnotation(type.Annotations, "dotnet.clrType") ?? type.Id.Value;
             Type? clrType = Resolve(clrName);
@@ -28,7 +29,9 @@ internal static class EfCoreSourceLineage
                     $"CLR type '{clrName}' for semantic type '{type.Id.Value}' could not be resolved.", ModelPath.ForType(type.Id));
             }
 
-            EfCoreSourcePropertyMapping[] properties = [.. type.Properties.Select(property => CreateProperty(type, property, clrType, applicationMode, diagnostics))];
+            var valueObject = type.Semantics.IsValueObject || type.Semantics.Role == EntityRole.ValueObject;
+            HashSet<string>? projectedMembers = valueObject ? null : FindProjectedMembers(type, projection);
+            EfCoreSourcePropertyMapping[] properties = [.. type.Properties.Select(property => CreateProperty(type, property, clrType, projectedMembers, applicationMode, diagnostics))];
             EfCoreSuppressedMember[] suppressed = [.. properties.Where(static property => property.SemanticOnlyKind != EfCoreSemanticOnlyKind.None)
                 .Select(property => new EfCoreSuppressedMember
                 {
@@ -43,7 +46,6 @@ internal static class EfCoreSourceLineage
                 ResolveOwnedMapping(model, objects, type, property, clrName, applicationMode, ownedTargetIds, owned, diagnostics);
             }
 
-            var valueObject = type.Semantics.IsValueObject || type.Semantics.Role == EntityRole.ValueObject;
             sourceTypes.Add(new EfCoreSourceTypeMapping
             {
                 SourceSemanticTypeId = type.Id.Value,
@@ -62,6 +64,64 @@ internal static class EfCoreSourceLineage
             SourceTypes = [.. sourceTypes.Select(type => type with { IsOwned = ownedTargetIds.Contains(new TypeId(type.SourceSemanticTypeId)) })],
             Diagnostics = diagnostics,
         };
+    }
+
+    private static HashSet<string> FindProjectedMembers(ObjectTypeDefinition type, EfModelDefinition projection)
+    {
+        var clrName = GetAnnotation(type.Annotations, "dotnet.clrType");
+        EfEntityTypeDefinition? projected = projection.EntityTypes.FirstOrDefault(entity =>
+            string.Equals(entity.SourceSemanticTypeId, type.Id.Value, StringComparison.Ordinal)
+            || (entity.SourceSemanticTypeId is null && clrName is not null
+                && string.Equals(GetAnnotation(entity.Annotations, "dotnet.clrType"), clrName, StringComparison.Ordinal)));
+        return projected?.Properties
+            .Select(property => GetAnnotation(property.Annotations, "dotnet.memberName") ?? property.Name)
+            .ToHashSet(StringComparer.Ordinal) ?? [];
+    }
+
+    private static HashSet<TypeId> BuildProjectionScope(ObjectTypeDefinition[] objects, EfModelDefinition projection)
+    {
+        var scope = new HashSet<TypeId>();
+        var projectedTypeIds = projection.EntityTypes
+            .Select(static entity => entity.SourceSemanticTypeId)
+            .Where(static id => !string.IsNullOrWhiteSpace(id))
+            .Select(static id => new TypeId(id!))
+            .ToHashSet();
+        var projectedClrNames = projection.EntityTypes
+            .Select(entity => GetAnnotation(entity.Annotations, "dotnet.clrType"))
+            .Where(static name => !string.IsNullOrWhiteSpace(name))
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (ObjectTypeDefinition type in objects)
+        {
+            var clrName = GetAnnotation(type.Annotations, "dotnet.clrType");
+            var explicitlyApplicable = IsTrue(type.Annotations, "efCore.entity");
+            if (explicitlyApplicable || projectedTypeIds.Contains(type.Id)
+                || (projectedTypeIds.Count == 0 && clrName is not null && projectedClrNames.Contains(clrName)))
+            {
+                _ = scope.Add(type.Id);
+            }
+        }
+
+        // Only ownership edges reachable from an EF root extend lineage scope. This deliberately
+        // avoids walking arbitrary canonical references (interfaces, DTOs and framework helpers).
+        bool changed;
+        do
+        {
+            changed = false;
+            foreach (ObjectTypeDefinition owner in objects.Where(type => scope.Contains(type.Id)))
+            {
+                foreach (PropertyDefinition property in owner.Properties.Where(IsOwned))
+                {
+                    ObjectTypeDefinition[] targets = [.. objects.Where(candidate => candidate.Id == property.Type.Id)];
+                    if (targets.Length == 1 && scope.Add(targets[0].Id))
+                    {
+                        changed = true;
+                    }
+                }
+            }
+        }
+        while (changed);
+
+        return scope;
     }
 
     private static void ResolveOwnedMapping(TypeSchemaModel model, ObjectTypeDefinition[] objects, ObjectTypeDefinition owner,
@@ -122,6 +182,7 @@ internal static class EfCoreSourceLineage
     }
 
     private static EfCoreSourcePropertyMapping CreateProperty(ObjectTypeDefinition owner, PropertyDefinition property, Type? ownerClrType,
+        HashSet<string>? projectedMembers,
         EfCoreApplicationMode applicationMode, List<SchemaDiagnostic> diagnostics)
     {
         var memberName = MemberName(property);
@@ -134,14 +195,32 @@ internal static class EfCoreSourceLineage
         }
 
         var extensionData = IsTrue(property.Annotations, "schema.extensionData");
+        var owned = IsOwned(property);
+        var projected = (projectedMembers is null || projectedMembers.Contains(memberName))
+            && (member is null || IsClrConventionPersistable(member.PropertyType) || owned);
+        if (!extensionData && !owned && (projectedMembers is null || projectedMembers.Contains(memberName)) && member is not null && !IsClrConventionPersistable(member.PropertyType))
+        {
+            Report(diagnostics, SchemaDiagnosticSeverity.Warning, "EFCORE_SOURCE_LINEAGE_STORAGE_UNSUPPORTED",
+                $"Projected member '{owner.Name}.{property.Name}' uses CLR type '{member.PropertyType.FullName}', which closed CLR application cannot persist without an explicit conversion or storage policy; the member is suppressed.",
+                ModelPath.ForProperty(owner.Id, property.Name));
+        }
         return new EfCoreSourcePropertyMapping
         {
             SourcePropertyId = property.Id.Value,
             SourceMemberName = memberName,
             SourceDeclaringClrTypeName = member?.DeclaringType?.AssemblyQualifiedName ?? ownerClrType?.AssemblyQualifiedName ?? string.Empty,
-            StorageKind = extensionData ? EfCoreStorageKind.Suppressed : IsOwned(property) ? EfCoreStorageKind.OwnedNavigation : EfCoreStorageKind.Scalar,
+            StorageKind = extensionData || (!owned && !projected) ? EfCoreStorageKind.Suppressed : owned ? EfCoreStorageKind.OwnedNavigation : EfCoreStorageKind.Scalar,
             SemanticOnlyKind = extensionData ? EfCoreSemanticOnlyKind.ExtensionData : EfCoreSemanticOnlyKind.None,
         };
+    }
+
+    private static bool IsClrConventionPersistable(Type type)
+    {
+        Type candidate = Nullable.GetUnderlyingType(type) ?? type;
+        return candidate.IsPrimitive || candidate.IsEnum || candidate == typeof(string) || candidate == typeof(decimal)
+            || candidate == typeof(Guid) || candidate == typeof(DateOnly) || candidate == typeof(TimeOnly)
+            || candidate == typeof(DateTime) || candidate == typeof(DateTimeOffset) || candidate == typeof(TimeSpan)
+            || candidate == typeof(Uri) || candidate == typeof(byte[]);
     }
 
     private static SchemaDiagnosticSeverity LineageSeverity(EfCoreApplicationMode mode)

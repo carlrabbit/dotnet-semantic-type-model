@@ -87,7 +87,10 @@ EFCORE_OWNED_COLLECTION_LINEAGE_POLICY_REQUIRED
 EFCORE_SOURCE_LINEAGE_CLR_TYPE_NOT_RESOLVED
 EFCORE_SOURCE_LINEAGE_MEMBER_NOT_FOUND
 EFCORE_SOURCE_LINEAGE_REQUIRED
+EFCORE_SOURCE_LINEAGE_STORAGE_UNSUPPORTED
 ```
+
+`EFCORE_SOURCE_LINEAGE_STORAGE_UNSUPPORTED` is a warning when an EF-projected member reaches closed CLR application with a CLR type that requires an explicit converter or storage policy. Closed application suppresses that member instead of allowing EF conventions to fail or silently invent storage.
 
 ## Error Surface
 
@@ -107,3 +110,8 @@ Runtime exceptions are acceptable only for blocking application failures after d
 - General dictionary persistence.
 - Value objects as root EF entities.
 - Broad public API redesign beyond application-policy derivation and lineage diagnostics.
+
+
+## 2.4.6 regression qualification
+
+Source lineage is restricted to EF projection/application scope. Compatibility changes must be exercised through unit projection/lineage tests, real CLR `DbContext` model construction, and SQLite in-memory provider tests; canonical types outside that scope do not produce CLR-lineage diagnostics.

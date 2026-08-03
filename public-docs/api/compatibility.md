@@ -75,3 +75,10 @@ EF Core projection preserves canonical nullability for nullable value-type scala
 ## EF Core 2.4.5 lineage compatibility
 
 `EfCoreDerivationOptions.ApplicationMode` defaults to `ClosedClrModel` and is stored in `EfCoreSemanticModel.ApplicationPolicy`. Closed derivation reports required CLR type/member lineage failures as errors; explicit `SharedTypeModel` derivation reports optional CLR lineage failures as warnings while retaining semantic ownership-shape errors. Owned target authoring failures now use stable `EFCORE_OWNED_*` diagnostics rather than raw LINQ exceptions. `ApplySemanticTypeModel` delegates to derivation and the existing semantic-model application paths, so its diagnostics include source-lineage diagnostics.
+
+
+## EF Core 2.4.6 real-application compatibility
+
+EF source-lineage compatibility is projection-scoped: root EF source types, reachable owned/value-object source types, member declaring CLR types, and explicitly EF-applicable semantic types participate. Unselected DTOs, repository abstractions, marker interfaces, framework helpers, and compiler-generated record infrastructure do not. Regression qualification requires unit projection/lineage tests, real CLR `DbContext`/`ModelBuilder` construction, and SQLite in-memory integration coverage.
+
+Derived `EfEntityTypeDefinition.SourceSemanticTypeId` carries the stable canonical source identity used by closed CLR lineage. Display names are not lineage identity and same-named canonical types do not enter scope unless their source identifier was projected.

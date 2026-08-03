@@ -151,3 +151,12 @@ var result = model.DeriveEfCoreModel(options =>
 `ClosedClrModel` remains the default and requires resolvable CLR type and public-member lineage. These failures are errors. `SharedTypeModel` makes CLR lineage optional and reports unavailable CLR lineage as warnings; invalid semantic ownership shapes remain errors. Check `result.Diagnostics` for `EFCORE_OWNED_TARGET_TYPE_NOT_FOUND`, `EFCORE_OWNED_TARGET_TYPE_AMBIGUOUS`, `EFCORE_OWNED_TARGET_SHAPE_UNSUPPORTED`, `EFCORE_OWNED_COLLECTION_LINEAGE_POLICY_REQUIRED`, `EFCORE_SOURCE_LINEAGE_CLR_TYPE_NOT_RESOLVED`, and `EFCORE_SOURCE_LINEAGE_MEMBER_NOT_FOUND`.
 
 `ApplySemanticTypeModel(...)` uses this same derivation path and returns both derivation and application-relevant diagnostics; owned target mistakes no longer surface as raw LINQ exceptions.
+
+
+## 2.4.6 real-application compatibility validation
+
+EF compatibility is validated at three complementary layers: focused unit tests prove projection and source-lineage mechanics, real CLR `DbContext` tests exercise actual `ModelBuilder` construction, and SQLite in-memory integration tests prove provider-backed model creation and basic persistence. Source lineage follows the EF projection/application scope rather than every canonical object definition, so unrelated interfaces, framework helpers, DTOs, and repository abstractions do not become EF candidates.
+
+Provider-backed SQLite checks live in the dedicated `SemanticTypeModel.EFCore.Tests.Integration` project so native-provider validation remains separate from the short-running unit-test surface.
+
+Closed CLR application suppresses projected CLR members that require a converter or unsupported-shape storage policy which has not been configured, and reports `EFCORE_SOURCE_LINEAGE_STORAGE_UNSUPPORTED`. In 2.4.6 this includes record-struct identifiers and `ReadOnlyMemory<byte>` payloads in the run-state regression fixture; SQLite round-trip coverage verifies supported keys and owned values while metadata assertions verify that unsupported members are absent rather than silently convention-mapped.

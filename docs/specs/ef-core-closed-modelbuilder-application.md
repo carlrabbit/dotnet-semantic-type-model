@@ -142,3 +142,8 @@ Docs must state:
 ## 2.4.5 derivation policy
 
 `EfCoreDerivationOptions.ApplicationMode` selects and records the application policy before lineage construction. Closed CLR lineage failures are blocking diagnostics. Shared-type derivation permits absent CLR lineage, but does not downgrade contradictory semantic ownership shapes.
+
+
+## 2.4.6 regression qualification
+
+Source lineage is restricted to EF projection/application scope. Compatibility changes must be exercised through unit projection/lineage tests, real CLR `DbContext` model construction, and SQLite in-memory provider tests; canonical types outside that scope do not produce CLR-lineage diagnostics.

@@ -42,6 +42,8 @@ Specs are authoritative for behavior, invariants, contracts, inputs and outputs,
 | specs/type-model-projection-capabilities.md | Projection capability matrix |
 | specs/type-model-powerbi-tom-projection.md | Power BI projection |
 | specs/type-model-ef-core-projection.md | EF Core projection |
+| specs/ef-core-real-application-regression-fixtures.md | Required anonymized fixture, real ModelBuilder, and SQLite EF compatibility layers |
+| specs/ef-core-source-lineage-scope-filtering.md | Projection-scoped EF source lineage inclusion and exclusion rules |
 | specs/ef-core-source-lineage-diagnostics.md | Diagnostic-first EF source lineage and application-policy-aware derivation |
 | specs/ef-core-closed-modelbuilder-application.md | Closed, lineage-preserving EF ModelBuilder application |
 | specs/ef-core-clr-convention-suppression.md | EF Core CLR convention suppression and value-object root boundaries |

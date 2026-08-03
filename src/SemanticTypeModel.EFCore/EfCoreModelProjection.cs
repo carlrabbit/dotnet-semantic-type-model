@@ -1486,6 +1486,7 @@ public sealed class EfCoreModelProjection(EfCoreProjectionOptions? options = nul
             _ = KeyPropertyIds;
             return new EfEntityTypeDefinition
             {
+                SourceSemanticTypeId = SourceTypeId.Value,
                 Name = EntityName,
                 TableName = TableName,
                 SchemaName = SchemaName,

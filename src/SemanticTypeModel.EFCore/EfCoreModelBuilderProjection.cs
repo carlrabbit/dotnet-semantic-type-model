@@ -250,7 +250,9 @@ public static class SemanticTypeModelEfCoreExtensions
 
     private static void SuppressUnpermittedMembers(EntityTypeBuilder builder, Type clrType, EfCoreSourceTypeMapping source)
     {
-        var permitted = source.Properties.Where(static property => property.SemanticOnlyKind == EfCoreSemanticOnlyKind.None)
+        var ownedNavigations = source.OwnedMappings.Select(static mapping => mapping.NavigationName).ToHashSet(StringComparer.Ordinal);
+        var permitted = source.Properties.Where(property => property.SemanticOnlyKind == EfCoreSemanticOnlyKind.None && property.StorageKind != EfCoreStorageKind.Suppressed
+                && (property.StorageKind != EfCoreStorageKind.OwnedNavigation || ownedNavigations.Contains(property.SourceMemberName)))
             .Select(static property => property.SourceMemberName).ToHashSet(StringComparer.Ordinal);
         foreach (PropertyInfo property in clrType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(property => !permitted.Contains(property.Name)))
         {
@@ -264,7 +266,9 @@ public static class SemanticTypeModelEfCoreExtensions
 
     private static void SuppressUnpermittedMembers(OwnedNavigationBuilder builder, Type clrType, EfCoreSourceTypeMapping source)
     {
-        var permitted = source.Properties.Where(static property => property.SemanticOnlyKind == EfCoreSemanticOnlyKind.None)
+        var ownedNavigations = source.OwnedMappings.Select(static mapping => mapping.NavigationName).ToHashSet(StringComparer.Ordinal);
+        var permitted = source.Properties.Where(property => property.SemanticOnlyKind == EfCoreSemanticOnlyKind.None && property.StorageKind != EfCoreStorageKind.Suppressed
+                && (property.StorageKind != EfCoreStorageKind.OwnedNavigation || ownedNavigations.Contains(property.SourceMemberName)))
             .Select(static property => property.SourceMemberName).ToHashSet(StringComparer.Ordinal);
         foreach (PropertyInfo property in clrType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(property => !permitted.Contains(property.Name)))
         {
