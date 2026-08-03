@@ -111,12 +111,8 @@ internal static class Program
         _ = JsonSchemaExporter.Export(imported.Model);
 
         Model.TypeSchemaModel canonicalModel = BuildCanonicalModel();
-        var modelBuilder = new ModelBuilder(new ConventionSet());
-        _ = modelBuilder.ApplySemanticTypeModel(canonicalModel, options =>
-        {
-            options.ApplicationMode = EfCoreApplicationMode.SharedTypeModel;
-            options.ProjectUnannotatedObjectsAsEntities = true;
-        });
+        EfRelationalModel relationalModel = canonicalModel.DeriveEfRelationalModel().Model;
+        _ = relationalModel.Diagnostics;
 
         _ = typeof(SemanticTypeAttribute);
 

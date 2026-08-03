@@ -33,8 +33,8 @@ Package-based samples should continue to validate generated canonical models whe
 
 ## 2.4.2 URI and EF owned-value-object scenario
 
-The shared Order Fulfillment `Customer` includes a nullable `Uri` website with URI format semantics. The EF Core sample selects `ValueObjectProjectionMode.SerializeJson` and verifies that the owned `BillingAddress` value object becomes exactly one string property with JSON conversion metadata in both the EF domain model and applied `ModelBuilder` metadata.
+The shared Order Fulfillment model includes URI scalars and owned ValueKinds. The EF Core sample verifies the fixed 2.5.0 relational model and CLR-backed application path.
 
 ## 2.4.4 closed EF scenario
 
-The package-based EF sample derives a lineage-preserving `EfCoreSemanticModel`, registers the application-selected CLR roots, and applies the closed model through `ApplyEfCoreSemanticModel`. It demonstrates that STM constrains EF conventions rather than augmenting a convention-owned semantic model. Shared-type projection remains an explicit secondary API.
+The package-based EF sample derives `EfRelationalModel` and applies the fixed CLR-backed table, scalar, TPT, and JSON-column contract through `ApplySemanticRelationalModel`.

@@ -1,3 +1,9 @@
+# 2.5.0
+
+- Reset `SemanticTypeModel.EFCore` to the opinionated relational contract: entities/tables, TPT, scalar columns, JSON-owned ValueKinds, JSON extension data, and identifier-only entity links.
+- Removed the 2.4.x application modes, shared-type projection, source-lineage graph, ownership navigations, alternative storage and inheritance strategies, relationship projection, compatibility aliases, and forwarding APIs.
+- Added real CLR ModelBuilder and SQLite create/insert/load acceptance coverage for the anonymized fixtures.
+
 # Release Notes
 
 ## 2.4.6

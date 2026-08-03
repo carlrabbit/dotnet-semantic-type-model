@@ -118,10 +118,11 @@ public sealed class OrderSubmitted
     public Guid EventId { get; init; }
     [SemanticEnvelopeMetadata]
     public DateTimeOffset OccurredAt { get; init; }
-    [SemanticEnvelopePayload]
+    [SemanticEnvelopePayload, SemanticOwned]
     public required OrderSubmittedPayload Payload { get; init; }
 }
 
+[SemanticType(SemanticTypeRole.ValueObject)]
 public sealed class OrderSubmittedPayload
 {
     public required string OrderId { get; init; }
@@ -171,6 +172,7 @@ public sealed class ProjectionProbe
     [SemanticAnnotation("efCore.enumStorage", "Numeric")]
     public OrderStatus? OptionalStatus { get; init; }
     public int RequiredInt { get; init; }
+    [SemanticKey]
     public required string RequiredText { get; init; }
     public string? OptionalText { get; init; }
 }

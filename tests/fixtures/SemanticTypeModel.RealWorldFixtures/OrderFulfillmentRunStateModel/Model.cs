@@ -30,9 +30,10 @@ public sealed record OrderFulfillmentRunSnapshot
     public required OrderSourceId SourceId { get; init; }
     [SemanticOwned] public required OrderSourceStatistics Statistics { get; init; }
     [SemanticOwned] public required ComponentStateEnvelope ComponentState { get; init; }
-    public IReadOnlyList<SourceExecutionRecord> Executions { get; init; } = [];
-    public IReadOnlyList<ProcessingFailureRecord> Failures { get; init; } = [];
-    public IReadOnlyList<ControlOperationRecord> ControlOperations { get; init; } = [];
+    [SemanticOwned(Kind = SemanticOwnershipKind.Collection)] public IReadOnlyList<SourceExecutionRecord> Executions { get; init; } = [];
+    [SemanticOwned(Kind = SemanticOwnershipKind.Collection)] public IReadOnlyList<ProcessingFailureRecord> Failures { get; init; } = [];
+    [SemanticOwned(Kind = SemanticOwnershipKind.Collection)] public IReadOnlyList<ControlOperationRecord> ControlOperations { get; init; } = [];
+    public required ReadOnlyMemory<byte> RawPayload { get; init; }
     public IReadOnlyDictionary<string, string> Labels { get; init; } = new Dictionary<string, string>();
 }
 

@@ -28,7 +28,7 @@ Decide whether a semantic feature is supported directly, supported with options,
 
 ```csharp
 var json = AppSemanticTypeModel.Create().DeriveJsonSchemaModel();
-var ef = AppSemanticTypeModel.Create().DeriveEfCoreModel();
+var ef = AppSemanticTypeModel.Create().DeriveEfRelationalModel();
 var powerBi = AppSemanticTypeModel.Create().DerivePowerBiModel();
 var configuration = AppSemanticTypeModel.Create().DeriveConfigurationModel();
 

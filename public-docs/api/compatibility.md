@@ -52,33 +52,8 @@ EF Core projection preserves canonical nullability for nullable value-type scala
 - `SemanticDescriptionAttribute`, the generic canonical `Description`, XML include switches, and XML requirement switches are removed; use `RequireTechnicalDescription` for technical-description enforcement.
 - Existing general description text must be classified manually because user-facing versus technical audience intent cannot be inferred safely.
 
-## 2.4.1 Dictionary Extraction Compatibility
+## EF Core 2.5.0 breaking reset
 
-- 2.4.1 preserves canonical validation strictness for `STM0002`; unresolved dictionary key or value references remain validation errors.
-- The patch changes .NET extraction and generated providers so supported dictionary key and value types are registered before validation.
-- The affected 2.4.0 scenario was valid extension data such as `[SemanticExtensionData] Dictionary<string, JsonElement>?`; consumers should upgrade to 2.4.1 rather than hiding the member from the canonical model.
-- EF Core continues to ignore extension data by default and now applies that ignore policy before EF-specific property type resolution.
+The EF package intentionally has no source-compatibility bridge from 2.4.x. `EfRelationalModel`, `DeriveEfRelationalModel`, `ApplySemanticRelationalModel`, and the `ApplySemanticTypeModel` convenience method are the complete surface. Application modes, shared-type entities, broad CLR source lineage, EF-owned navigations, relationship inference, and alternative inheritance or ValueKind storage policies were removed.
 
-## 2.4.2 URI and EF owned-storage compatibility
-
-- `System.Uri` is now a supported string-compatible scalar and implies URI format by default; this corrects 2.4.1 behavior without weakening `STM5025`.
-- EF owned value objects now respect `ValueObjectProjectionMode`. Consumers relying on implicit owned flattening should select `Flatten` explicitly.
-- Owned object-role and entity-role targets and owned collections now produce policy-required diagnostics rather than silent mappings.
-- `Owned` mode is not represented as `OwnsOne` metadata because provider-neutral true EF owned-navigation application remains deferred.
-
-## EF Core 2.4.4 closed-model boundary
-
-`EfCoreApplicationMode.ClosedClrModel` is the default. `ApplySemanticTypeModel` derives a lineage-preserving `EfCoreSemanticModel` and delegates to `ApplyEfCoreSemanticModel`; both therefore enforce the same closed CLR behavior. Convention-discovered members absent from the model are suppressed, semantic value objects cannot be root entities, and missing lineage produces `EFCORE_SOURCE_LINEAGE_REQUIRED`.
-
-`SharedTypeModel` and `ApplyEfCoreSemanticModelAsSharedTypes` provide explicit secondary shared-type application. `ClrConventionAugmentation` and `SharedTypeProjection` are obsolete source-compatible aliases for the corrected modes; applications should migrate names because EF conventions are not model authority.
-
-## EF Core 2.4.5 lineage compatibility
-
-`EfCoreDerivationOptions.ApplicationMode` defaults to `ClosedClrModel` and is stored in `EfCoreSemanticModel.ApplicationPolicy`. Closed derivation reports required CLR type/member lineage failures as errors; explicit `SharedTypeModel` derivation reports optional CLR lineage failures as warnings while retaining semantic ownership-shape errors. Owned target authoring failures now use stable `EFCORE_OWNED_*` diagnostics rather than raw LINQ exceptions. `ApplySemanticTypeModel` delegates to derivation and the existing semantic-model application paths, so its diagnostics include source-lineage diagnostics.
-
-
-## EF Core 2.4.6 real-application compatibility
-
-EF source-lineage compatibility is projection-scoped: root EF source types, reachable owned/value-object source types, member declaring CLR types, and explicitly EF-applicable semantic types participate. Unselected DTOs, repository abstractions, marker interfaces, framework helpers, and compiler-generated record infrastructure do not. Regression qualification requires unit projection/lineage tests, real CLR `DbContext`/`ModelBuilder` construction, and SQLite in-memory integration coverage.
-
-Derived `EfEntityTypeDefinition.SourceSemanticTypeId` carries the stable canonical source identity used by closed CLR lineage. Display names are not lineage identity and same-named canonical types do not enter scope unless their source identifier was projected.
+Owned ValueKinds and extension data use JSON columns; entity inheritance is TPT; semantic links must use identifier scalar properties.

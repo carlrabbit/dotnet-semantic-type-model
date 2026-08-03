@@ -2,60 +2,38 @@
 
 ## What this package does
 
-`SemanticTypeModel.EFCore` provides EF Core domain-model derivation and provider-neutral ModelBuilder projection from semantic models.
+`SemanticTypeModel.EFCore` maps the explicit semantic model to one opinionated CLR-backed relational representation.
 
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.EFCore --version 2.4.4
+dotnet add package SemanticTypeModel.EFCore --version 2.5.0
 ```
-
-## Use when
-
-- Install this package when you need EF Core domain-model derivation and provider-neutral ModelBuilder projection from semantic models.
-- Keep package boundaries explicit in an application or library.
-- Pair generated semantic models with the target runtime you are configuring.
-- Apply semantic metadata inside DbContext.OnModelCreating.
 
 ## Minimal example
 
 ```csharp
 using SemanticTypeModel.EFCore;
 
-var result = AppSemanticTypeModel.Create().DeriveEfCoreModel();
+var result = AppSemanticTypeModel.Create().DeriveEfRelationalModel();
 result.Diagnostics.ThrowIfErrors();
-modelBuilder.ApplyEfCoreSemanticModel(result.Model);
+modelBuilder.ApplySemanticRelationalModel(result.Model);
 ```
 
-## Main APIs
+`ApplySemanticTypeModel` is the convenience path that derives and applies the same model.
 
-| API | Purpose |
-| --- | --- |
-| `DeriveEfCoreModel` | Derives EF Core semantic metadata. |
-| `ApplyEfCoreSemanticModel` | Applies provider-neutral metadata to ModelBuilder. |
-| `ApplySemanticTypeModel` | Projects directly from a TypeSchemaModel to ModelBuilder. |
-| `EfCoreDerivationOptions` | Controls derivation and projection policies. |
+## Fixed contract
 
-## Works with
+- semantic entities are tables and semantic entity inheritance is TPT;
+- scalars are columns, enums are strings, and strong identifiers use their underlying scalar;
+- explicitly owned ValueKind objects and collections are JSON columns;
+- semantic extension data is a JSON object column;
+- entity objects, undeclared ValueKind storage, and arbitrary dictionaries produce diagnostics;
+- EF relationships, navigations, shared-type entities, `OwnsOne`, and `OwnsMany` are not projected.
 
-- Microsoft.EntityFrameworkCore, SemanticTypeModel.Core, and generated model providers.
-- `SemanticTypeModel.Abstractions.Model` for the current unified model surface.
-- `public-docs/samples/` projects that demonstrate package-based usage.
-
-## Does not do
-
-- It does not create DbContext types, run migrations, select database providers, or tune provider-specific SQL.
-- It does not make milestone plans or historical research documents part of the public API.
-- It does not change compatibility rules described in the compatibility documentation.
+The application still selects its EF provider and owns migrations and database operations. Version 2.5.0 intentionally removes the 2.4.x EF API rather than retaining compatibility aliases.
 
 ## More documentation
 
-- [Package list](../packages.md)
-- [Getting started](../getting-started.md)
 - [Compatibility](../api/compatibility.md)
 - [EF Core projection guide](../guides/ef-core-projection.md)
-- [Core semantics guide](../guides/core-semantics.md)
-
-## EF application modes
-
-Closed CLR application is the default. `ApplySemanticTypeModel` is a convenience wrapper over derivation plus `ApplyEfCoreSemanticModel`; the latter consumes source lineage and suppression metadata from `EfCoreSemanticModel`. Use `ApplyEfCoreSemanticModelAsSharedTypes` only when explicitly choosing provider-neutral shared types. A lineage-free closed application reports `EFCORE_SOURCE_LINEAGE_REQUIRED`.
