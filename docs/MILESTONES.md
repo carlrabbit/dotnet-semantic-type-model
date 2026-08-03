@@ -74,3 +74,4 @@ For each focus area:
 - [M0050 - Format-Compatible Scalar Support and Role-Aware EF Owned Storage](milestones/m0050-format-compatible-scalar-support-and-role-aware-ef-owned-storage.md)
 - [M0051 - EF CLR Convention Suppression and ValueObject Boundary Hardening](milestones/m0051-ef-clr-convention-suppression-and-valueobject-boundary-hardening.md)
 - [M0052 - Closed EF Core Semantic Model Application and 2.4.4 Release Preparation](milestones/m0052-closed-ef-core-semantic-model-application-and-2-4-4-release-preparation.md)
+- [M0053 - EF Source Lineage Diagnostics and Derivation Application Policy for 2.4.5](milestones/m0053-ef-source-lineage-diagnostics-and-derivation-application-policy-for-2-4-5.md)

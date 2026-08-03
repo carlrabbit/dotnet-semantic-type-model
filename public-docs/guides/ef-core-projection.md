@@ -136,3 +136,18 @@ modelBuilder.ApplyEfCoreSemanticModelAsSharedTypes(efModel);
 ```
 
 The former `ClrConventionAugmentation` and `SharedTypeProjection` enum names remain obsolete compatibility aliases. They no longer describe the preferred authority model. `[NotMapped]` is not required for the supported closed path.
+
+## 2.4.5 source lineage and derivation policy
+
+Select application policy during derivation, including when the model will be applied later:
+
+```csharp
+var result = model.DeriveEfCoreModel(options =>
+{
+    options.ApplicationMode = EfCoreApplicationMode.SharedTypeModel;
+});
+```
+
+`ClosedClrModel` remains the default and requires resolvable CLR type and public-member lineage. These failures are errors. `SharedTypeModel` makes CLR lineage optional and reports unavailable CLR lineage as warnings; invalid semantic ownership shapes remain errors. Check `result.Diagnostics` for `EFCORE_OWNED_TARGET_TYPE_NOT_FOUND`, `EFCORE_OWNED_TARGET_TYPE_AMBIGUOUS`, `EFCORE_OWNED_TARGET_SHAPE_UNSUPPORTED`, `EFCORE_OWNED_COLLECTION_LINEAGE_POLICY_REQUIRED`, `EFCORE_SOURCE_LINEAGE_CLR_TYPE_NOT_RESOLVED`, and `EFCORE_SOURCE_LINEAGE_MEMBER_NOT_FOUND`.
+
+`ApplySemanticTypeModel(...)` uses this same derivation path and returns both derivation and application-relevant diagnostics; owned target mistakes no longer surface as raw LINQ exceptions.

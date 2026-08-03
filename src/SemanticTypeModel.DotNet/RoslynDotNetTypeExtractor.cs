@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
+using SemanticTypeModel.DotNet.Diagnostics;
 
 namespace SemanticTypeModel.DotNet;
 
@@ -1637,6 +1638,14 @@ public sealed class RoslynDotNetTypeExtractor
             if (string.Equals(metadataName, SemanticOwnedAttributeMetadataName, StringComparison.Ordinal))
             {
                 var kind = GetOwnedKind(attribute, memberType);
+                var inferredKind = InferOwnedKind(memberType);
+                if (HasExplicitOwnedKind(attribute) && !string.Equals(kind, inferredKind, StringComparison.Ordinal))
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        DotNetExtractionDiagnosticIds.MemberShapeUnsupported,
+                        $"SemanticOwned kind '{kind}' conflicts with CLR member shape '{memberType.ToDisplayString()}'; use ownership kind '{inferredKind}' or change the member shape.",
+                        attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation()));
+                }
                 annotations["schema.ownership"] = "true";
                 annotations["schema.ownership.kind"] = kind;
                 annotations[kind == "collection" ? "schema.ownedCollection" : "schema.ownedObject"] = "true";
@@ -1686,6 +1695,12 @@ public sealed class RoslynDotNetTypeExtractor
         }
 
         return InferOwnedKind(memberType);
+    }
+
+    private static bool HasExplicitOwnedKind(AttributeData attribute)
+    {
+        return attribute.NamedArguments.Any(argument => string.Equals(argument.Key, nameof(SemanticOwnedAttribute.Kind), StringComparison.Ordinal)
+            && argument.Value.Value is int kind && kind != (int)SemanticOwnershipKind.Inferred);
     }
 
     private static string InferOwnedKind(ITypeSymbol memberType)

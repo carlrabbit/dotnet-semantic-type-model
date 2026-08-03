@@ -1,5 +1,15 @@
 # Release Notes
 
+## 2.4.5
+
+2.4.5 is a non-publishing patch release candidate. Publication, tagging, and GitHub release creation require separate human approval.
+
+- Replaced unchecked owned-target lineage resolution with guarded, shape-aware resolution and stable `EFCORE_*` diagnostics.
+- Added `EfCoreDerivationOptions.ApplicationMode`; derived `EfCoreSemanticModel` instances now carry `ApplicationPolicy`.
+- CLR type/member lineage failures are errors for `ClosedClrModel` and warnings for `SharedTypeModel`; semantic ownership contradictions remain errors.
+- `ApplySemanticTypeModel(...)` now derives through `DeriveEfCoreModel(...)`, applies the resulting model, and returns merged projection and lineage diagnostics.
+- Added compile-time `STM5025` reporting when an explicit `[SemanticOwned]` kind contradicts the statically known CLR member shape.
+
 ## 2.4.2
 
 2.4.2 is a non-publishing patch release candidate correcting two 2.4.1 behavior gaps. Publication, tagging, and GitHub release creation require separate human approval.

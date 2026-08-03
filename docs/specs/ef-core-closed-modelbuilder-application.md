@@ -138,3 +138,7 @@ Docs must state:
 - Arbitrary EF convention mapping.
 - Extension-data persistence in EF.
 - Value objects as root EF entities.
+
+## 2.4.5 derivation policy
+
+`EfCoreDerivationOptions.ApplicationMode` selects and records the application policy before lineage construction. Closed CLR lineage failures are blocking diagnostics. Shared-type derivation permits absent CLR lineage, but does not downgrade contradictory semantic ownership shapes.

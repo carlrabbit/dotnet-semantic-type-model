@@ -39,14 +39,19 @@ public sealed record EfCoreSemanticModel
         };
     }
 
-    internal static EfCoreSemanticModel FromDefinition(EfModelDefinition definition, TypeSchemaModel source)
+    internal static (EfCoreSemanticModel Model, IReadOnlyList<SchemaDiagnostic> Diagnostics) FromDefinition(
+        EfModelDefinition definition, TypeSchemaModel source, EfCoreApplicationMode applicationMode)
     {
-        EfCoreSemanticModel model = FromDefinition(definition);
-        return model with
+        EfCoreSourceLineageResult lineage = EfCoreSourceLineage.Create(source, applicationMode);
+        IReadOnlyList<SchemaDiagnostic> diagnostics = [.. definition.Diagnostics, .. lineage.Diagnostics];
+        EfCoreSemanticModel model = FromDefinition(definition) with
         {
             SourceModelId = source.Id.Value,
-            SourceTypes = EfCoreSourceLineage.Create(source),
+            SourceTypes = lineage.SourceTypes,
+            ApplicationPolicy = applicationMode,
+            Diagnostics = diagnostics,
         };
+        return (model, diagnostics);
     }
 
     /// <summary>Creates a legacy EF model definition view of this domain semantic model.</summary>

@@ -423,3 +423,7 @@ Core transformation diagnostics added by M0028 use the STM1xxx range:
 | `STM1005` | Warning | Semantic role alias metadata conflicts with an already declared canonical role. |
 | `STM1006` | Warning | Explicit semantic key metadata was declared on a non-entity type. |
 | `STM1007` | Warning | Multiple primary semantic keys were declared for one type. |
+
+## EF application policy
+
+EF domain derivation accepts an application mode and stores it in the derived domain semantic model. Convenience ModelBuilder application delegates through this derivation path so transformation, projection, and lineage diagnostics remain equivalent to manual derivation.

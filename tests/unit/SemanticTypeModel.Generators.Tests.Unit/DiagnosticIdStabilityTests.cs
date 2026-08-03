@@ -221,6 +221,29 @@ public sealed class DiagnosticIdStabilityTests
         _ = await Assert.That(extraction.Diagnostics.Count(static diagnostic => diagnostic.Code == "STM5025")).IsEqualTo(1);
     }
 
+    [Test]
+    public async Task Generator_should_diagnose_explicit_owned_kind_that_conflicts_with_CLR_shape()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using SemanticTypeModel.DotNet;
+
+            [SemanticType(SemanticTypeRole.Entity)]
+            public sealed class InvalidOwner
+            {
+                [SemanticOwned(Kind = SemanticOwnershipKind.Object)]
+                public List<InvalidTarget> Targets { get; init; } = new();
+            }
+
+            [SemanticType(SemanticTypeRole.ValueObject)]
+            public sealed class InvalidTarget { }
+            """;
+
+        Diagnostic[] diagnostics = RunGeneratorForDiagnostics(source);
+
+        _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == DotNetExtractionDiagnosticIds.MemberShapeUnsupported)).IsTrue();
+    }
+
     private static Diagnostic[] RunGeneratorForDiagnostics(
         string source,
         IReadOnlyDictionary<string, string>? options = null)
