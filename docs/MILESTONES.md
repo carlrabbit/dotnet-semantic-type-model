@@ -76,3 +76,5 @@ For each focus area:
 - [M0052 - Closed EF Core Semantic Model Application and 2.4.4 Release Preparation](milestones/m0052-closed-ef-core-semantic-model-application-and-2-4-4-release-preparation.md)
 - [M0053 - EF Source Lineage Diagnostics and Derivation Application Policy for 2.4.5](milestones/m0053-ef-source-lineage-diagnostics-and-derivation-application-policy-for-2-4-5.md)
 - [M0054 - Real Application EF Regression Fixtures and 2.4.6 Release Preparation](milestones/m0054-real-application-ef-regression-fixtures-and-2-4-6-release-preparation.md)
+
+- [M0055 - Opinionated Relational Projection Contract and EF Core Package Reset for 2.5.0](milestones/m0055-opinionated-relational-projection-contract-and-ef-core-package-reset-for-2-5-0.md)

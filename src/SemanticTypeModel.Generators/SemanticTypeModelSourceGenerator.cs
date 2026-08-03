@@ -240,6 +240,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         var source = new StringBuilder();
         source.AppendLine($"namespace {extraction.Options.GeneratedNamespace};");
         source.AppendLine();
+        source.AppendLine("/// <summary>Provides the generated canonical semantic type model.</summary>");
         source.AppendLine($"public static partial class {SanitizeIdentifier(extraction.Options.ProviderName)}");
         source.AppendLine("{");
         source.AppendLine("    /// <summary>");

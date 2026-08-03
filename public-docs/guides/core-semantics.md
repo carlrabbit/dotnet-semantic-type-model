@@ -139,4 +139,4 @@ Core semantics does not create target output by itself. It does not choose datab
 
 ## 2.4.4 extension-data inheritance
 
-Semantic types inherit semantic extension-data members declared by CLR base classes, including abstract base classes that do not have `[SemanticType]`. The member remains canonical extension data for JSON-oriented projections. EF Core closed application suppresses the member from EF mapping according to `EfCoreSemanticModel` lineage without turning the base class or value object into an independent EF root.
+Semantic types inherit semantic extension-data members declared by CLR base classes, including abstract base classes that do not have `[SemanticType]`. The member remains canonical extension data for JSON-oriented projections. EF Core persists the member as an extension-data JSON column without turning the non-semantic base or a ValueKind into an independent EF root.

@@ -1,35 +1,12 @@
 # Code-First EF Core Sample
 
-## Scenario Goal
+## Scenario
 
-Use an annotated C# domain model with the packaged source generator, derive an EF Core domain semantic model, and apply provider-neutral EF Core configuration to `ModelBuilder`.
-
-## Packages Used
-
-- `Microsoft.EntityFrameworkCore`
-- `SemanticTypeModel.Abstractions`
-- `SemanticTypeModel.Core`
-- `SemanticTypeModel.DotNet`
-- `SemanticTypeModel.EFCore`
-- `SemanticTypeModel.Generators`
-
-## Run Command
+The package-based sample generates a semantic model, derives `EfRelationalModel`, and applies its explicit CLR tables and columns to `ModelBuilder`.
 
 ```sh
 ./eng/package.sh 0.0.0-samples
 ./eng/samples.sh
 ```
 
-The sample project path is `samples/code-first-ef-core/code-first-ef-core.csproj`.
-
-## Expected Output
-
-The sample prints generated model information, EF Core derivation diagnostics, and provider-neutral `ModelBuilder` metadata counts.
-
-## Consumer Pattern Demonstrated
-
-A consumer lets the packaged generator produce `AppSemanticTypeModel.Create()`, derives `EfCoreSemanticModel`, checks diagnostics, and registers CLR entity roots and applies its closed contract to a local `ModelBuilder` through `ApplyEfCoreSemanticModel`.
-
-## Non-Goals
-
-This sample does not connect to a database, run migrations, require a provider package, discover or generate a `DbContext`, or replace EF Core application configuration.
+The sample validates the 2.5.0 fixed contract without selecting a provider, connecting to a database, running migrations, or generating a `DbContext`.

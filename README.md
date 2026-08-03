@@ -48,7 +48,7 @@ From the generated canonical model, derive target-specific domain models:
 
 ```csharp
 var jsonSchema = model.DeriveJsonSchemaModel();
-var efCore = model.DeriveEfCoreModel();
+var efCore = model.DeriveEfRelationalModel();
 var powerBi = model.DerivePowerBiModel();
 ```
 

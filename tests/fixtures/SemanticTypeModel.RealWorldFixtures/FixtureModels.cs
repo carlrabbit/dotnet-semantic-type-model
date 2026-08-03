@@ -20,30 +20,32 @@ public static class FixtureModels
         ScalarTypeDefinition timestamp = Scalar<DateTimeOffset>(ScalarKind.DateTimeOffset);
         ScalarTypeDefinition uri = Scalar<Uri>(ScalarKind.String);
 
-        ObjectTypeDefinition delivery = Object<Intake.PartnerDeliveryAgreement>(EntityRole.ValueObject,
-            [Property(nameof(Intake.PartnerDeliveryAgreement.PartnerCode), text.Id), Property(nameof(Intake.PartnerDeliveryAgreement.AgreementId), guid.Id)]);
-        ObjectTypeDefinition schedule = Object<Intake.OrderIntakeSchedule>(EntityRole.ValueObject,
-            [Property(nameof(Intake.OrderIntakeSchedule.StartDate), date.Id), Property(nameof(Intake.OrderIntakeSchedule.StartTime), time.Id), Property(nameof(Intake.OrderIntakeSchedule.Interval), duration.Id)]);
+        ObjectTypeDefinition delivery = Object<Intake.DeliveryContract>(EntityRole.ValueObject,
+            [Property(nameof(Intake.DeliveryContract.PartnerCode), text.Id), Property(nameof(Intake.DeliveryContract.AgreementId), guid.Id)]);
+        ObjectTypeDefinition schedule = Object<Intake.ScheduleContract>(EntityRole.ValueObject,
+            [Property(nameof(Intake.ScheduleContract.StartDate), date.Id), Property(nameof(Intake.ScheduleContract.StartTime), time.Id), Property(nameof(Intake.ScheduleContract.Interval), duration.Id)]);
         ObjectTypeDefinition polling = Object<Intake.SourcePollingPolicy>(EntityRole.ValueObject,
             [Property(nameof(Intake.SourcePollingPolicy.Interval), duration.Id), Property(nameof(Intake.SourcePollingPolicy.LastSuccessfulPoll), timestamp.Id, required: false)]);
-        ObjectTypeDefinition delimited = Object<Intake.DelimitedFileSource>(EntityRole.ValueObject,
-            [Property(nameof(Intake.DelimitedFileSource.Location), uri.Id), Property(nameof(Intake.DelimitedFileSource.Delimiter), character.Id)]);
-        ObjectTypeDefinition structured = Object<Intake.StructuredFileSource>(EntityRole.ValueObject,
-            [Property(nameof(Intake.StructuredFileSource.Location), uri.Id), Property(nameof(Intake.StructuredFileSource.RootElement), text.Id)]);
+        ObjectTypeDefinition delimited = Object<Intake.CsvSourceSpecification>(EntityRole.ValueObject,
+            [Property(nameof(Intake.CsvSourceSpecification.Location), uri.Id), Property(nameof(Intake.CsvSourceSpecification.Delimiter), character.Id)]);
+        ObjectTypeDefinition structured = Object<Intake.XmlSourceSpecification>(EntityRole.ValueObject,
+            [Property(nameof(Intake.XmlSourceSpecification.Location), uri.Id), Property(nameof(Intake.XmlSourceSpecification.RootElement), text.Id)]);
         ObjectTypeDefinition primaryApi = Object<Intake.PrimaryApiSource>(EntityRole.ValueObject,
             [Property(nameof(Intake.PrimaryApiSource.Endpoint), uri.Id), Property(nameof(Intake.PrimaryApiSource.Token), text.Id, required: false)]);
         ObjectTypeDefinition secondaryApi = Object<Intake.SecondaryApiSource>(EntityRole.ValueObject,
             [Property(nameof(Intake.SecondaryApiSource.Endpoint), uri.Id), Property(nameof(Intake.SecondaryApiSource.Token), text.Id, required: false)]);
-        ObjectTypeDefinition normalization = Object<Intake.NormalizationPipeline>(EntityRole.ValueObject,
-            [Property(nameof(Intake.NormalizationPipeline.Enabled), boolean.Id), Property(nameof(Intake.NormalizationPipeline.Mode), text.Id)]);
-        ObjectTypeDefinition derivedField = Object<Intake.DerivedOrderField>(EntityRole.ValueObject,
-            [Property(nameof(Intake.DerivedOrderField.Name), text.Id), Property(nameof(Intake.DerivedOrderField.Expression), text.Id, required: false)]);
-        ArrayTypeDefinition derivedFields = Array<IReadOnlyList<Intake.DerivedOrderField>>(derivedField.Id);
+        ObjectTypeDefinition normalization = Object<Intake.PostProcessingContract>(EntityRole.ValueObject,
+            [Property(nameof(Intake.PostProcessingContract.Enabled), boolean.Id), Property(nameof(Intake.PostProcessingContract.Mode), text.Id)]);
+        ObjectTypeDefinition derivedField = Object<Intake.DerivedProperty>(EntityRole.ValueObject,
+            [Property(nameof(Intake.DerivedProperty.Name), text.Id), Property(nameof(Intake.DerivedProperty.Expression), text.Id, required: false)]);
+        ArrayTypeDefinition derivedFields = Array<IReadOnlyList<Intake.DerivedProperty>>(derivedField.Id);
 
-        ObjectTypeDefinition semanticBase = Object<Intake.ConfigurableSpecification>(EntityRole.Entity,
-            [Property(nameof(Intake.ConfigurableSpecification.Id), guid.Id), Property(nameof(Intake.ConfigurableSpecification.SchemaVersion), number.Id), Property(nameof(Intake.ConfigurableSpecification.UpdatedAt), timestamp.Id), Property(nameof(Intake.ConfigurableSpecification.ExtensionData), text.Id, ("schema.extensionData", "true"))], nameof(Intake.ConfigurableSpecification.Id));
-        ObjectTypeDefinition root = Object<Intake.OrderIntakeSpecification>(EntityRole.Entity,
-            [Property(nameof(Intake.OrderIntakeSpecification.Id), guid.Id), Property(nameof(Intake.OrderIntakeSpecification.SchemaVersion), number.Id), Property(nameof(Intake.OrderIntakeSpecification.UpdatedAt), timestamp.Id), Property(nameof(Intake.OrderIntakeSpecification.ExtensionData), text.Id, ("schema.extensionData", "true")), Property(nameof(Intake.OrderIntakeSpecification.Delivery), delivery.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.OrderIntakeSpecification.Schedule), schedule.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.OrderIntakeSpecification.Polling), polling.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.OrderIntakeSpecification.DelimitedFile), delimited.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.OrderIntakeSpecification.StructuredFile), structured.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.OrderIntakeSpecification.PrimaryApi), primaryApi.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.OrderIntakeSpecification.SecondaryApi), secondaryApi.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.OrderIntakeSpecification.Normalization), normalization.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.OrderIntakeSpecification.DerivedFields), derivedFields.Id, ("schema.ownedCollection", "true"))], nameof(Intake.OrderIntakeSpecification.Id));
+        ObjectTypeDefinition semanticBase = Object<Intake.Specification>(EntityRole.Entity,
+            [Property(nameof(Intake.Specification.Id), guid.Id), Property(nameof(Intake.Specification.SchemaVersion), number.Id), Property(nameof(Intake.Specification.UpdatedAt), timestamp.Id), Property(nameof(Intake.Specification.ExtensionData), text.Id, ("schema.extensionData", "true"))], nameof(Intake.Specification.Id));
+        ObjectTypeDefinition workflow = Object<Intake.WorkflowSpecification>(EntityRole.Entity,
+            [Property(nameof(Intake.WorkflowSpecification.Id), guid.Id), Property(nameof(Intake.WorkflowSpecification.SchemaVersion), number.Id), Property(nameof(Intake.WorkflowSpecification.UpdatedAt), timestamp.Id), Property(nameof(Intake.WorkflowSpecification.ExtensionData), text.Id, ("schema.extensionData", "true"))], nameof(Intake.WorkflowSpecification.Id));
+        ObjectTypeDefinition root = Object<Intake.ImportSpecification>(EntityRole.Entity,
+            [Property(nameof(Intake.ImportSpecification.Id), guid.Id), Property(nameof(Intake.ImportSpecification.SchemaVersion), number.Id), Property(nameof(Intake.ImportSpecification.UpdatedAt), timestamp.Id), Property(nameof(Intake.ImportSpecification.ExtensionData), text.Id, ("schema.extensionData", "true")), Property(nameof(Intake.ImportSpecification.DeliveryContract), delivery.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.Schedule), schedule.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.Polling), polling.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.CsvSource), delimited.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.XmlSource), structured.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.PrimaryApiSource), primaryApi.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.SecondaryApiSource), secondaryApi.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.PostProcessing), normalization.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.DerivedProperties), derivedFields.Id, ("schema.ownedCollection", "true"))], nameof(Intake.ImportSpecification.Id));
 
         ObjectTypeDefinition nonSemanticBase = Object<Intake.VersionedExtensibleObject>(EntityRole.Unspecified,
             [Property(nameof(Intake.VersionedExtensibleObject.SchemaVersion), number.Id), Property(nameof(Intake.VersionedExtensibleObject.ExtensionData), text.Id, ("schema.extensionData", "true"))]);
@@ -51,8 +53,8 @@ public static class FixtureModels
         ObjectTypeDefinition equatable = Object(typeof(IEquatable<>), EntityRole.Unspecified, []);
         ObjectTypeDefinition jsonHelper = Object(typeof(System.Text.Json.JsonElement), EntityRole.Unspecified, []);
         ObjectTypeDefinition xmlHelper = Object(typeof(System.Xml.XmlDocument), EntityRole.Unspecified, []);
-        TypeDefinition[] types = [guid, text, number, boolean, character, date, time, duration, timestamp, uri, delivery, schedule, polling, delimited, structured, primaryApi, secondaryApi, normalization, derivedField, derivedFields, semanticBase, root, nonSemanticBase, marker, equatable, jsonHelper, xmlHelper];
-        return Model("OrderIntakeSpecificationModel", types);
+        TypeDefinition[] types = [guid, text, number, boolean, character, date, time, duration, timestamp, uri, delivery, schedule, polling, delimited, structured, primaryApi, secondaryApi, normalization, derivedField, derivedFields, semanticBase, root, workflow, nonSemanticBase, marker, equatable, jsonHelper, xmlHelper];
+        return Model("ImportSpecificationModel", types);
     }
 
     public static TypeSchemaModel CreateRunState()
@@ -85,7 +87,7 @@ public static class FixtureModels
         DictionaryTypeDefinition labels = Dictionary<IReadOnlyDictionary<string, string>>(text.Id, text.Id);
 
         ObjectTypeDefinition root = Object<RunState.OrderFulfillmentRunSnapshot>(EntityRole.Entity,
-            [Property(nameof(RunState.OrderFulfillmentRunSnapshot.Id), guid.Id), Property(nameof(RunState.OrderFulfillmentRunSnapshot.RunId), runId.Id), Property(nameof(RunState.OrderFulfillmentRunSnapshot.SourceId), sourceId.Id), Property(nameof(RunState.OrderFulfillmentRunSnapshot.Statistics), statistics.Id, ("schema.ownedObject", "true")), Property(nameof(RunState.OrderFulfillmentRunSnapshot.ComponentState), component.Id, ("schema.ownedObject", "true")), Property(nameof(RunState.OrderFulfillmentRunSnapshot.Executions), executions.Id), Property(nameof(RunState.OrderFulfillmentRunSnapshot.Failures), failures.Id), Property(nameof(RunState.OrderFulfillmentRunSnapshot.ControlOperations), operations.Id), Property(nameof(RunState.OrderFulfillmentRunSnapshot.Labels), labels.Id)], nameof(RunState.OrderFulfillmentRunSnapshot.Id));
+            [Property(nameof(RunState.OrderFulfillmentRunSnapshot.Id), guid.Id), Property(nameof(RunState.OrderFulfillmentRunSnapshot.RunId), runId.Id), Property(nameof(RunState.OrderFulfillmentRunSnapshot.SourceId), sourceId.Id), Property(nameof(RunState.OrderFulfillmentRunSnapshot.Statistics), statistics.Id, ("schema.ownedObject", "true")), Property(nameof(RunState.OrderFulfillmentRunSnapshot.ComponentState), component.Id, ("schema.ownedObject", "true")), Property(nameof(RunState.OrderFulfillmentRunSnapshot.Executions), executions.Id, ("schema.ownedCollection", "true")), Property(nameof(RunState.OrderFulfillmentRunSnapshot.Failures), failures.Id, ("schema.ownedCollection", "true")), Property(nameof(RunState.OrderFulfillmentRunSnapshot.ControlOperations), operations.Id, ("schema.ownedCollection", "true")), Property(nameof(RunState.OrderFulfillmentRunSnapshot.RawPayload), binary.Id)], nameof(RunState.OrderFulfillmentRunSnapshot.Id));
         ObjectTypeDefinition request = Object<RunState.SaveFulfillmentRunRequest>(EntityRole.Unspecified, [Property(nameof(RunState.SaveFulfillmentRunRequest.Snapshot), root.Id)]);
         ObjectTypeDefinition overview = Object<RunState.FulfillmentRunOverview>(EntityRole.Unspecified, [Property(nameof(RunState.FulfillmentRunOverview.RunId), runId.Id), Property(nameof(RunState.FulfillmentRunOverview.FailureCount), number.Id)]);
         ObjectTypeDefinition repository = Object(typeof(RunState.IFulfillmentRunStateRepository), EntityRole.Unspecified, []);
@@ -93,17 +95,17 @@ public static class FixtureModels
         return Model("OrderFulfillmentRunStateModel", types);
     }
 
-    public static Intake.OrderIntakeSpecification MinimalIntake()
+    public static Intake.ImportSpecification MinimalIntake()
     {
         return new()
         {
             Id = Guid.NewGuid(),
             SchemaVersion = 1,
             UpdatedAt = DateTimeOffset.UtcNow,
-            Delivery = new("partner", Guid.NewGuid()),
+            DeliveryContract = new("partner", Guid.NewGuid()),
             Schedule = new(DateOnly.FromDateTime(DateTime.UtcNow), TimeOnly.MinValue, TimeSpan.FromHours(1)),
             Polling = new(TimeSpan.FromMinutes(5), null),
-            Normalization = new(false, "none"),
+            PostProcessing = new(false, "none"),
         };
     }
 
@@ -115,7 +117,8 @@ public static class FixtureModels
             RunId = new(Guid.NewGuid()),
             SourceId = new(Guid.NewGuid()),
             Statistics = new(0, 0),
-            ComponentState = new() { Id = new(Guid.NewGuid()), Payload = ReadOnlyMemory<byte>.Empty },
+            ComponentState = new() { Id = new(Guid.NewGuid()), Payload = new byte[] { 1, 2 } },
+            RawPayload = new byte[] { 3, 4 },
         };
     }
 
@@ -161,7 +164,12 @@ public static class FixtureModels
 
     private static AnnotationBag Clr(Type type)
     {
-        return new() { Items = [new Annotation { Key = new("dotnet.clrType"), Value = type.AssemblyQualifiedName, Scope = AnnotationScope.Type, Source = AnnotationSource.Declared }] };
+        List<Annotation> items = [new Annotation { Key = new("dotnet.clrType"), Value = type.AssemblyQualifiedName, Scope = AnnotationScope.Type, Source = AnnotationSource.Declared }];
+        if (type.BaseType is { } baseType && baseType != typeof(object))
+        {
+            items.Add(new Annotation { Key = new("dotnet.baseType"), Value = baseType.FullName, Scope = AnnotationScope.Type, Source = AnnotationSource.Declared });
+        }
+        return new() { Items = items };
     }
 }
 #pragma warning restore CS1591

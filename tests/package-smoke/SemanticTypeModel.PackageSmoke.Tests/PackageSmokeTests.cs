@@ -1,8 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Model = SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Abstractions.Runtime;
 using SemanticTypeModel.DotNet;
@@ -35,16 +33,8 @@ internal sealed class PackageSmokeTests
         PowerBiProjectionModel powerBiProjection = new PowerBiModelProjection().Project(canonicalModel, powerBiContext);
         _ = await Assert.That(powerBiProjection).IsNotNull();
 
-        Model.SchemaProjectionContext efCoreContext = new() { Target = Model.ProjectionTarget.EfCore };
-        EfModelDefinition efCoreProjection = new EfCoreModelProjection().Project(canonicalModel, efCoreContext);
+        EfRelationalModel efCoreProjection = canonicalModel.DeriveEfRelationalModel().Model;
         _ = await Assert.That(efCoreProjection).IsNotNull();
-        var modelBuilder = new ModelBuilder(new ConventionSet());
-        EfCoreModelBuilderProjectionResult efCoreApplyResult = modelBuilder.ApplySemanticTypeModel(canonicalModel, options =>
-        {
-            options.ApplicationMode = EfCoreApplicationMode.SharedTypeModel;
-            options.ProjectUnannotatedObjectsAsEntities = true;
-        });
-        _ = await Assert.That(efCoreApplyResult.Model).IsNotNull();
 
         using ServiceProvider provider = new ServiceCollection()
             .AddSemanticTypeModel(canonicalModel)
