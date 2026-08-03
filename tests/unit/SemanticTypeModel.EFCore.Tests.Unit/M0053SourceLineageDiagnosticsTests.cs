@@ -45,6 +45,61 @@ public sealed class M0053SourceLineageDiagnosticsTests
         _ = await Assert.That(applied.Diagnostics.Any(d => d.Code == "EFCORE_OWNED_TARGET_TYPE_NOT_FOUND")).IsTrue();
     }
 
+    [Test]
+    public async Task SourceLineage_is_limited_to_projected_roots_and_reachable_owned_types()
+    {
+        TypeSchemaModel baseline = BuildModel("valid");
+        ObjectTypeDefinition infrastructure = new()
+        {
+            Id = new("System.IEquatable`1"),
+            Name = "IEquatable",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = Annotation(("dotnet.clrType", "System.IEquatable`1")),
+            Semantics = new(),
+            Properties = [],
+            Keys = [],
+            Relationships = [],
+        };
+        TypeDefinition[] types = [.. baseline.Types, infrastructure];
+        TypeSchemaModel model = new()
+        {
+            Id = baseline.Id,
+            Types = types,
+            TypesById = types.ToDictionary(type => type.Id),
+            Annotations = baseline.Annotations,
+        };
+
+        SemanticDerivationResult<EfCoreSemanticModel> result = model.DeriveEfCoreModel();
+
+        _ = await Assert.That(result.Model.SourceTypes.Any(type => type.SourceSemanticTypeId == infrastructure.Id.Value)).IsFalse();
+        _ = await Assert.That(result.Diagnostics.Any(diagnostic => diagnostic.Code.Contains("SOURCE_LINEAGE", StringComparison.Ordinal) && diagnostic.Message.Contains("IEquatable", StringComparison.Ordinal))).IsFalse();
+    }
+
+    [Test]
+    public async Task SourceLineage_uses_stable_source_id_instead_of_projected_name()
+    {
+        TypeSchemaModel baseline = BuildModel("valid");
+        ObjectTypeDefinition sameName = new()
+        {
+            Id = new("not-the-projected-owner"),
+            Name = "owner",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = Clr(typeof(SameNameInfrastructure)),
+            Semantics = new(),
+            Properties = [],
+            Keys = [],
+            Relationships = [],
+        };
+        TypeDefinition[] types = [.. baseline.Types, sameName];
+        TypeSchemaModel model = new() { Id = baseline.Id, Types = types, TypesById = types.ToDictionary(type => type.Id), Annotations = baseline.Annotations };
+
+        EfCoreSemanticModel derived = model.DeriveEfCoreModel().Model;
+
+        _ = await Assert.That(derived.SourceTypes.Any(type => type.SourceSemanticTypeId == sameName.Id.Value)).IsFalse();
+    }
+
     private static TypeSchemaModel BuildModel(string shape, bool includeClrLineage = true)
     {
         AnnotationBag ownerAnnotations = includeClrLineage ? Clr(typeof(LineageOwner)) : new();
@@ -84,5 +139,6 @@ public sealed class M0053SourceLineageDiagnosticsTests
 
     private sealed class LineageOwner { public LineageTarget? Target { get; init; } }
     private sealed class LineageTarget;
+    private sealed class SameNameInfrastructure;
 }
 #pragma warning restore CS1591

@@ -63,7 +63,7 @@ For each focus area:
 - [M0039 - Documentation Synchronization and 2.2.0 Release Preparation](milestones/m0039-documentation-synchronization-and-2-2-0-release-preparation.md)
 - [M0040 - Configuration Domain Model and Options Registration Projection](milestones/m0040-configuration-domain-model-and-options-registration-projection.md)
 - [M0041 - Remove Stale Public API Baselines and Standardize Package Documentation](milestones/m0041-remove-stale-public-api-baselines-and-standardize-package-documentation.md)
-- [M0042 - Rewrite Package READMEs and Usage Guides to Documentation Standard](milestones/m0042-rewrite-package-readmes-and-usage-guides-to-documentation-standard.md)
+- [M0042 - Rewrite Package READMEs and Usage Guides to Documentation Standard](milestones/m0042-rewrite-package-readmes-and-usage-guides.md)
 - [M0043 - Expand Usage Guides with Concrete Options, Policies, and Supported Items](milestones/m0043-expand-usage-guides-with-concrete-options-policies-and-supported-items.md)
 - [M0044 - Explicit Per-Type Configuration Registration and Required Section Presence](milestones/m0044-explicit-per-type-configuration-registration-and-required-section-presence.md)
 - [M0045 - Documentation Synchronization and 2.3.0 Release Preparation](milestones/m0045-documentation-synchronization-and-2-3-0-release-preparation.md)
@@ -75,3 +75,4 @@ For each focus area:
 - [M0051 - EF CLR Convention Suppression and ValueObject Boundary Hardening](milestones/m0051-ef-clr-convention-suppression-and-valueobject-boundary-hardening.md)
 - [M0052 - Closed EF Core Semantic Model Application and 2.4.4 Release Preparation](milestones/m0052-closed-ef-core-semantic-model-application-and-2-4-4-release-preparation.md)
 - [M0053 - EF Source Lineage Diagnostics and Derivation Application Policy for 2.4.5](milestones/m0053-ef-source-lineage-diagnostics-and-derivation-application-policy-for-2-4-5.md)
+- [M0054 - Real Application EF Regression Fixtures and 2.4.6 Release Preparation](milestones/m0054-real-application-ef-regression-fixtures-and-2-4-6-release-preparation.md)

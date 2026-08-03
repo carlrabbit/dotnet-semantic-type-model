@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SemanticTypeModel.RealWorldFixtures</RootNamespace>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../src/SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
+  </ItemGroup>
+</Project>

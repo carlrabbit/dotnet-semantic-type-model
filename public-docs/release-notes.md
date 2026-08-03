@@ -1,5 +1,14 @@
 # Release Notes
 
+## 2.4.6
+
+2.4.6 is a non-publishing patch release candidate. Publication, tagging, and GitHub release creation require separate human approval.
+
+- Limits EF source lineage to projected root entities and owned/value-object types reachable through EF mappings, excluding interfaces, helper infrastructure, DTOs, and repository abstractions.
+- Adds anonymized order-intake specification and fulfillment-run-state regression fixtures that retain realistic record, inheritance, ownership, extension-data, identifier, collection, dictionary, and binary-payload shapes.
+- Establishes three EF compatibility layers: unit projection/lineage tests, real CLR `DbContext`/`ModelBuilder` tests, and SQLite in-memory schema and persistence tests.
+- Reports and suppresses closed-CLR members that still require explicit conversion or storage policy, including record-struct identifiers and `ReadOnlyMemory<byte>` payloads; SQLite tests round-trip supported state and assert unsupported members are absent from metadata.
+
 ## 2.4.5
 
 2.4.5 is a non-publishing patch release candidate. Publication, tagging, and GitHub release creation require separate human approval.

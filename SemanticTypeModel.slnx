@@ -16,6 +16,9 @@
     <Project Path="src/SemanticTypeModel.Configuration.Generators/SemanticTypeModel.Configuration.Generators.csproj" />
   </Folder>
   <Folder Name="/tests/" />
+  <Folder Name="/tests/integration/">
+    <Project Path="tests/integration/SemanticTypeModel.EFCore.Tests.Integration/SemanticTypeModel.EFCore.Tests.Integration.csproj" />
+  </Folder>
   <Folder Name="/tests/unit/">
     <Project Path="tests/unit/SemanticTypeModel.Core.Tests.Unit/SemanticTypeModel.Core.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.DependencyInjection.Tests.Unit/SemanticTypeModel.DependencyInjection.Tests.Unit.csproj" />

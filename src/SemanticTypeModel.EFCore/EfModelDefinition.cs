@@ -42,7 +42,7 @@ public sealed record EfCoreSemanticModel
     internal static (EfCoreSemanticModel Model, IReadOnlyList<SchemaDiagnostic> Diagnostics) FromDefinition(
         EfModelDefinition definition, TypeSchemaModel source, EfCoreApplicationMode applicationMode)
     {
-        EfCoreSourceLineageResult lineage = EfCoreSourceLineage.Create(source, applicationMode);
+        EfCoreSourceLineageResult lineage = EfCoreSourceLineage.Create(source, definition, applicationMode);
         IReadOnlyList<SchemaDiagnostic> diagnostics = [.. definition.Diagnostics, .. lineage.Diagnostics];
         EfCoreSemanticModel model = FromDefinition(definition) with
         {
@@ -186,6 +186,9 @@ public sealed record EfModelDefinition
 /// </summary>
 public sealed record EfEntityTypeDefinition
 {
+    /// <summary>Gets the stable canonical source type identifier when this entity was derived from a canonical model.</summary>
+    public string? SourceSemanticTypeId { get; init; }
+
     /// <summary>
     /// Gets the projected entity type name.
     /// </summary>

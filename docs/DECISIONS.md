@@ -12,6 +12,7 @@ Decision records are authoritative for reasoning, alternatives, and constraints.
 
 | Decision | Purpose |
 |---|---|
+| decisions/real-application-fixtures-are-required-for-ef-compatibility.md | Require anonymized application-shaped EF regression fixtures and provider-backed validation |
 | decisions/ef-source-lineage-is-diagnostic-first-and-application-policy-aware.md | Diagnostic-first source lineage and derivation application policy |
 | decisions/efcore-semantic-model-is-the-ef-application-contract.md | EF semantic model application authority |
 | decisions/json-schema-as-primary-dialect.md | JSON Schema dialect choice |
