@@ -71,3 +71,7 @@ EF Core projection preserves canonical nullability for nullable value-type scala
 `EfCoreApplicationMode.ClosedClrModel` is the default. `ApplySemanticTypeModel` derives a lineage-preserving `EfCoreSemanticModel` and delegates to `ApplyEfCoreSemanticModel`; both therefore enforce the same closed CLR behavior. Convention-discovered members absent from the model are suppressed, semantic value objects cannot be root entities, and missing lineage produces `EFCORE_SOURCE_LINEAGE_REQUIRED`.
 
 `SharedTypeModel` and `ApplyEfCoreSemanticModelAsSharedTypes` provide explicit secondary shared-type application. `ClrConventionAugmentation` and `SharedTypeProjection` are obsolete source-compatible aliases for the corrected modes; applications should migrate names because EF conventions are not model authority.
+
+## EF Core 2.4.5 lineage compatibility
+
+`EfCoreDerivationOptions.ApplicationMode` defaults to `ClosedClrModel` and is stored in `EfCoreSemanticModel.ApplicationPolicy`. Closed derivation reports required CLR type/member lineage failures as errors; explicit `SharedTypeModel` derivation reports optional CLR lineage failures as warnings while retaining semantic ownership-shape errors. Owned target authoring failures now use stable `EFCORE_OWNED_*` diagnostics rather than raw LINQ exceptions. `ApplySemanticTypeModel` delegates to derivation and the existing semantic-model application paths, so its diagnostics include source-lineage diagnostics.

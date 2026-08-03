@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SemanticTypeModel.Abstractions.Model;
+using SemanticTypeModel.Core.Transformation;
 
 namespace SemanticTypeModel.EFCore;
 
@@ -139,9 +140,12 @@ public static class SemanticTypeModelEfCoreExtensions
         var options = new EfCoreModelBuilderProjectionOptions();
         configure?.Invoke(options);
 
-        var projectionContext = new SchemaProjectionContext { Target = ProjectionTarget.EfCore };
-        EfModelDefinition projectedModel = new EfCoreModelProjection(options.ToProjectionOptions()).Project(model, projectionContext);
-        EfCoreSemanticModel efModel = EfCoreSemanticModel.FromDefinition(projectedModel, model) with { ApplicationPolicy = options.ApplicationMode };
+        SemanticDerivationResult<EfCoreSemanticModel> derived = model.DeriveEfCoreModel(derivationOptions =>
+        {
+            derivationOptions.ApplicationMode = options.ApplicationMode;
+            derivationOptions.Projection = options.ToProjectionOptions();
+        });
+        EfCoreSemanticModel efModel = derived.Model;
         if (options.ApplicationMode == EfCoreApplicationMode.SharedTypeModel)
         {
             modelBuilder.ApplyEfCoreSemanticModelAsSharedTypes(efModel, options.DefaultSchema);
@@ -153,8 +157,8 @@ public static class SemanticTypeModelEfCoreExtensions
 
         return new EfCoreModelBuilderProjectionResult
         {
-            Model = projectedModel,
-            Diagnostics = projectedModel.Diagnostics,
+            Model = efModel.ToDefinition(),
+            Diagnostics = derived.Diagnostics,
         };
     }
 
@@ -220,6 +224,12 @@ public static class SemanticTypeModelEfCoreExtensions
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
         ArgumentNullException.ThrowIfNull(model);
+
+        if (model.ApplicationPolicy == EfCoreApplicationMode.SharedTypeModel)
+        {
+            modelBuilder.ApplyEfCoreSemanticModelAsSharedTypes(model, defaultSchema);
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(model.SourceModelId) || model.SourceTypes.Count == 0)
         {

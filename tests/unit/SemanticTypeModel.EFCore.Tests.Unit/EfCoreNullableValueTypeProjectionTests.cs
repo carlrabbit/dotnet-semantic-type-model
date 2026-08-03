@@ -44,7 +44,8 @@ public sealed class EfCoreNullableValueTypeProjectionTests
         _ = await Assert.That(entity.Properties.Single(p => p.Name == "RequiredInt").ClrType).IsEqualTo(typeof(int));
         _ = await Assert.That(entity.Properties.Single(p => p.Name == "RequiredText").ClrType).IsEqualTo(typeof(string));
         _ = await Assert.That(entity.Properties.Single(p => p.Name == "OptionalText").ClrType).IsEqualTo(typeof(string));
-        _ = await Assert.That(applied.Diagnostics).Count().IsEqualTo(projection.Diagnostics.Count);
+        _ = await Assert.That(applied.Diagnostics.Count).IsGreaterThanOrEqualTo(projection.Diagnostics.Count);
+        _ = await Assert.That(applied.Diagnostics.Any(diagnostic => diagnostic.Code == "EFCORE_SOURCE_LINEAGE_CLR_TYPE_NOT_RESOLVED")).IsTrue();
     }
 
     private static TypeSchemaModel BuildModel()

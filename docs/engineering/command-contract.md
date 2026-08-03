@@ -24,7 +24,7 @@ Define the stable set of repository commands used by humans, CI, and agents.
 | `./eng/build.sh` | Build the solution |
 | `./eng/test.sh` | Run all short-running tests |
 | `./eng/test-project.sh <project>` | Run short-running tests for one test project |
-| `./eng/test-filter.sh <filter>` | Run short-running tests matching an MTP tree-node filter |
+| `./eng/test-filter.sh <filter>` | Run short-running tests in unit-test projects whose path or C# source contains a bare focused term; arguments beginning with `/` are passed through as MTP tree-node filters |
 | `./eng/check-affected.sh [paths...]` | Run focused validation guidance for changed paths, or Tier 2 when no focused mapping is available; sample paths prepare local packages before running sample validation |
 | `./eng/format.sh` | Format all code |
 | `./eng/check.sh` | Tier 2 validation (restore + build + short-running tests + format check) |
@@ -40,6 +40,7 @@ Define the stable set of repository commands used by humans, CI, and agents.
 ## Rules
 
 - Humans, agents, and CI must use these commands.
+- Bare focused terms are repository source/project selectors rather than MTP expressions; use a leading `/` when supplying a complete MTP tree-node filter.
 - Do not invent alternative commands.
 - CI must call `./eng/check.sh` instead of duplicating logic.
 - `./eng/release-check.sh <version>` must not publish artifacts.

@@ -16,6 +16,9 @@ public sealed class EfCoreDerivationOptions
     /// <summary>Gets or sets EF Core projection options applied after canonical transformations.</summary>
     public EfCoreProjectionOptions Projection { get; set; } = EfCoreProjectionOptions.Default;
 
+    /// <summary>Gets or sets the policy carried by the derived model for later application.</summary>
+    public EfCoreApplicationMode ApplicationMode { get; set; } = EfCoreApplicationMode.ClosedClrModel;
+
     /// <summary>Gets EF Core envelope payload storage policy configuration.</summary>
     public EfCoreEnvelopeProjectionOptions Envelopes { get; } = new();
 
@@ -56,11 +59,14 @@ public static class EfCoreDerivationExtensions
         var context = new SchemaProjectionContext { Target = ProjectionTarget.EfCore };
         EfCoreProjectionOptions projectionOptions = options.Projection with { EnvelopePolicies = options.Envelopes.Policies };
         EfModelDefinition projected = new EfCoreModelProjection(projectionOptions).Project(transformed.Model, context);
-        IReadOnlyList<SchemaDiagnostic> diagnostics = [.. transformed.Diagnostics, .. projected.Diagnostics];
+        IReadOnlyList<SchemaDiagnostic> projectionDiagnostics = [.. transformed.Diagnostics, .. projected.Diagnostics];
+        EfModelDefinition definition = projected with { Diagnostics = projectionDiagnostics };
+        (EfCoreSemanticModel efModel, IReadOnlyList<SchemaDiagnostic> diagnostics) =
+            EfCoreSemanticModel.FromDefinition(definition, transformed.Model, options.ApplicationMode);
 
         return new SemanticDerivationResult<EfCoreSemanticModel>
         {
-            Model = EfCoreSemanticModel.FromDefinition(projected with { Diagnostics = diagnostics }, transformed.Model),
+            Model = efModel,
             Diagnostics = diagnostics,
             Trace = transformed.Trace,
         };
