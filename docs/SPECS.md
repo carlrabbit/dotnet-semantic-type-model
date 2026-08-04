@@ -47,6 +47,7 @@ Specs are authoritative for behavior, invariants, contracts, inputs and outputs,
 | specs/ef-core-source-lineage-diagnostics.md | Diagnostic-first EF source lineage and application-policy-aware derivation |
 | specs/ef-core-closed-modelbuilder-application.md | Closed, lineage-preserving EF ModelBuilder application |
 | specs/ef-core-clr-convention-suppression.md | EF Core CLR convention suppression and value-object root boundaries |
+| specs/ef-convention-suppression-and-exact-entity-allowlist.md | Preemptive EF convention suppression and exact semantic entity allowlist |
 | specs/system-text-json-contract-integration.md | System.Text.Json metadata import |
 | specs/system-text-json-domain-model-and-resolver-projection.md | System.Text.Json domain projection |
 | specs/diagnostics.md | Diagnostic policy |
