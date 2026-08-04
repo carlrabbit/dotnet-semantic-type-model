@@ -1,4 +1,21 @@
-# 2.5.0
+# 2.5.1
+
+2.5.1 is a non-publishing patch release candidate. Publication, tagging, and GitHub release creation require separate human approval.
+
+- Fixed semantic ValueKinds being convention-discovered as keyless entities before they could be mapped as JSON-converted properties.
+- Corrected `ApplySemanticRelationalModel(...)` ordering so deterministic suppression and cleanup occur before the residual `EF_UNEXPECTED_CONVENTION_ENTITY` diagnostic.
+- Added an exact final CLR entity allowlist audit: only projected semantic Entity types remain, while JSON-owned objects and collection items remain converted properties.
+- Added polluted-`ModelBuilder` and SQLite schema and round-trip coverage for JSON objects, JSON arrays, TPT entities, and exact entity inventories.
+
+## Upgrade guidance
+
+No consumer configuration change is required. Remove workarounds that call `ModelBuilder.Ignore(...)` for semantic ValueKinds; the package now owns that convention boundary. The relational contract and public application APIs remain unchanged from 2.5.0.
+
+## Publication status
+
+Human review is required for the mutable-model cleanup strategy, final entity audit, SQLite results, package inventory, release notes, and publication approval.
+
+## 2.5.0
 
 - Reset `SemanticTypeModel.EFCore` to the opinionated relational contract: entities/tables, TPT, scalar columns, JSON-owned ValueKinds, JSON extension data, and identifier-only entity links.
 - Removed the 2.4.x application modes, shared-type projection, source-lineage graph, ownership navigations, alternative storage and inheritance strategies, relationship projection, compatibility aliases, and forwarding APIs.

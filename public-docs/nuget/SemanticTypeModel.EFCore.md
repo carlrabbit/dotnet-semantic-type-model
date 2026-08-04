@@ -7,7 +7,7 @@
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.EFCore --version 2.5.0
+dotnet add package SemanticTypeModel.EFCore --version 2.5.1
 ```
 
 ## Minimal example
@@ -30,8 +30,10 @@ modelBuilder.ApplySemanticRelationalModel(result.Model);
 - semantic extension data is a JSON object column;
 - entity objects, undeclared ValueKind storage, and arbitrary dictionaries produce diagnostics;
 - EF relationships, navigations, shared-type entities, `OwnsOne`, and `OwnsMany` are not projected.
+- the package suppresses EF convention discovery for semantic ValueKinds and other non-entities, so the final CLR entity set exactly equals the semantic Entity CLR set;
+- JSON-owned objects and collections remain converted properties rather than owned or keyless EF entities, without consumer `ModelBuilder.Ignore(...)` calls.
 
-The application still selects its EF provider and owns migrations and database operations. Version 2.5.0 intentionally removes the 2.4.x EF API rather than retaining compatibility aliases.
+The application still selects its EF provider and owns migrations and database operations. The 2.5 line intentionally removes the 2.4.x EF API rather than retaining compatibility aliases.
 
 ## More documentation
 

@@ -78,3 +78,4 @@ For each focus area:
 - [M0054 - Real Application EF Regression Fixtures and 2.4.6 Release Preparation](milestones/m0054-real-application-ef-regression-fixtures-and-2-4-6-release-preparation.md)
 
 - [M0055 - Opinionated Relational Projection Contract and EF Core Package Reset for 2.5.0](milestones/m0055-opinionated-relational-projection-contract-and-ef-core-package-reset-for-2-5-0.md)
+- [M0056 - Preemptive EF Convention Suppression and 2.5.1 Release Preparation](milestones/m0056-preemptive-ef-convention-suppression-and-2-5-1-release-preparation.md)

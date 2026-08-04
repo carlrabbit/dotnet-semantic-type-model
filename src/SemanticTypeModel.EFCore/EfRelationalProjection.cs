@@ -116,21 +116,26 @@ public static class EfRelationalExtensions
         var diagnostics = new List<SchemaDiagnostic>(model.Diagnostics);
         var allowed = model.Entities.Select(entity => entity.ClrType).ToHashSet();
         var contained = model.Entities.SelectMany(entity => entity.JsonColumns).Select(column => JsonElementType(column.ValueType)).ToHashSet();
-        Type[] unexpected = [.. modelBuilder.Model.GetEntityTypes().Select(entity => entity.ClrType).Where(type => !allowed.Contains(type) && !contained.Contains(type))];
-        foreach (Type type in unexpected)
-        {
-            Report(diagnostics, "EF_UNEXPECTED_CONVENTION_ENTITY", $"EF convention entity '{type.FullName}' is not an explicitly projected semantic entity.", type.FullName ?? type.Name);
-        }
         if (diagnostics.Any(diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error))
         {
             return new EfRelationalApplicationResult { Diagnostics = diagnostics };
         }
+
+        // Ignore convention discoveries before registering the closed semantic entity set. Ignore is
+        // important here: removing metadata alone permits a later convention to discover the same
+        // ValueKind again when its owning CLR property is inspected.
+        Type[] suppressed = [.. modelBuilder.Model.GetEntityTypes().Select(entity => entity.ClrType)
+            .Concat(contained)
+            .Concat(model.Entities.SelectMany(entity => ClrBaseTypes(entity.ClrType)))
+            .Where(type => !allowed.Contains(type))
+            .Distinct()];
+        foreach (Type type in suppressed) modelBuilder.Ignore(type);
+
         foreach (EfEntity entity in model.Entities.OrderBy(entity => entity.BaseEntityId is null ? 0 : 1))
         {
             EntityTypeBuilder suppress = modelBuilder.Entity(entity.ClrType);
             foreach (PropertyInfo property in entity.ClrType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(property => property.DeclaringType == entity.ClrType)) _ = suppress.Ignore(property.Name);
         }
-        foreach (IMutableEntityType? discovered in modelBuilder.Model.GetEntityTypes().Where(entity => contained.Contains(entity.ClrType)).ToArray()) _ = modelBuilder.Model.RemoveEntityType(discovered);
         foreach (EfEntity entity in model.Entities.OrderBy(entity => entity.BaseEntityId is null ? 0 : 1).ThenBy(entity => entity.Table, StringComparer.Ordinal))
         {
             EntityTypeBuilder builder = modelBuilder.Entity(entity.ClrType);
@@ -141,7 +146,18 @@ public static class EfRelationalExtensions
             if (entity.BaseEntityId is null && entity.Key.Count > 0) _ = builder.HasKey(entity.Key.ToArray());
         }
         foreach (EfEntity root in model.Entities.Where(entity => entity.BaseEntityId is null && model.Entities.Any(candidate => candidate.BaseEntityId == entity.SemanticTypeId))) _ = modelBuilder.Entity(root.ClrType).UseTptMappingStrategy();
-        foreach (IMutableEntityType? discovered in modelBuilder.Model.GetEntityTypes().Where(entity => !allowed.Contains(entity.ClrType)).ToArray()) _ = modelBuilder.Model.RemoveEntityType(discovered);
+
+        // Explicit property configuration can run conventions again. Correct those discoveries before
+        // auditing; diagnostics describe only residual metadata that EF would not allow us to remove.
+        foreach (IMutableEntityType discovered in modelBuilder.Model.GetEntityTypes().Where(entity => !allowed.Contains(entity.ClrType)).OrderByDescending(EntityDepth).ToArray())
+            _ = modelBuilder.Model.RemoveEntityType(discovered);
+        foreach (IMutableEntityType unexpected in modelBuilder.Model.GetEntityTypes().Where(entity => !allowed.Contains(entity.ClrType)))
+        {
+            var expected = string.Join(", ", allowed.Select(type => type.FullName ?? type.Name).Order(StringComparer.Ordinal));
+            var discovery = string.Join(", ", unexpected.GetReferencingForeignKeys().Select(key => $"{key.DeclaringEntityType.ClrType.FullName}.{string.Join("/", key.Properties.Select(property => property.Name))}"));
+            var detail = string.IsNullOrEmpty(discovery) ? "No referencing property path is exposed by EF metadata." : $"Discovery paths: {discovery}.";
+            Report(diagnostics, "EF_UNEXPECTED_CONVENTION_ENTITY", $"EF convention entity '{unexpected.ClrType.FullName}' remains after correction (keyless: {unexpected.FindPrimaryKey() is null}). {detail} Expected semantic entities: {expected}.", unexpected.ClrType.FullName ?? unexpected.ClrType.Name);
+        }
         return new EfRelationalApplicationResult { Diagnostics = diagnostics };
     }
 
@@ -162,6 +178,18 @@ public static class EfRelationalExtensions
         else if (actual == typeof(Uri)) property.HasConversion(new ValueConverter<Uri, string>(v => v.ToString(), v => new Uri(v, UriKind.RelativeOrAbsolute)));
         else if (actual == typeof(ReadOnlyMemory<byte>)) property.HasConversion(new ValueConverter<ReadOnlyMemory<byte>, byte[]>(value => value.ToArray(), value => new ReadOnlyMemory<byte>(value)));
         else if (actual != column.ProviderType) property.HasConversion(CreateStrongConverter(column.ClrType, column.ProviderType));
+    }
+
+    private static IEnumerable<Type> ClrBaseTypes(Type type)
+    {
+        for (Type? current = type.BaseType; current is not null && current != typeof(object); current = current.BaseType) yield return current;
+    }
+
+    private static int EntityDepth(IMutableEntityType entity)
+    {
+        var depth = 0;
+        for (IReadOnlyEntityType? current = entity.BaseType; current is not null; current = current.BaseType) depth++;
+        return depth;
     }
 
     private static void ConfigureJson(EntityTypeBuilder builder, EfJsonColumn column)
