@@ -34,6 +34,7 @@ public static class EfRelationalExtensions
             Type? clrType = ResolveClrType(source);
             if (clrType is null)
             {
+                Report(diagnostics, "EF_MEMBER_STORAGE_ENTITY_UNRESOLVED", $"Semantic entity '{source.Name}' has no CLR storage entity for its projected members.", source.Id.Value);
                 Report(diagnostics, "EF_UNSUPPORTED_SCALAR_TYPE", $"Semantic entity '{source.Name}' has no resolvable CLR type.", source.Id.Value);
                 continue;
             }
@@ -50,18 +51,31 @@ public static class EfRelationalExtensions
             var scalars = new List<EfScalarColumn>();
             var binary = new List<EfScalarColumn>();
             var json = new List<EfJsonColumn>();
-            IEnumerable<PropertyDefinition> declared = source.Properties.Where(p => clrType.GetProperty(MemberName(p))?.DeclaringType == clrType || baseSource is null);
+            IEnumerable<PropertyDefinition> declared = source.Properties.Where(p => IsStoredOn(baseSource, clrType, p));
             foreach (PropertyDefinition property in declared)
             {
-                PropertyInfo? member = clrType.GetProperty(MemberName(property));
-                if (member is null) continue;
+                PropertyInfo[] memberMatches = FindMembers(clrType, MemberName(property));
+                PropertyInfo? member = ResolveMember(memberMatches, clrType, baseSource is not null);
+                if (member is null)
+                {
+                    var code = memberMatches.Length > 1 ? "EF_MEMBER_DECLARATION_AMBIGUOUS" : "EF_MEMBER_DECLARING_TYPE_MISMATCH";
+                    Report(diagnostics, code, memberMatches.Length > 1
+                        ? $"Member '{source.Name}.{property.Name}' has multiple CLR declarations and cannot be placed deterministically."
+                        : $"Member '{source.Name}.{property.Name}' has no matching public CLR declaration.", property.Id.Value);
+                    continue;
+                }
+                if (!member.DeclaringType!.IsAssignableFrom(clrType))
+                {
+                    Report(diagnostics, "EF_MEMBER_DECLARING_TYPE_MISMATCH", $"CLR declaration '{member.DeclaringType.FullName}.{member.Name}' cannot be stored by '{clrType.FullName}'.", property.Id.Value);
+                    continue;
+                }
                 TypeDefinition? target = effectiveModel.Types.FirstOrDefault(t => t.Id == property.Type.Id);
                 var extension = IsTrue(property, "schema.extensionData");
                 var ownedObject = IsTrue(property, "schema.ownedObject") || string.Equals(Value(property, "schema.ownership.kind"), "object", StringComparison.OrdinalIgnoreCase);
                 var ownedCollection = IsTrue(property, "schema.ownedCollection") || string.Equals(Value(property, "schema.ownership.kind"), "collection", StringComparison.OrdinalIgnoreCase);
                 if (extension)
                 {
-                    json.Add(Json(property, member, EfJsonShape.ExtensionData));
+                    json.Add(Json(property, member, EfJsonShape.ExtensionData, source, clrType));
                 }
                 else if (ownedObject || ownedCollection)
                 {
@@ -71,7 +85,7 @@ public static class EfRelationalExtensions
                     else if (valueTarget is not ObjectTypeDefinition valueKind || RoleOf(valueKind) != EntityRole.ValueObject)
                         Report(diagnostics, "EF_JSON_VALUE_TYPE_NOT_SERIALIZABLE", $"Owned member '{source.Name}.{property.Name}' must target a semantic ValueKind.", property.Id.Value);
                     else if (ValidateJsonValueKind(effectiveModel, valueKind, member.PropertyType, diagnostics, []))
-                        json.Add(Json(property, member, ownedCollection ? EfJsonShape.Array : EfJsonShape.Object));
+                        json.Add(Json(property, member, ownedCollection ? EfJsonShape.Array : EfJsonShape.Object, source, clrType));
                 }
                 else if (target is ObjectTypeDefinition entityTarget && RoleOf(entityTarget) == EntityRole.Entity)
                     Report(diagnostics, member.PropertyType != typeof(string) && typeof(System.Collections.IEnumerable).IsAssignableFrom(member.PropertyType) ? "EF_ENTITY_COLLECTION_REQUIRES_IDENTIFIER_SHAPE" : "EF_ENTITY_REFERENCE_REQUIRES_IDENTIFIER", $"Entity member '{source.Name}.{property.Name}' must use an identifier property.", property.Id.Value);
@@ -89,7 +103,7 @@ public static class EfRelationalExtensions
                 }
                 else if (TryProviderType(member.PropertyType, out Type provider))
                 {
-                    var column = new EfScalarColumn { PropertyId = property.Id.Value, MemberName = member.Name, ColumnName = member.Name, ClrType = member.PropertyType, ProviderType = provider, IsNullable = !property.Cardinality.IsRequired && (!member.PropertyType.IsValueType || Nullable.GetUnderlyingType(member.PropertyType) is not null) };
+                    var column = new EfScalarColumn { PropertyId = property.Id.Value, MemberName = member.Name, ColumnName = member.Name, ClrType = member.PropertyType, ProviderType = provider, IsNullable = !property.Cardinality.IsRequired && (!member.PropertyType.IsValueType || Nullable.GetUnderlyingType(member.PropertyType) is not null), DeclaringClrType = member.DeclaringType!, StorageClrType = clrType, SemanticDeclaringTypeId = source.Id.Value, StorageSemanticTypeId = source.Id.Value };
                     (provider == typeof(byte[]) ? binary : scalars).Add(column);
                 }
                 else if (target is ScalarTypeDefinition) Report(diagnostics, "EF_STRONG_ID_SHAPE_NOT_SUPPORTED", $"Strong identifier member '{source.Name}.{property.Name}' must expose one supported scalar Value property and matching constructor.", property.Id.Value);
@@ -116,6 +130,10 @@ public static class EfRelationalExtensions
         var diagnostics = new List<SchemaDiagnostic>(model.Diagnostics);
         var allowed = model.Entities.Select(entity => entity.ClrType).ToHashSet();
         var contained = model.Entities.SelectMany(entity => entity.JsonColumns).Select(column => JsonElementType(column.ValueType)).ToHashSet();
+        foreach (EfScalarColumn column in model.Entities.SelectMany(entity => entity.ScalarColumns.Concat(entity.BinaryColumns)))
+            ValidatePlacement(column.PropertyId, column.MemberName, column.DeclaringClrType, column.StorageClrType, allowed, diagnostics);
+        foreach (EfJsonColumn column in model.Entities.SelectMany(entity => entity.JsonColumns))
+            ValidatePlacement(column.PropertyId, column.MemberName, column.DeclaringClrType, column.StorageClrType, allowed, diagnostics);
         if (diagnostics.Any(diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error))
         {
             return new EfRelationalApplicationResult { Diagnostics = diagnostics };
@@ -141,8 +159,8 @@ public static class EfRelationalExtensions
             EntityTypeBuilder builder = modelBuilder.Entity(entity.ClrType);
             _ = builder.ToTable(entity.Table, defaultSchema);
             foreach (PropertyInfo property in entity.ClrType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(property => property.DeclaringType == entity.ClrType)) _ = builder.Ignore(property.Name);
-            foreach (EfScalarColumn column in entity.ScalarColumns.Concat(entity.BinaryColumns)) ConfigureScalar(builder, column);
-            foreach (EfJsonColumn column in entity.JsonColumns) ConfigureJson(builder, column);
+            foreach (EfScalarColumn column in entity.ScalarColumns.Concat(entity.BinaryColumns)) ConfigureScalar(modelBuilder.Entity(column.StorageClrType), column);
+            foreach (EfJsonColumn column in entity.JsonColumns) ConfigureJson(modelBuilder.Entity(column.StorageClrType), column);
             if (entity.BaseEntityId is null && entity.Key.Count > 0) _ = builder.HasKey(entity.Key.ToArray());
         }
         foreach (EfEntity root in model.Entities.Where(entity => entity.BaseEntityId is null && model.Entities.Any(candidate => candidate.BaseEntityId == entity.SemanticTypeId))) _ = modelBuilder.Entity(root.ClrType).UseTptMappingStrategy();
@@ -341,9 +359,46 @@ public static class EfRelationalExtensions
         var role = Value(type.Annotations, "schema.role");
         return Enum.TryParse(role, true, out EntityRole parsed) ? parsed : type.Semantics.Role;
     }
-    private static EfJsonColumn Json(PropertyDefinition p, PropertyInfo member, EfJsonShape shape)
+    private static EfJsonColumn Json(PropertyDefinition p, PropertyInfo member, EfJsonShape shape, ObjectTypeDefinition storage, Type storageClrType)
     {
-        return new() { PropertyId = p.Id.Value, MemberName = member.Name, ColumnName = member.Name, JsonShape = shape, ValueType = member.PropertyType, IsNullable = !p.Cardinality.IsRequired && (!member.PropertyType.IsValueType || Nullable.GetUnderlyingType(member.PropertyType) is not null) };
+        return new() { PropertyId = p.Id.Value, MemberName = member.Name, ColumnName = member.Name, JsonShape = shape, ValueType = member.PropertyType, IsNullable = !p.Cardinality.IsRequired && (!member.PropertyType.IsValueType || Nullable.GetUnderlyingType(member.PropertyType) is not null), DeclaringClrType = member.DeclaringType!, StorageClrType = storageClrType, SemanticDeclaringTypeId = storage.Id.Value, StorageSemanticTypeId = storage.Id.Value };
+    }
+
+    private static bool IsStoredOn(ObjectTypeDefinition? semanticBase, Type clrType, PropertyDefinition property)
+    {
+        PropertyInfo[] matches = FindMembers(clrType, MemberName(property));
+        return semanticBase is null ? matches.Length > 0 : matches.Any(member => member.DeclaringType == clrType);
+    }
+
+    private static PropertyInfo[] FindMembers(Type exposedOn, string name)
+    {
+        var matches = new List<PropertyInfo>();
+        for (Type? current = exposedOn; current is not null && current != typeof(object); current = current.BaseType)
+            matches.AddRange(current.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly).Where(property => property.Name == name));
+        return [.. matches];
+    }
+
+    private static void ValidatePlacement(string propertyId, string memberName, Type declaringClrType, Type storageClrType, HashSet<Type> allowed, List<SchemaDiagnostic> diagnostics)
+    {
+        if (!allowed.Contains(storageClrType))
+        {
+            Report(diagnostics, "EF_MEMBER_STORAGE_ENTITY_UNRESOLVED", $"Storage CLR entity '{storageClrType.FullName}' for member '{memberName}' is not a projected semantic entity.", propertyId);
+        }
+        else if (!declaringClrType.IsAssignableFrom(storageClrType) || declaringClrType.GetProperty(memberName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly) is null)
+        {
+            Report(diagnostics, "EF_MEMBER_DECLARING_TYPE_MISMATCH", $"Member '{declaringClrType.FullName}.{memberName}' cannot be configured on storage entity '{storageClrType.FullName}'.", propertyId);
+        }
+    }
+
+    private static PropertyInfo? ResolveMember(PropertyInfo[] matches, Type storageClrType, bool hasSemanticBase)
+    {
+        if (matches.Length == 1) return matches[0];
+        if (hasSemanticBase)
+        {
+            PropertyInfo[] local = [.. matches.Where(member => member.DeclaringType == storageClrType)];
+            if (local.Length == 1) return local[0];
+        }
+        return null;
     }
 
     private static Type? ResolveClrType(ObjectTypeDefinition type)

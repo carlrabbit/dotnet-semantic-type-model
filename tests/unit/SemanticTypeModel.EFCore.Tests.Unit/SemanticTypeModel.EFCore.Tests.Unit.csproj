@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj" />
+    <ProjectReference Include="../../fixtures/SemanticTypeModel.EFCoreModelShapes/SemanticTypeModel.EFCoreModelShapes.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj" />
   </ItemGroup>

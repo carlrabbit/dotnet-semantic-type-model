@@ -1,3 +1,16 @@
+# 2.5.3
+
+2.5.3 is a non-publishing patch release candidate. Publication, tagging, and GitHub release creation require separate human approval.
+
+- Separates CLR/semantic member declaration from CLR/semantic relational storage in EF column metadata.
+- Configures inherited non-semantic-base members on the first semantic storage entity and avoids reconfiguring semantic-base members on derived TPT entities.
+- Adds deterministic member declaration, storage resolution, and declaring-type mismatch diagnostics.
+- Adds the permanent 15-shape EF fixture inventory and focused declaration, storage, TPT, exact-entity, ValueKind, and SQLite regression coverage.
+
+## Upgrade guidance
+
+No consumer configuration change is required. Existing semantic models with inherited members no longer need placement workarounds. Human review remains required before publication.
+
 # 2.5.1
 
 2.5.1 is a non-publishing patch release candidate. Publication, tagging, and GitHub release creation require separate human approval.

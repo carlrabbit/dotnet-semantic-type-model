@@ -50,6 +50,14 @@ public sealed record EfScalarColumn
     public required Type ProviderType { get; init; }
     /// <summary>Gets whether null is permitted.</summary>
     public bool IsNullable { get; init; }
+    /// <summary>Gets the CLR type that actually declares the mapped member.</summary>
+    public required Type DeclaringClrType { get; init; }
+    /// <summary>Gets the CLR semantic entity whose table stores the column.</summary>
+    public required Type StorageClrType { get; init; }
+    /// <summary>Gets the semantic type that declares the projected property.</summary>
+    public required string SemanticDeclaringTypeId { get; init; }
+    /// <summary>Gets the semantic entity whose table stores the column.</summary>
+    public required string StorageSemanticTypeId { get; init; }
 }
 
 /// <summary>Identifies the fixed JSON document shape.</summary>
@@ -78,6 +86,14 @@ public sealed record EfJsonColumn
     public required Type ValueType { get; init; }
     /// <summary>Gets whether null is permitted.</summary>
     public bool IsNullable { get; init; }
+    /// <summary>Gets the CLR type that actually declares the mapped member.</summary>
+    public required Type DeclaringClrType { get; init; }
+    /// <summary>Gets the CLR semantic entity whose table stores the column.</summary>
+    public required Type StorageClrType { get; init; }
+    /// <summary>Gets the semantic type that declares the projected property.</summary>
+    public required string SemanticDeclaringTypeId { get; init; }
+    /// <summary>Gets the semantic entity whose table stores the column.</summary>
+    public required string StorageSemanticTypeId { get; init; }
 }
 
 
