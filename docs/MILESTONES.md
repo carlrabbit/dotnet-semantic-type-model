@@ -80,3 +80,4 @@ For each focus area:
 - [M0055 - Opinionated Relational Projection Contract and EF Core Package Reset for 2.5.0](milestones/m0055-opinionated-relational-projection-contract-and-ef-core-package-reset-for-2-5-0.md)
 - [M0056 - Preemptive EF Convention Suppression and 2.5.1 Release Preparation](milestones/m0056-preemptive-ef-convention-suppression-and-2-5-1-release-preparation.md)
 - [M0057 - EF Model Shape Test Matrix and Inherited Member Placement for 2.5.3](milestones/m0057-ef-model-shape-test-matrix-and-inherited-member-placement-for-2-5-3.md)
+- [M0058 - Typed Literals, Conditional Constraints, and Scalar Semantics for 2.6.0](milestones/m0058-typed-literals-conditional-constraints-and-scalar-semantics-for-2-6-0.md)

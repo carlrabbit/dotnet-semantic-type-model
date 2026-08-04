@@ -1,7 +1,7 @@
 # MILESTONES.md Update
 
-Append after M0056:
+Append after M0057:
 
 ```text
-- [M0057 - EF Model Shape Test Matrix and Inherited Member Placement for 2.5.3](milestones/m0057-ef-model-shape-test-matrix-and-inherited-member-placement-for-2-5-3.md)
+- [M0058 - Typed Literals, Conditional Constraints, and Scalar Semantics for 2.6.0](milestones/m0058-typed-literals-conditional-constraints-and-scalar-semantics-for-2-6-0.md)
 ```

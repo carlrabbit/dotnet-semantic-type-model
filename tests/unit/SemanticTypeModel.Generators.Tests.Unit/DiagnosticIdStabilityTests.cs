@@ -4,6 +4,7 @@ using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Diagnostics;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.DotNet.Diagnostics;
@@ -242,6 +243,173 @@ public sealed class DiagnosticIdStabilityTests
         Diagnostic[] diagnostics = RunGeneratorForDiagnostics(source);
 
         _ = await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == DotNetExtractionDiagnosticIds.MemberShapeUnsupported)).IsTrue();
+    }
+
+    [Test]
+    public async Task M0058_TypedLiteral_enum_required_when_is_normalized_against_source_type()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+            public enum ImportType { CsvFile, XmlFile, WebService1, WebService2 }
+            [SemanticType(SemanticTypeRole.Entity)]
+            public sealed class ImportSpecification
+            {
+                public ImportType ImportType { get; init; }
+                [SemanticRequiredWhen(nameof(ImportType), nameof(ImportType.CsvFile))]
+                public string? CsvSource { get; init; }
+            }
+            """;
+
+        DotNetExtractionResult extraction = Extract(source);
+        DotNetObjectTypeDescriptor import = extraction.TypesById.Values.OfType<DotNetObjectTypeDescriptor>()
+            .Single(static type => type.Name == "ImportSpecification");
+        SemanticTypeModel.Abstractions.Model.ConditionalConstraint constraint = import.Properties
+            .Single(static property => property.Name == "CsvSource").ConditionalConstraints.Single();
+
+        _ = await Assert.That(extraction.Diagnostics).IsEmpty();
+        _ = await Assert.That(constraint.SourcePropertyName).IsEqualTo("ImportType");
+        _ = await Assert.That(constraint.Literal.Kind).IsEqualTo(SemanticLiteralKind.EnumMember);
+        _ = await Assert.That(constraint.Literal.EnumMemberName).IsEqualTo("CsvFile");
+        _ = await Assert.That(constraint.Literal.EnumTypeId).IsEqualTo(constraint.SourceTypeId);
+        _ = await Assert.That(extraction.TypesById[constraint.SourceTypeId.Value]).IsTypeOf<DotNetEnumTypeDescriptor>();
+    }
+
+    [Test]
+    public async Task EnumLiteral_invalid_member_emits_stable_diagnostic()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+            public enum ImportType { CsvFile }
+            [SemanticType]
+            public sealed class ImportSpecification
+            {
+                public ImportType ImportType { get; init; }
+                [SemanticRequiredWhen(nameof(ImportType), "DoesNotExist")]
+                public string? CsvSource { get; init; }
+            }
+            """;
+
+        DotNetExtractionResult extraction = Extract(source);
+        _ = await Assert.That(extraction.Diagnostics.Any(static diagnostic =>
+            diagnostic.Code == DotNetExtractionDiagnosticIds.TypedLiteralEnumMemberNotFound)).IsTrue();
+    }
+
+    [Test]
+    public async Task TypedLiteral_scalar_matrix_preserves_string_boolean_integer_and_null_kinds()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+            [SemanticType]
+            public sealed class Rules
+            {
+                public string Mode { get; init; } = "";
+                public bool Enabled { get; init; }
+                public int Priority { get; init; }
+                public int? Optional { get; init; }
+                [SemanticRequiredWhen(nameof(Mode), "CsvFile")] public string? ByMode { get; init; }
+                [SemanticRequiredWhen(nameof(Enabled), "true")] public string? ByEnabled { get; init; }
+                [SemanticRequiredWhen(nameof(Priority), "10")] public string? ByPriority { get; init; }
+                [SemanticRequiredWhen(nameof(Optional), "null")] public string? ByNull { get; init; }
+            }
+            """;
+
+        DotNetObjectTypeDescriptor rules = Extract(source).TypesById.Values.OfType<DotNetObjectTypeDescriptor>().Single();
+        SemanticTypeModel.Abstractions.Model.SemanticLiteralKind[] kinds = [.. rules.Properties
+            .Where(static property => property.ConditionalConstraints.Count > 0)
+            .OrderBy(static property => property.Name, StringComparer.Ordinal)
+            .Select(static property => property.ConditionalConstraints.Single().Literal.Kind)];
+
+        _ = await Assert.That(kinds).IsEquivalentTo([
+            SemanticLiteralKind.Boolean,
+            SemanticLiteralKind.String,
+            SemanticLiteralKind.Null,
+            SemanticLiteralKind.Integer]);
+    }
+
+    [Test]
+    public async Task TypedLiteral_invalid_matrix_emits_specific_stable_diagnostics()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+            [SemanticType] public sealed class Complex { }
+            [SemanticType] public sealed class Rules
+            {
+                public bool Enabled { get; init; }
+                public byte Count { get; init; }
+                public int Number { get; init; }
+                public System.DateOnly Date { get; init; }
+                public Complex Complex { get; init; } = new();
+                [SemanticRequiredWhen("NoSuchProperty", "x")] public string? Missing { get; init; }
+                [SemanticRequiredWhen(nameof(Enabled), "yes")] public string? Boolean { get; init; }
+                [SemanticRequiredWhen(nameof(Count), "256")] public string? Overflow { get; init; }
+                [SemanticRequiredWhen(nameof(Number), "one")] public string? Numeric { get; init; }
+                [SemanticRequiredWhen(nameof(Number), "null")] public string? Null { get; init; }
+                [SemanticRequiredWhen(nameof(Date), "not-a-date")] public string? InvalidDate { get; init; }
+                [SemanticRequiredWhen(nameof(Complex), "x")] public string? Unsupported { get; init; }
+            }
+            """;
+
+        string[] codes = [.. Extract(source).Diagnostics.Select(static diagnostic => diagnostic.Code)];
+        _ = await Assert.That(codes).Contains(DotNetExtractionDiagnosticIds.TypedLiteralSourceNotFound);
+        _ = await Assert.That(codes).Contains(DotNetExtractionDiagnosticIds.TypedLiteralBooleanInvalid);
+        _ = await Assert.That(codes).Contains(DotNetExtractionDiagnosticIds.TypedLiteralNumericOverflow);
+        _ = await Assert.That(codes).Contains(DotNetExtractionDiagnosticIds.TypedLiteralNumericFormatInvalid);
+        _ = await Assert.That(codes).Contains(DotNetExtractionDiagnosticIds.TypedLiteralNullNotAllowed);
+        _ = await Assert.That(codes).Contains(DotNetExtractionDiagnosticIds.TypedLiteralValueInvalid);
+        _ = await Assert.That(codes).Contains(DotNetExtractionDiagnosticIds.TypedLiteralSourceTypeUnsupported);
+    }
+
+    [Test]
+    public async Task TypedLiteral_temporal_matrix_uses_invariant_normalization()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+            [SemanticType] public sealed class Rules
+            {
+                public System.DateOnly Date { get; init; }
+                public System.TimeOnly Time { get; init; }
+                public System.DateTimeOffset Timestamp { get; init; }
+                public System.TimeSpan Duration { get; init; }
+                [SemanticRequiredWhen(nameof(Date), "2026-08-04")] public string? ByDate { get; init; }
+                [SemanticRequiredWhen(nameof(Time), "13:14:15")] public string? ByTime { get; init; }
+                [SemanticRequiredWhen(nameof(Timestamp), "2026-08-04T13:14:15+00:00")] public string? ByTimestamp { get; init; }
+                [SemanticRequiredWhen(nameof(Duration), "01:02:03")] public string? ByDuration { get; init; }
+            }
+            """;
+
+        DotNetExtractionResult extraction = Extract(source);
+        SemanticLiteral[] literals = [.. extraction.TypesById.Values.OfType<DotNetObjectTypeDescriptor>().Single().Properties
+            .Where(static property => property.ConditionalConstraints.Count != 0)
+            .OrderBy(static property => property.Name, StringComparer.Ordinal)
+            .Select(static property => property.ConditionalConstraints.Single().Literal)];
+
+        _ = await Assert.That(extraction.Diagnostics).IsEmpty();
+        _ = await Assert.That(literals.Select(static literal => literal.Kind)).IsEquivalentTo([
+            SemanticLiteralKind.Date,
+            SemanticLiteralKind.Duration,
+            SemanticLiteralKind.Time,
+            SemanticLiteralKind.DateTimeOffset]);
+        _ = await Assert.That(literals.Select(static literal => literal.NormalizedText)).IsEquivalentTo([
+            "2026-08-04", "01:02:03", "13:14:15.0000000", "2026-08-04T13:14:15.0000000+00:00"]);
+    }
+
+    [Test]
+    public async Task StrongIdentifier_literal_has_deterministic_unsupported_policy()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+            public readonly record struct TenantId(System.Guid Value);
+            [SemanticType] public sealed class Rules
+            {
+                public TenantId TenantId { get; init; }
+                [SemanticRequiredWhen(nameof(TenantId), "8e531df9-c034-4b73-b2f6-879f2d254f4f")] public string? TenantRule { get; init; }
+            }
+            """;
+
+        DotNetExtractionResult extraction = Extract(source);
+
+        _ = await Assert.That(extraction.Diagnostics.Any(static diagnostic => diagnostic.Code == DotNetExtractionDiagnosticIds.TypedLiteralSourceTypeUnsupported)).IsTrue();
+        _ = await Assert.That(extraction.TypesById.Values.OfType<DotNetObjectTypeDescriptor>().Single(static type => type.Name == "Rules").Properties.Single(static property => property.Name == "TenantRule").ConditionalConstraints).IsEmpty();
     }
 
     private static Diagnostic[] RunGeneratorForDiagnostics(

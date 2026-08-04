@@ -1,3 +1,12 @@
+# 2.6.0
+
+2.6.0 is a non-publishing release candidate. Publication, tagging, and GitHub release creation require separate human approval.
+
+- Adds projection-neutral typed literals and resolved conditional-constraint references for `SemanticRequiredWhen`.
+- Normalizes enum member names, Boolean and invariant numeric values, nullable `null`, GUID, and date/time literals against the source property type, with stable STM5026-STM5036 diagnostics for invalid and unsupported cases.
+- Treats strong-identifier condition sources without a resolved provider-scalar contract as unsupported (`STM5027`) rather than silently comparing their text as strings.
+- Emits deterministic JSON Schema `if`/`const`/`then` conditional required rules while keeping RequiredWhen metadata out of EF Core entity discovery.
+
 # 2.5.3
 
 2.5.3 is a non-publishing patch release candidate. Publication, tagging, and GitHub release creation require separate human approval.
@@ -33,8 +42,6 @@ Human review is required for the mutable-model cleanup strategy, final entity au
 - Reset `SemanticTypeModel.EFCore` to the opinionated relational contract: entities/tables, TPT, scalar columns, JSON-owned ValueKinds, JSON extension data, and identifier-only entity links.
 - Removed the 2.4.x application modes, shared-type projection, source-lineage graph, ownership navigations, alternative storage and inheritance strategies, relationship projection, compatibility aliases, and forwarding APIs.
 - Added real CLR ModelBuilder and SQLite create/insert/load acceptance coverage for the anonymized fixtures.
-
-# Release Notes
 
 ## 2.4.6
 

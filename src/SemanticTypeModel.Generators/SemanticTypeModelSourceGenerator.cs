@@ -228,6 +228,17 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             DotNetExtractionDiagnosticIds.UnsupportedDiscoveryMode => GeneratorDiagnosticDescriptors.UnsupportedDiscoveryMode,
             DotNetExtractionDiagnosticIds.UnsupportedNamingPolicy => GeneratorDiagnosticDescriptors.UnsupportedNamingPolicy,
             DotNetExtractionDiagnosticIds.GeneratedProviderNameCollision => GeneratorDiagnosticDescriptors.GeneratedProviderNameCollision,
+            DotNetExtractionDiagnosticIds.TypedLiteralSourceNotFound => GeneratorDiagnosticDescriptors.TypedLiteralSourceNotFound,
+            DotNetExtractionDiagnosticIds.TypedLiteralSourceTypeUnsupported => GeneratorDiagnosticDescriptors.TypedLiteralSourceTypeUnsupported,
+            DotNetExtractionDiagnosticIds.TypedLiteralValueInvalid => GeneratorDiagnosticDescriptors.TypedLiteralValueInvalid,
+            DotNetExtractionDiagnosticIds.TypedLiteralEnumMemberNotFound => GeneratorDiagnosticDescriptors.TypedLiteralEnumMemberNotFound,
+            DotNetExtractionDiagnosticIds.TypedLiteralNumericFormatInvalid => GeneratorDiagnosticDescriptors.TypedLiteralNumericFormatInvalid,
+            DotNetExtractionDiagnosticIds.TypedLiteralNumericOverflow => GeneratorDiagnosticDescriptors.TypedLiteralNumericOverflow,
+            DotNetExtractionDiagnosticIds.TypedLiteralBooleanInvalid => GeneratorDiagnosticDescriptors.TypedLiteralBooleanInvalid,
+            DotNetExtractionDiagnosticIds.TypedLiteralNullNotAllowed => GeneratorDiagnosticDescriptors.TypedLiteralNullNotAllowed,
+            DotNetExtractionDiagnosticIds.ConditionalConstraintTargetInvalid => GeneratorDiagnosticDescriptors.ConditionalConstraintTargetInvalid,
+            DotNetExtractionDiagnosticIds.ConditionalConstraintSourceInvalid => GeneratorDiagnosticDescriptors.ConditionalConstraintSourceInvalid,
+            DotNetExtractionDiagnosticIds.ConditionalConstraintLiteralTypeMismatch => GeneratorDiagnosticDescriptors.ConditionalConstraintLiteralTypeMismatch,
             _ => GeneratorDiagnosticDescriptors.ExtractionFallback(diagnostic.Code),
         };
 
@@ -315,7 +326,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             source.AppendLine($"{indent}            Mutability = global::SemanticTypeModel.Abstractions.Model.Mutability.Mutable,");
             source.AppendLine($"{indent}            UserDescription = {Literal(GetAnnotationValue(property.Annotations, "schema.userDescription"))},");
             source.AppendLine($"{indent}            TechnicalDescription = {Literal(GetAnnotationValue(property.Annotations, "schema.technicalDescription"))},");
-            source.AppendLine($"{indent}            Constraints = new global::SemanticTypeModel.Abstractions.Model.ConstraintSet(),");
+            AppendConstraints(source, property, indentationLevel + 3);
             AppendAnnotationBag(source, property.Annotations, indentationLevel + 3, "Annotations");
             source.AppendLine($"{indent}        }},");
         }
@@ -323,6 +334,54 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         source.AppendLine($"{indent}    Keys = [],");
         source.AppendLine($"{indent}    Relationships = [],");
         source.AppendLine($"{indent}}}");
+    }
+
+    private static void AppendConstraints(StringBuilder source, DotNetPropertyDescriptor property, int indentationLevel)
+    {
+        string indent = new(' ', indentationLevel * 4);
+        if (property.ConditionalConstraints.Count == 0)
+        {
+            source.AppendLine($"{indent}Constraints = new global::SemanticTypeModel.Abstractions.Model.ConstraintSet(),");
+            return;
+        }
+
+        source.AppendLine($"{indent}Constraints = new global::SemanticTypeModel.Abstractions.Model.ConstraintSet");
+        source.AppendLine($"{indent}{{");
+        source.AppendLine($"{indent}    Conditional =");
+        source.AppendLine($"{indent}    [");
+        foreach (Abstractions.Model.ConditionalConstraint constraint in property.ConditionalConstraints)
+        {
+            Abstractions.Model.SemanticLiteral literal = constraint.Literal;
+            string value = literal.Value switch
+            {
+                null => "null",
+                bool boolean => boolean ? "true" : "false",
+                string text => $"\"{EscapeString(text)}\"",
+                decimal number => number.ToString(System.Globalization.CultureInfo.InvariantCulture) + "m",
+                IFormattable formattable => formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture),
+                _ => $"\"{EscapeString(Convert.ToString(literal.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty)}\"",
+            };
+            source.AppendLine($"{indent}        new global::SemanticTypeModel.Abstractions.Model.ConditionalConstraint");
+            source.AppendLine($"{indent}        {{");
+            source.AppendLine($"{indent}            TargetPropertyId = new global::SemanticTypeModel.Abstractions.Model.PropertyId(\"{EscapeString(constraint.TargetPropertyId.Value)}\"),");
+            source.AppendLine($"{indent}            SourcePropertyName = \"{EscapeString(constraint.SourcePropertyName)}\",");
+            source.AppendLine($"{indent}            SourcePropertyId = new global::SemanticTypeModel.Abstractions.Model.PropertyId(\"{EscapeString(constraint.SourcePropertyId.Value)}\"),");
+            source.AppendLine($"{indent}            SourceTypeId = new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(constraint.SourceTypeId.Value)}\"),");
+            source.AppendLine($"{indent}            Operator = global::SemanticTypeModel.Abstractions.Model.ConditionalConstraintOperator.{constraint.Operator},");
+            source.AppendLine($"{indent}            Literal = new global::SemanticTypeModel.Abstractions.Model.SemanticLiteral");
+            source.AppendLine($"{indent}            {{");
+            source.AppendLine($"{indent}                Kind = global::SemanticTypeModel.Abstractions.Model.SemanticLiteralKind.{literal.Kind}, RawText = \"{EscapeString(literal.RawText)}\", NormalizedText = \"{EscapeString(literal.NormalizedText)}\",");
+            source.AppendLine($"{indent}                TypeId = new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(literal.TypeId?.Value ?? string.Empty)}\"), ClrTypeName = \"{EscapeString(literal.ClrTypeName ?? string.Empty)}\", Value = {value}, IsNull = {literal.IsNull.ToString().ToLowerInvariant()},");
+            if (literal.EnumTypeId is not null)
+            {
+                source.AppendLine($"{indent}                EnumTypeId = new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(literal.EnumTypeId.Value.Value)}\"), EnumMemberName = \"{EscapeString(literal.EnumMemberName!)}\",");
+            }
+            source.AppendLine($"{indent}            }},");
+            source.AppendLine($"{indent}            Message = {Literal(constraint.Message)},");
+            source.AppendLine($"{indent}        }},");
+        }
+        source.AppendLine($"{indent}    ],");
+        source.AppendLine($"{indent}}},");
     }
 
     private static void AppendScalarType(StringBuilder source, DotNetScalarTypeDescriptor descriptor, int indentationLevel)

@@ -315,7 +315,44 @@ public sealed record ConstraintSet
     public NumericConstraints? Numeric { get; init; }
     public ArrayConstraints? Array { get; init; }
     public ObjectConstraints? Object { get; init; }
+    public IReadOnlyList<ConditionalConstraint> Conditional { get; init; } = [];
     public IReadOnlyList<CustomConstraint> Custom { get; init; } = [];
+}
+
+public enum SemanticLiteralKind
+{
+    String, Boolean, Integer, Decimal, EnumMember, Guid, Date, Time, DateTime,
+    DateTimeOffset, Duration, Null, StrongIdentifier, Unsupported,
+}
+
+public sealed record SemanticLiteral
+{
+    public required SemanticLiteralKind Kind { get; init; }
+    public required string RawText { get; init; }
+    public required string NormalizedText { get; init; }
+    public TypeId? TypeId { get; init; }
+    public string? ClrTypeName { get; init; }
+    public object? Value { get; init; }
+    public TypeId? EnumTypeId { get; init; }
+    public string? EnumMemberName { get; init; }
+    public bool IsNull { get; init; }
+    public IReadOnlyList<SchemaDiagnostic> Diagnostics { get; init; } = [];
+}
+
+public enum ConditionalConstraintOperator
+{
+    Equals, NotEquals, IsNull, IsNotNull,
+}
+
+public sealed record ConditionalConstraint
+{
+    public required PropertyId TargetPropertyId { get; init; }
+    public required string SourcePropertyName { get; init; }
+    public required PropertyId SourcePropertyId { get; init; }
+    public required TypeId SourceTypeId { get; init; }
+    public required ConditionalConstraintOperator Operator { get; init; }
+    public required SemanticLiteral Literal { get; init; }
+    public string? Message { get; init; }
 }
 
 public sealed record StringConstraints

@@ -19,6 +19,7 @@ public static class FixtureModels
         ScalarTypeDefinition duration = Scalar<TimeSpan>(ScalarKind.Duration);
         ScalarTypeDefinition timestamp = Scalar<DateTimeOffset>(ScalarKind.DateTimeOffset);
         ScalarTypeDefinition uri = Scalar<Uri>(ScalarKind.String);
+        EnumTypeDefinition importType = Enum<Intake.ImportType>();
 
         ObjectTypeDefinition delivery = Object<Intake.DeliveryContract>(EntityRole.ValueObject,
             [Property(nameof(Intake.DeliveryContract.PartnerCode), text.Id), Property(nameof(Intake.DeliveryContract.AgreementId), guid.Id)]);
@@ -45,7 +46,7 @@ public static class FixtureModels
         ObjectTypeDefinition workflow = Object<Intake.WorkflowSpecification>(EntityRole.Entity,
             [Property(nameof(Intake.WorkflowSpecification.Id), guid.Id), Property(nameof(Intake.WorkflowSpecification.SchemaVersion), number.Id), Property(nameof(Intake.WorkflowSpecification.UpdatedAt), timestamp.Id), Property(nameof(Intake.WorkflowSpecification.ExtensionData), text.Id, ("schema.extensionData", "true"))], nameof(Intake.WorkflowSpecification.Id));
         ObjectTypeDefinition root = Object<Intake.ImportSpecification>(EntityRole.Entity,
-            [Property(nameof(Intake.ImportSpecification.Id), guid.Id), Property(nameof(Intake.ImportSpecification.SchemaVersion), number.Id), Property(nameof(Intake.ImportSpecification.UpdatedAt), timestamp.Id), Property(nameof(Intake.ImportSpecification.ExtensionData), text.Id, ("schema.extensionData", "true")), Property(nameof(Intake.ImportSpecification.DeliveryContract), delivery.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.Schedule), schedule.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.Polling), polling.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.CsvSource), delimited.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.XmlSource), structured.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.PrimaryApiSource), primaryApi.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.SecondaryApiSource), secondaryApi.Id, false, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.PostProcessing), normalization.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.DerivedProperties), derivedFields.Id, ("schema.ownedCollection", "true"))], nameof(Intake.ImportSpecification.Id));
+            [Property(nameof(Intake.ImportSpecification.Id), guid.Id), Property(nameof(Intake.ImportSpecification.SchemaVersion), number.Id), Property(nameof(Intake.ImportSpecification.UpdatedAt), timestamp.Id), Property(nameof(Intake.ImportSpecification.ExtensionData), text.Id, ("schema.extensionData", "true")), Property(nameof(Intake.ImportSpecification.ImportType), importType.Id), Property(nameof(Intake.ImportSpecification.OptionalImportType), importType.Id, false), Property(nameof(Intake.ImportSpecification.DeliveryContract), delivery.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.Schedule), schedule.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.Polling), polling.Id, ("schema.ownedObject", "true")), ConditionalProperty(nameof(Intake.ImportSpecification.CsvSource), delimited.Id, nameof(Intake.ImportType.CsvFile)), ConditionalProperty(nameof(Intake.ImportSpecification.XmlSource), structured.Id, nameof(Intake.ImportType.XmlFile)), ConditionalProperty(nameof(Intake.ImportSpecification.WebService1Source), primaryApi.Id, nameof(Intake.ImportType.WebService1)), ConditionalProperty(nameof(Intake.ImportSpecification.WebService2Source), secondaryApi.Id, nameof(Intake.ImportType.WebService2)), Property(nameof(Intake.ImportSpecification.PostProcessing), normalization.Id, ("schema.ownedObject", "true")), Property(nameof(Intake.ImportSpecification.DerivedProperties), derivedFields.Id, ("schema.ownedCollection", "true"))], nameof(Intake.ImportSpecification.Id));
 
         ObjectTypeDefinition nonSemanticBase = Object<Intake.VersionedExtensibleObject>(EntityRole.Unspecified,
             [Property(nameof(Intake.VersionedExtensibleObject.SchemaVersion), number.Id), Property(nameof(Intake.VersionedExtensibleObject.ExtensionData), text.Id, ("schema.extensionData", "true"))]);
@@ -53,7 +54,7 @@ public static class FixtureModels
         ObjectTypeDefinition equatable = Object(typeof(IEquatable<>), EntityRole.Unspecified, []);
         ObjectTypeDefinition jsonHelper = Object(typeof(System.Text.Json.JsonElement), EntityRole.Unspecified, []);
         ObjectTypeDefinition xmlHelper = Object(typeof(System.Xml.XmlDocument), EntityRole.Unspecified, []);
-        TypeDefinition[] types = [guid, text, number, boolean, character, date, time, duration, timestamp, uri, delivery, schedule, polling, delimited, structured, primaryApi, secondaryApi, normalization, derivedField, derivedFields, semanticBase, root, workflow, nonSemanticBase, marker, equatable, jsonHelper, xmlHelper];
+        TypeDefinition[] types = [guid, text, number, boolean, character, date, time, duration, timestamp, uri, importType, delivery, schedule, polling, delimited, structured, primaryApi, secondaryApi, normalization, derivedField, derivedFields, semanticBase, root, workflow, nonSemanticBase, marker, equatable, jsonHelper, xmlHelper];
         return Model("ImportSpecificationModel", types);
     }
 
@@ -102,6 +103,7 @@ public static class FixtureModels
             Id = Guid.NewGuid(),
             SchemaVersion = 1,
             UpdatedAt = DateTimeOffset.UtcNow,
+            ImportType = Intake.ImportType.CsvFile,
             DeliveryContract = new("partner", Guid.NewGuid()),
             Schedule = new(DateOnly.FromDateTime(DateTime.UtcNow), TimeOnly.MinValue, TimeSpan.FromHours(1)),
             Polling = new(TimeSpan.FromMinutes(5), null),
@@ -130,6 +132,18 @@ public static class FixtureModels
     private static ScalarTypeDefinition Scalar<T>(ScalarKind kind)
     {
         return new() { Id = new(typeof(T).FullName!), Name = typeof(T).Name, Kind = TypeKind.Scalar, Nullability = Nullability.NonNullable, ScalarKind = kind, Annotations = Clr(typeof(T)) };
+    }
+
+    private static EnumTypeDefinition Enum<T>() where T : struct, Enum
+    {
+        return new() { Id = new(typeof(T).FullName!), Name = typeof(T).Name, Kind = TypeKind.Enum, Nullability = Nullability.NonNullable, StorageKind = EnumStorageKind.String, Values = [.. System.Enum.GetNames<T>().Select(name => new EnumValueDefinition { Name = name, Value = name, Annotations = new() })], Annotations = Clr(typeof(T)) };
+    }
+
+    private static PropertyDefinition ConditionalProperty(string name, TypeId type, string member)
+    {
+        PropertyDefinition property = Property(name, type, false, ("schema.ownedObject", "true"));
+        TypeId enumId = new(typeof(Intake.ImportType).FullName!);
+        return property with { Constraints = new ConstraintSet { Conditional = [new ConditionalConstraint { TargetPropertyId = property.Id, SourcePropertyName = nameof(Intake.ImportSpecification.ImportType), SourcePropertyId = new(nameof(Intake.ImportSpecification.ImportType)), SourceTypeId = enumId, Operator = ConditionalConstraintOperator.Equals, Literal = new SemanticLiteral { Kind = SemanticLiteralKind.EnumMember, RawText = member, NormalizedText = member, TypeId = enumId, ClrTypeName = typeof(Intake.ImportType).FullName, Value = member, EnumTypeId = enumId, EnumMemberName = member } }] } };
     }
 
     private static ObjectTypeDefinition Object<T>(EntityRole role, IReadOnlyList<PropertyDefinition> properties, string? key = null)

@@ -88,4 +88,27 @@ public static class DotNetExtractionDiagnosticIds
 
     /// <summary>STM5025 — A type member shape was not supported by the current extraction path.</summary>
     public const string MemberShapeUnsupported = "STM5025";
+
+    /// <summary>STM5026 — A typed-literal source property was not found.</summary>
+    public const string TypedLiteralSourceNotFound = "STM5026";
+    /// <summary>STM5027 — A typed-literal source type is unsupported.</summary>
+    public const string TypedLiteralSourceTypeUnsupported = "STM5027";
+    /// <summary>STM5028 — A typed-literal value is invalid.</summary>
+    public const string TypedLiteralValueInvalid = "STM5028";
+    /// <summary>STM5029 — An enum-member literal was not found.</summary>
+    public const string TypedLiteralEnumMemberNotFound = "STM5029";
+    /// <summary>STM5030 — A numeric literal has invalid invariant format.</summary>
+    public const string TypedLiteralNumericFormatInvalid = "STM5030";
+    /// <summary>STM5031 — A numeric literal exceeds its source type's range.</summary>
+    public const string TypedLiteralNumericOverflow = "STM5031";
+    /// <summary>STM5032 — A Boolean literal is invalid.</summary>
+    public const string TypedLiteralBooleanInvalid = "STM5032";
+    /// <summary>STM5033 — Null was used with a non-nullable source.</summary>
+    public const string TypedLiteralNullNotAllowed = "STM5033";
+    /// <summary>STM5034 — A conditional-constraint target is invalid.</summary>
+    public const string ConditionalConstraintTargetInvalid = "STM5034";
+    /// <summary>STM5035 — A conditional-constraint source is invalid.</summary>
+    public const string ConditionalConstraintSourceInvalid = "STM5035";
+    /// <summary>STM5036 — A conditional literal does not match its source type.</summary>
+    public const string ConditionalConstraintLiteralTypeMismatch = "STM5036";
 }

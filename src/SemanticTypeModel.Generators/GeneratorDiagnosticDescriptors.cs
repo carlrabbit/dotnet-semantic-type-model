@@ -55,6 +55,23 @@ internal static class GeneratorDiagnosticDescriptors
         isEnabledByDefault: true,
         helpLinkUri: HelpUriBase + "#stm5019");
 
+    internal static readonly DiagnosticDescriptor TypedLiteralSourceNotFound = Extraction(DotNetExtractionDiagnosticIds.TypedLiteralSourceNotFound, "Typed literal source not found");
+    internal static readonly DiagnosticDescriptor TypedLiteralSourceTypeUnsupported = Extraction(DotNetExtractionDiagnosticIds.TypedLiteralSourceTypeUnsupported, "Typed literal source type unsupported");
+    internal static readonly DiagnosticDescriptor TypedLiteralValueInvalid = Extraction(DotNetExtractionDiagnosticIds.TypedLiteralValueInvalid, "Typed literal value invalid");
+    internal static readonly DiagnosticDescriptor TypedLiteralEnumMemberNotFound = Extraction(DotNetExtractionDiagnosticIds.TypedLiteralEnumMemberNotFound, "Typed literal enum member not found");
+    internal static readonly DiagnosticDescriptor TypedLiteralNumericFormatInvalid = Extraction(DotNetExtractionDiagnosticIds.TypedLiteralNumericFormatInvalid, "Typed literal numeric format invalid");
+    internal static readonly DiagnosticDescriptor TypedLiteralNumericOverflow = Extraction(DotNetExtractionDiagnosticIds.TypedLiteralNumericOverflow, "Typed literal numeric overflow");
+    internal static readonly DiagnosticDescriptor TypedLiteralBooleanInvalid = Extraction(DotNetExtractionDiagnosticIds.TypedLiteralBooleanInvalid, "Typed literal Boolean invalid");
+    internal static readonly DiagnosticDescriptor TypedLiteralNullNotAllowed = Extraction(DotNetExtractionDiagnosticIds.TypedLiteralNullNotAllowed, "Typed literal null not allowed");
+    internal static readonly DiagnosticDescriptor ConditionalConstraintTargetInvalid = Extraction(DotNetExtractionDiagnosticIds.ConditionalConstraintTargetInvalid, "Conditional constraint target invalid");
+    internal static readonly DiagnosticDescriptor ConditionalConstraintSourceInvalid = Extraction(DotNetExtractionDiagnosticIds.ConditionalConstraintSourceInvalid, "Conditional constraint source invalid");
+    internal static readonly DiagnosticDescriptor ConditionalConstraintLiteralTypeMismatch = Extraction(DotNetExtractionDiagnosticIds.ConditionalConstraintLiteralTypeMismatch, "Conditional constraint literal type mismatch");
+
+    private static DiagnosticDescriptor Extraction(string code, string title)
+    {
+        return new(code, title, "{0}", Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, helpLinkUri: HelpUriBase + "#" + code.ToLowerInvariant());
+    }
+
     /// <summary>
     /// Fallback descriptor used for STM5xxx codes emitted by the .NET type extractor.
     /// The code and message are supplied at call time.

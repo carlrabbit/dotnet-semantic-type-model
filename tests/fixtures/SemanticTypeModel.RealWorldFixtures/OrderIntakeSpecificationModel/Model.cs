@@ -31,17 +31,21 @@ public abstract record Specification : VersionedExtensibleObject
 [SemanticType(SemanticTypeRole.Entity)]
 public sealed record WorkflowSpecification : Specification;
 
+public enum ImportType { CsvFile, XmlFile, WebService1, WebService2 }
+
 [SemanticType(SemanticTypeRole.Entity)]
 public sealed record ImportSpecification : Specification, IConfigurationKind<ImportSpecification>
 {
     public static string Kind => "order-intake";
+    public required ImportType ImportType { get; init; }
+    public ImportType? OptionalImportType { get; init; }
     [SemanticOwned(Kind = SemanticOwnershipKind.Object)] public required DeliveryContract DeliveryContract { get; init; }
     [SemanticOwned(Kind = SemanticOwnershipKind.Object)] public required ScheduleContract Schedule { get; init; }
     [SemanticOwned(Kind = SemanticOwnershipKind.Object)] public required SourcePollingPolicy Polling { get; init; }
-    [SemanticOwned(Kind = SemanticOwnershipKind.Object)] public CsvSourceSpecification? CsvSource { get; init; }
-    [SemanticOwned(Kind = SemanticOwnershipKind.Object)] public XmlSourceSpecification? XmlSource { get; init; }
-    [SemanticOwned(Kind = SemanticOwnershipKind.Object)] public PrimaryApiSource? PrimaryApiSource { get; init; }
-    [SemanticOwned(Kind = SemanticOwnershipKind.Object)] public SecondaryApiSource? SecondaryApiSource { get; init; }
+    [SemanticOwned(Kind = SemanticOwnershipKind.Object), SemanticRequiredWhen(nameof(ImportType), nameof(ImportType.CsvFile))] public CsvSourceSpecification? CsvSource { get; init; }
+    [SemanticOwned(Kind = SemanticOwnershipKind.Object), SemanticRequiredWhen(nameof(ImportType), nameof(ImportType.XmlFile))] public XmlSourceSpecification? XmlSource { get; init; }
+    [SemanticOwned(Kind = SemanticOwnershipKind.Object), SemanticRequiredWhen(nameof(ImportType), nameof(ImportType.WebService1))] public PrimaryApiSource? WebService1Source { get; init; }
+    [SemanticOwned(Kind = SemanticOwnershipKind.Object), SemanticRequiredWhen(nameof(ImportType), nameof(ImportType.WebService2))] public SecondaryApiSource? WebService2Source { get; init; }
     [SemanticOwned(Kind = SemanticOwnershipKind.Object)] public required PostProcessingContract PostProcessing { get; init; }
     [SemanticOwned(Kind = SemanticOwnershipKind.Collection)] public IReadOnlyList<DerivedProperty> DerivedProperties { get; init; } = [];
 }
