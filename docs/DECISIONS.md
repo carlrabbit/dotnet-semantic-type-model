@@ -31,3 +31,4 @@ Decision records are authoritative for reasoning, alternatives, and constraints.
 | decisions/configuration-domain-is-options-registration-projection.md | Configuration as domain projection |
 | decisions/configuration-registration-is-explicit-per-options-type.md | Explicit Configuration registration |
 | decisions/remove-fake-public-api-baselines.md | Remove stale API baselines |
+| decisions/conditional-constraint-literals-are-typed.md | Normalize conditional literals against their resolved source type |

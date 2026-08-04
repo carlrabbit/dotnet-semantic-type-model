@@ -23,7 +23,11 @@ public sealed class M0056ConventionSuppressionTests
         _ = await Assert.That(model.Entities.Select(e => e.Table)).IsEquivalentTo([nameof(Intake.Specification), nameof(Intake.ImportSpecification), nameof(Intake.WorkflowSpecification)]);
         EfEntity import = model.Entities.Single(e => e.ClrType == typeof(Intake.ImportSpecification));
         _ = await Assert.That(import.BaseEntityId).IsEqualTo(typeof(Intake.Specification).FullName);
-        _ = await Assert.That(import.JsonColumns.Select(c => c.MemberName)).IsEquivalentTo(["DeliveryContract", "Schedule", "Polling", "CsvSource", "XmlSource", "PrimaryApiSource", "SecondaryApiSource", "PostProcessing", "DerivedProperties"]);
+        _ = await Assert.That(import.ScalarColumns.Single(c => c.MemberName == nameof(Intake.ImportSpecification.ImportType)).ProviderType).IsEqualTo(typeof(string));
+        EfScalarColumn optionalEnum = import.ScalarColumns.Single(c => c.MemberName == nameof(Intake.ImportSpecification.OptionalImportType));
+        _ = await Assert.That(optionalEnum.ProviderType).IsEqualTo(typeof(string));
+        _ = await Assert.That(optionalEnum.IsNullable).IsTrue();
+        _ = await Assert.That(import.JsonColumns.Select(c => c.MemberName)).IsEquivalentTo(["DeliveryContract", "Schedule", "Polling", "CsvSource", "XmlSource", "WebService1Source", "WebService2Source", "PostProcessing", "DerivedProperties"]);
         EfEntity root = model.Entities.Single(e => e.ClrType == typeof(Intake.Specification));
         _ = await Assert.That(root.JsonColumns.Single(c => c.MemberName == nameof(Intake.VersionedExtensibleObject.ExtensionData)).JsonShape).IsEqualTo(EfJsonShape.ExtensionData);
         _ = await Assert.That(model.Entities.Any(e => e.ClrType == typeof(Intake.CsvSourceSpecification))).IsFalse();

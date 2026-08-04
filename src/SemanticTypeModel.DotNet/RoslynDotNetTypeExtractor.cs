@@ -4,6 +4,12 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using SemanticTypeModel.DotNet.Diagnostics;
+using ConditionalConstraint = SemanticTypeModel.Abstractions.Model.ConditionalConstraint;
+using ConditionalConstraintOperator = SemanticTypeModel.Abstractions.Model.ConditionalConstraintOperator;
+using PropertyId = SemanticTypeModel.Abstractions.Model.PropertyId;
+using SemanticLiteral = SemanticTypeModel.Abstractions.Model.SemanticLiteral;
+using SemanticLiteralKind = SemanticTypeModel.Abstractions.Model.SemanticLiteralKind;
+using TypeId = SemanticTypeModel.Abstractions.Model.TypeId;
 
 namespace SemanticTypeModel.DotNet;
 
@@ -604,7 +610,7 @@ public sealed class RoslynDotNetTypeExtractor
             TryAddXmlTechnicalDescriptionAnnotation(property, memberAttributes, memberAnnotations);
             TryAddEnvelopeMemberAnnotations(memberAttributes, memberAnnotations);
             TryAddEvolutionMemberAnnotations(memberAttributes, memberType, memberAnnotations);
-            TryAddRequiredWhenAnnotations(memberAttributes, memberAnnotations);
+            IReadOnlyList<ConditionalConstraint> conditionalConstraints = NormalizeRequiredWhen(type, property, propertyName, memberAttributes, memberAnnotations);
             ValidateMemberAttributeUsage(memberAttributes, property);
             DiagnoseMissingTechnicalDescriptionIfRequired(property, property.Locations.FirstOrDefault());
 
@@ -643,6 +649,7 @@ public sealed class RoslynDotNetTypeExtractor
                 IsRequired = property.IsRequired,
                 IsNullable = allowsNull,
                 Annotations = memberAnnotations,
+                ConditionalConstraints = conditionalConstraints,
             });
         }
 
@@ -770,8 +777,14 @@ public sealed class RoslynDotNetTypeExtractor
         }
     }
 
-    private static void TryAddRequiredWhenAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
+    private List<ConditionalConstraint> NormalizeRequiredWhen(
+        INamedTypeSymbol owner,
+        IPropertySymbol target,
+        string targetPropertyName,
+        ImmutableArray<AttributeData> attributes,
+        Dictionary<string, string> annotations)
     {
+        var constraints = new List<ConditionalConstraint>();
         foreach (AttributeData attribute in attributes)
         {
             if (!string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticRequiredWhenAttributeMetadataName, StringComparison.Ordinal))
@@ -779,18 +792,204 @@ public sealed class RoslynDotNetTypeExtractor
                 continue;
             }
 
+            string sourceName = attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value?.ToString() ?? string.Empty : string.Empty;
+            string raw = attribute.ConstructorArguments.Length > 1 ? attribute.ConstructorArguments[1].Value?.ToString() ?? string.Empty : string.Empty;
             annotations["schema.condition.requiredWhen"] = "true";
-            annotations["schema.condition.requiredWhen.source"] = attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value?.ToString() ?? string.Empty : string.Empty;
+            annotations["schema.condition.requiredWhen.source"] = sourceName;
             annotations["schema.condition.requiredWhen.operator"] = "equals";
-            annotations["schema.condition.requiredWhen.value"] = attribute.ConstructorArguments.Length > 1 ? attribute.ConstructorArguments[1].Value?.ToString() ?? string.Empty : string.Empty;
+            annotations["schema.condition.requiredWhen.value"] = raw;
+            string? message = null;
             foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
             {
-                if (string.Equals(key, "Message", StringComparison.Ordinal) && value.Value is string message)
+                if (string.Equals(key, "Message", StringComparison.Ordinal) && value.Value is string declaredMessage)
                 {
-                    annotations["schema.condition.requiredWhen.message"] = message;
+                    annotations["schema.condition.requiredWhen.message"] = declaredMessage;
+                    message = declaredMessage;
                 }
             }
+
+            IPropertySymbol? source = GetMembersIncludingInheritedProperties(owner)
+                .FirstOrDefault(candidate => string.Equals(candidate.Name, sourceName, StringComparison.Ordinal));
+            if (source is null)
+            {
+                AddTypedLiteralDiagnostic(DotNetExtractionDiagnosticIds.TypedLiteralSourceNotFound,
+                    $"Conditional constraint source property '{sourceName}' was not found on '{owner.ToDisplayString()}'.", attribute, target);
+                continue;
+            }
+
+            (ITypeSymbol sourceType, bool allowsNull) = NormalizeNullability(source.Type, source.NullableAnnotation);
+            SemanticLiteral? literal = NormalizeLiteral(sourceType, allowsNull, raw, attribute, target);
+            if (literal is null)
+            {
+                continue;
+            }
+
+            string ownerId = GetTypeId(owner);
+            constraints.Add(new ConditionalConstraint
+            {
+                TargetPropertyId = new PropertyId(ownerId + "." + targetPropertyName),
+                SourcePropertyName = sourceName,
+                SourcePropertyId = new PropertyId(ownerId + "." + GetPropertyName(source)),
+                SourceTypeId = new TypeId(GetTypeId(sourceType)),
+                Operator = ConditionalConstraintOperator.Equals,
+                Literal = literal,
+                Message = message,
+            });
         }
+
+        return constraints;
+    }
+
+    private SemanticLiteral? NormalizeLiteral(ITypeSymbol type, bool allowsNull, string raw, AttributeData attribute, IPropertySymbol target)
+    {
+        string typeId = GetTypeId(type);
+        string clrName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat).Replace("global::", string.Empty, StringComparison.Ordinal);
+        SemanticLiteral Literal(SemanticLiteralKind kind, string normalized, object? value)
+        {
+            return new SemanticLiteral
+            {
+                Kind = kind,
+                RawText = raw,
+                NormalizedText = normalized,
+                TypeId = new TypeId(typeId),
+                ClrTypeName = clrName,
+                Value = value,
+            };
+        }
+
+        if (string.Equals(raw, "null", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!allowsNull)
+            {
+                AddTypedLiteralDiagnostic(DotNetExtractionDiagnosticIds.TypedLiteralNullNotAllowed,
+                    $"Null is not allowed for conditional constraint source type '{clrName}'.", attribute, target);
+                return null;
+            }
+
+            return Literal(SemanticLiteralKind.Null, "null", null) with { IsNull = true };
+        }
+
+        if (type.TypeKind == TypeKind.Enum && type is INamedTypeSymbol enumType)
+        {
+            IFieldSymbol? member = enumType.GetMembers(raw).OfType<IFieldSymbol>().FirstOrDefault(static field => field.HasConstantValue);
+            if (member is null)
+            {
+                AddTypedLiteralDiagnostic(DotNetExtractionDiagnosticIds.TypedLiteralEnumMemberNotFound,
+                    $"'{raw}' is not a member of enum '{clrName}'.", attribute, target);
+                return null;
+            }
+
+            return Literal(SemanticLiteralKind.EnumMember, member.Name, member.ConstantValue) with
+            {
+                EnumTypeId = new TypeId(typeId),
+                EnumMemberName = member.Name,
+            };
+        }
+
+        if (type.SpecialType == SpecialType.System_String)
+        {
+            return Literal(SemanticLiteralKind.String, raw, raw);
+        }
+
+        if (type.SpecialType == SpecialType.System_Boolean)
+        {
+            if (!bool.TryParse(raw, out bool value))
+            {
+                AddTypedLiteralDiagnostic(DotNetExtractionDiagnosticIds.TypedLiteralBooleanInvalid,
+                    $"'{raw}' is not a valid Boolean literal.", attribute, target);
+                return null;
+            }
+
+            return Literal(SemanticLiteralKind.Boolean, value ? "true" : "false", value);
+        }
+
+        if (type.SpecialType is SpecialType.System_Byte or SpecialType.System_SByte or SpecialType.System_Int16 or SpecialType.System_UInt16
+            or SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Int64 or SpecialType.System_UInt64)
+        {
+            try
+            {
+                object value = type.SpecialType switch
+                {
+                    SpecialType.System_Byte => byte.Parse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture),
+                    SpecialType.System_SByte => sbyte.Parse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture),
+                    SpecialType.System_Int16 => short.Parse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture),
+                    SpecialType.System_UInt16 => ushort.Parse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture),
+                    SpecialType.System_Int32 => int.Parse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture),
+                    SpecialType.System_UInt32 => uint.Parse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture),
+                    SpecialType.System_Int64 => long.Parse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture),
+                    _ => ulong.Parse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture),
+                };
+                return Literal(SemanticLiteralKind.Integer, Convert.ToString(value, CultureInfo.InvariantCulture)!, value);
+            }
+            catch (OverflowException)
+            {
+                AddTypedLiteralDiagnostic(DotNetExtractionDiagnosticIds.TypedLiteralNumericOverflow, $"'{raw}' overflows '{clrName}'.", attribute, target);
+                return null;
+            }
+            catch (FormatException)
+            {
+                AddTypedLiteralDiagnostic(DotNetExtractionDiagnosticIds.TypedLiteralNumericFormatInvalid, $"'{raw}' is not a valid integer literal.", attribute, target);
+                return null;
+            }
+        }
+
+        if (type.SpecialType is SpecialType.System_Decimal or SpecialType.System_Double or SpecialType.System_Single)
+        {
+            if (!decimal.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal value))
+            {
+                AddTypedLiteralDiagnostic(DotNetExtractionDiagnosticIds.TypedLiteralNumericFormatInvalid, $"'{raw}' is not a valid decimal literal.", attribute, target);
+                return null;
+            }
+
+            return Literal(SemanticLiteralKind.Decimal, value.ToString(CultureInfo.InvariantCulture), value);
+        }
+
+        SemanticLiteralKind? kind = clrName switch
+        {
+            "System.Guid" => SemanticLiteralKind.Guid,
+            "System.DateOnly" => SemanticLiteralKind.Date,
+            "System.TimeOnly" => SemanticLiteralKind.Time,
+            "System.DateTime" => SemanticLiteralKind.DateTime,
+            "System.DateTimeOffset" => SemanticLiteralKind.DateTimeOffset,
+            "System.TimeSpan" => SemanticLiteralKind.Duration,
+            _ => null,
+        };
+        if (kind is not null && TryNormalizeTemporalOrGuid(kind.Value, raw, out string normalized))
+        {
+            return Literal(kind.Value, normalized, normalized);
+        }
+
+        AddTypedLiteralDiagnostic(kind is null ? DotNetExtractionDiagnosticIds.TypedLiteralSourceTypeUnsupported : DotNetExtractionDiagnosticIds.TypedLiteralValueInvalid,
+            kind is null ? $"Source type '{clrName}' is not supported for typed conditional literals." : $"'{raw}' is not a valid {kind} literal.", attribute, target);
+        return null;
+    }
+
+    private static bool TryNormalizeTemporalOrGuid(SemanticLiteralKind kind, string raw, out string normalized)
+    {
+        normalized = string.Empty;
+        bool valid = kind switch
+        {
+            SemanticLiteralKind.Guid when Guid.TryParse(raw, out Guid value) => Set(value.ToString("D"), out normalized),
+            SemanticLiteralKind.Date when DateOnly.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly value) => Set(value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), out normalized),
+            SemanticLiteralKind.Time when TimeOnly.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out TimeOnly value) => Set(value.ToString("O", CultureInfo.InvariantCulture), out normalized),
+            SemanticLiteralKind.DateTime when DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime value) => Set(value.ToString("O", CultureInfo.InvariantCulture), out normalized),
+            SemanticLiteralKind.DateTimeOffset when DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTimeOffset value) => Set(value.ToString("O", CultureInfo.InvariantCulture), out normalized),
+            SemanticLiteralKind.Duration when TimeSpan.TryParse(raw, CultureInfo.InvariantCulture, out TimeSpan value) => Set(value.ToString("c", CultureInfo.InvariantCulture), out normalized),
+            _ => false,
+        };
+        return valid;
+
+        static bool Set(string value, out string result)
+        {
+            result = value;
+            return true;
+        }
+    }
+
+    private void AddTypedLiteralDiagnostic(string code, string message, AttributeData attribute, IPropertySymbol target)
+    {
+        _diagnostics.Add(new DotNetExtractionDiagnostic(code, message,
+            attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? target.Locations.FirstOrDefault()));
     }
 
     private void TryAddSystemTextJsonTypeAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations, INamedTypeSymbol type)

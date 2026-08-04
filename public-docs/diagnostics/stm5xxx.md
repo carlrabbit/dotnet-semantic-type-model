@@ -314,6 +314,27 @@ All STM5xxx diagnostics have `Warning` severity unless stated otherwise.
 
 ---
 
+## Typed literal and conditional constraint extraction
+
+| ID | Meaning |
+|---|---|
+| STM5026 | The named typed-literal source property was not found. |
+| STM5027 | The resolved source type cannot supply a supported typed literal. |
+| STM5028 | A GUID, date/time, duration, or other supported literal has an invalid value. |
+| STM5029 | The value does not name a member of the resolved enum source type. |
+| STM5030 | A numeric value does not use a valid invariant format. |
+| STM5031 | A numeric value overflows the resolved CLR source type. |
+| STM5032 | A Boolean value is not `true` or `false` (case-insensitive). |
+| STM5033 | `null` was used for a source property that does not allow null. |
+| STM5034 | The conditional constraint target is invalid. |
+| STM5035 | The conditional constraint source is invalid. |
+| STM5036 | The typed literal does not match the resolved source type. |
+
+STM5034-STM5036 are reserved for .NET extraction or import paths that receive malformed
+prebuilt conditional metadata. Canonical-model validation uses the existing STM1020-STM1023
+diagnostic family. Strong-identifier structs without a resolved provider-scalar contract use
+STM5027 in 2.6.0 rather than being interpreted as strings.
+
 ## Related
 
 - [diagnostics.md](../diagnostics.md)

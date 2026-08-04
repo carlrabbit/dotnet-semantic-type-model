@@ -119,6 +119,19 @@ public static class JsonSchemaDerivationExtensions
                 additionalAllowed = string.Equals(legacyAdditional, "true", StringComparison.OrdinalIgnoreCase);
             }
 
+            List<Model.ConditionalConstraint> supported = [];
+            foreach (Model.ConditionalConstraint constraint in type.Properties.SelectMany(static property => property.Constraints.Conditional))
+            {
+                if (constraint.Operator == Model.ConditionalConstraintOperator.Equals)
+                {
+                    supported.Add(constraint);
+                }
+                else
+                {
+                    AddDiagnostic("JSONSCHEMA_CONDITIONAL_OPERATOR_UNSUPPORTED", $"Conditional operator '{constraint.Operator}' on target '{constraint.TargetPropertyId.Value}' is not supported by JSON Schema projection.", $"/types/{type.Id.Value}/properties/{constraint.TargetPropertyId.Value}/constraints/conditional");
+                }
+            }
+
             return new JsonSchemaObjectNode
             {
                 Name = type.Name,
@@ -126,7 +139,21 @@ public static class JsonSchemaDerivationExtensions
                 Description = type.UserDescription,
                 AdditionalPropertiesAllowed = additionalAllowed,
                 Properties = [.. type.Properties.Where(static property => !HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData)).OrderBy(static property => property.Name, StringComparer.Ordinal).Select(property => MapProperty(type, property))],
+                ConditionalConstraints = [.. supported.OrderBy(static constraint => constraint.TargetPropertyId.Value, StringComparer.Ordinal).Select(MapConditionalConstraint)],
                 Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
+            };
+        }
+
+        private static JsonSchemaConditionalConstraint MapConditionalConstraint(Model.ConditionalConstraint constraint)
+        {
+            var value = constraint.Literal.Kind == Model.SemanticLiteralKind.EnumMember
+                ? constraint.Literal.EnumMemberName
+                : constraint.Literal.Value;
+            return new JsonSchemaConditionalConstraint
+            {
+                SourceProperty = constraint.SourcePropertyName,
+                TargetProperty = constraint.TargetPropertyId.Value[(constraint.TargetPropertyId.Value.LastIndexOf('.') + 1)..],
+                Value = JsonSerializer.SerializeToElement(value),
             };
         }
 

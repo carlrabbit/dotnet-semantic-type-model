@@ -113,6 +113,23 @@ Core semantics has no target-output option that changes JSON Schema, EF Core, Po
 | Envelope payload diagnostic | Envelope has zero or multiple payload members | Mark exactly one member with `SemanticEnvelopePayload`. |
 | RequiredWhen diagnostic | Source member, operator, or literal cannot be resolved | Use `nameof`, equality-compatible literals, and supported scalar/enum values. |
 
+## Typed conditional literals
+
+`SemanticRequiredWhen` remains source compatible, but its value is normalized against the resolved source property's CLR and semantic types. For example:
+
+```csharp
+public enum ImportType { CsvFile, XmlFile, WebService1, WebService2 }
+
+public ImportType ImportType { get; init; }
+
+[SemanticRequiredWhen(nameof(ImportType), nameof(ImportType.CsvFile))]
+public CsvSourceSpecification? CsvSource { get; init; }
+```
+
+The condition stores `CsvFile` as an enum-member literal referencing `ImportType`, not as a string. Fully qualified enum values are not required. Strings remain strings only for string sources; Boolean, numeric, null, GUID, and date/time values use invariant typed normalization. Missing sources, invalid values, overflow, nullability violations, and unsupported source types produce stable extraction diagnostics rather than guessed comparisons.
+
+Strong-identifier structs without an unambiguous provider-scalar extraction contract are unsupported in 2.6.0. A condition using one emits `STM5027`; it is never downgraded to a string comparison.
+
 ## Common mistakes
 
 - Using display names as stable model identifiers.

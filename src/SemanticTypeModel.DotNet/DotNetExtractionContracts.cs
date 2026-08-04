@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.DotNet;
 
@@ -300,6 +301,9 @@ public sealed record DotNetPropertyDescriptor
     /// Gets member annotations.
     /// </summary>
     public IReadOnlyDictionary<string, string> Annotations { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>Gets normalized cross-property conditional constraints.</summary>
+    public IReadOnlyList<ConditionalConstraint> ConditionalConstraints { get; init; } = [];
 }
 
 /// <summary>

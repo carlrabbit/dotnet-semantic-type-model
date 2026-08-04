@@ -30,8 +30,88 @@ public sealed class TypeSchemaModelValidator
         CheckInvalidConstraintRanges(model, diagnostics);
         CheckAnnotationKeys(model, diagnostics);
         CheckEnumDuplicates(model, diagnostics);
+        CheckConditionalConstraints(model, diagnostics);
 
         return diagnostics;
+    }
+
+    private static void CheckConditionalConstraints(TypeSchemaModel model, List<SchemaDiagnostic> diagnostics)
+    {
+        foreach (ObjectTypeDefinition owner in model.Types.OfType<ObjectTypeDefinition>())
+        {
+            var properties = owner.Properties.ToDictionary(static property => property.Id);
+            foreach (PropertyDefinition declaredTarget in owner.Properties)
+            {
+                foreach (ConditionalConstraint constraint in declaredTarget.Constraints.Conditional)
+                {
+                    var path = ModelPath.ForProperty(owner.Id, declaredTarget.Name);
+                    if (constraint.TargetPropertyId != declaredTarget.Id)
+                    {
+                        diagnostics.Add(Error("STM1023", $"Conditional constraint target '{constraint.TargetPropertyId.Value}' does not match its declared property '{declaredTarget.Id.Value}'.", path));
+                    }
+
+                    if (!properties.TryGetValue(constraint.SourcePropertyId, out PropertyDefinition? source))
+                    {
+                        diagnostics.Add(Error("STM1020", $"Conditional constraint source '{constraint.SourcePropertyId.Value}' is not a property of '{owner.Id.Value}'.", path));
+                        continue;
+                    }
+
+                    if (!string.Equals(source.Name, constraint.SourcePropertyName, StringComparison.Ordinal))
+                    {
+                        diagnostics.Add(Error("STM1020", $"Conditional constraint source name '{constraint.SourcePropertyName}' does not match source property '{source.Name}'.", path));
+                    }
+
+                    if (source.Type.Id != constraint.SourceTypeId || constraint.Literal.TypeId != constraint.SourceTypeId)
+                    {
+                        diagnostics.Add(Error("STM1022", $"Conditional literal type '{constraint.Literal.TypeId?.Value}' does not match source type '{source.Type.Id.Value}'.", path));
+                    }
+
+                    TypeDefinition? sourceType = model.TryGetType(source.Type.Id);
+                    var nullOperator = constraint.Operator is ConditionalConstraintOperator.IsNull or ConditionalConstraintOperator.IsNotNull;
+                    if (nullOperator != (constraint.Literal.Kind == SemanticLiteralKind.Null && constraint.Literal.IsNull))
+                    {
+                        diagnostics.Add(Error("STM1022", $"Conditional operator '{constraint.Operator}' requires a null literal, while equality operators require a non-null literal.", path));
+                    }
+
+                    if (constraint.Operator == ConditionalConstraintOperator.IsNull && !source.Cardinality.AllowsNull)
+                    {
+                        diagnostics.Add(Error("STM1022", $"Conditional operator 'IsNull' cannot be applied to non-nullable source '{source.Name}'.", path));
+                    }
+
+                    if (!nullOperator && !LiteralKindMatches(sourceType, constraint.Literal.Kind))
+                    {
+                        diagnostics.Add(Error("STM1022", $"Conditional literal kind '{constraint.Literal.Kind}' does not match source type '{source.Type.Id.Value}'.", path));
+                    }
+
+                    if (sourceType is EnumTypeDefinition enumType
+                        && (constraint.Literal.EnumTypeId != enumType.Id
+                            || !enumType.Values.Any(value => string.Equals(value.Name, constraint.Literal.EnumMemberName, StringComparison.Ordinal))))
+                    {
+                        diagnostics.Add(Error("STM1022", $"Conditional enum literal '{constraint.Literal.EnumMemberName}' is not declared by '{enumType.Id.Value}'.", path));
+                    }
+                }
+            }
+        }
+    }
+
+    private static bool LiteralKindMatches(TypeDefinition? type, SemanticLiteralKind kind)
+    {
+        return kind != SemanticLiteralKind.Unsupported && type is not null && (type is EnumTypeDefinition
+            ? kind == SemanticLiteralKind.EnumMember
+            : type is ScalarTypeDefinition scalar && (scalar.ScalarKind, kind) switch
+            {
+                (ScalarKind.String, SemanticLiteralKind.String or SemanticLiteralKind.StrongIdentifier) => true,
+                (ScalarKind.Boolean, SemanticLiteralKind.Boolean) => true,
+                (ScalarKind.Integer, SemanticLiteralKind.Integer) => true,
+                (ScalarKind.Number or ScalarKind.Decimal, SemanticLiteralKind.Decimal) => true,
+                (ScalarKind.Guid, SemanticLiteralKind.Guid) => true,
+                (ScalarKind.Date, SemanticLiteralKind.Date) => true,
+                (ScalarKind.Time, SemanticLiteralKind.Time) => true,
+                (ScalarKind.DateTime, SemanticLiteralKind.DateTime) => true,
+                (ScalarKind.DateTimeOffset, SemanticLiteralKind.DateTimeOffset) => true,
+                (ScalarKind.Duration, SemanticLiteralKind.Duration) => true,
+                _ => false,
+            });
     }
 
     private static void CheckDuplicateTypeIds(TypeSchemaModel model, List<SchemaDiagnostic> diagnostics)

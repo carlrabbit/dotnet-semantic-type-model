@@ -48,6 +48,20 @@ public sealed record JsonSchemaObjectNode : JsonSchemaNode
 
     /// <summary>Gets a value indicating whether additional properties are permitted.</summary>
     public bool AdditionalPropertiesAllowed { get; init; } = true;
+
+    /// <summary>Gets deterministic conditional required constraints.</summary>
+    public IReadOnlyList<JsonSchemaConditionalConstraint> ConditionalConstraints { get; init; } = [];
+}
+
+/// <summary>Represents an equality condition that makes a target property required.</summary>
+public sealed record JsonSchemaConditionalConstraint
+{
+    /// <summary>Gets the condition source property.</summary>
+    public required string SourceProperty { get; init; }
+    /// <summary>Gets the projected constant value.</summary>
+    public required JsonElement Value { get; init; }
+    /// <summary>Gets the conditionally required target property.</summary>
+    public required string TargetProperty { get; init; }
 }
 
 /// <summary>Represents a JSON Schema property.</summary>

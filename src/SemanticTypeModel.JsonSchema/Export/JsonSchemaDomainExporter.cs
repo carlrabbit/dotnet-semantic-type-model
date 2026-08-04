@@ -174,6 +174,42 @@ public static class JsonSchemaDomainExporter
         {
             writer.WriteBoolean("additionalProperties", false);
         }
+
+        if (obj.ConditionalConstraints.Count > 0)
+        {
+            writer.WritePropertyName("allOf");
+            writer.WriteStartArray();
+            foreach (JsonSchemaConditionalConstraint constraint in obj.ConditionalConstraints
+                .OrderBy(static item => item.SourceProperty, StringComparer.Ordinal)
+                .ThenBy(static item => item.TargetProperty, StringComparer.Ordinal))
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("if");
+                writer.WriteStartObject();
+                writer.WritePropertyName("properties");
+                writer.WriteStartObject();
+                writer.WritePropertyName(constraint.SourceProperty);
+                writer.WriteStartObject();
+                writer.WritePropertyName("const");
+                constraint.Value.WriteTo(writer);
+                writer.WriteEndObject();
+                writer.WriteEndObject();
+                writer.WritePropertyName("required");
+                writer.WriteStartArray();
+                writer.WriteStringValue(constraint.SourceProperty);
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+                writer.WritePropertyName("then");
+                writer.WriteStartObject();
+                writer.WritePropertyName("required");
+                writer.WriteStartArray();
+                writer.WriteStringValue(constraint.TargetProperty);
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+                writer.WriteEndObject();
+            }
+            writer.WriteEndArray();
+        }
     }
 
     private static void WriteScalar(Utf8JsonWriter writer, JsonSchemaScalarNode scalar)

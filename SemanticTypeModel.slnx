@@ -22,6 +22,7 @@
   <Folder Name="/tests/unit/">
     <Project Path="tests/unit/SemanticTypeModel.Core.Tests.Unit/SemanticTypeModel.Core.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.DependencyInjection.Tests.Unit/SemanticTypeModel.DependencyInjection.Tests.Unit.csproj" />
+    <Project Path="tests/unit/SemanticTypeModel.DotNet.Tests.Unit/SemanticTypeModel.DotNet.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.Generators.Tests.Unit/SemanticTypeModel.Generators.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.JsonSchema.Tests.Unit/SemanticTypeModel.JsonSchema.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.EFCore.Tests.Unit/SemanticTypeModel.EFCore.Tests.Unit.csproj" />

@@ -51,3 +51,4 @@ Specs are authoritative for behavior, invariants, contracts, inputs and outputs,
 | specs/system-text-json-contract-integration.md | System.Text.Json metadata import |
 | specs/system-text-json-domain-model-and-resolver-projection.md | System.Text.Json domain projection |
 | specs/diagnostics.md | Diagnostic policy |
+| specs/typed-literals-and-conditional-constraint-semantics.md | Typed literals and conditional constraint normalization |
