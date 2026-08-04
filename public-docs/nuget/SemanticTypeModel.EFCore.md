@@ -7,7 +7,7 @@
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.EFCore --version 2.5.1
+dotnet add package SemanticTypeModel.EFCore --version 2.5.3
 ```
 
 ## Minimal example
@@ -32,6 +32,8 @@ modelBuilder.ApplySemanticRelationalModel(result.Model);
 - EF relationships, navigations, shared-type entities, `OwnsOne`, and `OwnsMany` are not projected.
 - the package suppresses EF convention discovery for semantic ValueKinds and other non-entities, so the final CLR entity set exactly equals the semantic Entity CLR set;
 - JSON-owned objects and collections remain converted properties rather than owned or keyless EF entities, without consumer `ModelBuilder.Ignore(...)` calls.
+
+Property declaration and relational storage are tracked separately. Semantic-base members are configured only on the semantic-base TPT table; members inherited from non-semantic CLR bases are stored by the first semantic entity; derived tables contain only derived state (plus the TPT key).
 
 The application still selects its EF provider and owns migrations and database operations. The 2.5 line intentionally removes the 2.4.x EF API rather than retaining compatibility aliases.
 

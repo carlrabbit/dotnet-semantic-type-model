@@ -12,6 +12,15 @@ fi
 
 project="$1"
 
+if [ -d "$project" ]; then
+  set -- "$project"/*.csproj
+  if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+    echo "Expected exactly one test project in directory: $project" >&2
+    exit 1
+  fi
+  project="$1"
+fi
+
 if [ ! -f "$project" ]; then
   echo "Test project not found: $project" >&2
   exit 1
