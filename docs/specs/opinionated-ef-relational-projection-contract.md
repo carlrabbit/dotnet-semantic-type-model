@@ -10,7 +10,7 @@ Authoritative for M0055 and the `2.5.0` EF package reset.
 Entity -> table
 Semantic entity inheritance -> TPT
 Scalar -> column
-Enum -> string column
+Enum -> string column with finalized string provider CLR metadata
 Strong identifier -> underlying scalar column
 Owned ValueKind object -> JSON object column
 Owned ValueKind collection -> JSON array column
@@ -62,6 +62,10 @@ No TPH/TPC options.
 Semantic entity links are stored through identifiers.
 
 Do not infer relational navigations or foreign keys.
+
+## Enum Storage
+
+Enum scalar properties are string-backed provider columns. Finalized EF metadata must report `typeof(string)` as the provider CLR type for required and nullable enum properties. Provider-backed tests must audit this metadata, not only the semantic relational model.
 
 ## Extension Data
 
