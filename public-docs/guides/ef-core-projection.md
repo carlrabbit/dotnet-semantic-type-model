@@ -2,7 +2,7 @@
 
 ## Contract
 
-Version 2.5.3 has one CLR-backed application path. Explicit semantic entities become tables; semantic entity inheritance uses TPT. Scalar members become columns, enums become strings, strong identifiers become their underlying scalar, binary values remain binary, and explicitly owned ValueKind members become serialized JSON columns. `SemanticExtensionData` is persisted as a JSON object.
+Version 2.6.1 has one CLR-backed application path. Explicit semantic entities become tables; semantic entity inheritance uses TPT. Scalar members become columns, enums become string provider columns, strong identifiers become their underlying scalar, binary values remain binary, and explicitly owned ValueKind members become serialized JSON columns. `SemanticExtensionData` is persisted as a JSON object.
 
 No value kind becomes an entity. The projection does not use `OwnsOne` or `OwnsMany`, does not create navigations or relationships, and does not inspect interfaces, generic constraints, record infrastructure, DTOs, repositories, framework helpers, static members, or method signatures.
 

@@ -1,3 +1,10 @@
+# 2.6.1
+
+2.6.1 is a non-publishing patch release candidate. Publication, tagging, and GitHub release creation require separate human approval.
+
+- EF Core enum scalar columns now stamp finalized provider CLR metadata as `string` for required and nullable enum members when semantic enum storage is string-based.
+- Added a CLR-extracted, provider-backed SQLite regression that finalizes the EF model, audits entity/navigation/foreign-key/shadow/join metadata, creates the schema, saves, and reloads enum values plus enum-guarded ValueKind JSON data.
+
 # 2.6.0
 
 2.6.0 is a non-publishing release candidate. Publication, tagging, and GitHub release creation require separate human approval.

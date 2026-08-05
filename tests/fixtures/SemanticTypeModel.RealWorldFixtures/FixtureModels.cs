@@ -1,5 +1,6 @@
 using SemanticTypeModel.Abstractions.Model;
 using Intake = SemanticTypeModel.RealWorldFixtures.OrderIntakeSpecificationModel;
+using M0059 = SemanticTypeModel.RealWorldFixtures.M0059ClrEnumRegression;
 using RunState = SemanticTypeModel.RealWorldFixtures.OrderFulfillmentRunStateModel;
 
 namespace SemanticTypeModel.RealWorldFixtures;
@@ -56,6 +57,23 @@ public static class FixtureModels
         ObjectTypeDefinition xmlHelper = Object(typeof(System.Xml.XmlDocument), EntityRole.Unspecified, []);
         TypeDefinition[] types = [guid, text, number, boolean, character, date, time, duration, timestamp, uri, importType, delivery, schedule, polling, delimited, structured, primaryApi, secondaryApi, normalization, derivedField, derivedFields, semanticBase, root, workflow, nonSemanticBase, marker, equatable, jsonHelper, xmlHelper];
         return Model("ImportSpecificationModel", types);
+    }
+
+
+    public static TypeSchemaModel CreateM0059EnumRegression()
+    {
+        EnumTypeDefinition sourceKind = Enum<M0059.ImportSourceKind>();
+        ScalarTypeDefinition guid = Scalar<Guid>(ScalarKind.Guid);
+        ScalarTypeDefinition text = Scalar<string>(ScalarKind.String);
+        ObjectTypeDefinition csv = Object<M0059.CsvSource>(EntityRole.ValueObject, [Property(nameof(M0059.CsvSource.Location), text.Id), Property(nameof(M0059.CsvSource.Delimiter), text.Id)]);
+        ObjectTypeDefinition job = Object<M0059.ImportJob>(EntityRole.Entity,
+        [
+            Property(nameof(M0059.ImportJob.Id), guid.Id),
+            Property(nameof(M0059.ImportJob.SourceKind), sourceKind.Id),
+            Property(nameof(M0059.ImportJob.OptionalSourceKind), sourceKind.Id, false),
+            Property(nameof(M0059.ImportJob.CsvSource), csv.Id, false, ("schema.ownedObject", "true")),
+        ], nameof(M0059.ImportJob.Id));
+        return Model("M0059EnumRegression", [sourceKind, guid, text, job, csv]);
     }
 
     public static TypeSchemaModel CreateRunState()

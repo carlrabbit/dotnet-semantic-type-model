@@ -192,7 +192,11 @@ public static class EfRelationalExtensions
     {
         PropertyBuilder property = builder.Property(column.ClrType, column.MemberName).HasColumnName(column.ColumnName).IsRequired(!column.IsNullable);
         Type actual = Nullable.GetUnderlyingType(column.ClrType) ?? column.ClrType;
-        if (actual.IsEnum) property.HasConversion<string>();
+        if (actual.IsEnum)
+        {
+            property.HasConversion(CreateEnumStringConverter(column.ClrType));
+            property.Metadata.SetProviderClrType(typeof(string));
+        }
         else if (actual == typeof(Uri)) property.HasConversion(new ValueConverter<Uri, string>(v => v.ToString(), v => new Uri(v, UriKind.RelativeOrAbsolute)));
         else if (actual == typeof(ReadOnlyMemory<byte>)) property.HasConversion(new ValueConverter<ReadOnlyMemory<byte>, byte[]>(value => value.ToArray(), value => new ReadOnlyMemory<byte>(value)));
         else if (actual != column.ProviderType) property.HasConversion(CreateStrongConverter(column.ClrType, column.ProviderType));
@@ -239,6 +243,13 @@ public static class EfRelationalExtensions
     private static T Deserialize<T>(string json)
     {
         return JsonSerializer.Deserialize<T>(json, JsonOptions)!;
+    }
+
+    private static ValueConverter CreateEnumStringConverter(Type enumType)
+    {
+        Type actual = Nullable.GetUnderlyingType(enumType) ?? enumType;
+        Type converterType = typeof(EnumToStringConverter<>).MakeGenericType(actual);
+        return (ValueConverter)Activator.CreateInstance(converterType)!;
     }
 
     private static ValueConverter CreateStrongConverter(Type wrapper, Type provider)
