@@ -27,7 +27,6 @@ TypeDefinition
 ObjectTypeDefinition
 PropertyDefinition
 KeyDefinition
-RelationshipDefinition
 ConstraintSet
 ScalarTypeDefinition
 EnumTypeDefinition

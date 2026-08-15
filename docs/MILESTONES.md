@@ -11,7 +11,7 @@ No milestone is active.
 ## Next Number
 
 ```text
-M0062
+M0063
 ```
 
 Never restart or reuse milestone numbers.

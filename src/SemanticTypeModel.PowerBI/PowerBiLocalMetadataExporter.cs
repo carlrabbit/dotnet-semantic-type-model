@@ -61,17 +61,6 @@ public static class PowerBiLocalMetadataExporter
                     Levels = hierarchy.Levels.OrderBy(static level => level.Ordinal).Select(static level => new { level.Name, level.Column, level.Ordinal }),
                 }),
             }),
-            Relationships = model.Relationships.OrderBy(static relationship => relationship.Name, StringComparer.Ordinal).Select(relationship => new
-            {
-                relationship.Name,
-                relationship.FromTable,
-                relationship.FromColumn,
-                relationship.ToTable,
-                relationship.ToColumn,
-                Cardinality = relationship.Cardinality.ToString(),
-                relationship.IsActive,
-                Direction = relationship.Direction.ToString(),
-            }),
             CalculatedTables = model.CalculatedTables.OrderBy(static table => table.Name, StringComparer.Ordinal).Select(table => new
             {
                 table.Name,
@@ -120,11 +109,6 @@ public static class PowerBiLocalMetadataExporter
             {
                 _ = builder.AppendLine(CultureInfo.InvariantCulture, $"    Measure: {measure.Name} Language={measure.ExpressionLanguage} Hidden={measure.IsHidden}");
             }
-        }
-
-        foreach (PowerBiRelationshipDefinition relationship in model.Relationships.OrderBy(static relationship => relationship.Name, StringComparer.Ordinal))
-        {
-            _ = builder.AppendLine(CultureInfo.InvariantCulture, $"  Relationship: {relationship.Name} {relationship.FromTable}[{relationship.FromColumn}] -> {relationship.ToTable}[{relationship.ToColumn}] {relationship.Cardinality} Active={relationship.IsActive}");
         }
 
         foreach (PowerBiCalculatedTableDefinition table in model.CalculatedTables.OrderBy(static table => table.Name, StringComparer.Ordinal))

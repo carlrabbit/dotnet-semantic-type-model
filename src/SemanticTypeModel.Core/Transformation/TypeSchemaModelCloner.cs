@@ -52,9 +52,9 @@ internal static class TypeSchemaModelCloner
                 Annotations = CloneAnnotationBag(objectType.Annotations),
                 Properties = [.. objectType.Properties.Select(CloneProperty)],
                 Keys = [.. objectType.Keys.Select(CloneKey)],
-                Relationships = [.. objectType.Relationships.Select(CloneRelationship)],
                 Composition = objectType.Composition with { AllOf = [.. objectType.Composition.AllOf] },
                 Semantics = objectType.Semantics with { },
+                Mutability = objectType.Mutability,
                 ComputedMembers = [.. objectType.ComputedMembers.Select(CloneComputedMember)],
             },
             ScalarTypeDefinition scalarType => scalarType with
@@ -118,16 +118,6 @@ internal static class TypeSchemaModelCloner
         {
             Properties = [.. key.Properties],
             Annotations = CloneAnnotationBag(key.Annotations),
-        };
-    }
-
-    private static RelationshipDefinition CloneRelationship(RelationshipDefinition relationship)
-    {
-        return relationship with
-        {
-            PrincipalProperties = [.. relationship.PrincipalProperties],
-            DependentProperties = [.. relationship.DependentProperties],
-            Annotations = CloneAnnotationBag(relationship.Annotations),
         };
     }
 

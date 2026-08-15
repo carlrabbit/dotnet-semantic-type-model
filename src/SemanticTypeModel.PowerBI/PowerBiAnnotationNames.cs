@@ -33,10 +33,8 @@ public static class PowerBiAnnotationNames
     public const string DataCategory = "powerBi.dataCategory";
 
     /// <summary>Power BI active relationship annotation.</summary>
-    public const string RelationshipActive = "powerBi.isActive";
 
     /// <summary>Power BI relationship name annotation.</summary>
-    public const string RelationshipName = "powerBi.relationshipName";
 
 
     /// <summary>Power BI sort-by-column annotation.</summary>

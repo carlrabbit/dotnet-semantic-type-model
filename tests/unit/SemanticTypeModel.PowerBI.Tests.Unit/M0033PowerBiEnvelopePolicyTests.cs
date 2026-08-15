@@ -53,12 +53,12 @@ public sealed class M0033PowerBiEnvelopePolicyTests
 
     private static ObjectTypeDefinition Object(string name, IReadOnlyList<PropertyDefinition> properties, AnnotationBag? annotations = null, EntitySemantics? semantics = null)
     {
-        return new() { Id = new TypeId(name), Name = name, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Properties = properties, Keys = [], Relationships = [], Annotations = annotations ?? EmptyAnnotations, Semantics = semantics ?? new EntitySemantics { Role = EntityRole.ValueObject, IsValueObject = true } };
+        return new() { Id = new TypeId(name), Name = name, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Properties = properties, Keys = [], Annotations = annotations ?? EmptyAnnotations, Semantics = semantics ?? new EntitySemantics { Role = EntityRole.ValueObject, IsValueObject = true } };
     }
 
     private static PropertyDefinition Property(string name, TypeId type, bool required, bool nullable, AnnotationBag? annotations = null)
     {
-        return new() { Id = new PropertyId(name), Name = name, Type = new TypeRef(type), Cardinality = new Cardinality { IsRequired = required, AllowsNull = nullable }, Mutability = Mutability.Mutable, Constraints = new ConstraintSet(), Annotations = annotations ?? EmptyAnnotations };
+        return new() { Id = new PropertyId(name), Name = name, Type = new TypeRef(type), Cardinality = new Cardinality { IsRequired = required, AllowsNull = nullable }, Mutability = SemanticMutability.Mutable, Constraints = new ConstraintSet(), Annotations = annotations ?? EmptyAnnotations };
     }
 
     private static AnnotationBag Annotation(params (string Key, object? Value)[] values)

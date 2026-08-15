@@ -36,12 +36,6 @@ public static class StmDiagnosticIds
     /// <summary>STM0005 — Key references a property that does not exist on the owning type.</summary>
     public const string KeyPropertyRefMissing = "STM0005";
 
-    /// <summary>STM0006 — Relationship references a type that is missing or is not an object type.</summary>
-    public const string RelationshipTypeMissing = "STM0006";
-
-    /// <summary>STM0007 — Relationship references a property that does not exist on the owning type.</summary>
-    public const string RelationshipPropertyRefMissing = "STM0007";
-
     /// <summary>STM0008 — Cardinality bounds are invalid (negative or min exceeds max).</summary>
     public const string InvalidCardinalityBounds = "STM0008";
 

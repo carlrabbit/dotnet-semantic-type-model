@@ -37,7 +37,7 @@ This specification is authoritative for:
 - Baseline exclusions:
   - `[SemanticIgnore]` types or members;
   - private/static/indexer/compiler-generated members;
-  - methods/events/fields by default.
+  - methods/events and unannotated fields by default; public fields with an explicit lifecycle-mutability declaration are extracted as canonical properties.
 
 ## Attribute Vocabulary
 
@@ -50,7 +50,8 @@ Baseline extraction attributes:
 - `[SemanticTechnicalDescription]`
 - `[SemanticRole]`
 - `[SemanticKey]`
-- `[SemanticRelationship]`
+- `[SemanticMutable]`
+- `[SemanticImmutable]`
 
 Required behavior:
 

@@ -8,8 +8,6 @@ public readonly record struct TypeId(string Value);
 
 public readonly record struct PropertyId(string Value);
 
-public readonly record struct RelationshipId(string Value);
-
 public readonly record struct PropertyRef(PropertyId Id);
 
 public readonly record struct AnnotationKey(string Value);
@@ -101,7 +99,13 @@ public sealed record ObjectTypeDefinition : TypeDefinition
 {
     public required IReadOnlyList<PropertyDefinition> Properties { get; init; }
     public required IReadOnlyList<KeyDefinition> Keys { get; init; }
-    public required IReadOnlyList<RelationshipDefinition> Relationships { get; init; }
+    public SemanticMutability? Mutability { get; init; }
+
+    public SemanticMutability? GetEffectiveMutability(PropertyDefinition property)
+    {
+        ArgumentNullException.ThrowIfNull(property);
+        return property.Mutability ?? Mutability;
+    }
     public ObjectComposition Composition { get; init; } = new();
     public EntitySemantics Semantics { get; init; } = new();
     public IReadOnlyList<ComputedMemberDefinition> ComputedMembers { get; init; } = [];
@@ -113,7 +117,7 @@ public sealed record PropertyDefinition
     public required string Name { get; init; }
     public required TypeRef Type { get; init; }
     public required Cardinality Cardinality { get; init; }
-    public required Mutability Mutability { get; init; }
+    public SemanticMutability? Mutability { get; init; }
     public string? DisplayName { get; init; }
     public string? UserDescription { get; init; }
     public string? TechnicalDescription { get; init; }
@@ -129,13 +133,10 @@ public sealed record Cardinality
     public int? MaxItems { get; init; }
 }
 
-public enum Mutability
+public enum SemanticMutability
 {
     Mutable,
     Immutable,
-    InitOnly,
-    ReadOnly,
-    WriteOnly,
 }
 
 public sealed record ScalarTypeDefinition : TypeDefinition
@@ -280,35 +281,6 @@ public enum KeyKind
     External,
 }
 
-public sealed record RelationshipDefinition
-{
-    public required RelationshipId Id { get; init; }
-    public required TypeRef PrincipalType { get; init; }
-    public required TypeRef DependentType { get; init; }
-    public required IReadOnlyList<PropertyRef> PrincipalProperties { get; init; }
-    public required IReadOnlyList<PropertyRef> DependentProperties { get; init; }
-    public required RelationshipCardinality Cardinality { get; init; }
-    public DeleteBehaviorSemantics DeleteBehavior { get; init; }
-    public required AnnotationBag Annotations { get; init; }
-}
-
-public enum RelationshipCardinality
-{
-    OneToOne,
-    OneToMany,
-    ManyToOne,
-    ManyToMany,
-}
-
-public enum DeleteBehaviorSemantics
-{
-    Unspecified,
-    Restrict,
-    Cascade,
-    SetNull,
-    NoAction,
-}
-
 public sealed record ConstraintSet
 {
     public StringConstraints? String { get; init; }
@@ -447,7 +419,6 @@ public enum SchemaDiagnosticStage
 public enum ProjectionTarget
 {
     JsonSchema,
-    JsonEditor,
     EfCore,
     PowerBi,
     SystemTextJson,

@@ -169,12 +169,6 @@ ui.*
 4. property display name
 5. property name
 
-### Relationship names
-
-1. `tom.relationshipName`
-2. configured naming transformation
-3. canonical relationship id
-
 ### Measure names
 
 1. explicit measure builder/name
@@ -241,27 +235,9 @@ Binary with diagnostic unless configured
 Enum as string by default unless configured
 ```
 
-## Relationships
+## Relationship boundary
 
-Projection supports explicit simple analytical relationships:
-
-```text
-one-to-one
-one-to-many
-many-to-one
-relationship endpoints
-relationship cardinality
-active/inactive flag when explicitly modeled
-cross-filter direction when explicitly modeled and provider-neutral
-relationship name
-```
-
-Rules:
-
-- both endpoint types must resolve to projected tables;
-- endpoint properties must resolve to projected columns when required;
-- unsupported many-to-many or ambiguous relationships emit diagnostics;
-- relationship inference beyond explicit metadata is out of scope.
+The projection does not consume, infer, or emit canonical general relationships. Applications own target-specific relationship configuration.
 
 ## Measures
 

@@ -84,7 +84,6 @@ public sealed class SchemaTransformationPipelineTests
                 Property("email", "Prop2", stringType.Id),
             ],
             Keys = [],
-            Relationships = [],
         };
 
         SchemaPipelineResult result = await SchemaTransformationPipeline.Create()
@@ -113,7 +112,6 @@ public sealed class SchemaTransformationPipelineTests
             },
             Properties = [],
             Keys = [],
-            Relationships = [],
         };
 
         SchemaPipelineResult result = await SchemaTransformationPipeline.Create()
@@ -198,7 +196,7 @@ public sealed class SchemaTransformationPipelineTests
             Name = name,
             Type = new TypeRef(typeId),
             Cardinality = new Cardinality { IsRequired = true },
-            Mutability = Mutability.Mutable,
+            Mutability = SemanticMutability.Mutable,
             Constraints = new ConstraintSet(),
             Annotations = EmptyAnnotations,
         };

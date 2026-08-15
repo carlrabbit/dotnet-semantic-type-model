@@ -161,30 +161,6 @@ All STM5xxx diagnostics have `Warning` severity unless stated otherwise.
 
 ---
 
-## STM5014 — Relationship definition invalid
-
-**Severity:** Warning
-
-**Message:** `Relationship definition on type '{typeName}' was invalid or could not be applied.`
-
-**Cause:** A relationship attribute has an invalid configuration (missing target type, empty name, etc.).
-
-**Fix:** Ensure relationship attributes have valid target types and non-empty names.
-
----
-
-## STM5015 — Relationship endpoint unresolved
-
-**Severity:** Warning
-
-**Message:** `Relationship endpoint reference on '{typeName}' could not be resolved.`
-
-**Cause:** A relationship attribute references a type or property that cannot be found in the current compilation.
-
-**Fix:** Ensure the referenced type is included in the compilation and is a recognized semantic type.
-
----
-
 ## STM5016 — Enum member unsupported value
 
 **Severity:** Warning
@@ -356,3 +332,9 @@ STM5027 in 2.6.0 rather than being interpreted as strings.
 | STM5045 | Error | Manifest CLR member cannot be resolved. | Rebuild the manifest after the CLR member change. |
 | STM5046 | Error | The retained EF storage policy cannot map a member. | Use a supported scalar, identifier, binary, enum, or explicitly owned ValueKind shape. |
 | STM5047 | Error | Manifest producer and EF consumer suite versions differ. | Use the same exact version for every SemanticTypeModel package. |
+
+## Lifecycle mutability extraction (STM5048)
+
+| Code | Severity | Cause | Fix |
+|---|---|---|---|
+| STM5048 | Error | `[SemanticMutable]` and `[SemanticImmutable]` are both declared on the same type, property, or field. | Keep exactly one lifecycle-mutability declaration on that target, or remove both to leave mutability unspecified. |

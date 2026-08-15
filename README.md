@@ -67,7 +67,7 @@ See [Using SemanticTypeModel](public-docs/usage.md) for the complete first flow.
 ## Configure generation
 
 Common generator settings include the generated namespace, provider name, discovery mode, namespace
-filters, internal-type/member inclusion, naming policy, key/relationship inference, and technical-description
+filters, internal-type/member inclusion, naming policy, key inference, and technical-description
 validation.
 
 For example, change the generated namespace with an assembly option:

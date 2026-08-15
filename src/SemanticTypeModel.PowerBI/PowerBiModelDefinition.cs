@@ -20,11 +20,6 @@ public sealed record PowerBiSemanticModel
     /// </summary>
     public required IReadOnlyList<PowerBiTableDefinition> Tables { get; set; }
 
-    /// <summary>
-    /// Gets projected relationships.
-    /// </summary>
-    public required IReadOnlyList<PowerBiRelationshipDefinition> Relationships { get; set; }
-
     /// <summary>Gets explicit calculated tables.</summary>
     public IReadOnlyList<PowerBiCalculatedTableDefinition> CalculatedTables { get; set; } = [];
 
@@ -45,16 +40,13 @@ public sealed record PowerBiProjectionModel
     /// <summary>Gets projected tables.</summary>
     public required IReadOnlyList<PowerBiTableDefinition> Tables { get; set; }
 
-    /// <summary>Gets projected relationships.</summary>
-    public required IReadOnlyList<PowerBiRelationshipDefinition> Relationships { get; set; }
-
     /// <summary>Gets projection diagnostics.</summary>
     public required IReadOnlyList<SchemaDiagnostic> Diagnostics { get; set; }
 
     /// <summary>Converts this projection result to the Power BI domain semantic model.</summary>
     public PowerBiSemanticModel ToSemanticModel()
     {
-        return new PowerBiSemanticModel { Name = Name, Tables = Tables, Relationships = Relationships, Diagnostics = Diagnostics };
+        return new PowerBiSemanticModel { Name = Name, Tables = Tables, Diagnostics = Diagnostics };
     }
 }
 
@@ -184,57 +176,6 @@ public sealed record PowerBiColumnDefinition
     /// Gets carried annotations.
     /// </summary>
     public required AnnotationBag Annotations { get; init; }
-}
-
-/// <summary>
-/// Represents a projected Power BI relationship.
-/// </summary>
-public sealed record PowerBiRelationshipDefinition
-{
-    /// <summary>
-    /// Gets relationship name.
-    /// </summary>
-    public required string Name { get; set; }
-
-    /// <summary>
-    /// Gets source table name.
-    /// </summary>
-    public required string FromTable { get; init; }
-
-    /// <summary>
-    /// Gets source column name.
-    /// </summary>
-    public required string FromColumn { get; init; }
-
-    /// <summary>
-    /// Gets destination table name.
-    /// </summary>
-    public required string ToTable { get; init; }
-
-    /// <summary>
-    /// Gets destination column name.
-    /// </summary>
-    public required string ToColumn { get; init; }
-
-    /// <summary>
-    /// Gets relationship cardinality.
-    /// </summary>
-    public required PowerBiRelationshipCardinality Cardinality { get; init; }
-
-    /// <summary>
-    /// Gets a value indicating whether this relationship is active.
-    /// </summary>
-    public bool IsActive { get; init; } = true;
-
-    /// <summary>
-    /// Gets the relationship filter direction.
-    /// </summary>
-    public PowerBiRelationshipDirection Direction { get; init; } = PowerBiRelationshipDirection.Single;
-
-    /// <summary>
-    /// Gets the source semantic relationship id.
-    /// </summary>
-    public RelationshipId? SourceRelationshipId { get; init; }
 }
 
 /// <summary>
@@ -394,15 +335,6 @@ public enum PowerBiSummarization
 /// <summary>
 /// Defines relationship filter direction metadata.
 /// </summary>
-public enum PowerBiRelationshipDirection
-{
-    /// <summary>Single-direction filtering.</summary>
-    Single,
-
-    /// <summary>Bi-directional filtering.</summary>
-    Both,
-}
-
 /// <summary>
 /// Defines table and column naming policy.
 /// </summary>
@@ -448,21 +380,4 @@ public enum PowerBiDataType
     Binary,
 }
 
-/// <summary>
-/// Defines relationship cardinality in the projection model.
-/// </summary>
-public enum PowerBiRelationshipCardinality
-{
-    /// <summary>One-to-one.</summary>
-    OneToOne,
-
-    /// <summary>One-to-many.</summary>
-    OneToMany,
-
-    /// <summary>Many-to-one.</summary>
-    ManyToOne,
-
-    /// <summary>Many-to-many.</summary>
-    ManyToMany,
-}
 #pragma warning restore CA1720

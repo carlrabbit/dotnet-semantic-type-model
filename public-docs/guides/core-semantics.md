@@ -35,7 +35,6 @@ Common semantic concepts include:
 | Entity | Independently identifiable domain object |
 | ValueObject | Value contained by another semantic boundary, without independent identity by default |
 | Key | Identity member/group |
-| Relationship | Projection-neutral association metadata |
 | Required / Nullable | Presence and nullability semantics |
 | Constraint | Validation/shape constraint |
 | RequiredWhen | Conditional presence rule against a typed source value |
@@ -65,3 +64,7 @@ For generator-wide configuration such as discovery, naming, or generated namespa
 Target projections may preserve, approximate, ignore, or diagnose a semantic concept. See
 [Projection capabilities](projection-capabilities.md) before assuming a core annotation implies identical
 runtime behavior in every target.
+
+## Lifecycle mutability
+
+`SemanticMutability` is optional lifecycle intent, declared with `[SemanticMutable]` or `[SemanticImmutable]` on object types and members. Member declarations override type declarations; CLR setter/init/readonly shape does not infer it.

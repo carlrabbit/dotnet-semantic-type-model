@@ -216,3 +216,18 @@ The `SemanticTypeModel.Configuration` runtime API that binds one selected option
 
 ### Generated Registration Helper
 A source-generated convenience method that calls the runtime registration adapter instead of implementing independent Configuration binding or validation behavior.
+
+### Semantic Mutability
+Optional lifecycle mutability intent expressed only as `Mutable` or `Immutable`.
+
+### Declared Mutability
+The nullable mutability value explicitly authored on an object type or property.
+
+### Effective Mutability
+A property's declared mutability, otherwise its containing object's declared mutability, otherwise unspecified.
+
+### STM JSON Schema Extension
+The optional `x-stm` JSON Schema object that preserves the approved subset of STM-only semantics.
+
+### UI Annotation
+An open JSON-compatible canonical annotation whose key begins with `ui.`.

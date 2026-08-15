@@ -34,7 +34,6 @@ For every meaningful public capability, documentation must make these answers di
 
 - `public-docs/guides/core-semantics.md`
 - `public-docs/guides/json-schema.md`
-- `public-docs/guides/json-editor-compatibility.md`
 - `public-docs/guides/ef-core.md`
 - `public-docs/guides/power-bi.md`
 - `public-docs/guides/system-text-json.md`

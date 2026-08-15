@@ -91,12 +91,12 @@ public sealed class ConfigurationDerivationTests
 
     private static ObjectTypeDefinition Object(string id, IReadOnlyList<PropertyDefinition> properties, AnnotationBag annotations)
     {
-        return new() { Id = new TypeId(id), Name = id, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = annotations, Properties = properties, Keys = [], Relationships = [] };
+        return new() { Id = new TypeId(id), Name = id, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = annotations, Properties = properties, Keys = [] };
     }
 
     private static PropertyDefinition Property(string name, TypeId type, AnnotationBag? annotations = null)
     {
-        return new() { Id = new PropertyId(name), Name = name, Type = new TypeRef(type), Cardinality = new Cardinality(), Mutability = Mutability.InitOnly, Constraints = new ConstraintSet(), Annotations = annotations ?? new AnnotationBag() };
+        return new() { Id = new PropertyId(name), Name = name, Type = new TypeRef(type), Cardinality = new Cardinality(), Mutability = null, Constraints = new ConstraintSet(), Annotations = annotations ?? new AnnotationBag() };
     }
 
     private static AnnotationBag Annotations(params Annotation[] annotations)
@@ -192,12 +192,12 @@ public sealed class ConfigurationRegistrationTests
 
     private static ObjectTypeDefinition Object(string id, IReadOnlyList<PropertyDefinition> properties, AnnotationBag annotations)
     {
-        return new() { Id = new TypeId(id), Name = id, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = annotations, Properties = properties, Keys = [], Relationships = [] };
+        return new() { Id = new TypeId(id), Name = id, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = annotations, Properties = properties, Keys = [] };
     }
 
     private static PropertyDefinition Property(string name, TypeId type, AnnotationBag? annotations = null)
     {
-        return new() { Id = new PropertyId(name), Name = name, Type = new TypeRef(type), Cardinality = new Cardinality(), Mutability = Mutability.InitOnly, Constraints = new ConstraintSet(), Annotations = annotations ?? new AnnotationBag() };
+        return new() { Id = new PropertyId(name), Name = name, Type = new TypeRef(type), Cardinality = new Cardinality(), Mutability = null, Constraints = new ConstraintSet(), Annotations = annotations ?? new AnnotationBag() };
     }
 
     private static AnnotationBag Annotations(params Annotation[] annotations)

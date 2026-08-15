@@ -517,7 +517,7 @@ public sealed class ValidateEvolutionOwnershipLifecycleSemanticsTransformation :
 
             if (!model.TypesById.ContainsKey(property.Type.Id))
             {
-                Report(context, StmDiagnosticIds.RelationshipTypeMissing, $"Owned member '{objectType.Name}.{property.Name}' references missing type '{property.Type.Id.Value}'.", ModelPath.ForProperty(objectType.Id, property.Id.Value), CoreSemanticAnnotationKeys.Ownership);
+                Report(context, StmDiagnosticIds.UnresolvedTypeRef, $"Owned member '{objectType.Name}.{property.Name}' references missing type '{property.Type.Id.Value}'.", ModelPath.ForProperty(objectType.Id, property.Id.Value), CoreSemanticAnnotationKeys.Ownership);
             }
         }
     }

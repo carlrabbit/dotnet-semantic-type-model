@@ -72,22 +72,6 @@ Composite keys:
 - supported through shared `[SemanticKey(Name=..., Order=...)]`;
 - duplicate or missing order emits `STM5016`.
 
-## Relationship Inference
-
-When `InferRelationships=true`:
-
-- reference members to object-like types infer `ManyToOne`;
-- collections of object-like types infer `OneToMany`;
-- multiple candidates on a type emit `STM5014`.
-
-Explicit relationships:
-
-- `[SemanticRelationship]` maps explicit annotations and overrides inference.
-
-Target validation:
-
-- relationship targets missing from the extracted model emit `STM5015`.
-
 ## XML Documentation Convention
 
 XML documentation summaries are always technical-description fallback sources.
@@ -107,7 +91,6 @@ Convention and generation options are supported through analyzer/MSBuild propert
 - `SemanticTypeModelIncludeInternalMembers`
 - `SemanticTypeModelNamingPolicy`
 - `SemanticTypeModelInferKeys`
-- `SemanticTypeModelInferRelationships`
 - `SemanticTypeModelRequireTechnicalDescription`
 - `SemanticTypeModelGeneratedNamespace`
 - `SemanticTypeModelGeneratedProviderName`

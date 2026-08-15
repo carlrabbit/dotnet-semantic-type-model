@@ -2,67 +2,45 @@
 
 ## Use
 
-Generate a canonical model from annotated .NET code, derive the JSON Schema domain model, review diagnostics,
-then export Draft 2020-12 output.
+Derive the JSON Schema domain model from a canonical model and export Draft 2020-12 output:
 
 ```csharp
-using SemanticTypeModel.JsonSchema;
-using SemanticTypeModel.JsonSchema.Derivation;
-using SemanticTypeModel.JsonSchema.Export;
-
-var result = AppSemanticTypeModel.Create()
-    .DeriveJsonSchemaModel(options => options.UseDefaultTransformations());
-
-result.Diagnostics.ThrowIfErrors();
-
-JsonSchemaExportResult export = JsonSchemaExporter.Export(result.Model);
-Console.WriteLine(export.Document.RootElement.GetRawText());
+var derived = AppSemanticTypeModel.Create().DeriveJsonSchemaModel(options => options.UseDefaultTransformations());
+derived.Diagnostics.ThrowIfErrors();
+JsonSchemaExportResult export = JsonSchemaExporter.Export(derived.Model);
 ```
+
+Semantic annotations are enabled by default. STM-only semantics appear in one `x-stm` object whose initial vocabulary is exactly `role`, `aggregateRoot`, `mutability`, `technicalDescription`, `keys`, `unit`, and `ui`. `UserDescription` remains the standard JSON Schema `description`; technical text is independently emitted as `x-stm.technicalDescription`.
+
+Declared mutability is emitted only at the node where it was declared. Object keys retain composite member order and refer to emitted property names. Arbitrary JSON-compatible `ui.*` values pass through beneath `x-stm.ui` after stripping the `ui.` prefix.
 
 ## Configure
 
-Common export controls include schema ID, projection annotations, root/envelope selection policy, and UI export
-options.
-
 ```csharp
 JsonSchemaExportResult export = JsonSchemaExporter.Export(
-    result.Model,
+    derived.Model,
     new JsonSchemaExportOptions
     {
         SchemaId = new Uri("https://example.invalid/customer.schema.json"),
-        IncludeProjectionAnnotations = false,
-        UiExport = new JsonSchemaUiExportOptions
-        {
-            UiMode = JsonSchemaUiMode.JsonEditorCompatible,
-            IncludeJsonEditorCompatibilityAnnotations = true,
-        },
+        IncludeSemanticAnnotations = false, // plain JSON Schema without x-stm
     });
 ```
 
-Current semantic behavior includes deterministic definitions/references, required/nullability mapping, enum
-mapping, supported scalar formats, extension-data handling, and representable `RequiredWhen` conditions.
-
-`UserDescription` maps to user-facing schema description. Technical descriptions are separate and are emitted
-only through explicit target behavior/options.
-
-JSON Schema import may remain for compatibility/tooling, but annotated .NET code plus generated providers is the
-supported public authoring path.
+There is no JSON Editor compatibility mode, widget inference option, or closed UI vocabulary.
 
 ## Diagnose
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Duplicate projected property names | Naming policies collapse distinct members | Change semantic/JSON naming policy or source names. |
-| Unsupported scalar/shape | No safe schema representation exists | Change source shape or handle the target-specific boundary explicitly. |
-| Invalid UI hint | Selected UI compatibility mode cannot represent the hint | Remove/change the hint or UI mode. |
-| Lossy conditional export | `RequiredWhen` source/operator/literal is not safely representable | Use a supported typed equality condition. |
-| Extension data diagnostic | Member is not a supported dictionary-like extension-data shape | Use a supported extension-data member type. |
+| `x-stm` is absent | `IncludeSemanticAnnotations` is false or the node has no supported declarations | Enable semantic annotations or add an explicit supported semantic declaration. |
+| `JSONSCHEMA_UI_VALUE_NOT_JSON_COMPATIBLE` | A `ui.*` annotation value cannot be serialized as JSON | Use a string, number, Boolean, null, array, object, or `JsonElement`. |
+| Technical text is absent from `description` | Technical and user descriptions are intentionally independent | Add `SemanticUserDescription` for standard `description`; inspect `x-stm.technicalDescription` for technical text. |
+| Unsupported scalar/shape | No safe schema representation exists | Change the source shape or handle the projection diagnostic explicitly. |
 
 Always review derivation/export diagnostics before consuming output.
 
 ## Reference
 
-- [JSON Editor compatibility](json-editor-compatibility.md)
 - [Core semantics](core-semantics.md)
 - [Projection capabilities](projection-capabilities.md)
 - [Diagnostics](../diagnostics.md)

@@ -25,7 +25,6 @@ public sealed class TypeSchemaModelValidator
         CheckDuplicatePropertyNames(model, diagnostics);
         CheckDuplicateKeyNames(model, diagnostics);
         CheckKeyPropertyRefs(model, diagnostics);
-        CheckRelationships(model, diagnostics);
         CheckInvalidCardinality(model, diagnostics);
         CheckInvalidConstraintRanges(model, diagnostics);
         CheckAnnotationKeys(model, diagnostics);
@@ -134,7 +133,7 @@ public sealed class TypeSchemaModelValidator
     {
         foreach (TypeDefinition type in model.Types)
         {
-            foreach ((TypeRef typeRef, var refPath) in CollectNonRelationshipTypeRefs(type))
+            foreach ((TypeRef typeRef, var refPath) in CollectTypeRefs(type))
             {
                 if (!model.TypesById.ContainsKey(typeRef.Id))
                 {
@@ -147,7 +146,7 @@ public sealed class TypeSchemaModelValidator
         }
     }
 
-    private static IEnumerable<(TypeRef Ref, string Path)> CollectNonRelationshipTypeRefs(TypeDefinition type)
+    private static IEnumerable<(TypeRef Ref, string Path)> CollectTypeRefs(TypeDefinition type)
     {
         var typePath = ModelPath.ForType(type.Id);
 
@@ -269,76 +268,6 @@ public sealed class TypeSchemaModelValidator
         }
     }
 
-    private static void CheckRelationships(TypeSchemaModel model, List<SchemaDiagnostic> diagnostics)
-    {
-        foreach (ObjectTypeDefinition objectType in model.Types.OfType<ObjectTypeDefinition>())
-        {
-            foreach (RelationshipDefinition relationship in objectType.Relationships)
-            {
-                var relationshipPath = ModelPath.ForRelationship(objectType.Id, relationship.Id);
-                var principalResolved = TryGetObjectType(model, relationship.PrincipalType, out ObjectTypeDefinition? principalType);
-                var dependentResolved = TryGetObjectType(model, relationship.DependentType, out ObjectTypeDefinition? dependentType);
-
-                if (!principalResolved)
-                {
-                    diagnostics.Add(Error(
-                        "STM0006",
-                        $"Relationship '{relationship.Id.Value}' references missing or non-object principal type '{relationship.PrincipalType.Id.Value}'.",
-                        $"{relationshipPath}/principalType"));
-                }
-
-                if (!dependentResolved)
-                {
-                    diagnostics.Add(Error(
-                        "STM0006",
-                        $"Relationship '{relationship.Id.Value}' references missing or non-object dependent type '{relationship.DependentType.Id.Value}'.",
-                        $"{relationshipPath}/dependentType"));
-                }
-
-                if (principalResolved)
-                {
-                    CheckPropertyRefsExist(
-                        principalType!,
-                        relationship.PrincipalProperties,
-                        $"{relationshipPath}/principalProperties",
-                        relationship.Id,
-                        diagnostics);
-                }
-
-                if (dependentResolved)
-                {
-                    CheckPropertyRefsExist(
-                        dependentType!,
-                        relationship.DependentProperties,
-                        $"{relationshipPath}/dependentProperties",
-                        relationship.Id,
-                        diagnostics);
-                }
-            }
-        }
-    }
-
-    private static void CheckPropertyRefsExist(
-        ObjectTypeDefinition ownerType,
-        IReadOnlyList<PropertyRef> references,
-        string parentPath,
-        RelationshipId relationshipId,
-        List<SchemaDiagnostic> diagnostics)
-    {
-        HashSet<PropertyId> propertyIds = [.. ownerType.Properties.Select(static property => property.Id)];
-
-        foreach (PropertyRef propertyRef in references)
-        {
-            if (!propertyIds.Contains(propertyRef.Id))
-            {
-                diagnostics.Add(Error(
-                    "STM0007",
-                    $"Relationship '{relationshipId.Value}' references missing property '{propertyRef.Id.Value}' on type '{ownerType.Id.Value}'.",
-                    ModelPath.ForPropertyReference(parentPath, propertyRef.Id)));
-            }
-        }
-    }
-
     private static void CheckInvalidCardinality(TypeSchemaModel model, List<SchemaDiagnostic> diagnostics)
     {
         foreach (TypeDefinition type in model.Types)
@@ -417,11 +346,6 @@ public sealed class TypeSchemaModelValidator
                     CheckAnnotationBag(property.Annotations, ModelPath.ForProperty(type.Id, property.Name), diagnostics);
                 }
 
-                foreach (RelationshipDefinition relationship in objectType.Relationships)
-                {
-                    CheckAnnotationBag(relationship.Annotations, ModelPath.ForRelationship(type.Id, relationship.Id), diagnostics);
-                }
-
                 foreach (KeyDefinition key in objectType.Keys)
                 {
                     CheckAnnotationBag(key.Annotations, ModelPath.ForKey(type.Id, key.Name), diagnostics);
@@ -487,12 +411,6 @@ public sealed class TypeSchemaModelValidator
                 }
             }
         }
-    }
-
-    private static bool TryGetObjectType(TypeSchemaModel model, TypeRef typeRef, out ObjectTypeDefinition? objectType)
-    {
-        objectType = model.TryGetType(typeRef.Id) as ObjectTypeDefinition;
-        return objectType is not null;
     }
 
     private static bool HasInvalidRange<T>(T? minimum, T? maximum)

@@ -53,11 +53,7 @@ public static class DotNetExtractionDiagnosticIds
     /// <summary>STM5013 — A key definition was invalid or could not be applied.</summary>
     public const string KeyDefinitionInvalid = "STM5013";
 
-    /// <summary>STM5014 — A relationship definition was invalid or could not be applied.</summary>
-    public const string RelationshipDefinitionInvalid = "STM5014";
 
-    /// <summary>STM5015 — A relationship endpoint reference could not be resolved.</summary>
-    public const string RelationshipEndpointUnresolved = "STM5015";
 
     /// <summary>STM5016 — An enum member has an unsupported backing value type.</summary>
     public const string EnumMemberUnsupportedValue = "STM5016";
@@ -133,4 +129,6 @@ public static class DotNetExtractionDiagnosticIds
     public const string EfProjectionError = "STM5046";
     /// <summary>STM5047 — Manifest producer and consumer suite versions differ.</summary>
     public const string EfManifestSuiteVersionMismatch = "STM5047";
+    /// <summary>STM5048 — Conflicting lifecycle mutability declarations.</summary>
+    public const string ConflictingSemanticMutability = "STM5048";
 }

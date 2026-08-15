@@ -138,7 +138,6 @@ var result = model.Transform(pipeline =>
 {
     pipeline.UseCoreDefaults();
     pipeline.Replace<InferEntityKeysTransformation>(new MyKeyInference());
-    pipeline.Remove<InferRelationshipsTransformation>();
     pipeline.AddAfter<NormalizeSemanticAliasesTransformation>(new MyTransformation());
 });
 ```

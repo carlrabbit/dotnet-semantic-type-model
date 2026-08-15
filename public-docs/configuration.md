@@ -55,7 +55,6 @@ Default: `AppSemanticTypeModel`.
 | Include internal members | `false` | `IncludeInternalMembers` | `SemanticTypeModelIncludeInternalMembers` |
 | Naming policy | `Preserve` | `NamingPolicy` | `SemanticTypeModelNamingPolicy` |
 | Infer keys | `false` | `InferKeys` | `SemanticTypeModelInferKeys` |
-| Infer relationships | `false` | `InferRelationships` | `SemanticTypeModelInferRelationships` |
 | Require technical descriptions | `false` | `RequireTechnicalDescription` | `SemanticTypeModelRequireTechnicalDescription` |
 | Import System.Text.Json attributes | `false` | `ImportSystemTextJsonAttributes` | `SemanticTypeModelImportSystemTextJsonAttributes` |
 | Use `JsonPropertyName` as semantic name | `false` | `UseJsonPropertyNameAsSemanticName` | `SemanticTypeModelUseJsonPropertyNameAsSemanticName` |
@@ -116,7 +115,6 @@ Inference is disabled by default:
 ```csharp
 [assembly: SemanticTypeModelGeneratorOptions(
     InferKeys = true,
-    InferRelationships = true)]
 ```
 
 Prefer explicit semantic metadata when inference would be ambiguous or when the model is a durable public

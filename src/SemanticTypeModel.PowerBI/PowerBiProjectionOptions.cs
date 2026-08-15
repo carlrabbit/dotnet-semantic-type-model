@@ -44,11 +44,6 @@ public sealed record PowerBiProjectionOptions
     public bool IncludeUnsupportedAnnotations { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets a value indicating whether incomplete relationships produce errors instead of warnings.
-    /// </summary>
-    public bool TreatRelationshipsAsRequired { get; set; }
-
-    /// <summary>
     /// Gets or sets a value indicating whether unannotated object types can become Power BI tables.
     /// </summary>
     public bool ProjectUnannotatedObjectsAsTables { get; set; }

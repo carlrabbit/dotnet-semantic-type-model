@@ -34,7 +34,7 @@ The canonical semantic model surface includes:
 - collection/map model: `ArrayTypeDefinition`, `DictionaryTypeDefinition`;
 - composition model: `UnionTypeDefinition` (`OneOf`/`AnyOf`) and `IntersectionTypeDefinition`;
 - reference model: stable `TypeRef(TypeId)` for recursive/reference graphs;
-- semantics model: `EntitySemantics`, `KeyDefinition`, `RelationshipDefinition`, computed members;
+- semantics model: `EntitySemantics`, `KeyDefinition`, computed members;
 - diagnostics model: `SchemaDiagnostic` with severity, code, message, stage, model path, source, projection target, and related model paths.
 
 ## Invariants

@@ -74,7 +74,6 @@ public sealed class M0028TransformationPipelineTests
                 Property("Id", "Id", stringType.Id, Annotations(Annotation("schema.key", "true"), Annotation("schema.key.generated", "true"))),
             ],
             Keys = [],
-            Relationships = [],
         };
 
         ObjectTypeDefinition valueObject = new()
@@ -86,7 +85,6 @@ public sealed class M0028TransformationPipelineTests
             Annotations = Annotations(Annotation("schema.role", "ValueObject")),
             Properties = [Property("Code", "Code", stringType.Id, Annotations(Annotation("schema.key", "true")))],
             Keys = [],
-            Relationships = [],
         };
 
         SemanticModelTransformationResult result = BuildModel(customer, valueObject, stringType).Transform(pipeline => pipeline.UseCoreDefaults(), new SchemaPipelineOptions { ContinueOnError = true });
@@ -152,7 +150,7 @@ public sealed class M0028TransformationPipelineTests
             Name = name,
             Type = new TypeRef(typeId),
             Cardinality = new Cardinality { IsRequired = true },
-            Mutability = Mutability.Mutable,
+            Mutability = SemanticMutability.Mutable,
             Constraints = new ConstraintSet(),
             Annotations = annotations ?? EmptyAnnotations,
         };

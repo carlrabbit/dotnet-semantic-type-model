@@ -4,6 +4,7 @@ namespace SemanticTypeModel.Samples.CodeFirstJsonSchema;
 
 // Consumers mark normal application types with SemanticTypeModel.DotNet attributes.
 [SemanticType(SemanticTypeRole.Entity)]
+[SemanticImmutable]
 [SemanticName("Customer")]
 [SemanticUserDescription("A customer account exported by the code-first JSON Schema sample.")]
 public sealed class Customer
@@ -17,7 +18,10 @@ public sealed class Customer
     [SemanticUserDescription("Primary contact email address.")]
     public required string Email { get; init; }
 
-    public Address BillingAddress { get; init; } = new();
+    [SemanticMutable]
+    [SemanticTechnicalDescription("A refreshable technical cache example.")]
+    [SemanticAnnotation("ui.customThing", "refreshable-address")]
+    public Address BillingAddress { get; set; } = new();
 }
 
 public sealed class Address

@@ -148,20 +148,7 @@ public sealed class M0031PowerBiDerivationTests
                 Property("monthName", "MonthName", intType.Id, true, false, Annotation((PowerBiAnnotationNames.SortByColumn, "monthNumber"))),
                 Property("amount", "Amount", decimalType.Id, true, false, Annotation((PowerBiAnnotationNames.FormatString, "$#,0.00"))),
             ],
-            [Key("PK_FactSales", "FactSalesKey")],
-            relationships:
-            [
-                new RelationshipDefinition
-                {
-                    Id = new RelationshipId("FactSales_DimCustomer"),
-                    PrincipalType = new TypeRef(dimension.Id),
-                    DependentType = new TypeRef(new TypeId("FactSales")),
-                    PrincipalProperties = [new PropertyRef(new PropertyId("DimCustomerKey"))],
-                    DependentProperties = [new PropertyRef(new PropertyId("FactCustomerKey"))],
-                    Cardinality = RelationshipCardinality.ManyToOne,
-                    Annotations = EmptyAnnotations,
-                },
-            ]);
+            [Key("PK_FactSales", "FactSalesKey")]);
 
         return BuildModel(fact, dimension, intType, decimalType, boolType);
     }
@@ -176,9 +163,9 @@ public sealed class M0031PowerBiDerivationTests
         return new ScalarTypeDefinition { Id = new TypeId(name), Name = name, Kind = TypeKind.Scalar, Nullability = Nullability.NonNullable, Annotations = EmptyAnnotations, ScalarKind = kind };
     }
 
-    private static ObjectTypeDefinition Entity(string name, EntityRole role, IReadOnlyList<PropertyDefinition> properties, IReadOnlyList<KeyDefinition> keys, IReadOnlyList<RelationshipDefinition>? relationships = null)
+    private static ObjectTypeDefinition Entity(string name, EntityRole role, IReadOnlyList<PropertyDefinition> properties, IReadOnlyList<KeyDefinition> keys)
     {
-        return new ObjectTypeDefinition { Id = new TypeId(name), Name = name, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = Annotation((PowerBiAnnotationNames.TableRole, role.ToString())), Semantics = new EntitySemantics { Role = role }, Properties = properties, Keys = keys, Relationships = relationships ?? [] };
+        return new ObjectTypeDefinition { Id = new TypeId(name), Name = name, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = Annotation((PowerBiAnnotationNames.TableRole, role.ToString())), Semantics = new EntitySemantics { Role = role }, Properties = properties, Keys = keys };
     }
 
     private static KeyDefinition Key(string name, params string[] properties)
@@ -188,7 +175,7 @@ public sealed class M0031PowerBiDerivationTests
 
     private static PropertyDefinition Property(string name, string propertyId, TypeId typeId, bool isRequired, bool allowsNull, AnnotationBag? annotations = null)
     {
-        return new PropertyDefinition { Id = new PropertyId(propertyId), Name = name, Type = new TypeRef(typeId), Cardinality = new Cardinality { IsRequired = isRequired, AllowsNull = allowsNull }, Mutability = Mutability.Mutable, Constraints = new ConstraintSet(), Annotations = annotations ?? EmptyAnnotations };
+        return new PropertyDefinition { Id = new PropertyId(propertyId), Name = name, Type = new TypeRef(typeId), Cardinality = new Cardinality { IsRequired = isRequired, AllowsNull = allowsNull }, Mutability = SemanticMutability.Mutable, Constraints = new ConstraintSet(), Annotations = annotations ?? EmptyAnnotations };
     }
 
     private static AnnotationBag Annotation(params (string key, object? value)[] items)

@@ -86,7 +86,6 @@ public sealed class TypeSchemaModelDependencyInjectionTests
                 Property("email", "P2", new TypeId("String")),
             ],
             Keys = [],
-            Relationships = [],
         };
 
         using ServiceProvider serviceProvider = new ServiceCollection()
@@ -120,7 +119,6 @@ public sealed class TypeSchemaModelDependencyInjectionTests
                 Annotations = EmptyAnnotations,
                 Properties = [Property("id", "CustomerIdProperty", new TypeId("CustomerId"))],
                 Keys = [],
-                Relationships = [],
             };
             return BuildModel(customer, Scalar("CustomerId", "CustomerId"));
         }
@@ -222,7 +220,7 @@ public sealed class TypeSchemaModelDependencyInjectionTests
             Name = name,
             Type = new TypeRef(typeId),
             Cardinality = new Cardinality { IsRequired = true },
-            Mutability = Mutability.Mutable,
+            Mutability = SemanticMutability.Mutable,
             Constraints = new ConstraintSet(),
             Annotations = EmptyAnnotations,
         };

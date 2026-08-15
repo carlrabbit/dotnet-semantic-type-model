@@ -49,11 +49,6 @@ public sealed record DotNetExtractionOptions
     public bool InferKeys { get; init; }
 
     /// <summary>
-    /// Gets a value indicating whether relationship inference is enabled.
-    /// </summary>
-    public bool InferRelationships { get; init; }
-
-    /// <summary>
     /// Gets a value indicating whether a technical description is required.
     /// </summary>
     public bool RequireTechnicalDescription { get; init; }
@@ -212,6 +207,9 @@ public abstract record DotNetTypeDescriptor
 /// </summary>
 public sealed record DotNetObjectTypeDescriptor : DotNetTypeDescriptor
 {
+    /// <summary>Gets declared lifecycle mutability.</summary>
+    public SemanticMutability? Mutability { get; init; }
+
     /// <summary>
     /// Gets object properties.
     /// </summary>
@@ -277,6 +275,9 @@ public sealed record DotNetDictionaryTypeDescriptor : DotNetTypeDescriptor
 /// </summary>
 public sealed record DotNetPropertyDescriptor
 {
+    /// <summary>Gets declared lifecycle mutability.</summary>
+    public SemanticMutability? Mutability { get; init; }
+
     /// <summary>
     /// Gets property name.
     /// </summary>

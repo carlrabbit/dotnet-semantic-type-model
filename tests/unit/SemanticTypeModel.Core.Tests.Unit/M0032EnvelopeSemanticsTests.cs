@@ -103,7 +103,6 @@ public sealed class M0032EnvelopeSemanticsTests
             Annotations = annotations ?? new AnnotationBag(),
             Properties = properties,
             Keys = [],
-            Relationships = [],
         };
     }
 
@@ -115,7 +114,7 @@ public sealed class M0032EnvelopeSemanticsTests
             Name = name,
             Type = new TypeRef(typeId),
             Cardinality = new Cardinality(),
-            Mutability = Mutability.Mutable,
+            Mutability = SemanticMutability.Mutable,
             Constraints = new ConstraintSet(),
             Annotations = annotations ?? new AnnotationBag(),
         };
