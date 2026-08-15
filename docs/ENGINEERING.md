@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Engineering documents define repository commands, toolchain setup, validation commands, implementation constraints, and release packaging policies.
+Engineering documents define repository commands, toolchain setup, validation commands, implementation constraints, documentation lifecycle, and release packaging policies.
 
 ## Validation Tiers
 
@@ -28,8 +28,44 @@ Use validation tiers to keep local feedback focused while preserving reliable co
 - Do not introduce terminology that is absent from `docs/TERMINOLOGY.md`.
 - Update specs when behavior changes.
 - Update architecture documents when structure changes.
-- Update decisions when durable rationale is introduced.
+- Update decisions when durable rationale is introduced or replaced.
 - Update public documentation surfaces when consumer-facing behavior changes.
+
+## Documentation Lifecycle
+
+The repository working tree carries **current truth and active work**. Git carries detailed historical work and superseded designs.
+
+### Authority roles
+
+- Specifications define exact current behavioral contracts.
+- Architecture defines major structural boundaries and dependency direction.
+- Decisions explain non-obvious current rationale.
+- Milestones route active implementation work.
+- Public docs explain supported consumer usage.
+- `HISTORY.md` summarizes architectural evolution without becoming a changelog or milestone archive.
+
+### Completion and supersession
+
+- After a milestone is implemented and durable outcomes are synchronized into specs/decisions/architecture/public docs/tests as appropriate, delete the completed milestone file.
+- Never reuse milestone numbers. After M0060, numbering continues with M0061.
+- Delete superseded decisions/specifications after promoting any still-current requirement or rationale into replacement authority.
+- Do not create an archive directory merely to retain files already preserved by Git.
+- `.guide-sync/pending/` contains only unresolved current synchronization work and should normally be empty.
+- Do not copy external setup/engineering guides into `docs/research/`.
+
+### Anti-regrowth rule
+
+Prefer modifying an existing authoritative document.
+
+Create a new document only for a distinct authority boundary such as:
+
+- a new independently implementable subsystem contract;
+- a new durable cross-cutting/non-obvious architectural decision;
+- a new consumer/package/audience entry point;
+- an active milestone;
+- a genuinely separate research subject.
+
+A new feature, bug fix, diagnostic, mapping rule, release, or implementation detail normally extends existing authority rather than creating a new file.
 
 ## Testing Constraints
 
@@ -37,6 +73,7 @@ Use validation tiers to keep local feedback focused while preserving reliable co
 - Short-running tests must avoid network dependencies, arbitrary sleeps, large datasets, and expensive benchmark behavior.
 - Long-running tests, benchmarks, stress tests, and release-only integration scenarios must be explicit and isolated from the default short-running test path.
 - Prefer focused Tier 1 validation during implementation, then Tier 2 before completion.
+- Boundary-crossing generator/provider/package defects require tests that exercise the actual boundary; do not substitute hand-built internal models for the integration being validated.
 
 ## Public Documentation Synchronization
 
@@ -48,6 +85,8 @@ Consumer-visible changes must be reflected in:
 - package README sources under `public-docs/nuget/` when package usage changes.
 
 Run `./eng/public-docs.sh` when public documentation changes.
+
+Do not infer publication state from a completed release-preparation milestone, a package existing in source, or a README version snippet. Publication/version guidance must be based on verified package publication truth.
 
 ## Diagnostics
 

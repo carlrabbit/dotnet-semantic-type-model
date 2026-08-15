@@ -1,19 +1,35 @@
 # Versioning
 
-## Policy
+## Package suite rule
 
-- `1.0.0` is the first stable release.
-- Semantic versioning applies after `1.0.0`.
-- Documented public APIs are covered by the compatibility policy.
-- Experimental APIs are explicitly marked when present.
-- Diagnostic IDs are stable unless the compatibility policy explicitly says otherwise.
-- Annotation keys are stable unless the compatibility policy explicitly says otherwise.
-- Prerelease APIs before 1.0 were not compatibility-stable.
+All `SemanticTypeModel.*` packages are treated as one aligned package suite.
+
+**Use the same exact version for every SemanticTypeModel package in one application. Mixing suite versions is
+unsupported.**
+
+This includes runtime, abstractions, projection, and generator/analyzer packages.
+
+## Consumer examples
+
+Version-neutral evergreen snippets are preferred:
+
+```sh
+dotnet add package SemanticTypeModel.DotNet
+dotnet add package SemanticTypeModel.Generators
+dotnet add package SemanticTypeModel.JsonSchema
+```
+
+When a consumer pins versions explicitly, pin all SemanticTypeModel packages to the same value. For example,
+with central package management use one shared version property rather than independently maintained values.
 
 ## Compatibility
 
-Public API compatibility expectations are tracked in [api/compatibility.md](api/compatibility.md).
+Semantic versioning applies to stable releases. See [Compatibility](api/compatibility.md) for current
+compatibility boundaries and [Release notes](release-notes.md) for version-specific chronology.
 
-## Current Release Candidate
+## Publication truth
 
-`2.4.1` is the current patch release-preparation target. It corrects the 2.4.0 dictionary key extraction defect that could omit key type definitions and produce `STM0002` for valid dictionary models, most visibly `[SemanticExtensionData] Dictionary<string, JsonElement>?`. Publication, tag creation, and GitHub release creation remain separate human-approved actions.
+Repository source or documentation for a prospective release does not prove that a package was published. Current publication state must be verified from the actual package/release channel during release
+work.
+
+Evergreen usage/configuration guides therefore do not declare a guessed current publication version.

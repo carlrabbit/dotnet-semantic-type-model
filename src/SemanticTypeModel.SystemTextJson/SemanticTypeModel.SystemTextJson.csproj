@@ -23,6 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../../public-docs/nuget/SemanticTypeModel.SystemTextJson.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../public-docs/nuget/SemanticTypeModel.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 </Project>

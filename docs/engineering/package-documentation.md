@@ -2,232 +2,100 @@
 
 ## Purpose
 
-Define the repository standard for NuGet package descriptions, package README sources, usage guides, compatibility documentation, release notes, and specs.
+Define consumer documentation for the tightly coupled SemanticTypeModel package suite.
 
-Package documentation keeps NuGet README content, public usage guides, and release validation aligned with the packages that are actually produced by this repository.
+## Shared package README
 
-## Document Types
-
-| Document type | Purpose | Location |
-|---|---|---|
-| NuGet package description | Short package metadata for search results and package cards. | Project/package metadata |
-| NuGet package README | Install-and-first-use package landing page. | `public-docs/nuget/*.md` |
-| Usage guide | Scenario-oriented walkthrough with concrete options, policies, diagnostics, and mistakes. | `public-docs/guides/*.md` |
-| Compatibility documentation | Versioning, breaking-change, and compatibility policy. | `public-docs/api/compatibility.md` |
-| Release notes | Version-specific changes and migration notes. | `public-docs/release-notes.md` |
-| Specification | Behavioral authority for implementation. | `docs/specs/*.md` |
-
-## NuGet Package Description Standard
-
-A NuGet package description must be short, concrete, and consumer-facing.
-
-It should contain:
+All packable `SemanticTypeModel.*` projects use one source:
 
 ```text
-what the package does
-who should install it
-its role in the SemanticTypeModel ecosystem
-primary integration point or output
-one important non-goal when confusion is likely
+public-docs/nuget/SemanticTypeModel.md
 ```
 
-It must not contain:
+It is packed as `README.md` in every NuGet package.
+
+Do not maintain package-specific README files while package versions and usage remain suite-coupled.
+
+The shared README must contain:
+
+- the suite version-alignment rule;
+- scenario-to-package selection;
+- a minimal generated-model flow;
+- links to usage, configuration, troubleshooting, diagnostics, and target guides;
+- a package-role reference table;
+- important suite-wide non-goals/compatibility boundaries.
+
+## Version rule
+
+Every `SemanticTypeModel.*` package used in one consumer application must use the same exact version.
+Documentation must not recommend mixed suite versions.
+
+Prefer version-neutral evergreen install snippets. Historical versions belong in release notes and migration
+context.
+
+## Public guide standard
+
+Guides are task-oriented. A guide should answer, in the order most useful to a consumer:
 
 ```text
-architecture history
-milestone references
-full examples
-complete feature lists
-release notes
-compatibility essays
-marketing claims unsupported by the package alone
+Use
+Configure
+Diagnose
+Reference
 ```
 
-Template:
+Do not force filler sections. Include conceptual explanation only when it helps a consumer make a usage,
+configuration, or diagnostic decision.
 
-```text
-<PackageName> provides <capability> for <consumer/use case>. Use it when <primary scenario>. It integrates with <main package/system> and produces <main output>. It does not <important non-goal>.
-```
+### Use
 
-## Package README Standard
+Provide a minimal real consumer path and one realistic composition example where needed.
 
-Package README sources under `public-docs/nuget/*.md` must be short package landing pages.
+### Configure
 
-Required sections:
+Document actual public options/policies with:
 
-```text
-# <PackageName>
+- option/API name;
+- default;
+- allowed values/supported shapes;
+- effect;
+- unsupported/error behavior.
 
-## What this package does
-## Install
-## Use when
-## Minimal example
-## Main APIs
-## Works with
-## Does not do
-## More documentation
-```
+Do not require consumers to read implementation specs to discover public configuration.
 
-Package READMEs must not become full scenario guides. Link to usage guides for extended walkthroughs.
+### Diagnose
 
-## Usage Guide Standard
+For public diagnostics/failures provide:
 
-Usage guides under `public-docs/guides/*.md` must be task-oriented.
+- what happened;
+- likely cause;
+- concrete fix;
+- related configuration when applicable.
 
-Required sections:
+### Reference
 
-```text
-# <Scenario>
+Use concise tables for package roles, supported shapes, limitations, and links to authoritative detail.
 
-## Goal
-## Prerequisites
-## Packages
-## Minimal path
-## Full example
-## How it works
-## Options and policies
-## Diagnostics
-## Common mistakes
-## Limitations
-## Related docs
-```
+## Generator completeness rule
 
-## Guide Precision Standard
+Every public source-generator/library configuration option must be discoverable from
+`public-docs/configuration.md`.
 
-A usage guide must not satisfy the section checklist with generic prose only.
+Every public generator diagnostic must be discoverable from `public-docs/diagnostics.md` or a diagnostic
+range page.
 
-### Options and policies
+## Samples
 
-Every guide must include either:
+Do not create per-sample README/Markdown documentation. The executable project is the detailed sample.
+Maintain only `public-docs/samples.md` as an index.
 
-- a concrete options/policies table; or
-- a short statement that the scenario has no user-selectable options and why.
+## Release boundary
 
-Required table shape:
-
-```markdown
-| Item / policy | Default | Allowed values / supported items | Effect | Diagnostics / unsupported cases |
-|---|---|---|---|---|
-```
-
-Rules:
-
-- name actual options or supported semantic items;
-- state the default or say `No default`;
-- list allowed values or supported items;
-- state what changes when the option is selected;
-- state what can fail or how unsupported cases are reported;
-- avoid broad phrases such as “configure naming, ownership, and relationships” unless followed by a concrete table.
-
-### Supported items
-
-Guides that describe projection behavior must include a supported-items table when more than one semantic item is involved.
-
-Recommended shape:
-
-```markdown
-| Semantic item | Target behavior | Default | Override / policy | Diagnostics |
-|---|---|---|---|---|
-```
-
-### Diagnostics
-
-Every guide must use a cause/fix table:
-
-```markdown
-| Symptom / diagnostic | Likely cause | Fix |
-|---|---|---|
-```
-
-### Common mistakes
-
-Common mistakes must be guide-specific. Do not repeat the same generic bullets in every guide unless the guide also includes package-specific mistakes.
-
-### Examples
-
-Every projection guide should include at least one example that changes an option or policy when meaningful options exist.
-
-Do not invent API names. Verify examples against current source, specs, samples, or package documentation.
-
-### Planned versus shipped behavior
-
-If a guide discusses a planned package or planned API, mark it as planned and avoid presenting it as current shipped behavior.
-
-## Compatibility Documentation Standard
-
-Compatibility documentation must describe current repository practice honestly.
-
-If the repository does not maintain generated public API baselines, compatibility docs must not imply that static shipped/unshipped files enforce public API compatibility.
-
-Breaking changes must be documented through:
-
-```text
-release notes
-compatibility docs
-package README updates when usage changes
-migration notes when required
-human review during release readiness
-```
-
-## Release Notes Standard
-
-Release notes must describe:
-
-```text
-version
-release date or status
-added features
-changed behavior
-removed APIs or packages
-breaking changes
-migration notes
-validation status or known limitations
-```
-
-Release notes must not replace package READMEs or usage guides.
-
-## Specification Boundary
-
-Specs define behavior, contracts, invariants, diagnostics, and projection rules.
-
-Specs must not be rewritten into tutorials.
-
-Public guides may link to specs when a consumer needs authoritative detail, but guides must remain user-task oriented.
-
-## Writing Rules
-
-- Lead with the user problem.
-- Prefer short concrete sentences.
-- Avoid “this guide explores” and similar throat-clearing.
-- Avoid unsupported marketing claims.
-- Do not mention milestones in public consumer docs unless release notes require it.
-- Do not mention the external guide repository in public consumer docs.
-- Do not add README files outside the repository root.
+Evergreen guides describe current behavior. Move release-specific corrections, milestone narration, and
+upgrade chronology to `public-docs/release-notes.md` or `public-docs/api/compatibility.md`.
 
 ## Validation
 
-Run public documentation validation after package documentation changes:
-
 ```sh
 ./eng/public-docs.sh
-```
-
-When package docs change examples or sample commands, also run:
-
-```sh
-./eng/samples.sh
-```
-
-## Document Contract
-
-When this document changes, review:
-
-```text
-docs/PUBLIC-DOCS.md
-docs/engineering/public-documentation.md
-public-docs/nuget/*.md
-public-docs/guides/*.md
-public-docs/api/compatibility.md
-public-docs/release-notes.md
-eng/public-docs.sh
 ```

@@ -66,6 +66,6 @@
   </Target>
 
   <ItemGroup>
-    <None Include="../../public-docs/nuget/SemanticTypeModel.Generators.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../public-docs/nuget/SemanticTypeModel.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 </Project>

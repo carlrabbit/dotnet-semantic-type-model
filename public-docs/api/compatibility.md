@@ -1,63 +1,65 @@
 # Compatibility
 
-## Public API Compatibility
+This page describes current consumer compatibility boundaries. Version-by-version chronology belongs in
+[Release notes](../release-notes.md).
 
-- Public API compatibility is reviewed through package smoke tests, runnable samples, public documentation, release notes, compatibility documentation, and human review.
-- Breaking changes require explicit milestone and release documentation.
-- The repository does not currently maintain text API baseline files as release gates.
-- `SemanticTypeModel.SystemTextJson` 1.1.0 removed generated `JsonSerializerContext` support as a documented compatibility correction because the 1.0 design depended on unsupported source-generator chaining.
-- 2.2.0 release-preparation documentation records M0038 as the model-surface cleanup boundary; removed `Canonical` namespace and old shape-graph APIs must not be presented as supported current usage.
-- 2.4.0 release-preparation documentation records Configuration as explicit per-options-type registration; model-wide Configuration application registration is obsolete pending human compatibility review.
+## Package suite
 
-## 2.2.0 Model Surface Compatibility
+All `SemanticTypeModel.*` packages used together must use the same exact version. Mixed suite versions are
+unsupported, including generator/analyzer packages.
 
-- `SemanticTypeModel.Abstractions.Model` is the supported public model surface for canonical semantic model contracts.
-- `SemanticTypeModel.Abstractions.Canonical` is removed from shipped source and compatibility documentation.
-- The old `TypeShape` / `ObjectShape` / `PropertyShape` / `ShapeRef` shape graph is removed rather than retained as a compatibility shim.
-- Source-generated providers return `SemanticTypeModel.Abstractions.Model.TypeSchemaModel` directly for projection packages.
-- JSON Schema import remains compatibility-oriented and is not the supported canonical authoring path; use annotated .NET code plus generated providers for public samples and package guidance.
+## Canonical model authoring
 
-## Diagnostics Compatibility
+Annotated .NET code is the supported public authoring source for canonical semantic models. Generated providers
+return the current `SemanticTypeModel.Abstractions.Model.TypeSchemaModel` surface.
 
-- Diagnostics are currently preview/unstable unless explicitly declared stable in release notes.
+The old `Canonical` namespace/legacy shape graph is not a supported current model surface. JSON Schema import,
+where retained for compatibility/tooling, is not the recommended canonical authoring path.
 
-## Runtime Compatibility
+## Public API review
 
-- Preserve canonical command and package naming constraints:
-  - solution `SemanticTypeModel.slnx`
-  - root namespace `SemanticTypeModel`
-  - package prefix `SemanticTypeModel.*`
+The repository reviews compatibility through package smoke tests, runnable samples, public documentation,
+release notes, compatibility documentation, and human review. It does not currently use committed text API
+baseline files as the sole compatibility gate.
 
-## 2.4.0 Configuration Registration Compatibility
+## Diagnostics
 
-- Configuration application registration is explicit per options type through `AddSemanticOptions<TOptions>`.
-- Complete-model Configuration derivation remains available for inspection and tooling, but complete-model application registration is obsolete.
-- Generated Configuration helpers are optional convenience APIs and must delegate to the runtime adapter.
-- Human review is required before removing the obsolete model-wide registration API in a future compatibility boundary.
+Diagnostic IDs and stability are documented in [Diagnostics](../diagnostics.md) and their range pages. Do not
+depend on exact diagnostic message text as a compatibility contract.
 
-- `ConfigurationSectionPresence.Optional` is the compatibility default; `Required` adds provider-independent effective-data validation under the selected section.
-- Required-section, DataAnnotations, and `RequiredWhen` deployed-value failures are options-validation failures; invalid or ambiguous model metadata fails during registration.
+## Audience-specific descriptions
 
-### M0046 EF Core nullable value-type compatibility
+`UserDescription` and `TechnicalDescription` are separate contracts. User-facing targets do not silently fall
+back to technical text, and technical targets do not silently substitute user text. Existing generic-description
+content from older APIs requires intentional classification when migrating.
 
-EF Core projection preserves canonical nullability for nullable value-type scalars by using `Nullable<T>` for the projected property CLR type and for the applied EF Core model-builder property type. The regression coverage includes nullable integer, long, decimal, Boolean, date/time, GUID, numeric enum storage, and required non-nullable control values.
+## System.Text.Json
 
-## 2.4.0 Audience-Specific Description Compatibility
+SemanticTypeModel does not generate `JsonSerializerContext`. Applications own contexts/resolvers and may wrap
+them with SemanticTypeModel resolver customization. Removed generated-context switches are not a supported
+current path.
 
-- `UserDescription` and `TechnicalDescription` replace the former general description concept in the public model contracts.
-- `SemanticUserDescriptionAttribute` supplies user-facing text for projections such as JSON Schema `description` and Power BI descriptions.
-- `SemanticTechnicalDescriptionAttribute` supplies technical text; XML `<summary>` is an automatic technical-description fallback when no explicit technical description exists.
-- EF Core maps technical descriptions to table and column comments.
-- JSON Schema technical descriptions are emitted only through the opt-in technical-description extension name.
-- `SemanticDescriptionAttribute`, the generic canonical `Description`, XML include switches, and XML requirement switches are removed; use `RequireTechnicalDescription` for technical-description enforcement.
-- Existing general description text must be classified manually because user-facing versus technical audience intent cannot be inferred safely.
+## Configuration / Options
 
-## EF Core 2.5.0 breaking reset
+Application registration is explicit per options type through `AddSemanticOptions<TOptions>`. A complete
+semantic model may contain multiple Configuration types without registering all of them automatically.
 
-The EF package intentionally has no source-compatibility bridge from 2.4.x. `EfRelationalModel` and `DeriveEfRelationalModel` are the inspection surface. Generated EF configuration is the 3.0 application surface. Application modes, shared-type entities, broad CLR source lineage, EF-owned navigations, relationship inference, and alternative inheritance or ValueKind storage policies were removed.
+## EF Core
 
-Owned ValueKinds and extension data use JSON columns; entity inheritance is TPT; semantic links must use identifier scalar properties.
+The supported static application path is generated configuration through
+`SemanticTypeModel.EFCore.Generators`:
 
-## EF Core 3.0 breaking application change
+- the model assembly emits a semantic manifest;
+- the persistence assembly explicitly selects model(s);
+- the generator emits ordinary `IEntityTypeConfiguration<TEntity>` implementations and a deterministic apply
+  extension;
+- generated configuration owns only semantic CLR Entities selected from that model;
+- unrelated/manual application entities remain application-owned.
 
-The supported static CLR application path changes from runtime global `ApplySemanticTypeModel`/`ApplySemanticRelationalModel` cleanup to `SemanticTypeModel.EFCore.Generators`. Persistence projects explicitly select model manifests and call generated registration extensions. Generated configurations own only their semantic CLR Entities, so other selected models and manual entities compose normally.
+The retired runtime global `ModelBuilder` cleanup/application path is not the current application contract.
+There is no compatibility bridge that reintroduces broad relationship inference, `OwnsOne`/`OwnsMany`, or
+alternative inheritance modes into the current generated contract.
+
+## Migration history
+
+For exact version-specific additions/removals and upgrade notes, use [Release notes](../release-notes.md).

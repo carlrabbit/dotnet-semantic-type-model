@@ -17,6 +17,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../../public-docs/nuget/SemanticTypeModel.Abstractions.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../public-docs/nuget/SemanticTypeModel.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 </Project>
