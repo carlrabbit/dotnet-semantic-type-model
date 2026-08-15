@@ -97,13 +97,6 @@ public sealed record EfJsonColumn
 }
 
 
-/// <summary>Represents deterministic diagnostics produced while applying a relational model.</summary>
-public sealed record EfRelationalApplicationResult
-{
-    /// <summary>Gets application diagnostics.</summary>
-    public required IReadOnlyList<SchemaDiagnostic> Diagnostics { get; init; }
-}
-
 /// <summary>Configures the opinionated relational projection.</summary>
 public sealed class EfRelationalOptions
 {

@@ -23,3 +23,7 @@ dotnet add package SemanticTypeModel.PowerBI --version 2.4.0
 ```
 
 JSON Editor compatibility is enabled through `SemanticTypeModel.JsonSchema` export options rather than through a separate package. For package roles and combinations, see [packages.md](packages.md).
+
+## Generated EF configurations (3.0.0)
+
+Install `SemanticTypeModel.EFCore.Generators` as a private analyzer in the persistence project and use an assembly-level `GenerateSemanticEfModel(typeof(ModelMarker))` attribute. The marker's model assembly must install `SemanticTypeModel.Generators` to emit manifest version 1.

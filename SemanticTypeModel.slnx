@@ -10,6 +10,7 @@
     <Project Path="src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj" />
     <Project Path="src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj" />
     <Project Path="src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj" />
+    <Project Path="src/SemanticTypeModel.EFCore.Generators/SemanticTypeModel.EFCore.Generators.csproj" />
     <Project Path="src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj" />
     <Project Path="src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj" />
     <Project Path="src/SemanticTypeModel.Configuration/SemanticTypeModel.Configuration.csproj" />
@@ -26,6 +27,7 @@
     <Project Path="tests/unit/SemanticTypeModel.Generators.Tests.Unit/SemanticTypeModel.Generators.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.JsonSchema.Tests.Unit/SemanticTypeModel.JsonSchema.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.EFCore.Tests.Unit/SemanticTypeModel.EFCore.Tests.Unit.csproj" />
+    <Project Path="tests/unit/SemanticTypeModel.EFCore.Generators.Tests.Unit/SemanticTypeModel.EFCore.Generators.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.PowerBI.Tests.Unit/SemanticTypeModel.PowerBI.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.SystemTextJson.Tests.Unit/SemanticTypeModel.SystemTextJson.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.Configuration.Tests.Unit/SemanticTypeModel.Configuration.Tests.Unit.csproj" />

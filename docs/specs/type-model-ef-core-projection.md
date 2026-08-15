@@ -545,7 +545,7 @@ The M0051 augmentation framing is superseded. Closed application now suppresses 
 
 ## M0052 closed ModelBuilder application
 
-The derived `EfCoreSemanticModel` preserves source model/type/property/member/declaring-type lineage, semantic role and root/value-object/owned classification, storage intent, semantic-only suppression, and owned source/target identity. It is the complete contract for closed CLR application. `ApplySemanticTypeModel` derives and applies that contract through `ApplyEfCoreSemanticModel`. Missing lineage fails with `EFCORE_SOURCE_LINEAGE_REQUIRED`; shared types require explicit application.
+`DeriveEfRelationalModel` remains an inspection contract. Static CLR application uses the versioned compile-time semantic manifest and generated ordinary EF configurations defined by `ef-core-generated-configuration-contract.md`; runtime closed-`ModelBuilder` application is removed in 3.0.
 
 ## Source lineage diagnostics
 

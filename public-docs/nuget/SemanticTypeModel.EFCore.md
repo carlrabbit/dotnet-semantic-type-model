@@ -2,42 +2,38 @@
 
 ## What this package does
 
-`SemanticTypeModel.EFCore` maps the explicit semantic model to one opinionated CLR-backed relational representation.
+Provides EF relational inspection contracts, explicit semantic-model selection, and converter/comparer primitives consumed by generated EF configuration.
 
 ## Install
 
 ```sh
-dotnet add package SemanticTypeModel.EFCore --version 2.5.3
+dotnet add package SemanticTypeModel.EFCore --version 3.0.0
 ```
+
+## Use when
+
+Use it with `SemanticTypeModel.EFCore.Generators` in an EF persistence project, or use `DeriveEfRelationalModel` for inspection.
 
 ## Minimal example
 
 ```csharp
-using SemanticTypeModel.EFCore;
-
-var result = AppSemanticTypeModel.Create().DeriveEfRelationalModel();
-result.Diagnostics.ThrowIfErrors();
-modelBuilder.ApplySemanticRelationalModel(result.Model);
+[assembly: GenerateSemanticEfModel(typeof(FinanceModelMarker))]
 ```
 
-`ApplySemanticTypeModel` is the convenience path that derives and applies the same model.
+## Main APIs
 
-## Fixed contract
+- `GenerateSemanticEfModelAttribute`
+- `DeriveEfRelationalModel`
+- `SemanticEfValueConverters`
 
-- semantic entities are tables and semantic entity inheritance is TPT;
-- scalars are columns, enums are strings, and strong identifiers use their underlying scalar;
-- explicitly owned ValueKind objects and collections are JSON columns;
-- semantic extension data is a JSON object column;
-- entity objects, undeclared ValueKind storage, and arbitrary dictionaries produce diagnostics;
-- EF relationships, navigations, shared-type entities, `OwnsOne`, and `OwnsMany` are not projected.
-- the package suppresses EF convention discovery for semantic ValueKinds and other non-entities, so the final CLR entity set exactly equals the semantic Entity CLR set;
-- JSON-owned objects and collections remain converted properties rather than owned or keyless EF entities, without consumer `ModelBuilder.Ignore(...)` calls.
+## Works with
 
-Property declaration and relational storage are tracked separately. Semantic-base members are configured only on the semantic-base TPT table; members inherited from non-semantic CLR bases are stored by the first semantic entity; derived tables contain only derived state (plus the TPT key).
+EF Core 10 and `SemanticTypeModel.EFCore.Generators` 3.0.0.
 
-The application still selects its EF provider and owns migrations and database operations. The 2.5 line intentionally removes the 2.4.x EF API rather than retaining compatibility aliases.
+## Does not do
+
+It does not own migrations, database creation, provider setup, or global cleanup of a `ModelBuilder`. Runtime `ApplySemanticTypeModel` and `ApplySemanticRelationalModel` are not the 3.0 application contract.
 
 ## More documentation
 
-- [Compatibility](../api/compatibility.md)
-- [EF Core projection guide](../guides/ef-core-projection.md)
+See the [EF projection guide](../guides/ef-core-projection.md).

@@ -97,3 +97,7 @@ The matrix is a decision aid, not a lossless-shape guarantee. Provider-specific 
 - [EF Core projection guide](ef-core-projection.md)
 - [Power BI projection guide](power-bi-projection.md)
 - [Compatibility](../api/compatibility.md)
+
+### EF generated application
+
+`SemanticTypeModel.EFCore.Generators` preserves the relational Entity/TPT/scalar/enum-string/strong-id/binary/JSON-ValueKind policy while changing application to explicit, composable generated configuration. It generates configurations only for semantic Entities.

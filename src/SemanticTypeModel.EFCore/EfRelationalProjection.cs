@@ -1,14 +1,9 @@
 #pragma warning disable IDE0011, IDE0058, IDE0305
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Transformation;
+using SemanticTypeModel.EFCore.Internal;
 
 namespace SemanticTypeModel.EFCore;
 
@@ -73,7 +68,7 @@ public static class EfRelationalExtensions
                 var extension = IsTrue(property, "schema.extensionData");
                 var ownedObject = IsTrue(property, "schema.ownedObject") || string.Equals(Value(property, "schema.ownership.kind"), "object", StringComparison.OrdinalIgnoreCase);
                 var ownedCollection = IsTrue(property, "schema.ownedCollection") || string.Equals(Value(property, "schema.ownership.kind"), "collection", StringComparison.OrdinalIgnoreCase);
-                if (extension)
+                if (EfStoragePolicy.IsJsonStorage(extension, extension ? null : ownedCollection ? "Collection" : ownedObject ? "Object" : null) && extension)
                 {
                     json.Add(Json(property, member, EfJsonShape.ExtensionData, source, clrType));
                 }
@@ -122,162 +117,27 @@ public static class EfRelationalExtensions
         return new SemanticDerivationResult<EfRelationalModel> { Model = relational, Diagnostics = diagnostics, Trace = transformed.Trace };
     }
 
-    /// <summary>Applies a previously derived relational model to a CLR-backed ModelBuilder.</summary>
-    public static EfRelationalApplicationResult ApplySemanticRelationalModel(this ModelBuilder modelBuilder, EfRelationalModel model, string? defaultSchema = null)
-    {
-        ArgumentNullException.ThrowIfNull(modelBuilder);
-        ArgumentNullException.ThrowIfNull(model);
-        var diagnostics = new List<SchemaDiagnostic>(model.Diagnostics);
-        var allowed = model.Entities.Select(entity => entity.ClrType).ToHashSet();
-        var contained = model.Entities.SelectMany(entity => entity.JsonColumns).Select(column => JsonElementType(column.ValueType)).ToHashSet();
-        foreach (EfScalarColumn column in model.Entities.SelectMany(entity => entity.ScalarColumns.Concat(entity.BinaryColumns)))
-            ValidatePlacement(column.PropertyId, column.MemberName, column.DeclaringClrType, column.StorageClrType, allowed, diagnostics);
-        foreach (EfJsonColumn column in model.Entities.SelectMany(entity => entity.JsonColumns))
-            ValidatePlacement(column.PropertyId, column.MemberName, column.DeclaringClrType, column.StorageClrType, allowed, diagnostics);
-        if (diagnostics.Any(diagnostic => diagnostic.Severity == SchemaDiagnosticSeverity.Error))
-        {
-            return new EfRelationalApplicationResult { Diagnostics = diagnostics };
-        }
-
-        // Ignore convention discoveries before registering the closed semantic entity set. Ignore is
-        // important here: removing metadata alone permits a later convention to discover the same
-        // ValueKind again when its owning CLR property is inspected.
-        Type[] suppressed = [.. modelBuilder.Model.GetEntityTypes().Select(entity => entity.ClrType)
-            .Concat(contained)
-            .Concat(model.Entities.SelectMany(entity => ClrBaseTypes(entity.ClrType)))
-            .Where(type => !allowed.Contains(type))
-            .Distinct()];
-        foreach (Type type in suppressed) modelBuilder.Ignore(type);
-
-        foreach (EfEntity entity in model.Entities.OrderBy(entity => entity.BaseEntityId is null ? 0 : 1))
-        {
-            EntityTypeBuilder suppress = modelBuilder.Entity(entity.ClrType);
-            foreach (PropertyInfo property in entity.ClrType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(property => property.DeclaringType == entity.ClrType)) _ = suppress.Ignore(property.Name);
-        }
-        foreach (EfEntity entity in model.Entities.OrderBy(entity => entity.BaseEntityId is null ? 0 : 1).ThenBy(entity => entity.Table, StringComparer.Ordinal))
-        {
-            EntityTypeBuilder builder = modelBuilder.Entity(entity.ClrType);
-            _ = builder.ToTable(entity.Table, defaultSchema);
-            foreach (PropertyInfo property in entity.ClrType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(property => property.DeclaringType == entity.ClrType)) _ = builder.Ignore(property.Name);
-            foreach (EfScalarColumn column in entity.ScalarColumns.Concat(entity.BinaryColumns)) ConfigureScalar(modelBuilder.Entity(column.StorageClrType), column);
-            foreach (EfJsonColumn column in entity.JsonColumns) ConfigureJson(modelBuilder.Entity(column.StorageClrType), column);
-            if (entity.BaseEntityId is null && entity.Key.Count > 0) _ = builder.HasKey(entity.Key.ToArray());
-        }
-        foreach (EfEntity root in model.Entities.Where(entity => entity.BaseEntityId is null && model.Entities.Any(candidate => candidate.BaseEntityId == entity.SemanticTypeId))) _ = modelBuilder.Entity(root.ClrType).UseTptMappingStrategy();
-
-        // Explicit property configuration can run conventions again. Correct those discoveries before
-        // auditing; diagnostics describe only residual metadata that EF would not allow us to remove.
-        foreach (IMutableEntityType discovered in modelBuilder.Model.GetEntityTypes().Where(entity => !allowed.Contains(entity.ClrType)).OrderByDescending(EntityDepth).ToArray())
-            _ = modelBuilder.Model.RemoveEntityType(discovered);
-        foreach (IMutableEntityType unexpected in modelBuilder.Model.GetEntityTypes().Where(entity => !allowed.Contains(entity.ClrType)))
-        {
-            var expected = string.Join(", ", allowed.Select(type => type.FullName ?? type.Name).Order(StringComparer.Ordinal));
-            var discovery = string.Join(", ", unexpected.GetReferencingForeignKeys().Select(key => $"{key.DeclaringEntityType.ClrType.FullName}.{string.Join("/", key.Properties.Select(property => property.Name))}"));
-            var detail = string.IsNullOrEmpty(discovery) ? "No referencing property path is exposed by EF metadata." : $"Discovery paths: {discovery}.";
-            Report(diagnostics, "EF_UNEXPECTED_CONVENTION_ENTITY", $"EF convention entity '{unexpected.ClrType.FullName}' remains after correction (keyless: {unexpected.FindPrimaryKey() is null}). {detail} Expected semantic entities: {expected}.", unexpected.ClrType.FullName ?? unexpected.ClrType.Name);
-        }
-        return new EfRelationalApplicationResult { Diagnostics = diagnostics };
-    }
-
-    /// <summary>Derives and applies the relational model through the single supported application path.</summary>
-    public static SemanticDerivationResult<EfRelationalModel> ApplySemanticTypeModel(this ModelBuilder modelBuilder, TypeSchemaModel model, Action<EfRelationalOptions>? configure = null)
-    {
-        SemanticDerivationResult<EfRelationalModel> result = model.DeriveEfRelationalModel(configure);
-        string? schema = null; if (configure is not null) { var options = new EfRelationalOptions(); configure(options); schema = options.DefaultSchema; }
-        EfRelationalApplicationResult application = modelBuilder.ApplySemanticRelationalModel(result.Model, schema);
-        return result with { Diagnostics = application.Diagnostics };
-    }
-
-    private static void ConfigureScalar(EntityTypeBuilder builder, EfScalarColumn column)
-    {
-        PropertyBuilder property = builder.Property(column.ClrType, column.MemberName).HasColumnName(column.ColumnName).IsRequired(!column.IsNullable);
-        Type actual = Nullable.GetUnderlyingType(column.ClrType) ?? column.ClrType;
-        if (actual.IsEnum)
-        {
-            property.HasConversion(CreateEnumStringConverter(column.ClrType));
-            property.Metadata.SetProviderClrType(typeof(string));
-        }
-        else if (actual == typeof(Uri)) property.HasConversion(new ValueConverter<Uri, string>(v => v.ToString(), v => new Uri(v, UriKind.RelativeOrAbsolute)));
-        else if (actual == typeof(ReadOnlyMemory<byte>)) property.HasConversion(new ValueConverter<ReadOnlyMemory<byte>, byte[]>(value => value.ToArray(), value => new ReadOnlyMemory<byte>(value)));
-        else if (actual != column.ProviderType) property.HasConversion(CreateStrongConverter(column.ClrType, column.ProviderType));
-    }
-
-    private static IEnumerable<Type> ClrBaseTypes(Type type)
-    {
-        for (Type? current = type.BaseType; current is not null && current != typeof(object); current = current.BaseType) yield return current;
-    }
-
-    private static int EntityDepth(IMutableEntityType entity)
-    {
-        var depth = 0;
-        for (IReadOnlyEntityType? current = entity.BaseType; current is not null; current = current.BaseType) depth++;
-        return depth;
-    }
-
-    private static void ConfigureJson(EntityTypeBuilder builder, EfJsonColumn column)
-    {
-        PropertyBuilder property = builder.Property(column.ValueType, column.MemberName).HasColumnName(column.ColumnName).IsRequired(!column.IsNullable);
-        property.HasConversion(CreateJsonConverter(column.ValueType));
-        property.Metadata.SetValueComparer(CreateJsonComparer(column.ValueType));
-    }
-
-    private static ValueConverter CreateJsonConverter(Type type)
-    {
-        ParameterExpression value = Expression.Parameter(type, "value");
-        MethodInfo serialize = typeof(EfRelationalExtensions).GetMethod(nameof(Serialize), BindingFlags.NonPublic | BindingFlags.Static)!.MakeGenericMethod(type);
-        MethodInfo deserialize = typeof(EfRelationalExtensions).GetMethod(nameof(Deserialize), BindingFlags.NonPublic | BindingFlags.Static)!.MakeGenericMethod(type);
-        ParameterExpression json = Expression.Parameter(typeof(string), "json");
-        Type converterType = typeof(ValueConverter<,>).MakeGenericType(type, typeof(string));
-        return (ValueConverter)Activator.CreateInstance(converterType, Expression.Lambda(Expression.Call(serialize, value), value), Expression.Lambda(Expression.Call(deserialize, json), json), null)!;
-    }
-    private static ValueComparer CreateJsonComparer(Type type)
-    {
-        return (ValueComparer)Activator.CreateInstance(typeof(JsonValueComparer<>).MakeGenericType(type))!;
-    }
-
-    private static string Serialize<T>(T value)
-    {
-        return JsonSerializer.Serialize(value, JsonOptions);
-    }
-
-    private static T Deserialize<T>(string json)
-    {
-        return JsonSerializer.Deserialize<T>(json, JsonOptions)!;
-    }
-
-    private static ValueConverter CreateEnumStringConverter(Type enumType)
-    {
-        Type actual = Nullable.GetUnderlyingType(enumType) ?? enumType;
-        Type converterType = typeof(EnumToStringConverter<>).MakeGenericType(actual);
-        return (ValueConverter)Activator.CreateInstance(converterType)!;
-    }
-
-    private static ValueConverter CreateStrongConverter(Type wrapper, Type provider)
-    {
-        Type actual = Nullable.GetUnderlyingType(wrapper) ?? wrapper;
-        PropertyInfo? valueProperty = actual.GetProperty("Value", BindingFlags.Instance | BindingFlags.Public);
-        ConstructorInfo? constructor = actual.GetConstructor([provider]);
-        System.Diagnostics.Debug.Assert(valueProperty is not null && constructor is not null, "Strong identifier shape is validated during derivation.");
-        ParameterExpression input = Expression.Parameter(wrapper, "value");
-        Expression unwrapped = wrapper == actual ? input : Expression.Property(input, "Value");
-        LambdaExpression to = Expression.Lambda(Expression.Property(unwrapped, valueProperty!), input);
-        ParameterExpression stored = Expression.Parameter(provider, "value");
-        Expression created = Expression.New(constructor!, stored);
-        LambdaExpression from = Expression.Lambda(wrapper == actual ? created : Expression.Convert(created, wrapper), stored);
-        Type converterType = typeof(ValueConverter<,>).MakeGenericType(wrapper, provider);
-        return (ValueConverter)Activator.CreateInstance(converterType, to, from, null)!;
-    }
-
     private static bool TryProviderType(Type type, out Type provider)
     {
         Type actual = Nullable.GetUnderlyingType(type) ?? type;
-        if (actual.IsEnum || actual == typeof(Uri)) { provider = typeof(string); return true; }
-        Type[] supported = [typeof(string), typeof(bool), typeof(byte), typeof(short), typeof(int), typeof(long), typeof(float), typeof(double), typeof(decimal), typeof(Guid), typeof(DateOnly), typeof(TimeOnly), typeof(DateTime), typeof(DateTimeOffset), typeof(TimeSpan), typeof(byte[])];
-        if (supported.Contains(actual)) { provider = actual; return true; }
-        if (actual == typeof(ReadOnlyMemory<byte>)) { provider = typeof(byte[]); return true; }
         PropertyInfo? value = actual.GetProperty("Value", BindingFlags.Instance | BindingFlags.Public);
-        if (value is not null && actual.GetConstructor([value.PropertyType]) is not null && supported.Contains(value.PropertyType)) { provider = value.PropertyType; return true; }
-        provider = typeof(void); return false;
+        var hasStrongShape = value is not null && actual.GetConstructor([value.PropertyType]) is not null;
+        var scalarName = actual == typeof(ReadOnlyMemory<byte>)
+            ? "System.ReadOnlyMemory<System.Byte>"
+            : actual == typeof(byte[])
+                ? "System.Byte[]"
+                : actual.FullName ?? actual.Name;
+        EfScalarStorageKind storage = EfStoragePolicy.ClassifyScalar(scalarName, actual.IsEnum, hasStrongShape);
+        provider = storage switch
+        {
+            EfScalarStorageKind.EnumString or EfScalarStorageKind.UriString => typeof(string),
+            EfScalarStorageKind.ReadOnlyMemoryBinary or EfScalarStorageKind.DirectBinary => typeof(byte[]),
+            EfScalarStorageKind.StrongScalar => value!.PropertyType,
+            EfScalarStorageKind.Direct => actual,
+            EfScalarStorageKind.Unsupported => typeof(void),
+            _ => typeof(void),
+        };
+        return storage != EfScalarStorageKind.Unsupported;
     }
     private static bool ValidateJsonValueKind(TypeSchemaModel model, ObjectTypeDefinition valueKind, Type declaredClrType, List<SchemaDiagnostic> diagnostics, HashSet<TypeId> visited)
     {
@@ -389,18 +249,6 @@ public static class EfRelationalExtensions
         return [.. matches];
     }
 
-    private static void ValidatePlacement(string propertyId, string memberName, Type declaringClrType, Type storageClrType, HashSet<Type> allowed, List<SchemaDiagnostic> diagnostics)
-    {
-        if (!allowed.Contains(storageClrType))
-        {
-            Report(diagnostics, "EF_MEMBER_STORAGE_ENTITY_UNRESOLVED", $"Storage CLR entity '{storageClrType.FullName}' for member '{memberName}' is not a projected semantic entity.", propertyId);
-        }
-        else if (!declaringClrType.IsAssignableFrom(storageClrType) || declaringClrType.GetProperty(memberName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly) is null)
-        {
-            Report(diagnostics, "EF_MEMBER_DECLARING_TYPE_MISMATCH", $"Member '{declaringClrType.FullName}.{memberName}' cannot be configured on storage entity '{storageClrType.FullName}'.", propertyId);
-        }
-    }
-
     private static PropertyInfo? ResolveMember(PropertyInfo[] matches, Type storageClrType, bool hasSemanticBase)
     {
         if (matches.Length == 1) return matches[0];
@@ -444,5 +292,4 @@ public static class EfRelationalExtensions
         diagnostics.Add(new() { Code = code, Message = message, Severity = SchemaDiagnosticSeverity.Error, Stage = SchemaDiagnosticStage.Projection, ModelPath = path, ProjectionTarget = ProjectionTarget.EfCore });
     }
 
-    private sealed class JsonValueComparer<T>() : ValueComparer<T>((a, b) => Serialize(a).Equals(Serialize(b), StringComparison.Ordinal), value => Serialize(value).GetHashCode(StringComparison.Ordinal), value => Deserialize<T>(Serialize(value)));
 }

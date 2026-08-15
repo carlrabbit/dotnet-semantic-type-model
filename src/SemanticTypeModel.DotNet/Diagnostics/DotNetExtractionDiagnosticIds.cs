@@ -111,4 +111,24 @@ public static class DotNetExtractionDiagnosticIds
     public const string ConditionalConstraintSourceInvalid = "STM5035";
     /// <summary>STM5036 — A conditional literal does not match its source type.</summary>
     public const string ConditionalConstraintLiteralTypeMismatch = "STM5036";
+    /// <summary>STM5037 — A selected semantic manifest is missing.</summary>
+    public const string EfSelectedManifestMissing = "STM5037";
+    /// <summary>STM5038 — A selected semantic manifest is ambiguous.</summary>
+    public const string EfSelectedManifestAmbiguous = "STM5038";
+    /// <summary>STM5039 — A semantic manifest version is unsupported.</summary>
+    public const string EfManifestVersionUnsupported = "STM5039";
+    /// <summary>STM5040 — A selected semantic manifest is invalid.</summary>
+    public const string EfSelectedManifestInvalid = "STM5040";
+    /// <summary>STM5041 — Multiple models claim the same CLR Entity.</summary>
+    public const string EfEntityOwnershipCollision = "STM5041";
+    /// <summary>STM5042 — Generated entity configuration names collide.</summary>
+    public const string EfConfigurationNameCollision = "STM5042";
+    /// <summary>STM5043 — Generated registration names collide.</summary>
+    public const string EfRegistrationNameCollision = "STM5043";
+    /// <summary>STM5044 — A manifest CLR type cannot be resolved.</summary>
+    public const string EfClrTypeUnresolved = "STM5044";
+    /// <summary>STM5045 — A manifest CLR member cannot be resolved.</summary>
+    public const string EfClrMemberUnresolved = "STM5045";
+    /// <summary>STM5046 — EF configuration projection failed.</summary>
+    public const string EfProjectionError = "STM5046";
 }

@@ -71,6 +71,26 @@ for package_id in $(semantic_type_model_package_ids); do
   dotnet add "$consumer_dir" package "$package_id" --version "$version" >/dev/null
 done
 
+model_dir="$tmp_root/model"
+dotnet new classlib --framework net10.0 --output "$model_dir" >/dev/null
+cp "$consumer_dir/NuGet.Config" "$model_dir/NuGet.Config"
+dotnet add "$model_dir" package SemanticTypeModel.DotNet --version "$version" >/dev/null
+dotnet add "$model_dir" package SemanticTypeModel.Generators --version "$version" >/dev/null
+dotnet add "$consumer_dir" reference "$model_dir" >/dev/null
+cat > "$model_dir/Class1.cs" <<'CS'
+using SemanticTypeModel.DotNet;
+
+namespace PackageSmoke.Model;
+
+[SemanticType(SemanticTypeRole.Entity)]
+public sealed class SmokeOrder
+{
+    [SemanticKey]
+    public int Id { get; set; }
+    public string Status { get; set; } = string.Empty;
+}
+CS
+
 cat > "$consumer_dir/Program.cs" <<'CS'
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -81,6 +101,10 @@ using SemanticTypeModel.EFCore;
 using SemanticTypeModel.JsonSchema;
 using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.JsonSchema.Import;
+using SemanticTypeModel.Generated.EFCore;
+using PackageSmoke.Model;
+
+[assembly: GenerateSemanticEfModel(typeof(SmokeOrder))]
 
 [SemanticType(Name = "SmokeCustomer")]
 public sealed partial class SmokeCustomer
@@ -115,6 +139,13 @@ internal static class Program
         _ = relationalModel.Diagnostics;
 
         _ = typeof(SemanticTypeAttribute);
+
+        var generatedBuilder = new ModelBuilder();
+        generatedBuilder.ApplyAppSemanticModel();
+        if (generatedBuilder.Model.FindEntityType(typeof(SmokeOrder)) is null)
+        {
+            throw new InvalidOperationException("Packed EF generator did not execute.");
+        }
 
         Console.WriteLine("Package smoke consumer succeeded.");
     }
@@ -182,7 +213,7 @@ internal static class Program
 }
 CS
 
-dotnet run --project "$consumer_dir" --configuration Release >/dev/null
+dotnet run --project "$consumer_dir" --configuration Release
 
 dotnet test tests/package-smoke/SemanticTypeModel.PackageSmoke.Tests/SemanticTypeModel.PackageSmoke.Tests.csproj \
   --configuration Release \

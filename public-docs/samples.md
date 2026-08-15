@@ -37,4 +37,4 @@ The shared Order Fulfillment model includes URI scalars and owned ValueKinds. Th
 
 ## 2.4.4 closed EF scenario
 
-The package-based EF sample derives `EfRelationalModel` and applies the fixed CLR-backed table, scalar, TPT, and JSON-column contract through `ApplySemanticRelationalModel`.
+The package-based EF sample selects the domain manifest and applies generated entity configurations through `ApplyAppSemanticModel`.

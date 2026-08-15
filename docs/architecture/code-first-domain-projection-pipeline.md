@@ -132,7 +132,10 @@ JSON Schema import is not a canonical model source.
 Canonical Semantic Type Model
   -> EF Core derivation transformations
   -> EF Core semantic model
-  -> ModelBuilder.ApplySemanticTypeModel(...)
+  -> compile-time semantic manifest
+  -> explicit GenerateSemanticEfModel selection
+  -> generated IEntityTypeConfiguration<TEntity>
+  -> generated Apply<Model>SemanticModel()
 ```
 
 EF Core database creation and migrations are outside this library’s domain.

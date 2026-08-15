@@ -15,6 +15,7 @@
     <PackageVersion Include="SemanticTypeModel.DependencyInjection" Version="$(SemanticTypeModelSamplePackageVersion)" />
     <PackageVersion Include="SemanticTypeModel.PowerBI" Version="$(SemanticTypeModelSamplePackageVersion)" />
     <PackageVersion Include="SemanticTypeModel.EFCore" Version="$(SemanticTypeModelSamplePackageVersion)" />
+    <PackageVersion Include="SemanticTypeModel.EFCore.Generators" Version="$(SemanticTypeModelSamplePackageVersion)" />
     <PackageVersion Include="SemanticTypeModel.SystemTextJson" Version="$(SemanticTypeModelSamplePackageVersion)" />
     <PackageVersion Include="SemanticTypeModel.Configuration" Version="$(SemanticTypeModelSamplePackageVersion)" />
   </ItemGroup>

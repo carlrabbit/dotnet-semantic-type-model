@@ -340,3 +340,18 @@ STM5027 in 2.6.0 rather than being interpreted as strings.
 - [diagnostics.md](../diagnostics.md)
 - [stm0xxx.md](stm0xxx.md)
 - [stm3xxx.md](stm3xxx.md)
+
+## Generated EF configuration (STM5037-STM5046)
+
+| Code | Severity | Cause | Fix |
+|---|---|---|---|
+| STM5037 | Error | Selected model assembly has no manifest. | Install `SemanticTypeModel.Generators` in the model project. |
+| STM5038 | Error | Selected assembly has multiple manifests. | Emit exactly one manifest per model assembly. |
+| STM5039 | Error | Manifest schema version is unsupported. | Align generator package versions. |
+| STM5040 | Error | Manifest metadata is malformed. | Rebuild the model with a compatible generator. |
+| STM5041 | Error | Two selected models own the same CLR Entity. | Select one owner for that Entity. |
+| STM5042 | Error | Entity configuration names collide. | Give the CLR Entity types distinct metadata names. |
+| STM5043 | Error | Registration extension names collide. | Give selected semantic models distinct generated provider names. |
+| STM5044 | Error | Manifest CLR Entity cannot be resolved. | Restore the selected model reference and preserve its CLR type. |
+| STM5045 | Error | Manifest CLR member cannot be resolved. | Rebuild the manifest after the CLR member change. |
+| STM5046 | Error | The retained EF storage policy cannot map a member. | Use a supported scalar, identifier, binary, enum, or explicitly owned ValueKind shape. |
