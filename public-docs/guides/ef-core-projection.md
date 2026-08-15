@@ -1,44 +1,126 @@
 # EF Core Relational Projection
 
-## Contract
+## Goal
 
-Version 2.6.1 has one CLR-backed application path. Explicit semantic entities become tables; semantic entity inheritance uses TPT. Scalar members become columns, enums become string provider columns, strong identifiers become their underlying scalar, binary values remain binary, and explicitly owned ValueKind members become serialized JSON columns. `SemanticExtensionData` is persisted as a JSON object.
+Generate ordinary EF Core entity configurations from an explicitly selected semantic model without changing unrelated entities in the surrounding `DbContext`.
 
-No value kind becomes an entity. The projection does not use `OwnsOne` or `OwnsMany`, does not create navigations or relationships, and does not inspect interfaces, generic constraints, record infrastructure, DTOs, repositories, framework helpers, static members, or method signatures.
+## Prerequisites
 
-Property declaration and relational storage are tracked separately. Semantic-base members are configured only on the semantic-base TPT table; members inherited from non-semantic CLR bases are stored by the first semantic entity; derived tables contain only derived state (plus the TPT key).
+The model assembly targets .NET 10, references `SemanticTypeModel.DotNet`, and runs `SemanticTypeModel.Generators`. The persistence project references the model assembly and EF Core 10.
 
-The package owns the EF convention boundary. Before semantic configuration it suppresses already discovered ValueKinds and other non-entities, and after configuration it removes new convention discoveries. The final EF CLR entity set is exactly the semantic Entity CLR set. JSON-owned objects and collection items remain converted properties, never owned or keyless EF entities; consumers do not call `ModelBuilder.Ignore(...)` for them.
+## Packages
 
-## Usage
+- Model project: `SemanticTypeModel.DotNet` and private analyzer `SemanticTypeModel.Generators`.
+- Persistence project: `SemanticTypeModel.EFCore` and private analyzer `SemanticTypeModel.EFCore.Generators`.
+
+## Minimal path
 
 ```csharp
-using Microsoft.EntityFrameworkCore;
-using SemanticTypeModel.EFCore;
+[assembly: GenerateSemanticEfModel(typeof(FinanceModelMarker))]
 
-public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    modelBuilder.ApplyFinanceSemanticModel();
+}
+```
+
+The marker selects exactly one referenced assembly manifest. There is no transitive-reference scan.
+
+## Full example
+
+```csharp
+[assembly: GenerateSemanticEfModel(typeof(FinanceModelMarker))]
+[assembly: GenerateSemanticEfModel(typeof(AccountingModelMarker))]
+
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.ApplyFinanceSemanticModel();
+    modelBuilder.ApplyAccountingSemanticModel();
+    modelBuilder.ApplyConfiguration(new AuditRecordConfiguration());
+}
+```
+
+Application customization uses the generated configuration's partial class:
+
+```csharp
+internal partial class AccountConfiguration
+{
+    static partial void ConfigureAfterGenerated(EntityTypeBuilder<Account> builder)
     {
-        var result = AppSemanticTypeModel.Create().DeriveEfRelationalModel();
-        result.Diagnostics.ThrowIfErrors();
-        modelBuilder.ApplySemanticRelationalModel(result.Model);
+        builder.HasIndex(account => account.DisplayName).IsUnique();
     }
 }
 ```
 
-Or use the equivalent convenience call:
+## How it works
 
-```csharp
-var result = modelBuilder.ApplySemanticTypeModel(AppSemanticTypeModel.Create());
-```
+`SemanticTypeModel.Generators` emits deterministic manifest schema version 1 as assembly metadata. It contains semantic type and property identities, CLR type/member/declaring lineage, type shape, role, ownership, nullability, keys, and inheritance inputs. The persistence generator reads that metadata through Roslyn without loading or executing the model assembly.
+
+It emits one internal partial `IEntityTypeConfiguration<TEntity>` for each semantic Entity and no configuration for ValueKinds, enums, configuration types, or other nonentities. Generated `Configure` calls `ConfigureBeforeGenerated`, direct EF calls, and then `ConfigureAfterGenerated`. The public registration extension applies semantic base configurations before derived configurations.
+
+Generated code configures only selected-model Entities. It never enumerates, removes, rejects, or validates unrelated EF entity types. Multiple semantic models and manual entities therefore compose normally.
+
+## Options and policies
+
+| Item / policy | Default | Allowed values / supported items | Effect | Diagnostics / unsupported cases |
+|---|---|---|---|---|
+| Model selection | No model selected | Repeatable `GenerateSemanticEfModel(typeof(Marker))` | Generates one registration extension per selected manifest | STM5037-STM5040 |
+| Entity mapping | Generated | Semantic Entity only | Table and `IEntityTypeConfiguration<TEntity>` | STM5044-STM5046 |
+| Inheritance | TPT | Semantic CLR base/derived Entity chain | Base registration precedes derived | STM5046 when lineage is invalid |
+| ValueKind storage | Explicit ownership | Owned object, owned collection, extension data | One JSON-converted property column | STM5046 for undeclared/invalid storage |
+| URI storage | `System.Uri` or nullable `System.Uri` | URI value | String column through generated converter | Manifest nullability controls `IsRequired` |
+| Customization | Generated mapping | Before and after partial hooks | `AfterGenerated` is the normal override/hotfix point | Compile error for an incorrect partial signature |
+| Relationships | None | Identifier-shaped scalar members | No navigation inference | STM5046 for entity/object/collection shapes |
+
+## Supported items
+
+| Semantic item | Target behavior | Default | Override / policy | Diagnostics |
+|---|---|---|---|---|
+| Entity | Table and generated configuration | Included | After hook can refine normal EF metadata | STM5044-STM5046 |
+| Entity inheritance | TPT | Base before derived | No TPH/TPC option | STM5046 |
+| Scalar | Column | Direct property mapping | After hook | STM5046 |
+| Enum | String provider column | `HasConversion<string>()` | After hook | STM5046 |
+| Strong identifier | Underlying scalar provider value | `Value` plus matching constructor | After hook | STM5046 |
+| Binary | Binary property/conversion | `byte[]` or `ReadOnlyMemory<byte>` | After hook | STM5046 |
+| Owned ValueKind/object collection | JSON string conversion and structural comparer | Requires semantic ownership | After hook | STM5046 |
+| Nonentity | No EF configuration | Excluded | None | None |
 
 ## Diagnostics
 
-Unsupported combinations are omitted and reported deterministically, including owned entities, undeclared ValueKind storage, entity object references, entity object collections, arbitrary dictionaries, unsupported scalars and strong-ID shapes, invalid inheritance, residual unexpected convention entities, non-serializable JSON values, and duplicate table or column names. `EF_UNEXPECTED_CONVENTION_ENTITY` is emitted only after deterministic correction and the final exact-set audit. Do not continue database startup when derivation contains errors.
+| Symptom / diagnostic | Likely cause | Fix |
+|---|---|---|
+| STM5037 | Selected model project did not emit a manifest | Install/run `SemanticTypeModel.Generators` in that project |
+| STM5039 | Generator versions disagree on manifest schema | Align model and EF generator package versions |
+| STM5041 | Two selected manifests own one CLR Entity | Select a single owning model |
+| STM5045 | CLR member changed after manifest generation | Rebuild the model project and correct the member |
+| STM5046 | Member shape violates the retained EF storage policy | Use a supported scalar/identifier/binary shape or explicit ValueKind ownership |
 
-## Provider strategy
+## Common mistakes
 
-JSON documents use deterministic `System.Text.Json` serialization through an EF value converter and structural comparison. The provider stores the converted value as a string column; provider-specific JSON querying is outside this contract.
+- Installing the EF generator in the model project instead of the persistence project.
+- Forgetting the assembly-level selection attribute.
+- Calling `ApplyConfigurationsFromAssembly` instead of the generated explicit extension.
+- Editing generated files instead of implementing `ConfigureAfterGenerated`.
+- Expecting navigation inference, `OwnsOne`, or `OwnsMany`.
 
-The package does not choose a provider, create a `DbContext`, run migrations, create production databases, or configure relationships.
+## Limitations
+
+The integration does not choose a provider, create migrations, create production databases, infer relationships, offer per-entity opt-out, or provide a materialization CLI. Provider-specific JSON querying remains provider-owned.
+
+Generated documents are visible in IDE generated-source nodes. To write physical files for inspection:
+
+```xml
+<PropertyGroup>
+  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+</PropertyGroup>
+```
+
+Generated files are not committed.
+
+## Related docs
+
+- [EF generator package](../nuget/SemanticTypeModel.EFCore.Generators.md)
+- [Projection capabilities](projection-capabilities.md)
+- [Diagnostics](../diagnostics.md)
+- [Code-first EF sample](../samples/code-first-ef-core.md)

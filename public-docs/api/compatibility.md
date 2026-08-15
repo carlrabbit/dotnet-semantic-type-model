@@ -54,6 +54,10 @@ EF Core projection preserves canonical nullability for nullable value-type scala
 
 ## EF Core 2.5.0 breaking reset
 
-The EF package intentionally has no source-compatibility bridge from 2.4.x. `EfRelationalModel`, `DeriveEfRelationalModel`, `ApplySemanticRelationalModel`, and the `ApplySemanticTypeModel` convenience method are the complete surface. Application modes, shared-type entities, broad CLR source lineage, EF-owned navigations, relationship inference, and alternative inheritance or ValueKind storage policies were removed.
+The EF package intentionally has no source-compatibility bridge from 2.4.x. `EfRelationalModel` and `DeriveEfRelationalModel` are the inspection surface. Generated EF configuration is the 3.0 application surface. Application modes, shared-type entities, broad CLR source lineage, EF-owned navigations, relationship inference, and alternative inheritance or ValueKind storage policies were removed.
 
 Owned ValueKinds and extension data use JSON columns; entity inheritance is TPT; semantic links must use identifier scalar properties.
+
+## EF Core 3.0 breaking application change
+
+The supported static CLR application path changes from runtime global `ApplySemanticTypeModel`/`ApplySemanticRelationalModel` cleanup to `SemanticTypeModel.EFCore.Generators`. Persistence projects explicitly select model manifests and call generated registration extensions. Generated configurations own only their semantic CLR Entities, so other selected models and manual entities compose normally.

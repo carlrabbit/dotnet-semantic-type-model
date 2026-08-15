@@ -10,3 +10,7 @@ The package-based sample generates a semantic model, derives `EfRelationalModel`
 ```
 
 The sample validates the 2.5.0 fixed contract without selecting a provider, connecting to a database, running migrations, or generating a `DbContext`.
+
+## 3.0 generated application
+
+The persistence sample references the domain assembly, selects it with `GenerateSemanticEfModel`, and calls the generated `ApplyAppSemanticModel()` extension. This is normal EF configuration code; no runtime model cleanup occurs.

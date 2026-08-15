@@ -1,4 +1,6 @@
 # Decision: EfCoreSemanticModel Is the EF Application Contract
+> **Superseded for static CLR application in 3.0.0 by `ef-core-generated-configuration-contract.md` and generated ordinary EF configuration.**
+
 
 ## Status
 

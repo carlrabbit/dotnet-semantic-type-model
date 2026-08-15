@@ -1,4 +1,6 @@
 # Decision: EF Source Lineage Is Diagnostic-First and Application-Policy-Aware
+> **Superseded for static CLR application in 3.0.0 by `ef-core-generated-configuration-contract.md` and generated ordinary EF configuration.**
+
 
 ## Status
 

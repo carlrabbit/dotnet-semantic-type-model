@@ -81,3 +81,6 @@ For each focus area:
 - [M0056 - Preemptive EF Convention Suppression and 2.5.1 Release Preparation](milestones/m0056-preemptive-ef-convention-suppression-and-2-5-1-release-preparation.md)
 - [M0057 - EF Model Shape Test Matrix and Inherited Member Placement for 2.5.3](milestones/m0057-ef-model-shape-test-matrix-and-inherited-member-placement-for-2-5-3.md)
 - [M0058 - Typed Literals, Conditional Constraints, and Scalar Semantics for 2.6.0](milestones/m0058-typed-literals-conditional-constraints-and-scalar-semantics-for-2-6-0.md)
+
+- [M0059 - EF CLR-to-Provider Regression and 2.6.1](milestones/m0059-ef-clr-to-provider-regression-and-2-6-1.md)
+- [M0060 - Generated EF Entity Configurations and Composable EF Integration for 3.0.0](milestones/m0060-generated-ef-entity-configurations-and-composable-ef-integration-for-3-0-0.md)

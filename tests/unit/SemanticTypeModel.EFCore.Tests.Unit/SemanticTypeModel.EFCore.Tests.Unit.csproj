@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>SemanticTypeModel.EFCore.Tests.Unit</RootNamespace>
+    <NoWarn>$(NoWarn);CS1591;CA1707;IDE0005</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

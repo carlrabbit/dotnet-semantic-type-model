@@ -1,7 +1,10 @@
-# MILESTONES.md Update
+# `docs/MILESTONES.md` update
 
-Append after M0057:
+The repository currently contains M0059, but the milestone index still ends at M0058.
 
-```text
-- [M0058 - Typed Literals, Conditional Constraints, and Scalar Semantics for 2.6.0](milestones/m0058-typed-literals-conditional-constraints-and-scalar-semantics-for-2-6-0.md)
+Append after M0058:
+
+```markdown
+- [M0059 - CLR-to-Provider EF Regression Contract and 2.6.1 Preparation](milestones/m0059-ef-clr-to-provider-regression-and-2-6-1.md)
+- [M0060 - Generated EF Entity Configurations and Composable EF Integration for 3.0.0](milestones/m0060-generated-ef-entity-configurations-and-composable-ef-integration-for-3-0-0.md)
 ```

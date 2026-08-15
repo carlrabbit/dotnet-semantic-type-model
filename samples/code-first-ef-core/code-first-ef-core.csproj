@@ -10,6 +10,7 @@
     <PackageReference Include="SemanticTypeModel.Core" />
     <PackageReference Include="SemanticTypeModel.DotNet" />
     <PackageReference Include="SemanticTypeModel.EFCore" />
+    <PackageReference Include="SemanticTypeModel.EFCore.Generators" PrivateAssets="all" />
     <PackageReference Include="SemanticTypeModel.Generators" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>

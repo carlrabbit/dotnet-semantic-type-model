@@ -592,6 +592,7 @@ public sealed class RoslynDotNetTypeExtractor
             var memberAnnotations = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["dotnet.memberName"] = property.Name,
+                ["dotnet.declaringType"] = GetTypeId(property.ContainingType),
             };
             if (IsSystemUri(memberType))
             {

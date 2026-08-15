@@ -46,3 +46,7 @@ See [guides/core-semantics.md](guides/core-semantics.md).
 ## Release Status
 
 `2.4.0` is the current release-preparation documentation target. It includes the Configuration runtime and generator packages, explicit per-options-type Configuration registration, and the unified model surface under `SemanticTypeModel.Abstractions.Model`; `2.0.0` remains the code-first semantic model release baseline. Documented public APIs follow the compatibility policy unless a page explicitly marks a feature as preview.
+
+## Composable EF setup
+
+For EF Core 3.0, select each semantic model explicitly in the persistence assembly with `GenerateSemanticEfModel`. Call the generated public `Apply<Model>SemanticModel()` extensions from `OnModelCreating`; unrelated manual EF entities remain application-owned.

@@ -1,3 +1,10 @@
+## 3.0.0 (release candidate)
+
+- Added `SemanticTypeModel.EFCore.Generators`, manifest schema version 1, explicit model selection, entity configurations, partial hooks, and deterministic registration.
+- Replaced the supported runtime global EF cleanup/application path. This is a breaking migration: install the analyzer in the persistence project and call the generated apply extension.
+- Generated models configure only owned CLR Entities; multiple models and manual entities compose. Duplicate CLR ownership is `STM5041`.
+- Not published; release validation is required.
+
 # 2.6.1
 
 2.6.1 is a non-publishing patch release candidate. Publication, tagging, and GitHub release creation require separate human approval.

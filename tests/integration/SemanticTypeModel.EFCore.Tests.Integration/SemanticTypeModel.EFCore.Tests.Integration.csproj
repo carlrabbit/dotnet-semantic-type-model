@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>SemanticTypeModel.EFCore.Tests.Integration</RootNamespace>
+    <NoWarn>$(NoWarn);CS1591;CA1707;CA1852;IDE0005;IDE0055;IDE0058</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
@@ -12,6 +13,9 @@
     <ProjectReference Include="../../../src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.EFCore.Generators/SemanticTypeModel.EFCore.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../fixtures/SemanticTypeModel.M0060.ModelA/SemanticTypeModel.M0060.ModelA.csproj" />
+    <ProjectReference Include="../../fixtures/SemanticTypeModel.M0060.ModelB/SemanticTypeModel.M0060.ModelB.csproj" />
     <ProjectReference Include="../../fixtures/SemanticTypeModel.EFCoreModelShapes/SemanticTypeModel.EFCoreModelShapes.csproj" />
     <ProjectReference Include="../../fixtures/SemanticTypeModel.RealWorldFixtures/SemanticTypeModel.RealWorldFixtures.csproj" />
   </ItemGroup>

@@ -26,4 +26,5 @@
   <ItemGroup>
     <None Include="../../public-docs/nuget/SemanticTypeModel.EFCore.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
+  <ItemGroup><Compile Include="../SemanticTypeModel.EFCore.Shared/EfStoragePolicy.cs" Link="Internal/EfStoragePolicy.cs" /></ItemGroup>
 </Project>

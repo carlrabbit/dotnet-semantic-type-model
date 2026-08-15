@@ -53,41 +53,19 @@ if [ -n "$non_root_readmes" ]; then
   exit 1
 fi
 
+export STM_PACKAGE_IDS="$(semantic_type_model_package_ids)"
+export STM_PACKAGE_PROJECTS="$(semantic_type_model_package_projects)"
 python3 - <<'PY'
 from pathlib import Path
+import os
 import re
 import sys
 import xml.etree.ElementTree as ET
 
 errors: list[str] = []
 
-package_ids = [line.strip() for line in """
-SemanticTypeModel.Abstractions
-SemanticTypeModel.Core
-SemanticTypeModel.JsonSchema
-SemanticTypeModel.DotNet
-SemanticTypeModel.Generators
-SemanticTypeModel.DependencyInjection
-SemanticTypeModel.Configuration
-SemanticTypeModel.Configuration.Generators
-SemanticTypeModel.PowerBI
-SemanticTypeModel.EFCore
-SemanticTypeModel.SystemTextJson
-""".splitlines() if line.strip()]
-
-package_projects = [line.strip() for line in """
-src/SemanticTypeModel.Abstractions/SemanticTypeModel.Abstractions.csproj
-src/SemanticTypeModel.Core/SemanticTypeModel.Core.csproj
-src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj
-src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj
-src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj
-src/SemanticTypeModel.DependencyInjection/SemanticTypeModel.DependencyInjection.csproj
-src/SemanticTypeModel.Configuration/SemanticTypeModel.Configuration.csproj
-src/SemanticTypeModel.Configuration.Generators/SemanticTypeModel.Configuration.Generators.csproj
-src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj
-src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj
-src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj
-""".splitlines() if line.strip()]
+package_ids = os.environ['STM_PACKAGE_IDS'].splitlines()
+package_projects = os.environ['STM_PACKAGE_PROJECTS'].splitlines()
 
 public_docs = Path('docs/PUBLIC-DOCS.md').read_text(encoding='utf-8')
 readme = Path('README.md').read_text(encoding='utf-8')

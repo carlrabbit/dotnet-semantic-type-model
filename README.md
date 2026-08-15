@@ -66,6 +66,7 @@ Each derivation returns diagnostics and inspection output so unsupported or ambi
 - `SemanticTypeModel.Configuration.Generators`
 - `SemanticTypeModel.PowerBI`
 - `SemanticTypeModel.EFCore`
+- `SemanticTypeModel.EFCore.Generators`
 - `SemanticTypeModel.SystemTextJson`
 
 ## Stable Release Notice

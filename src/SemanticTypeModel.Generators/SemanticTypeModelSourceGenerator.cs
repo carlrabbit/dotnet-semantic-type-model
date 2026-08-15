@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using SemanticTypeModel.DotNet;
@@ -47,7 +48,100 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             string source = GenerateProviderSource(extraction);
             productionContext.AddSource("SemanticTypeModel.Generated.g.cs", source);
 
+            productionContext.AddSource("SemanticTypeModel.Manifest.g.cs", GenerateManifestSource(extraction));
+
         });
+    }
+
+    private static string GenerateManifestSource(DotNetExtractionResult extraction)
+    {
+        // AssemblyMetadataAttribute is deliberately used as the hand-off boundary. Roslyn exposes
+        // it from a referenced assembly's metadata without loading or executing that assembly.
+        var manifest = new SemanticManifest
+        {
+            Version = 1,
+            ModelName = SanitizeIdentifier(extraction.Options.ProviderName),
+            Types = [.. extraction.TypesById.Values.OrderBy(static type => type.Id, StringComparer.Ordinal).Select(ToManifestType)],
+        };
+        string payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(manifest)));
+        return $"[assembly: global::System.Reflection.AssemblyMetadataAttribute(\"SemanticTypeModel.Manifest\", \"{EscapeString(payload)}\")]\n";
+    }
+
+    private static ManifestType ToManifestType(DotNetTypeDescriptor descriptor)
+    {
+        return new ManifestType
+        {
+            Id = descriptor.Id,
+            Name = descriptor.Name,
+            ClrName = Annotation(descriptor.Annotations, "dotnet.clrType") ?? descriptor.Id,
+            BaseClrName = Annotation(descriptor.Annotations, "dotnet.baseType"),
+            Kind = descriptor switch
+            {
+                DotNetObjectTypeDescriptor => "Object",
+                DotNetEnumTypeDescriptor => "Enum",
+                DotNetArrayTypeDescriptor => "Array",
+                DotNetDictionaryTypeDescriptor => "Dictionary",
+                DotNetScalarTypeDescriptor => "Scalar",
+                _ => "Unknown",
+            },
+            Role = Annotation(descriptor.Annotations, "schema.role"),
+            ItemTypeId = (descriptor as DotNetArrayTypeDescriptor)?.ItemTypeId,
+            Properties = descriptor is DotNetObjectTypeDescriptor objectType
+                ? [.. objectType.Properties.OrderBy(static property => property.Name, StringComparer.Ordinal).Select(static property => new ManifestProperty
+                {
+                    Name = property.Name,
+                    MemberName = Annotation(property.Annotations, "dotnet.memberName") ?? property.Name,
+                    DeclaringClrName = Annotation(property.Annotations, "dotnet.declaringType"),
+                    TypeId = property.TypeId,
+                    IsRequired = property.IsRequired,
+                    IsNullable = property.IsNullable,
+                    IsPrimaryKey = string.Equals(Annotation(property.Annotations, "schema.key"), "true", StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(Annotation(property.Annotations, "schema.key.kind") ?? "Primary", "Primary", StringComparison.OrdinalIgnoreCase),
+                    KeyOrder = int.TryParse(Annotation(property.Annotations, "schema.key.order"), out int order) ? order : 0,
+                    Ownership = string.Equals(Annotation(property.Annotations, "schema.ownedCollection"), "true", StringComparison.OrdinalIgnoreCase) ? "Collection"
+                        : string.Equals(Annotation(property.Annotations, "schema.ownedObject"), "true", StringComparison.OrdinalIgnoreCase) ? "Object" : null,
+                    IsExtensionData = string.Equals(Annotation(property.Annotations, "schema.extensionData"), "true", StringComparison.OrdinalIgnoreCase),
+                })]
+                : [],
+        };
+    }
+
+    private static string? Annotation(IReadOnlyDictionary<string, string> annotations, string key)
+    {
+        return annotations.TryGetValue(key, out string? value) ? value : null;
+    }
+
+    private sealed class SemanticManifest
+    {
+        public int Version { get; set; }
+        public string ModelName { get; set; } = string.Empty;
+        public IReadOnlyList<ManifestType> Types { get; set; } = [];
+    }
+
+    private sealed class ManifestType
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string ClrName { get; set; } = string.Empty;
+        public string? BaseClrName { get; set; }
+        public string Kind { get; set; } = string.Empty;
+        public string? Role { get; set; }
+        public string? ItemTypeId { get; set; }
+        public IReadOnlyList<ManifestProperty> Properties { get; set; } = [];
+    }
+
+    private sealed class ManifestProperty
+    {
+        public string Name { get; set; } = string.Empty;
+        public string MemberName { get; set; } = string.Empty;
+        public string? DeclaringClrName { get; set; }
+        public string TypeId { get; set; } = string.Empty;
+        public bool IsRequired { get; set; }
+        public bool IsNullable { get; set; }
+        public bool IsPrimaryKey { get; set; }
+        public int KeyOrder { get; set; }
+        public string? Ownership { get; set; }
+        public bool IsExtensionData { get; set; }
     }
 
     private static DotNetExtractionOptions ParseOptions(

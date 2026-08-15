@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>SemanticTypeModel.EFCore.Generators</RootNamespace>
+    <OutputItemType>Analyzer</OutputItemType>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);RS1036;RS1041;RS2008;CA1305;IDE0007;IDE0011;IDE0019;IDE0055;IDE0058;IDE0060;IDE0305;NU5128</NoWarn>
+    <PackageId>SemanticTypeModel.EFCore.Generators</PackageId>
+    <Title>SemanticTypeModel.EFCore.Generators</Title>
+    <Description>Generates composable EF Core entity configurations from explicitly selected SemanticTypeModel manifests. Install it in an EF persistence project to produce ordinary IEntityTypeConfiguration code; it does not scan or clean unrelated DbContext entities.</Description>
+    <Authors>SemanticTypeModel Contributors</Authors>
+    <RepositoryUrl>https://github.com/carlrabbit/dotnet-semantic-type-model</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>semantic-type-model;efcore;source-generator;roslyn</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
+    <IncludeSymbols>true</IncludeSymbols><SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <ProjectReference Include="../SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" PrivateAssets="all" />
+    <ProjectReference Include="../SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj" />
+  </ItemGroup>
+  <PropertyGroup><TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CollectGeneratorAnalyzer</TargetsForTfmSpecificContentInPackage></PropertyGroup>
+  <Target Name="CollectGeneratorAnalyzer" DependsOnTargets="Build"><ItemGroup>
+    <TfmSpecificPackageFile Include="$(TargetDir)$(AssemblyName).dll" PackagePath="analyzers/dotnet/cs" />
+    <TfmSpecificPackageFile Include="$(TargetDir)$(AssemblyName).pdb" PackagePath="analyzers/dotnet/cs" Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
+  </ItemGroup></Target>
+  <ItemGroup><None Include="../../public-docs/nuget/SemanticTypeModel.EFCore.Generators.md" Pack="true" PackagePath="README.md" /></ItemGroup>
+  <ItemGroup><Compile Include="../SemanticTypeModel.EFCore.Shared/EfStoragePolicy.cs" Link="Internal/EfStoragePolicy.cs" /></ItemGroup>
+</Project>

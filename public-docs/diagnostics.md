@@ -16,7 +16,7 @@ All stable diagnostic IDs use the prefix `STM` followed by a four-digit number:
 | STM0xxx     | Semantic model validation                | SemanticTypeModel.Core           |
 | STM1xxx     | Core transformation                      | SemanticTypeModel.Core           |
 | STM3xxx     | JSON Schema runtime projection           | SemanticTypeModel.JsonSchema     |
-| STM5xxx     | .NET type extraction / source generator  | SemanticTypeModel.DotNet / SemanticTypeModel.Generators |
+| STM5xxx     | .NET extraction and source generators   | SemanticTypeModel.DotNet / generator packages |
 
 ## Severity Levels
 
@@ -113,6 +113,8 @@ Full reference: [diagnostics/stm3xxx.md](diagnostics/stm3xxx.md)
 | STM5023 | Warning  | Semantic name duplicate            |
 | STM5024 | Warning  | Annotation conflict                |
 | STM5025 | Warning  | Member shape unsupported           |
+
+| STM5037-STM5046 | Error | Generated EF manifest/configuration failures |
 
 Full reference: [diagnostics/stm5xxx.md](diagnostics/stm5xxx.md)
 

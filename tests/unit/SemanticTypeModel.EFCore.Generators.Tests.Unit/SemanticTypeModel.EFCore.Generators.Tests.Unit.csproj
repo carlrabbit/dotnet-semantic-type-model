@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup><RootNamespace>SemanticTypeModel.EFCore.Generators.Tests.Unit</RootNamespace><NoWarn>$(NoWarn);CS1591;CA1707;CA1859;IDE0007;IDE0011;IDE0046;IDE0058</NoWarn></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="TUnit" /><PackageReference Include="TUnit.Assertions" /><PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" /><PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.EFCore.Generators/SemanticTypeModel.EFCore.Generators.csproj" />
+  </ItemGroup>
+</Project>

@@ -13,6 +13,7 @@ The current stable package set is:
 - `SemanticTypeModel.DependencyInjection`
 - `SemanticTypeModel.PowerBI`
 - `SemanticTypeModel.EFCore`
+- `SemanticTypeModel.EFCore.Generators`
 - `SemanticTypeModel.Configuration`
 - `SemanticTypeModel.Configuration.Generators`
 
@@ -30,7 +31,8 @@ The current stable package set is:
 | `SemanticTypeModel.SystemTextJson` | System.Text.Json contract metadata import, annotation constants, domain semantic model derivation, and resolver customization helpers. |
 | `SemanticTypeModel.DependencyInjection` | Runtime provider, transformation, and projection service registration. |
 | `SemanticTypeModel.PowerBI` | Power BI domain semantic model derivation and local metadata projection. |
-| `SemanticTypeModel.EFCore` | EF Core domain semantic model derivation and provider-neutral `ModelBuilder` projection. |
+| `SemanticTypeModel.EFCore` | EF relational inspection contracts, model selection, and generated-code converter primitives. |
+| `SemanticTypeModel.EFCore.Generators` | Persistence-project analyzer that generates composable entity configurations. |
 | `SemanticTypeModel.Configuration` | Configuration domain semantic model derivation and Microsoft.Extensions.Options registration projection. |
 | `SemanticTypeModel.Configuration.Generators` | Source-generator package for deterministic configuration options registration helpers. |
 
