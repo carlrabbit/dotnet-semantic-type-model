@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>SemanticTypeModel.Configuration</RootNamespace>
+    <NoWarn>$(NoWarn);IDE0130</NoWarn>
     <PackageId>SemanticTypeModel.Configuration</PackageId>
     <Title>SemanticTypeModel.Configuration</Title>
     <Description>Configuration domain model and Microsoft.Extensions.Options registration projection for SemanticTypeModel.</Description>

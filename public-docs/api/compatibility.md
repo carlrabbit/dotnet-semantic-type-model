@@ -13,8 +13,7 @@ unsupported, including generator/analyzer packages.
 Annotated .NET code is the supported public authoring source for canonical semantic models. Generated providers
 return the current `SemanticTypeModel.Abstractions.Model.TypeSchemaModel` surface.
 
-The old `Canonical` namespace/legacy shape graph is not a supported current model surface. JSON Schema import,
-where retained for compatibility/tooling, is not the recommended canonical authoring path.
+The old `Canonical` namespace/legacy shape graph is not a supported current model surface. JSON Schema import has been removed and is not a supported canonical authoring path.
 
 ## Public API review
 
@@ -49,8 +48,8 @@ semantic model may contain multiple Configuration types without registering all 
 The supported static application path is generated configuration through
 `SemanticTypeModel.EFCore.Generators`:
 
-- the model assembly emits a semantic manifest;
-- the persistence assembly explicitly selects model(s);
+- the model assembly emits an ephemeral internal semantic manifest containing its producer suite version;
+- the persistence assembly explicitly selects model(s), and its EF generator must use the same exact suite version as the manifest producer;
 - the generator emits ordinary `IEntityTypeConfiguration<TEntity>` implementations and a deterministic apply
   extension;
 - generated configuration owns only semantic CLR Entities selected from that model;

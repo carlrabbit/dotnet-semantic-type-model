@@ -48,7 +48,7 @@ Unsupported:
 - schema registry behavior;
 - validation engine behavior.
 
-Retained JSON Schema import APIs, if any, are legacy/internal compatibility behavior and must not be presented as public authoring.
+No JSON Schema import API or compatibility surface is retained.
 
 ## Domain Semantic Model
 
@@ -328,7 +328,6 @@ empty alternatives
 ambiguous schema name
 duplicate schema name
 unsupported annotation/extension value
-legacy import API usage when public API is retained
 ```
 
 ## Inspection Integration
@@ -387,7 +386,6 @@ simple anyOf export
 unsupported composition diagnostics
 deterministic branch ordering
 deterministic document output
-legacy import boundary if retained
 ```
 
 ## Non-Goals

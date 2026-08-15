@@ -31,7 +31,6 @@ Define the stable set of repository commands used by humans, CI, and agents.
 | `./eng/benchmark.sh` | Run benchmarks in Release mode |
 | `./eng/samples.sh` | Build and run runnable samples against locally prepared packages in `artifacts/nuget`; run `./eng/package.sh <version>` first |
 | `./eng/public-docs.sh` | Validate public documentation surfaces and package documentation consistency |
-| `./eng/public-docs.sh` | Validate public API compatibility documentation files |
 | `./eng/package.sh <version>` | Pack release NuGet packages into `artifacts/nuget` |
 | `./eng/package-smoke.sh <version>` | Validate local package consumption from `artifacts/nuget` |
 | `./eng/release-check.sh <version>` | Run release-readiness gate without publishing |
@@ -46,3 +45,9 @@ Define the stable set of repository commands used by humans, CI, and agents.
 - `./eng/release-check.sh <version>` must not publish artifacts.
 - `./eng/publish.sh <version>` requires `NUGET_API_KEY`.
 - All required commands for the relevant validation tier must succeed before work is considered complete.
+
+## Implementation Levels
+
+The `eng/` filenames remain the stable command API. Direct `dotnet` launchers (`restore`, `build`, `test`, `test-project`, `format`, and `benchmark`) are Level 1. Small sequencing commands (`check`, `package`, `samples`, `release-check`, and `publish`) are Level 2. Repository policy commands (`check-affected` and `public-docs`) are Level 3: their shell files are thin launchers into the tested `eng/Engineering.Commands` host. `package-smoke` is also Level 3: its thin launcher delegates package policy, temporary consumer construction, and scenario orchestration to the tested command host.
+
+Complex path classification, package inventory, and documentation policy belong in tested .NET engineering code. Shell remains responsible for direct process invocation and short, readable sequencing. Launchers forward arguments and return the host or subprocess exit status unchanged.

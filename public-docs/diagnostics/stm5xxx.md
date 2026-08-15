@@ -341,7 +341,7 @@ STM5027 in 2.6.0 rather than being interpreted as strings.
 - [stm0xxx.md](stm0xxx.md)
 - [stm3xxx.md](stm3xxx.md)
 
-## Generated EF configuration (STM5037-STM5046)
+## Generated EF configuration (STM5037-STM5047)
 
 | Code | Severity | Cause | Fix |
 |---|---|---|---|
@@ -355,3 +355,4 @@ STM5027 in 2.6.0 rather than being interpreted as strings.
 | STM5044 | Error | Manifest CLR Entity cannot be resolved. | Restore the selected model reference and preserve its CLR type. |
 | STM5045 | Error | Manifest CLR member cannot be resolved. | Rebuild the manifest after the CLR member change. |
 | STM5046 | Error | The retained EF storage policy cannot map a member. | Use a supported scalar, identifier, binary, enum, or explicitly owned ValueKind shape. |
+| STM5047 | Error | Manifest producer and EF consumer suite versions differ. | Use the same exact version for every SemanticTypeModel package. |

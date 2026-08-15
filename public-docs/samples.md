@@ -11,7 +11,6 @@ this page is only an index.
 | System.Text.Json resolver | `samples/system-text-json-resolver/` | Application-owned resolver/context customized with semantic metadata |
 | Runtime DI | `samples/runtime-di/` | Runtime provider/projection composition |
 | Configuration options | `samples/configuration-options/` | Explicit `AddSemanticOptions<TOptions>` registration from a generated model |
-| JSON Schema roundtrip | `samples/json-schema-roundtrip/` | Retained compatibility-oriented JSON Schema import/export path |
 | Shared model | `samples/OrderFulfillment.Domain/` | Shared annotated domain consumed by multiple target samples |
 
 ## Run

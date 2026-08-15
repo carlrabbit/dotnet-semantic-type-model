@@ -66,7 +66,7 @@ Use [Diagnostics](diagnostics.md) and the STM5xxx range page. The important fami
 
 - STM5001-STM5025: .NET extraction/generator configuration and shape problems;
 - STM5026-STM5036: typed conditional-literal validation;
-- STM5037-STM5046: generated EF manifest/configuration failures.
+- STM5037-STM5047: generated EF manifest/configuration failures.
 
 ## EF Core generated no configuration for my type
 

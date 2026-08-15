@@ -36,7 +36,6 @@ if [ -z "$version" ]; then
 fi
 
 projects="
-samples/json-schema-roundtrip/json-schema-roundtrip.csproj
 samples/code-first-json-schema/code-first-json-schema.csproj
 samples/code-first-ef-core/code-first-ef-core.csproj
 samples/code-first-powerbi/code-first-powerbi.csproj

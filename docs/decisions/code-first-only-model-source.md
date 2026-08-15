@@ -58,7 +58,7 @@ JSON Schema remains useful as a projection/export target.
 
 - Specs and public docs must stop presenting JSON Schema import as the primary or supported canonical model creation path.
 - JSON Schema package behavior should be repositioned around export/projection from code-generated models.
-- Existing JSON Schema import APIs must be removed, made internal, or documented as legacy/unsupported according to compatibility policy.
+- JSON Schema import APIs are removed; no compatibility surface is retained.
 - Persisted model loading must be described as snapshot loading, not authoring.
 - Domain integrations must derive domain semantic models from the canonical model.
 - The query and inspection surface becomes a core product concern.
