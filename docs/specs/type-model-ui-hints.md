@@ -12,7 +12,7 @@ This spec is authoritative for:
 - downstream `jsonEditor.*` hint keys and compatibility scope;
 - UI hint validation and normalization expectations;
 - JSON Schema projection/export mapping behavior for UI hints;
-- legacy/internal JSON Schema import mapping behavior when retained for compatibility.
+- JSON Schema projection/export mapping behavior.
 
 ## Generic UI Hint Vocabulary (`ui.*`)
 

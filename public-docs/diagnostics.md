@@ -43,6 +43,7 @@ Diagnostic message text is not an API contract. Prefer IDs/categories and docume
 | `STM5041` | Multiple selected models own the same CLR Entity | Select a single owning semantic model for that CLR Entity. |
 | `STM5042` | Generated configuration type names collide | Change model/type naming so generated configuration names are unique. |
 | `STM5043` | Generated registration names collide | Change selected model/provider naming so registration names are unique. |
+| `STM5047` | Manifest producer and EF generator versions differ | Align every SemanticTypeModel package to the same exact version. |
 | `STM5044` | Manifest CLR type cannot be resolved | Rebuild references; verify the selected assembly/type still matches the manifest. |
 | `STM5045` | Manifest CLR member cannot be resolved | Rebuild the model project; verify the member was not renamed/removed. |
 | `STM5046` | EF configuration projection failed | Use a supported semantic Entity/member/storage shape; see [EF Core](guides/ef-core.md). |

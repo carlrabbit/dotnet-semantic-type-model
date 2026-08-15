@@ -92,10 +92,12 @@ public sealed class M0060GeneratedConfigurationTests
         GeneratorDriverRunResult missing = RunWithoutManifest(selection);
         GeneratorDriverRunResult invalid = RunCore("[assembly: System.Reflection.AssemblyMetadata(\"SemanticTypeModel.Manifest\", \"not-base64\")]\n" + selection);
         GeneratorDriverRunResult ambiguous = RunCore(Metadata(Manifest("One", [])) + Metadata(Manifest("Two", [])) + selection);
+        GeneratorDriverRunResult mismatch = Run(selection, Manifest("Mismatch", [], semanticTypeModelVersion: "999.0.0"));
         _ = await Assert.That(unsupported.Has(DotNetExtractionDiagnosticIds.EfManifestVersionUnsupported)).IsTrue();
         _ = await Assert.That(missing.Has(DotNetExtractionDiagnosticIds.EfSelectedManifestMissing)).IsTrue();
         _ = await Assert.That(invalid.Has(DotNetExtractionDiagnosticIds.EfSelectedManifestInvalid)).IsTrue();
         _ = await Assert.That(ambiguous.Has(DotNetExtractionDiagnosticIds.EfSelectedManifestAmbiguous)).IsTrue();
+        _ = await Assert.That(mismatch.Has(DotNetExtractionDiagnosticIds.EfManifestSuiteVersionMismatch)).IsTrue();
     }
 
     [Test]
@@ -182,9 +184,16 @@ public sealed class M0060GeneratedConfigurationTests
         return [.. result.Results.SelectMany(run => run.GeneratedSources).OrderBy(source => source.HintName, StringComparer.Ordinal).Select(source => source.SourceText.ToString())];
     }
 
-    private static object Manifest(string name, object[] types, int version = 1)
+    private static object Manifest(string name, object[] types, int version = 1, string? semanticTypeModelVersion = null)
     {
-        return new { Version = version, ModelName = name, Types = types };
+        return new { Version = version, SemanticTypeModelVersion = semanticTypeModelVersion ?? SuiteVersion(), ModelName = name, Types = types };
+    }
+
+    private static string SuiteVersion()
+    {
+        return typeof(SemanticEfConfigurationGenerator).Assembly
+        .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+        .Cast<System.Reflection.AssemblyInformationalVersionAttribute>().Single().InformationalVersion.Split('+')[0];
     }
 
     private static object Entity(string name)

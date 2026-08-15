@@ -8,7 +8,7 @@ Authoritative behavioral specification.
 
 Define the Configuration domain semantic model, selected-type derivation, required section presence, and Microsoft.Extensions.Options registration projection.
 
-This specification is authoritative for configuration-domain derivation, options type discovery, configuration sections, section presence, bind policies, options validation, `ValidateOnStart`, explicit per-type registration, generated registration helpers, diagnostics, and inspection.
+This specification is authoritative for configuration-domain derivation, options type discovery, configuration sections, section presence, bind policies, options validation, `ValidateOnStart`, explicit per-type registration, diagnostics, and inspection.
 
 ## Core Principle
 
@@ -20,14 +20,7 @@ The Configuration package must not own application configuration sources. Host a
 
 ## Package Boundary
 
-```text
-SemanticTypeModel.Configuration
-SemanticTypeModel.Configuration.Generators
-```
-
-`SemanticTypeModel.Configuration` owns domain derivation, selected-type registration, validation, inspection, and diagnostics.
-
-`SemanticTypeModel.Configuration.Generators` owns optional generated consumer glue that delegates to the runtime registration adapter.
+`SemanticTypeModel.Configuration` owns domain derivation, selected-type registration, validation, inspection, and diagnostics. Domain derivation and Microsoft.Extensions.Options integration are separated internally while remaining one package. Applications explicitly compose registration.
 
 ## Configuration Domain Model
 
@@ -187,27 +180,6 @@ With `ValidateOnStart`, missing required section data must fail host startup.
 
 Without `ValidateOnStart`, failure occurs when the options instance is validated or resolved.
 
-## Generated Registration Helpers
-
-Generated helpers are optional convenience APIs.
-
-They must delegate to the runtime adapter:
-
-```csharp
-public static OptionsBuilder<ColdStorageOptions> AddColdStorageOptions(
-    this IServiceCollection services,
-    IConfiguration configuration)
-{
-    return services.AddSemanticOptions<ColdStorageOptions>(
-        configuration,
-        AppSemanticTypeModel.Create());
-}
-```
-
-Generated helpers must be emitted only when explicitly requested by type metadata or generator policy.
-
-No generated helper may auto-register every Configuration type by default.
-
 ## Model-Wide Registration
 
 Complete-model registration is not the primary application API.
@@ -262,7 +234,6 @@ The Configuration package must diagnose:
 - Application registration is explicit per options type.
 - Unselected Configuration types are not registered.
 - Runtime registration is the canonical behavior implementation.
-- Generated helpers delegate to runtime registration.
 - Configuration semantics do not load providers or manage secrets.
 - Section presence is Configuration-specific.
 - Unsupported validation is not silently dropped.
@@ -278,5 +249,4 @@ Public docs must explain:
 - how to register multiple selected types from one complete model;
 - how named options and call-site section overrides work;
 - how required section validation interacts with `ValidateOnStart`;
-- how generated helpers delegate to runtime registration;
 - why other Configuration types in the model remain unregistered.

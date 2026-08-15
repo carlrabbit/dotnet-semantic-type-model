@@ -24,7 +24,8 @@ This specification is authoritative for:
   - discover configured extraction roots;
   - invoke `SemanticTypeModel.DotNet` extraction logic;
   - emit deterministic provider code that constructs canonical `TypeSchemaModel`;
-  - surface extraction/generation diagnostics.
+  - surface extraction/generation diagnostics;
+  - emit an ephemeral internal semantic manifest carrying the exact producing SemanticTypeModel suite version for aligned generator composition.
 - Non-responsibilities:
   - direct projection output generation that bypasses the canonical model and domain semantic model pipeline.
 

@@ -20,7 +20,6 @@ Generator/analyzer packages are part of that rule too.
 | EF Core | `SemanticTypeModel.EFCore`, `SemanticTypeModel.EFCore.Generators` |
 | System.Text.Json | `SemanticTypeModel.SystemTextJson` |
 | Microsoft.Extensions.Options | `SemanticTypeModel.Configuration` |
-| Configuration helper generation | `SemanticTypeModel.Configuration.Generators` when the selected build exposes generated helpers |
 | Power BI local metadata | `SemanticTypeModel.PowerBI` |
 | Runtime DI composition | `SemanticTypeModel.DependencyInjection` |
 
@@ -94,12 +93,11 @@ If generation or projection fails:
 | `SemanticTypeModel.Core` | Core semantics, transformations, diagnostics, inspection |
 | `SemanticTypeModel.DotNet` | Attributes and Roslyn extraction contracts |
 | `SemanticTypeModel.Generators` | Compile-time canonical model provider and semantic manifest generation |
-| `SemanticTypeModel.JsonSchema` | JSON Schema derivation/export and retained compatibility import |
+| `SemanticTypeModel.JsonSchema` | JSON Schema derivation and Draft 2020-12 export |
 | `SemanticTypeModel.EFCore` | EF relational inspection, selection contract, converters/comparers/helpers |
 | `SemanticTypeModel.EFCore.Generators` | Generated composable `IEntityTypeConfiguration<TEntity>` application |
 | `SemanticTypeModel.SystemTextJson` | Resolver metadata derivation/customization |
 | `SemanticTypeModel.Configuration` | Configuration semantic model and explicit Options registration |
-| `SemanticTypeModel.Configuration.Generators` | Optional generated registration-helper package boundary |
 | `SemanticTypeModel.PowerBI` | Deterministic local analytical metadata projection |
 | `SemanticTypeModel.DependencyInjection` | Runtime provider/projection service registration |
 

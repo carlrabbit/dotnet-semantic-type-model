@@ -3,6 +3,8 @@
 - Added `SemanticTypeModel.EFCore.Generators`, manifest schema version 1, explicit model selection, entity configurations, partial hooks, and deterministic registration.
 - Replaced the supported runtime global EF cleanup/application path. This is a breaking migration: install the analyzer in the persistence project and call the generated apply extension.
 - Generated models configure only owned CLR Entities; multiple models and manual entities compose. Duplicate CLR ownership is `STM5041`.
+- Removed the unused `SemanticTypeModel.Configuration.Generators` package and the JSON Schema import compatibility API.
+- Semantic manifests now require an exact producer/consumer suite-version match (`STM5047`).
 - Not published; release validation is required.
 
 # 2.6.1
@@ -133,7 +135,7 @@ The intended 2.4.1 package set is resolved from packable projects during release
 
 ### Package Inventory
 
-The intended 2.4.0 package set is resolved from packable projects during release validation and is expected to include `SemanticTypeModel.Abstractions`, `SemanticTypeModel.Core`, `SemanticTypeModel.JsonSchema`, `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, `SemanticTypeModel.DependencyInjection`, `SemanticTypeModel.Configuration`, `SemanticTypeModel.Configuration.Generators`, `SemanticTypeModel.PowerBI`, `SemanticTypeModel.EFCore`, and `SemanticTypeModel.SystemTextJson`. Human review is required for the final produced package inventory and archive contents.
+The intended 2.4.0 package set is resolved from packable projects during release validation and is expected to include `SemanticTypeModel.Abstractions`, `SemanticTypeModel.Core`, `SemanticTypeModel.JsonSchema`, `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, `SemanticTypeModel.DependencyInjection`, `SemanticTypeModel.Configuration`, `SemanticTypeModel.PowerBI`, `SemanticTypeModel.EFCore`, and `SemanticTypeModel.SystemTextJson`. Human review is required for the final produced package inventory and archive contents.
 
 ### Known Limitations and Publication Status
 

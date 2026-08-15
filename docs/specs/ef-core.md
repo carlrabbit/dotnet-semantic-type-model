@@ -78,7 +78,7 @@ The manifest is:
 - not loaded by executing the referenced model assembly;
 - not a second user-authored semantic model format.
 
-Compatibility/evolution policy between future manifest schema versions is not defined by this specification.
+The manifest is ephemeral internal compile-time transport between aligned generator packages. It carries the producing SemanticTypeModel suite version, and the consuming EF generator requires that version to match its own exact suite version. Cross-version consumption and persisted-manifest compatibility are unsupported; no compatibility negotiation is provided.
 
 ## Explicit Model Selection
 

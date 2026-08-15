@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><RootNamespace>SemanticTypeModel.Engineering.Tests.Unit</RootNamespace></PropertyGroup>
+  <ItemGroup><PackageReference Include="TUnit"/><PackageReference Include="TUnit.Assertions"/></ItemGroup>
+  <ItemGroup><ProjectReference Include="../../../eng/Engineering.Commands/Engineering.Commands.csproj"/></ItemGroup>
+</Project>

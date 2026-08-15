@@ -1,30 +1,51 @@
 {
+  "schemaVersion": 1,
   "guideSystem": {
     "repository": "carlrabbit/agentic-project-guides",
-    "version": "0.3.0",
-    "usage": "planning-migration-documentation-sync-release-readiness-only"
+    "version": "0.6.0"
   },
-  "targetRepository": {
-    "repository": "carlrabbit/dotnet-semantic-type-model",
-    "role": "product-repository",
-    "profile": "dotnet-library",
-    "projectType": "dotnet-library",
-    "maturity": "post-2.0-public-package-set",
-    "executionMode": "ai-executed-human-reviewed"
+  "appliedProfiles": [
+    {
+      "id": "base",
+      "version": "0.6.0"
+    },
+    {
+      "id": "dotnet-library",
+      "version": "0.6.0"
+    }
+  ],
+  "repositoryRole": "capability-provider",
+  "maturityStage": "published-maintenance",
+  "executionModel": {
+    "defaultImplementationMode": "ai-executed-human-reviewed",
+    "documentationSync": "separate-pass",
+    "releaseReadiness": "separate-pass",
+    "humanReview": "milestone-scoped"
   },
-  "authority": {
-    "ordinaryImplementationAgentsUse": "target-repository-local-docs-only",
-    "ordinaryImplementationAgentsIgnore": [
-      ".guide-profile.json",
-      ".guide-sync/",
-      "docs/research/project-setup-guide-*.md",
-      "docs/research/engineering-guide-*.md"
+  "engineeringCommands": {
+    "canonicalInterface": "eng",
+    "implementation": "repository-specific",
+    "supportedLaunchers": [
+      "bash"
     ],
-    "externalGuidesAreOperationalAuthority": false
+    "testedPlatforms": [
+      "linux"
+    ]
   },
-  "lastResolvedByPlanningTask": {
-    "resolvedLatestGuideSystemVersion": "0.3.0",
-    "resolvedAt": "2026-06-15",
-    "notes": "Version resolved from carlrabbit/agentic-project-guides README.md and CHANGELOG.md during M0036 planning."
-  }
+  "activeDocumentationLayers": [
+    "architecture",
+    "decisions",
+    "engineering",
+    "history",
+    "milestones",
+    "public-docs",
+    "specs",
+    "terminology",
+    "workflows"
+  ],
+  "inactiveDocumentationLayers": [
+    "tbps",
+    "issue-templates",
+    "repository-guide-copies"
+  ]
 }

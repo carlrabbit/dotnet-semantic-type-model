@@ -14,9 +14,17 @@
     <Project Path="src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj" />
     <Project Path="src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj" />
     <Project Path="src/SemanticTypeModel.Configuration/SemanticTypeModel.Configuration.csproj" />
-    <Project Path="src/SemanticTypeModel.Configuration.Generators/SemanticTypeModel.Configuration.Generators.csproj" />
+  </Folder>
+  <Folder Name="/eng/">
+    <Project Path="eng/Engineering.Commands/Engineering.Commands.csproj" />
   </Folder>
   <Folder Name="/tests/" />
+  <Folder Name="/tests/fixtures/">
+    <Project Path="tests/fixtures/SemanticTypeModel.EFCoreModelShapes/SemanticTypeModel.EFCoreModelShapes.csproj" />
+    <Project Path="tests/fixtures/SemanticTypeModel.M0060.ModelA/SemanticTypeModel.M0060.ModelA.csproj" />
+    <Project Path="tests/fixtures/SemanticTypeModel.M0060.ModelB/SemanticTypeModel.M0060.ModelB.csproj" />
+    <Project Path="tests/fixtures/SemanticTypeModel.RealWorldFixtures/SemanticTypeModel.RealWorldFixtures.csproj" />
+  </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/SemanticTypeModel.EFCore.Tests.Integration/SemanticTypeModel.EFCore.Tests.Integration.csproj" />
   </Folder>
@@ -31,5 +39,6 @@
     <Project Path="tests/unit/SemanticTypeModel.PowerBI.Tests.Unit/SemanticTypeModel.PowerBI.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.SystemTextJson.Tests.Unit/SemanticTypeModel.SystemTextJson.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.Configuration.Tests.Unit/SemanticTypeModel.Configuration.Tests.Unit.csproj" />
+    <Project Path="tests/unit/SemanticTypeModel.Engineering.Tests.Unit/SemanticTypeModel.Engineering.Tests.Unit.csproj" />
   </Folder>
 </Solution>

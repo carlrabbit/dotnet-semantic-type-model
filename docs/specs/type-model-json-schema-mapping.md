@@ -14,7 +14,7 @@ This specification is authoritative for canonical-to-JSON-Schema projection inte
 
 The detailed domain model, derivation, export, and composition behavior is defined by [json-schema-domain-model-and-export.md](json-schema-domain-model-and-export.md).
 
-This spec is not authority for JSON-Schema-to-canonical authoring. JSON Schema import is unsupported as canonical model creation under [code-first-semantic-model-architecture.md](code-first-semantic-model-architecture.md). Any retained JSON-Schema-to-canonical behavior is legacy/internal compatibility behavior only.
+This spec is not authority for JSON-Schema-to-canonical authoring. JSON Schema import is unsupported as canonical model creation under [code-first-semantic-model-architecture.md](code-first-semantic-model-architecture.md).
 
 ## Mapping Pipeline
 
@@ -123,9 +123,3 @@ When preserved, unsupported keyword annotations use reserved namespaces such as 
 - export defaults to standard JSON Schema semantics without downstream keyword emission.
 - display text export precedence is `ui.title` -> `schema.title`/`title` and `ui.description` -> `schema.userDescription`/target `description`.
 - UI hints are non-semantic projection hints and must not alter canonical requiredness/nullability semantics.
-
-## Legacy/Internal Import Boundary
-
-JSON Schema import is not a supported public source for canonical semantic models.
-
-If import components remain for compatibility, tests, or internal migration, they are legacy/internal behavior and must not be presented as an authoring path.

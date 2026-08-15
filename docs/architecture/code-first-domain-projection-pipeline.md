@@ -85,7 +85,7 @@ It does not own target representation choices such as EF relationship inference,
 
 It also emits the deterministic compile-time semantic manifest used for cross-project generator composition. The manifest is generated metadata derived from the canonical semantics and CLR lineage; it is not a user-authored schema.
 
-Manifest compatibility/version-evolution policy is a separate architectural topic and is not defined by this document.
+The manifest is ephemeral internal compile-time transport. Producer and consumer generator packages must use the same exact SemanticTypeModel suite version; persisted or cross-version manifest consumption is unsupported.
 
 ## Transformation and Domain Derivation
 

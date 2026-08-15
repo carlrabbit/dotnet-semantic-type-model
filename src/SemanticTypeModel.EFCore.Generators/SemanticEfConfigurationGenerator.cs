@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
@@ -59,6 +60,12 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
             if (manifest!.Version != SemanticManifest.CurrentVersion)
             {
                 context.ReportDiagnostic(Diagnostic.Create(EfGeneratorDiagnosticDescriptors.ManifestVersionUnsupported, location, manifest.Version, SemanticManifest.CurrentVersion));
+                continue;
+            }
+
+            if (!string.Equals(manifest.SemanticTypeModelVersion, SuiteVersion.Current, StringComparison.Ordinal))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(EfGeneratorDiagnosticDescriptors.ManifestSuiteVersionMismatch, location, manifest.SemanticTypeModelVersion, SuiteVersion.Current));
                 continue;
             }
 
@@ -497,8 +504,20 @@ internal sealed class SemanticManifest
 {
     internal const int CurrentVersion = 1;
     public int Version { get; set; }
+    public string SemanticTypeModelVersion { get; set; } = string.Empty;
     public string ModelName { get; set; } = string.Empty;
     public IReadOnlyList<SemanticType> Types { get; set; } = [];
+}
+
+
+internal static class SuiteVersion
+{
+    internal static readonly string Current =
+        typeof(SemanticEfConfigurationGenerator).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            .Split('+')[0]
+        ?? typeof(SemanticEfConfigurationGenerator).Assembly.GetName().Version?.ToString(3)
+        ?? "0.0.0";
 }
 
 internal sealed class SemanticType

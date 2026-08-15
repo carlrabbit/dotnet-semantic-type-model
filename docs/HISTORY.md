@@ -56,3 +56,7 @@ Generated configuration exposes `ConfigureBeforeGenerated` and `ConfigureAfterGe
 ## History Policy
 
 Add to this file only when a change alters the project's architectural mental model or a major system boundary. Do not add one entry per milestone, release, bug fix, diagnostic, or mapping option.
+
+## Post-EF consolidation
+
+Engineering policy moved behind the stable `eng/` command API into tested repository-local .NET code. The compile-time semantic manifest remained ephemeral and gained exact producer/consumer suite-version enforcement. The unused Configuration generator placeholder and JSON Schema import compatibility path were removed, leaving code-first canonical acquisition and target-owned projection boundaries explicit.

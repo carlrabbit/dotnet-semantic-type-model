@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
@@ -60,6 +61,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         var manifest = new SemanticManifest
         {
             Version = 1,
+            SemanticTypeModelVersion = SuiteVersion.Current,
             ModelName = SanitizeIdentifier(extraction.Options.ProviderName),
             Types = [.. extraction.TypesById.Values.OrderBy(static type => type.Id, StringComparer.Ordinal).Select(ToManifestType)],
         };
@@ -114,8 +116,19 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
     private sealed class SemanticManifest
     {
         public int Version { get; set; }
+        public string SemanticTypeModelVersion { get; set; } = string.Empty;
         public string ModelName { get; set; } = string.Empty;
         public IReadOnlyList<ManifestType> Types { get; set; } = [];
+    }
+
+    private static class SuiteVersion
+    {
+        internal static readonly string Current =
+            typeof(SemanticTypeModelSourceGenerator).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                .Split('+')[0]
+            ?? typeof(SemanticTypeModelSourceGenerator).Assembly.GetName().Version?.ToString(3)
+            ?? "0.0.0";
     }
 
     private sealed class ManifestType

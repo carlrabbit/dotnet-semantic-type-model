@@ -131,4 +131,6 @@ public static class DotNetExtractionDiagnosticIds
     public const string EfClrMemberUnresolved = "STM5045";
     /// <summary>STM5046 — EF configuration projection failed.</summary>
     public const string EfProjectionError = "STM5046";
+    /// <summary>STM5047 — Manifest producer and consumer suite versions differ.</summary>
+    public const string EfManifestSuiteVersionMismatch = "STM5047";
 }
