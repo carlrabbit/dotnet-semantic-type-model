@@ -1,18 +1,48 @@
 # Agent Instructions
 
-## Authority and Conditional Reading
+## Start Here
 
-Start with this file. Read additional documents only when they are relevant to the task:
+Use this file as the repository router. Read only the additional authority needed for the assigned task.
 
+### Current Authority
+
+- Read `docs/TERMINOLOGY.md` before introducing or changing project terminology.
+- Read the relevant current specification under `docs/specs/` when changing behavior.
+- Read `docs/ARCHITECTURE.md` and the relevant document under `docs/architecture/` when changing structural boundaries, package responsibilities, dependency direction, or compile-time/runtime composition.
+- Read `docs/DECISIONS.md` and relevant current decisions when a non-obvious architectural choice constrains the work.
 - Read `docs/ENGINEERING.md` and `docs/engineering/command-contract.md` when choosing validation commands or changing engineering policy.
-- Read relevant specs under `docs/specs/` when changing behavior covered by a specification.
-- Read `docs/PUBLIC-DOCS.md` and affected `public-docs/` pages when changing consumer-facing behavior, package metadata, diagnostics, samples, or release guidance.
+- Read `docs/PUBLIC-DOCS.md` and affected `public-docs/` pages when changing consumer-facing behavior, package metadata, diagnostics, samples, installation, migration, or release guidance.
 - Read workflow docs and workflow YAML together when changing CI, packaging, release, or publishing automation.
+- Read `docs/MILESTONES.md` and an active milestone only when the task is routed through that milestone.
+- Read `docs/HISTORY.md` only when architectural evolution is relevant.
 - Read `.guide-profile.json` and `.guide-sync/` only when explicitly assigned guide migration, documentation synchronization, or release-readiness planning work.
 
-Do not treat `docs/research/project-setup-guide-*` or `docs/research/engineering-guide-*` as authoritative. They are historical research copies and are not required reading.
+## Authority Roles
 
-Do not read the external guide repository during ordinary implementation work. Use only target-repository authority documents listed by the assigned milestone or task.
+```text
+Specification  = what behavior is required now.
+Architecture   = how the major pieces fit together.
+Decision       = why a non-obvious current choice exists.
+Engineering    = how repository work is built, validated, packaged, and synchronized.
+Public docs    = supported consumer guidance.
+Milestone      = what active implementation work should happen next.
+History        = concise architectural evolution.
+Git history    = detailed completed work and superseded designs.
+```
+
+A milestone does not override a current specification or decision. Historical Git content does not override current working-tree authority.
+
+## Documentation Lifecycle
+
+- The working tree should contain current truth and active work, not an archive of every prior design.
+- Completed milestone files are deleted after durable results are synchronized into current authority.
+- Superseded decisions/specifications are deleted after any still-current requirement or rationale is promoted into replacement authority.
+- Do not create `docs/archive/` merely to retain material already preserved by Git.
+- Do not copy external project-setup or engineering guide documents into this repository.
+- `.guide-sync/pending/` contains unresolved current synchronization work only and should normally be empty.
+- Prefer extending an existing authoritative document over creating a new document.
+
+Create a new documentation file only when it represents a distinct authority boundary: a new subsystem contract, an independently durable architectural decision, a new consumer/package/audience entry point, an active milestone, or a genuinely separate research subject.
 
 ## Validation Tiers
 
@@ -40,5 +70,4 @@ Before completing implementation work, run Tier 2 unless the task is documentati
 - Preserve public contracts unless an authoritative spec changes.
 - Do not introduce terminology that is absent from `docs/TERMINOLOGY.md`.
 - Prefer deterministic, short-running tests by default; do not add network, timing-dependent, or expensive tests to the short-running suite.
-- Do not copy external guide documents into this repository.
-- Do not introduce TBPs, broad guardrail documents, default issue templates, or workflow documents unless a project-specific milestone explicitly requires them as project truth.
+- Do not introduce TBPs, broad guardrail documents, default issue templates, or workflow documents unless a project-specific current requirement makes them repository truth.

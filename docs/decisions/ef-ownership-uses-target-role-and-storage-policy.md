@@ -1,59 +1,27 @@
-# Decision: EF Ownership Uses Target Role and Storage Policy
+# EF Ownership Uses Target Role and Storage Policy
 
 ## Status
 
-Accepted for M0050.
+Accepted and current.
 
 ## Context
 
-The EF Core projection currently treats `[SemanticOwned]` on a single object as a hard-coded flattening signal. That is too blunt.
+Semantic ownership describes lifecycle containment. It is projection-neutral and does not itself mean EF `OwnsOne`, `OwnsMany`, flattening, a separate table, or any other relational representation.
 
-Ownership describes lifecycle containment. It does not decide whether the value is stored as flattened columns, an EF owned navigation, a JSON column, a separate table, or omitted with diagnostics.
-
-The target type role also matters. Owning a `ValueObject` is different from owning an `Object` or `Entity`.
+Conflating semantic ownership with one EF mechanism makes the canonical model target-specific and creates incorrect behavior for structural values, entities, and collections.
 
 ## Decision
 
-EF Core projection will classify owned members using:
+EF representation is selected from semantic ownership **together with target role/shape and the current EF storage policy**.
 
-```text
-property ownership annotation
-target type semantic role
-target shape
-EF storage policy
-```
+The current provider-neutral EF policy treats owned structural value shapes as JSON-converted properties/collections. Semantic Entities are configured as entities. Semantic ownership does not cause EF owned-entity graph inference.
 
-Owned value objects use value-object storage policy.
-
-Owned object-role targets require explicit owned-object policy or emit diagnostics.
-
-Owned entity-role targets require explicit aggregate-owned entity policy or emit diagnostics.
-
-Owned collections remain explicit-policy-required.
-
-`[SemanticOwned]` no longer means “flatten this object.”
+Detailed mapping rules belong to `../specs/ef-core.md`.
 
 ## Consequences
 
-- Existing consumers relying on implicit flattening for `[SemanticOwned]` value objects must use `ValueObjectProjectionMode.Flatten`.
-- Consumers can serialize owned value objects as one JSON string column by selecting `ValueObjectProjectionMode.SerializeJson`.
-- Object-role owned members are safer because the projection will not silently flatten rich object graphs.
-- EF domain metadata must not claim true `OwnsOne` unless `ModelBuilder` applies it.
-
-## Alternatives Rejected
-
-### Keep hard-coded flattening
-
-Rejected because it conflates ownership with storage.
-
-### Treat every owned object as EF `OwnsOne`
-
-Rejected unless true `ModelBuilder` ownership support is implemented end to end.
-
-### Use value-object policy for all owned target roles
-
-Rejected because object-role and entity-role targets are semantically different from value objects.
-
-### Implement owned collections immediately
-
-Rejected for this milestone because collection storage requires a separate explicit policy surface.
+- `[SemanticOwned]` is a lifecycle/containment statement, not an EF mapping command.
+- EF does not infer `OwnsOne` or `OwnsMany` from semantic ownership.
+- Structural value objects/collections can be represented without turning them into independently discovered EF entity graphs.
+- Owned entity-role targets and unsupported ambiguous shapes require explicit supported semantics or diagnostics rather than target guessing.
+- Future provider-specific storage capabilities may add target policy, but they must not redefine canonical ownership meaning.
