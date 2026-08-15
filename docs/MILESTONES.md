@@ -2,85 +2,47 @@
 
 ## Purpose
 
-Milestones sequence implementation work for the SemanticTypeModel repository.
+Milestones are **active implementation work orders**. They route an implementation agent to the scope, authority, acceptance criteria, and validation needed for the next coherent change.
 
-## Naming constraints
+Milestones are not permanent project truth.
 
-- Solution: `SemanticTypeModel.slnx`
-- Root namespace: `SemanticTypeModel`
-- Package prefix: `SemanticTypeModel.*`
+## Current
 
-## Milestone Usage
+At the M0060 baseline used for this documentation reset, there is no next active milestone in this overlay.
 
-Milestones are implementation routers, not broad required-reading bundles. Use each milestone to identify the relevant focus area, authoritative specs, direct documentation impact, deferred documentation impact, and validation tier. Historical research guide copies are non-authoritative and are not required to implement a milestone.
+If an active milestone has been added after that baseline, preserve it and list it here while applying the reset.
 
-For each focus area:
+## Next Number
 
-- read only the specs and engineering documents needed for that change;
-- classify validation using Tier 0 through Tier 4 from `docs/ENGINEERING.md`;
-- update public docs immediately for direct consumer-facing impact;
-- record deferred documentation impact explicitly when docs cannot be completed in the same change.
+```text
+M0061
+```
 
-## Available Milestones
+Never restart or reuse milestone numbers. Historical commit/PR/conversation references must remain unambiguous.
 
-- [M0001 - Project and Engineering Setup](milestones/m0001-project-and-engineering-setup.md)
-- [M0002 - Baseline Semantic Type Model](milestones/m0002-baseline-semantic-type-model.md)
-- [M0003 - Type Model Hardening](milestones/m0003-type-model-hardening.md)
-- [M0004 - JSON Schema Runtime Import and Export Baseline](milestones/m0004-json-schema-runtime-import-export-baseline.md)
-- [M0005 - Transformation Pipeline and Diagnostics Hardening](milestones/m0005-transformation-pipeline-and-diagnostics-hardening.md)
-- [M0006 - JSON Editor and UI Projection Hints](milestones/m0006-json-editor-and-ui-projection-hints.md)
-- [M0007 - Power BI TOM Projection Prototype](milestones/m0007-power-bi-tom-projection-prototype.md)
-- [M0008 - EF Core DbModel Projection Prototype](milestones/m0008-ef-core-dbmodel-projection-prototype.md)
-- [M0009 - .NET Type System Extraction and Compile-Time Generator Baseline](milestones/m0009-dotnet-type-system-extraction-and-compile-time-generator-baseline.md)
-- [M0010 - Attribute and Convention Model for .NET Type Extraction](milestones/m0010-attribute-and-convention-model-for-dotnet-type-extraction.md)
-- [M0011 - Runtime API Surface and DI Integration](milestones/m0011-runtime-api-surface-and-di-integration.md)
-- [M0012 - Documentation, Samples, Release Readiness, and First End-to-End Scenarios](milestones/m0012-documentation-samples-release-readiness-and-first-end-to-end-scenarios.md)
-- [M0014 - Semantic Type Annotation Usability](milestones/m0014-semantic-type-annotation-usability.md)
-- [M0015 - EF Core Projection Hardening](milestones/m0015-ef-core-projection-hardening.md)
-- [M0016 - End-to-End Code-First Schema Authoring Samples](milestones/m0016-end-to-end-code-first-schema-authoring-samples.md)
-- [M0017 - JSON Schema Projection Hardening for Code-First Models](milestones/m0017-json-schema-projection-hardening-for-code-first-models.md)
-- [M0018 - Diagnostics Documentation and Analyzer Experience](milestones/m0018-diagnostics-documentation-and-analyzer-experience.md)
-- [M0019 - Projection Capability Matrix and Compatibility Contracts](milestones/m0019-projection-capability-matrix-and-compatibility-contracts.md)
-- [M0020 - System.Text.Json Contract Integration](milestones/m0020-system-text-json-contract-integration.md)
-- [M0021 - Power BI Projection Hardening](milestones/m0021-power-bi-projection-hardening.md)
-- [M0022 - 1.0 Public API, Compatibility, Documentation, Samples, and Release Readiness](milestones/m0022-1-0-public-api-compatibility-documentation-samples-and-release-readiness.md)
-- [M0023 - 1.0.0 Release Hardening and Final Release](milestones/m0023-1-0-0-release-hardening-and-final-release.md)
-- [M0024 - System.Text.Json Contract Correction](milestones/m0024-system-text-json-contract-correction.md)
-- [M0025 - Consumer-Facing Samples and Package-Based Sample Validation](milestones/m0025-consumer-facing-samples-and-package-based-sample-validation.md)
-- [M0026 - Code-First Semantic Model Architecture Realignment](milestones/m0026-code-first-semantic-model-architecture-realignment.md)
-- [M0027 - Query and Inspection API for Code-First Semantic Models](milestones/m0027-query-and-inspection-api-for-code-first-semantic-models.md)
-- [M0028 - Transformation Pipeline and Domain Model Derivation](milestones/m0028-transformation-pipeline-and-domain-derivation.md)
-- [M0029 - JSON Schema as Code-First Projection Only](milestones/m0029-json-schema-as-code-first-projection-only.md)
-- [M0030 - EF Core Domain Semantic Model and ModelBuilder Projection](milestones/m0030-ef-core-domain-semantic-model-and-modelbuilder-projection.md)
-- [M0031 - Power BI Domain Semantic Model and Local Metadata Projection](milestones/m0031-power-bi-domain-semantic-model-and-local-metadata-projection.md)
-- [M0032 - Core Semantic Vocabulary and Envelope Semantics](milestones/m0032-core-semantic-vocabulary-and-envelope-semantics.md)
-- [M0033 - Envelope Projection Policies and EF Core Owned Payload Storage](milestones/m0033-envelope-projection-policies-and-ef-core-owned-payload-storage.md)
-- [M0034 - Evolution, Ownership, and Lifecycle Semantics](milestones/m0034-evolution-ownership-and-lifecycle-semantics.md)
-- [M0035 - Remove Legacy Model Compatibility and Align System.Text.Json Projection](milestones/m0035-remove-legacy-model-compatibility-and-align-system-text-json-projection.md)
-- [M0036 - Adopt External Agentic Project Guide System v0.3.0](milestones/m0036-adopt-external-agentic-project-guide-system-v0.3.0.md)
-- [M0037 - Documentation Synchronization and 2.1.0 Release Preparation](milestones/m0037-documentation-synchronization-and-2-1-0-release-preparation.md)
-- [M0038 - Collapse Model/Canonical Split and Align Generator Output](milestones/m0038-collapse-model-canonical-split-and-align-generator-output.md)
-- [M0039 - Documentation Synchronization and 2.2.0 Release Preparation](milestones/m0039-documentation-synchronization-and-2-2-0-release-preparation.md)
-- [M0040 - Configuration Domain Model and Options Registration Projection](milestones/m0040-configuration-domain-model-and-options-registration-projection.md)
-- [M0041 - Remove Stale Public API Baselines and Standardize Package Documentation](milestones/m0041-remove-stale-public-api-baselines-and-standardize-package-documentation.md)
-- [M0042 - Rewrite Package READMEs and Usage Guides to Documentation Standard](milestones/m0042-rewrite-package-readmes-and-usage-guides.md)
-- [M0043 - Expand Usage Guides with Concrete Options, Policies, and Supported Items](milestones/m0043-expand-usage-guides-with-concrete-options-policies-and-supported-items.md)
-- [M0044 - Explicit Per-Type Configuration Registration and Required Section Presence](milestones/m0044-explicit-per-type-configuration-registration-and-required-section-presence.md)
-- [M0045 - Documentation Synchronization and 2.3.0 Release Preparation](milestones/m0045-documentation-synchronization-and-2-3-0-release-preparation.md)
-- [M0046 - Shared Order Fulfillment Samples and Scalar Nullability Compatibility Hardening](milestones/m0046-shared-order-fulfillment-samples-and-scalar-nullability-compatibility-hardening.md)
-- [M0047 - Audience-Specific Descriptions and Projection Description Policies](milestones/m0047-audience-specific-descriptions-and-projection-description-policies.md)
-- [M0048 - Documentation Synchronization and 2.4.0 Release Preparation](milestones/m0048-documentation-synchronization-and-2-4-0-release-preparation.md)
-- [M0049 - Emergency Dictionary Type Extraction Fix and 2.4.1 Patch Release](milestones/m0049-emergency-dictionary-type-extraction-fix-and-2-4-1-patch-release.md)
-- [M0050 - Format-Compatible Scalar Support and Role-Aware EF Owned Storage](milestones/m0050-format-compatible-scalar-support-and-role-aware-ef-owned-storage.md)
-- [M0051 - EF CLR Convention Suppression and ValueObject Boundary Hardening](milestones/m0051-ef-clr-convention-suppression-and-valueobject-boundary-hardening.md)
-- [M0052 - Closed EF Core Semantic Model Application and 2.4.4 Release Preparation](milestones/m0052-closed-ef-core-semantic-model-application-and-2-4-4-release-preparation.md)
-- [M0053 - EF Source Lineage Diagnostics and Derivation Application Policy for 2.4.5](milestones/m0053-ef-source-lineage-diagnostics-and-derivation-application-policy-for-2-4-5.md)
-- [M0054 - Real Application EF Regression Fixtures and 2.4.6 Release Preparation](milestones/m0054-real-application-ef-regression-fixtures-and-2-4-6-release-preparation.md)
+## Lifecycle
 
-- [M0055 - Opinionated Relational Projection Contract and EF Core Package Reset for 2.5.0](milestones/m0055-opinionated-relational-projection-contract-and-ef-core-package-reset-for-2-5-0.md)
-- [M0056 - Preemptive EF Convention Suppression and 2.5.1 Release Preparation](milestones/m0056-preemptive-ef-convention-suppression-and-2-5-1-release-preparation.md)
-- [M0057 - EF Model Shape Test Matrix and Inherited Member Placement for 2.5.3](milestones/m0057-ef-model-shape-test-matrix-and-inherited-member-placement-for-2-5-3.md)
-- [M0058 - Typed Literals, Conditional Constraints, and Scalar Semantics for 2.6.0](milestones/m0058-typed-literals-conditional-constraints-and-scalar-semantics-for-2-6-0.md)
+```text
+plan
+  -> active docs/milestones/mNNNN-*.md
+  -> implement
+  -> synchronize durable truth
+  -> validate
+  -> complete
+  -> delete completed milestone file
+```
 
-- [M0059 - EF CLR-to-Provider Regression and 2.6.1](milestones/m0059-ef-clr-to-provider-regression-and-2-6-1.md)
-- [M0060 - Generated EF Entity Configurations and Composable EF Integration for 3.0.0](milestones/m0060-generated-ef-entity-configurations-and-composable-ef-integration-for-3-0-0.md)
+Before deleting a completed milestone, promote durable outcomes as appropriate:
+
+- current behavior -> specification;
+- structural change -> architecture;
+- enduring non-obvious rationale -> decision;
+- consumer-visible behavior -> public/package documentation;
+- architectural evolution -> concise `HISTORY.md` entry when warranted;
+- regression contract -> tests.
+
+Do not move completed milestones into an archive directory. Git history retains them.
+
+## Milestone Creation Rule
+
+Create a milestone only for active implementation sequencing. Do not create milestone files to preserve release history, completed implementation notes, or documentation that belongs in a current subsystem contract.

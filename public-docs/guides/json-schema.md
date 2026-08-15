@@ -1,31 +1,9 @@
 # JSON Schema
 
-## Goal
+## Use
 
-Export deterministic JSON Schema Draft 2020-12 documents from a generated code-first semantic model.
-
-## Prerequisites
-
-- .NET 10 SDK.
-- Annotated .NET types are the canonical authoring source.
-- A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
-- The examples assume package version `2.4.0`.
-
-## Packages
-
-- `SemanticTypeModel.JsonSchema` for derivation and export.
-- `SemanticTypeModel.Generators` and `SemanticTypeModel.DotNet` when the model comes from annotated code.
-- `SemanticTypeModel.Core` for transformations and diagnostics.
-
-## Minimal path
-
-1. Generate a `TypeSchemaModel` from annotated .NET code.
-2. Call `DeriveJsonSchemaModel(options => options.UseDefaultTransformations())`.
-3. Check diagnostics.
-4. Call `JsonSchemaExporter.Export(result.Model)`.
-5. Write or inspect the exported document.
-
-## Full example
+Generate a canonical model from annotated .NET code, derive the JSON Schema domain model, review diagnostics,
+then export Draft 2020-12 output.
 
 ```csharp
 using SemanticTypeModel.JsonSchema;
@@ -37,81 +15,55 @@ var result = AppSemanticTypeModel.Create()
 
 result.Diagnostics.ThrowIfErrors();
 
-JsonSchemaExportResult export = JsonSchemaExporter.Export(result.Model, new JsonSchemaExportOptions
-{
-    SchemaId = new Uri("https://example.invalid/schemas/customer.schema.json"),
-    IncludeProjectionAnnotations = false,
-    UiExport = new JsonSchemaUiExportOptions
-    {
-        UiMode = JsonSchemaUiMode.JsonEditorCompatible,
-        IncludeJsonEditorCompatibilityAnnotations = true,
-    },
-});
-
+JsonSchemaExportResult export = JsonSchemaExporter.Export(result.Model);
 Console.WriteLine(export.Document.RootElement.GetRawText());
 ```
 
-## How it works
+## Configure
 
-JSON Schema derivation consumes the generated semantic model, applies default transformations when requested, then exports a schema document. The exporter is code-first only for new consumers; JSON Schema import is not the recommended authoring path.
+Common export controls include schema ID, projection annotations, root/envelope selection policy, and UI export
+options.
 
-## Options and policies
+```csharp
+JsonSchemaExportResult export = JsonSchemaExporter.Export(
+    result.Model,
+    new JsonSchemaExportOptions
+    {
+        SchemaId = new Uri("https://example.invalid/customer.schema.json"),
+        IncludeProjectionAnnotations = false,
+        UiExport = new JsonSchemaUiExportOptions
+        {
+            UiMode = JsonSchemaUiMode.JsonEditorCompatible,
+            IncludeJsonEditorCompatibilityAnnotations = true,
+        },
+    });
+```
 
-| Item / policy | Default | Allowed values / supported items | Effect | Diagnostics / unsupported cases |
-|---|---|---|---|---|
-| Dialect | `Draft202012` | `JsonSchemaDialect.Draft202012` | Emits Draft 2020-12 schema keywords | Other dialects are unsupported. |
-| `SchemaId` | No default | Any absolute or relative `Uri` accepted by caller | Emits `$id` | Invalid URI construction fails before export. |
-| Root selection policy | Domain root | Object roots from the derived model; envelope policy when envelope semantics exist | Chooses exported root schema | Ambiguous envelope payload policy is diagnostic. |
-| Envelope wrapper vs payload | Wrapper unless a target policy selects payload | Envelope wrapper, payload-only, or target-specific policy when available | Controls whether envelope metadata appears in schema | Missing/multiple payload members are diagnostics. |
-| Reference policy | Deterministic definitions/references | Derived type references | Reuses schemas for known types | Unresolved type references are diagnostics. |
-| `additionalProperties` | Closed for known object properties unless extension data allows extras | Closed object or extension-data shape | Controls unknown JSON members | Unsupported extension-data member shapes are diagnostics. |
-| Required/nullability mapping | CLR/semantic requiredness and nullable metadata | Required, optional, nullable | Emits `required` and null-capable schemas | Contradictions may produce diagnostics. |
-| Enum mapping | Names/display metadata | CLR enum names and `SemanticEnumValue` labels/descriptions | Emits enum values and optional labels | Unsupported enum backing assumptions are diagnostics. |
-| Format mapping | Format when present | `email`, `uri`, `hostname`, `ipv4`, `ipv6`, `date`, `time`, `date-time`, `duration`, `uuid`, custom strings | Emits `format` | Unknown custom formats are emitted as annotations/hints, not validators. |
-| Extension-data policy | Preserve when dictionary-like extension data is marked | `SemanticExtensionData` dictionary-like member | Allows unknown keys through extension-data schema | Non-dictionary extension data is diagnostic. |
-| `RequiredWhen` | Export when representable | Equality against supported typed scalar/enum literal | Deterministically emits `allOf` entries containing `if`/`const` and `then`/`required` | Unsupported operator/literal or target policy uses STM1020-STM1024 style diagnostics. |
-| UI export mode | `JsonSchemaUiMode.None` | `None`, `JsonEditorCompatible` | Adds no UI annotations or JSON Editor-compatible annotations | Unsupported widgets or invalid order are diagnostics. |
-| `IncludeProjectionAnnotations` | `true` | `true`, `false` | Keeps or suppresses projection/unsupported-keyword annotations | Suppressing annotations can hide explanatory metadata but not diagnostics. |
-| `UiHintOptions.StrictKnownHintsOnly` | `false` | `true`, `false` | Turns unknown UI hints into stricter diagnostics | Unknown UI hint keys fail under strict mode. |
+Current semantic behavior includes deterministic definitions/references, required/nullability mapping, enum
+mapping, supported scalar formats, extension-data handling, and representable `RequiredWhen` conditions.
 
-## Diagnostics
+`UserDescription` maps to user-facing schema description. Technical descriptions are separate and are emitted
+only through explicit target behavior/options.
 
-| Symptom / diagnostic | Likely cause | Fix |
+JSON Schema import may remain for compatibility/tooling, but annotated .NET code plus generated providers is the
+supported public authoring path.
+
+## Diagnose
+
+| Symptom | Likely cause | Fix |
 |---|---|---|
-| Duplicate projected property names | Semantic name, JSON name, or UI title maps two members to the same key | Change the source names or selected name policy. |
-| Unsupported scalar mapping | CLR type has no JSON Schema scalar equivalent | Add a semantic format, converter boundary, or ignore/replace the member. |
-| Invalid UI hint | Widget/order/title metadata cannot be represented in selected UI mode | Remove the hint or use JSON Editor-compatible values. |
-| Lossy conditional export | `RequiredWhen` cannot become a safe JSON Schema condition | Use equality against a supported scalar/enum source. |
+| Duplicate projected property names | Naming policies collapse distinct members | Change semantic/JSON naming policy or source names. |
+| Unsupported scalar/shape | No safe schema representation exists | Change source shape or handle the target-specific boundary explicitly. |
+| Invalid UI hint | Selected UI compatibility mode cannot represent the hint | Remove/change the hint or UI mode. |
+| Lossy conditional export | `RequiredWhen` source/operator/literal is not safely representable | Use a supported typed equality condition. |
+| Extension data diagnostic | Member is not a supported dictionary-like extension-data shape | Use a supported extension-data member type. |
 
-## Common mistakes
+Always review derivation/export diagnostics before consuming output.
 
-- Assuming `format` validates values in every downstream validator.
-- Enabling JSON Editor annotations in general-purpose API schemas without checking consumers.
-- Treating extension data as permission for arbitrary typed CLR objects.
-- Suppressing projection annotations and then ignoring diagnostics.
+## Reference
 
-## Limitations
-
-The package does not perform runtime JSON validation, does not make schema import the recommended authoring path, and does not infer application migration behavior from schema differences.
-
-## Related docs
-
-- [SemanticTypeModel.JsonSchema package](../nuget/SemanticTypeModel.JsonSchema.md)
 - [JSON Editor compatibility](json-editor-compatibility.md)
-- [Code-first JSON Schema sample](../samples/code-first-json-schema.md)
-
-### Shared sample editing contract
-
-The shared Order Fulfillment JSON Schema sample exports an editable Customer contract from the same semantic model used by EF Core, Power BI, and System.Text.Json samples. Optional nullable fields remain distinct from required fields in the exported schema.
-
-### Audience-specific descriptions
-
-JSON Schema maps `UserDescription` to the schema `description` keyword. XML `<summary>` contributes only `TechnicalDescription` and does not silently populate user-facing schema descriptions. If technical text is needed in exported JSON Schema, set the technical-description extension option to an `x-*` extension name and review that extension with downstream consumers.
-
-## 2.4.1 Extension-Data Dictionary Note
-
-2.4.1 corrects a 2.4.0 extraction defect for dictionary-backed extension data. Valid extension-data dictionaries such as `Dictionary<string, JsonElement>` are preserved in the canonical model with resolvable key and value types; projection-specific behavior remains unchanged.
-
-## URI properties
-
-A `System.Uri` or nullable `System.Uri` property exports as JSON Schema `type: string` with `format: uri` by default. Applying `SemanticFormat(Uri)` to `string` is also supported; applying formats to incompatible targets remains diagnostic.
+- [Core semantics](core-semantics.md)
+- [Projection capabilities](projection-capabilities.md)
+- [Diagnostics](../diagnostics.md)
+- executable example: `samples/code-first-json-schema/`

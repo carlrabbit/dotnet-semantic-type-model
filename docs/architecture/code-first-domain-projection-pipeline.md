@@ -6,210 +6,200 @@ Authoritative architecture document.
 
 ## Purpose
 
-Define the structural pipeline for code-first SemanticTypeModel usage and domain-specific semantic model derivation.
+Define the structural pipeline for code-first SemanticTypeModel usage, the canonical semantic boundary, target-specific domain derivation, and compile-time/runtime composition.
 
-## Architecture
-
-The repository architecture is:
+## System Mental Model
 
 ```text
 Annotated .NET code
-  -> runtime extraction or compile-time generation
-  -> canonical Semantic Type Model
-  -> query, inspect, validate, transform
-  -> domain-specific semantic model
-  -> domain-specific functionality
+        |
+        +-- runtime extraction (SemanticTypeModel.DotNet)
+        |
+        +-- compile-time generation (SemanticTypeModel.Generators)
+                 |
+                 v
+          canonical TypeSchemaModel
+                 |
+        query / inspect / validate / transform
+                 |
+        +--------+-------------+-------------+----------------+---------------+
+        |                      |             |                |               |
+        v                      v             v                v               v
+   JSON Schema              EF Core       Power BI    System.Text.Json  Configuration
+   domain model             domain/       domain       domain model     domain model
+                            relational      model
+                            model
+        |                      |             |                |               |
+        v                      v             v                v               v
+   document export        generated EF   local          resolver/options   Options
+                          configuration   metadata       behavior           registration
 ```
 
-## Layers
+The canonical model owns semantic meaning. Target packages own representation and integration choices.
 
-### Code Source Layer
+## Authoring Source
 
-The code source layer is the only supported authoring source for canonical models.
+Annotated .NET code is the supported authoring source for canonical semantic models.
 
-Inputs:
+Inputs include:
 
 - C# types;
-- SemanticTypeModel core attributes;
-- custom alias attributes;
-- domain-specific attributes;
-- generator/extraction configuration.
+- SemanticTypeModel attributes;
+- supported aliases/conventions;
+- target-specific annotations where a target package explicitly owns them;
+- extraction/generator configuration.
 
-### Extraction and Generation Layer
+A persisted semantic snapshot may preserve a generated model for later access, but it is not a second authoring language.
 
-This layer creates canonical `TypeSchemaModel` instances.
+External formats such as JSON Schema are projection/integration targets unless a future accepted architecture explicitly adds another source path.
 
-Implementations:
+## Canonical Model Boundary
 
-- runtime extraction in `SemanticTypeModel.DotNet`;
-- compile-time provider generation in `SemanticTypeModel.Generators`.
+`TypeSchemaModel` is the projection-neutral semantic source of truth.
 
-Outputs:
+It represents meaning such as:
 
-- canonical semantic model;
-- diagnostics;
-- optional persisted snapshot.
+- stable type/property identity;
+- semantic roles and shapes;
+- keys and requiredness/nullability;
+- ownership/containment;
+- scalar and enum semantics;
+- constraints and typed conditional literals;
+- envelopes;
+- lifecycle/evolution metadata;
+- extension data;
+- audience-specific descriptions;
+- diagnostics and transformation/query metadata.
 
-### Canonical Model Layer
+It does not own target representation choices such as EF relationship inference, JSON Schema document structure, Power BI service publishing, serializer implementation, or configuration source loading.
 
-The canonical model represents projection-neutral semantic meaning.
+## Acquisition and Generation
 
-Responsibilities:
+### Runtime extraction
 
-- stable identifiers;
-- semantic primitives;
-- annotations;
-- constraints;
-- diagnostics;
-- query support;
-- inspection support;
-- transformation support.
+`SemanticTypeModel.DotNet` extracts supported annotated CLR types into the canonical model when runtime construction is required.
 
-Non-responsibilities:
+### Compile-time generation
 
-- JSON Schema document authoring;
-- EF Core metadata model finalization;
-- Power BI service model finalization;
-- runtime editing.
+`SemanticTypeModel.Generators` generates canonical semantic-model providers for code-first projects.
 
-### Transformation Layer
+It also emits the deterministic compile-time semantic manifest used for cross-project generator composition. The manifest is generated metadata derived from the canonical semantics and CLR lineage; it is not a user-authored schema.
 
-Transformations derive meaning.
+Manifest compatibility/version-evolution policy is a separate architectural topic and is not defined by this document.
 
-Transformation categories:
+## Transformation and Domain Derivation
 
-| Category | Purpose |
-|---|---|
-| Core normalization | Normalize extracted .NET metadata into canonical semantic primitives. |
-| Core derivation | Derive primitives from aliases and conventions. |
-| Domain derivation | Derive domain-specific semantics from core primitives and domain attributes. |
-| Validation | Emit diagnostics for invalid, missing, or ambiguous semantics. |
+Transformations operate on canonical meaning and may normalize, derive, or validate semantic information.
 
-Users may configure or replace transformation sequences in code when a package exposes such customization.
+Target packages derive package-owned domain models before target functionality is applied. Domain packages must not redefine canonical meaning merely to fit the target representation.
 
-### Domain Semantic Model Layer
-
-Each domain package creates a domain-specific semantic model.
-
-Examples:
-
-| Domain package | Domain semantic model |
-|---|---|
-| `SemanticTypeModel.JsonSchema` | JSON Schema semantic model |
-| `SemanticTypeModel.EFCore` | EF Core semantic model |
-| `SemanticTypeModel.PowerBI` | Power BI semantic model |
-| `SemanticTypeModel.SystemTextJson` | System.Text.Json resolver customization model |
-
-The domain semantic model is the boundary between generic semantic metadata and domain functionality.
-
-### Domain Functionality Layer
-
-Domain functionality operates on the domain semantic model.
-
-Examples:
-
-- JSON Schema document export;
-- EF Core `ModelBuilder` configuration;
-- Power BI local metadata output;
-- System.Text.Json resolver customization.
-
-## Domain Pipelines
+## Target Pipelines
 
 ### JSON Schema
 
 ```text
-Canonical Semantic Type Model
-  -> JSON Schema derivation transformations
-  -> JSON Schema semantic model
-  -> JSON Schema Draft 2020-12 export
+canonical TypeSchemaModel
+  -> JSON Schema derivation
+  -> JSON Schema domain model
+  -> Draft 2020-12 export
 ```
 
-JSON Schema import is not a canonical model source.
+JSON Schema is not a supported canonical-model authoring source.
 
 ### EF Core
 
+EF Core has two related paths: provider-neutral relational derivation/inspection and compile-time CLR application.
+
 ```text
-Canonical Semantic Type Model
-  -> EF Core derivation transformations
-  -> EF Core semantic model
+semantic model assembly
   -> compile-time semantic manifest
-  -> explicit GenerateSemanticEfModel selection
-  -> generated IEntityTypeConfiguration<TEntity>
+  -> persistence project explicitly selects model(s)
+  -> SemanticTypeModel.EFCore.Generators
+  -> generated IEntityTypeConfiguration<TEntity> per semantic Entity
   -> generated Apply<Model>SemanticModel()
+  -> application-owned DbContext composition
 ```
 
-EF Core database creation and migrations are outside this library’s domain.
+The generated model configures only the CLR entities it owns. It does not police the global EF model. Multiple semantic models and application-owned EF entities can therefore compose in one `DbContext`.
+
+`SemanticTypeModel.EFCore` retains provider-neutral relational derivation/inspection contracts and runtime helper primitives used by generated configuration.
+
+Migrations, database lifecycle, provider setup, and final `DbContext` composition remain application-owned.
 
 ### Power BI
 
 ```text
-Canonical Semantic Type Model
-  -> Power BI derivation transformations
-  -> Power BI semantic model
-  -> local Power BI metadata output
+canonical TypeSchemaModel
+  -> Power BI derivation
+  -> Power BI domain model
+  -> local metadata output
 ```
 
-Power BI service publishing, PBIX generation, and full TOM parity are outside this library’s domain.
+Service publishing, workspace management, refresh scheduling, PBIX generation, and full TOM parity are outside the library boundary.
 
 ### System.Text.Json
 
 ```text
-Canonical Semantic Type Model
-  -> System.Text.Json metadata derivation
-  -> resolver customization model
-  -> IJsonTypeInfoResolver / JsonSerializerOptions behavior
+canonical TypeSchemaModel
+  -> System.Text.Json derivation
+  -> package-owned domain model
+  -> resolver / JsonSerializerOptions behavior
 ```
 
-SemanticTypeModel does not generate `JsonSerializerContext` declarations or custom serializers.
+SemanticTypeModel does not generate a custom `JsonSerializerContext` or serializer implementation.
 
-## Query and Inspection Path
-
-The development loop requires inspection before and after transformations:
+### Configuration
 
 ```text
-Canonical model
-  -> text summary
-  -> diagnostics summary
-  -> transformation trace
-  -> domain model summary
+canonical TypeSchemaModel
+  -> Configuration derivation
+  -> Configuration domain model
+  -> Microsoft.Extensions.Options registration / validation
 ```
 
-Query and inspection APIs must work with:
+SemanticTypeModel does not become a configuration provider or own source data loading.
 
-- CLR types when available;
-- string identifiers as fallback;
-- persisted snapshots when code is unavailable.
+## Package and Dependency Boundaries
 
-## Persistence Path
+Core direction remains inward toward abstractions/canonical semantics; target integrations depend on canonical contracts rather than the reverse.
+
+Conceptually:
 
 ```text
-Code-generated canonical model
-  -> persisted snapshot
-  -> loaded canonical model
-  -> query/inspect/transform/project
+SemanticTypeModel.Abstractions
+        ^
+        |
+SemanticTypeModel.Core
+        ^
+        +-- SemanticTypeModel.DotNet
+        +-- SemanticTypeModel.Generators
+        +-- target/domain packages
+        +-- integration/generator packages
 ```
 
-A persisted snapshot is not an authoring format. It preserves access to a code-generated semantic model when the codebase is unavailable.
+Target packages may share internal helper code where appropriate, but canonical packages must not depend on target-specific packages.
 
-## Dependency Direction
-
-Expected dependency direction:
+For EF generation, the intended project layering is:
 
 ```text
-Abstractions
-  <- Core
-  <- DotNet
-  <- Generators
-  <- JsonSchema / EFCore / PowerBI / SystemTextJson
-  <- DependencyInjection
-```
+Domain/model project
+  -> DotNet + semantic generator
+  -> no EF dependency required
 
-Domain packages may depend on core abstractions and shared runtime utilities, but core packages must not depend on domain packages.
+Persistence project
+  -> domain/model project
+  -> SemanticTypeModel.EFCore
+  -> SemanticTypeModel.EFCore.Generators
+  -> EF Core/provider packages
+```
 
 ## Architectural Constraints
 
-- Canonical model remains projection-neutral.
-- Domain models are explicit and package-owned.
-- Domain functionality must not rely on scattered ad hoc annotation lookups as its primary model.
-- Diagnostics are emitted when derivation cannot be done safely.
-- Consumer-facing behavior must be deterministic and short-running.
+- Code-first annotated .NET remains the supported authoring source.
+- The canonical model remains projection-neutral.
+- Target/domain models are explicit and package-owned.
+- Target packages own representation choices, not canonical meaning.
+- Diagnostics are preferred over ambiguous target guessing.
+- Compile-time output and target behavior must be deterministic.
+- EF generated configuration owns only selected semantic entities; the application owns the global `DbContext`.
+- Historical adapter/application architectures do not remain equal authority in the working tree after they are superseded.

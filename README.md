@@ -1,35 +1,35 @@
 # SemanticTypeModel
 
-SemanticTypeModel is a .NET 10 library set for code-first semantic type models. Annotated .NET code is extracted into a canonical semantic model, transformed through deterministic pipelines, and projected into domain semantic models such as JSON Schema, EF Core, and Power BI metadata.
+SemanticTypeModel is a .NET 10 package suite for defining semantic meaning on .NET types once and using
+that model across targets such as JSON Schema, EF Core, Power BI, System.Text.Json, and
+Microsoft.Extensions.Options.
+
+Annotated .NET code is the supported authoring source. The source generator builds a canonical
+`TypeSchemaModel`; target packages derive or generate target-specific behavior from it.
 
 ## Install
 
-Add the package or packages your scenario needs:
+**Use the same exact version for every `SemanticTypeModel.*` package in an application.** The packages are
+released and tested as one aligned suite; mixing SemanticTypeModel package versions is unsupported.
 
-```sh
-dotnet add package SemanticTypeModel.Core --version 2.4.6
-dotnet add package SemanticTypeModel.DotNet --version 2.4.6
-dotnet add package SemanticTypeModel.Generators --version 2.4.6
-dotnet add package SemanticTypeModel.JsonSchema --version 2.4.6
-```
+Install the packages for the scenario you need:
 
-Scenario packages:
+| Scenario | Add these packages |
+|---|---|
+| Define and generate a semantic model | `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators` |
+| JSON Schema | + `SemanticTypeModel.JsonSchema` |
+| EF Core | + `SemanticTypeModel.EFCore`, `SemanticTypeModel.EFCore.Generators` |
+| System.Text.Json | + `SemanticTypeModel.SystemTextJson` |
+| Configuration / Options | + `SemanticTypeModel.Configuration` |
+| Power BI metadata | + `SemanticTypeModel.PowerBI` |
+| Runtime DI composition | + `SemanticTypeModel.DependencyInjection` |
 
-```sh
-dotnet add package SemanticTypeModel.EFCore --version 2.4.6
-dotnet add package SemanticTypeModel.PowerBI --version 2.4.6
-dotnet add package SemanticTypeModel.SystemTextJson --version 2.4.6
-dotnet add package SemanticTypeModel.DependencyInjection --version 2.4.6
-```
+The complete package-role map is in the [shared NuGet README](public-docs/nuget/SemanticTypeModel.md).
 
-See full package guidance in [public-docs/packages.md](public-docs/packages.md).
-
-## Quick Start
-
-Use annotated .NET code as the supported authoring source for the canonical model:
+## First model
 
 ```csharp
-using SemanticTypeModel;
+using SemanticTypeModel.DotNet;
 
 [SemanticType(SemanticTypeRole.Entity)]
 public sealed class Customer
@@ -37,85 +37,89 @@ public sealed class Customer
     [SemanticKey]
     public required string Id { get; init; }
 
-    [SemanticName("Customer name")]
+    [SemanticDisplayName("Customer name")]
     public required string Name { get; init; }
 }
+```
+
+Build the project with `SemanticTypeModel.Generators` referenced as an analyzer/package. The generated
+provider defaults to:
+
+```csharp
+namespace SemanticTypeModel.Generated;
+
+public static partial class AppSemanticTypeModel
+{
+    public static TypeSchemaModel Create();
+}
+```
+
+Use it from application code:
+
+```csharp
+using SemanticTypeModel.Generated;
 
 TypeSchemaModel model = AppSemanticTypeModel.Create();
 ```
 
-From the generated canonical model, derive target-specific domain models:
+See [Using SemanticTypeModel](public-docs/usage.md) for the complete first flow.
+
+## Configure generation
+
+Common generator settings include the generated namespace, provider name, discovery mode, namespace
+filters, internal-type/member inclusion, naming policy, key/relationship inference, and technical-description
+validation.
+
+For example, change the generated namespace with an assembly option:
 
 ```csharp
-var jsonSchema = model.DeriveJsonSchemaModel();
-var efCore = model.DeriveEfRelationalModel();
-var powerBi = model.DerivePowerBiModel();
+[assembly: SemanticTypeModelGeneratorOptions(
+    generatedNamespace: "MyApplication.SemanticModel")]
 ```
 
-Each derivation returns diagnostics and inspection output so unsupported or ambiguous semantics are visible instead of silently dropped.
+or with an MSBuild property:
 
-## Package List
+```xml
+<PropertyGroup>
+  <SemanticTypeModelGeneratedNamespace>MyApplication.SemanticModel</SemanticTypeModelGeneratedNamespace>
+</PropertyGroup>
+```
 
-- `SemanticTypeModel.Abstractions`
-- `SemanticTypeModel.Core`
-- `SemanticTypeModel.JsonSchema`
-- `SemanticTypeModel.DotNet`
-- `SemanticTypeModel.Generators`
-- `SemanticTypeModel.DependencyInjection`
-- `SemanticTypeModel.Configuration`
-- `SemanticTypeModel.Configuration.Generators`
-- `SemanticTypeModel.PowerBI`
-- `SemanticTypeModel.EFCore`
-- `SemanticTypeModel.EFCore.Generators`
-- `SemanticTypeModel.SystemTextJson`
+See the [configuration reference](public-docs/configuration.md) for every generator setting, defaults,
+allowed values, and examples.
 
-## Stable Release Notice
+## Use the model
 
-`2.4.6` is the current non-publishing patch release-candidate documentation target. It includes the Configuration runtime and generator packages, explicit per-options-type Configuration registration, and the unified model surface under `SemanticTypeModel.Abstractions.Model`; `2.0.0` remains the code-first semantic model release baseline. It adds the core semantic vocabulary, envelope semantics, JSON Schema domain-model export, EF Core domain-model-to-`ModelBuilder` projection, and Power BI domain-model-to-local-metadata projection. Compatibility rules are documented in [public-docs/api/compatibility.md](public-docs/api/compatibility.md).
+- [JSON Schema](public-docs/guides/json-schema.md)
+- [EF Core](public-docs/guides/ef-core.md)
+- [System.Text.Json](public-docs/guides/system-text-json.md)
+- [Configuration / Options](public-docs/guides/configuration-options.md)
+- [Power BI](public-docs/guides/power-bi.md)
+- [Projection capability matrix](public-docs/guides/projection-capabilities.md)
 
-## Samples
+Runnable examples live directly under [`samples/`](samples/). The compact sample index is
+[public-docs/samples.md](public-docs/samples.md).
 
-Runnable samples live under `samples/` and are documented in [public-docs/samples.md](public-docs/samples.md).
+## Diagnose problems
+
+SemanticTypeModel reports model/projection diagnostics at runtime and `STMxxxx` diagnostics from source
+generators at compile time.
 
 Start with:
 
-- `samples/code-first-json-schema`
-- `samples/code-first-ef-core`
-- `samples/code-first-powerbi`
+- [Troubleshooting](public-docs/troubleshooting.md) for symptom-oriented fixes;
+- [Diagnostics](public-docs/diagnostics.md) for diagnostic ranges and common fixes;
+- the target guide for projection-specific limitations and failure modes.
 
-Prepare local packages, then run all package-based samples:
+Do not ignore diagnostics merely because a projection produced output; warnings can indicate lossy target
+representation.
 
-```sh
-./eng/package.sh 0.0.0-samples
-./eng/samples.sh
-```
+## Compatibility and versions
 
-## Public Docs
+All SemanticTypeModel packages in one application should use the same exact version. See
+[Versioning](public-docs/versioning.md), [Compatibility](public-docs/api/compatibility.md), and
+[Release notes](public-docs/release-notes.md).
 
-- [public-docs/getting-started.md](public-docs/getting-started.md)
-- [public-docs/installation.md](public-docs/installation.md)
-- [public-docs/concepts.md](public-docs/concepts.md)
-- [public-docs/packages.md](public-docs/packages.md)
-- [public-docs/api/public-api.md](public-docs/api/public-api.md)
-- [public-docs/diagnostics.md](public-docs/diagnostics.md)
-- [public-docs/guides/core-semantics.md](public-docs/guides/core-semantics.md)
-- [public-docs/guides/json-schema.md](public-docs/guides/json-schema.md)
-- [public-docs/guides/json-editor-compatibility.md](public-docs/guides/json-editor-compatibility.md)
-- [public-docs/guides/ef-core-projection.md](public-docs/guides/ef-core-projection.md)
-- [public-docs/guides/power-bi-projection.md](public-docs/guides/power-bi-projection.md)
-- [public-docs/guides/projection-capabilities.md](public-docs/guides/projection-capabilities.md)
-- [public-docs/guides/system-text-json.md](public-docs/guides/system-text-json.md)
-- [public-docs/guides/configuration.md](public-docs/guides/configuration.md)
-- [public-docs/versioning.md](public-docs/versioning.md)
-- [public-docs/release-notes.md](public-docs/release-notes.md)
+## Contributing
 
-## Contributor Docs
-
-- [docs/TERMINOLOGY.md](docs/TERMINOLOGY.md)
-- [docs/ENGINEERING.md](docs/ENGINEERING.md)
-- [docs/MILESTONES.md](docs/MILESTONES.md)
-- [docs/PUBLIC-DOCS.md](docs/PUBLIC-DOCS.md)
-
-### Shared Order Fulfillment samples
-
-The code-first sample suite includes a shared Order Fulfillment domain under `samples/OrderFulfillment.Domain`. Projection samples call `OrderFulfillmentSemanticModel.Create()` and then run their own EF Core, JSON Schema, Power BI, System.Text.Json, runtime DI, or Configuration adapter checks against representative output.
+Humans start with [CONTRIBUTING.md](CONTRIBUTING.md). Agents start with [AGENTS.md](AGENTS.md).

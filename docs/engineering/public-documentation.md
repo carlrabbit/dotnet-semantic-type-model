@@ -1,44 +1,33 @@
 # Public Documentation Engineering
 
-## Purpose
-
-Define engineering validation expectations for public consumer documentation surfaces.
-
-## Validation Command
+## Validation command
 
 ```sh
 ./eng/public-docs.sh
 ```
 
-## Required Checks
+## Required checks
 
-`./eng/public-docs.sh` validates:
+The validator must verify:
 
-- required consumer-facing files exist;
-- package README source files exist;
-- package IDs in project files match `docs/PUBLIC-DOCS.md`;
-- NuGet package README source mappings match project files;
-- package installation versions are consistent across `README.md` and `public-docs/`;
-- package lists do not drift between the README, public docs, and project files;
-- public API and compatibility reference docs exist;
-- sample documentation pages exist;
-- non-root README files are rejected.
+- required consumer entry points and guides exist;
+- all packable package projects use `public-docs/nuget/SemanticTypeModel.md` as their NuGet README source;
+- package IDs come from the canonical inventory in `eng/common.sh`;
+- the shared NuGet README mentions every package ID;
+- active SemanticTypeModel package versions do not drift;
+- the shared README states the same-exact-version rule;
+- deleted superseded public pages do not regrow;
+- per-package NuGet README sources do not regrow;
+- per-sample Markdown pages do not regrow;
+- evergreen public docs do not contain milestone/release-candidate narration;
+- local Markdown links resolve;
+- non-root `README.md` files are rejected.
 
-## Related Authority
+Historical release/version references in `public-docs/release-notes.md` and migration history in
+`public-docs/api/compatibility.md` are excluded from evergreen-version/history checks.
 
-- `docs/PUBLIC-DOCS.md`
-- `README.md`
-- `public-docs/`
+## Done criteria
 
-## Done Criteria
-
-- Public documentation surfaces required by `docs/PUBLIC-DOCS.md` exist.
-- Public documentation validation command passes.
-- No `README.md` files are added outside the repository root.
-
-## Document Contract
-
-When public documentation validation changes, review and update:
-- `docs/PUBLIC-DOCS.md`
-- `docs/workflows/public-docs.md`
-- `eng/public-docs.sh`
+- `./eng/public-docs.sh` succeeds.
+- Consumer-visible capabilities touched by the change answer use/configure/diagnose questions.
+- No new redundant documentation surface is introduced.

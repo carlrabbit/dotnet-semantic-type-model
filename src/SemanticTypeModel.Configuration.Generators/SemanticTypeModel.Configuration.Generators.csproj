@@ -17,6 +17,6 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="../../public-docs/nuget/SemanticTypeModel.Configuration.Generators.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../public-docs/nuget/SemanticTypeModel.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 </Project>

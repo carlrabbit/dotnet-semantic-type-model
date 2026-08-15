@@ -2,68 +2,48 @@
 
 ## Purpose
 
-Define the non-publishing release validation gate that must pass before human-approved publication.
+Define the non-publishing validation gate before human-approved publication.
 
-## Release Gate Command
+## Release gate
 
 ```sh
 ./eng/release-check.sh <version>
 ```
 
-## Required Order
+The gate must remain synchronized with `eng/release-check.sh` and include repository validation, release build,
+package production, package smoke validation, samples, and public-documentation validation as applicable.
 
-`./eng/release-check.sh <version>` runs this sequence without publishing:
+## Documentation prerequisite
 
-1. `./eng/check.sh`
-2. `dotnet build --configuration Release`
-3. `./eng/package.sh <version>`
-4. `./eng/package-smoke.sh <version>`
-5. `./eng/samples.sh` when the samples command exists
-6. `./eng/public-docs.sh`
+Before final release validation:
 
-The documented sequence must remain synchronized with `eng/release-check.sh`.
+- synchronize current specs/architecture/decisions with implementation;
+- update `README.md` and `public-docs/usage.md` when the consumer flow changes;
+- update `public-docs/configuration.md` for public generator/library options;
+- update target guides for use/configure/diagnose changes;
+- update `public-docs/diagnostics.md` or range pages for diagnostics;
+- update the single shared `public-docs/nuget/SemanticTypeModel.md`;
+- update compatibility and release notes for migration/version-specific changes;
+- verify `public-docs/samples.md` still routes to current executable samples;
+- run `./eng/public-docs.sh`.
 
-## Documentation Synchronization Prerequisite
+## Suite version alignment
 
-Before running the final release gate:
+Every package produced for a release uses the same requested SemanticTypeModel suite version. Package smoke,
+samples, and documentation must not mix SemanticTypeModel package versions.
 
-- resolve applicable `.guide-sync/pending/` items;
-- synchronize authoritative specs and terminology with implemented behavior;
-- synchronize package README sources and usage guides;
-- synchronize getting-started, installation, package, sample, compatibility, versioning, and release-note docs;
-- remove stale current-version guidance;
-- validate public documentation.
+## Package checks
 
-Documentation synchronization is part of release readiness, not a substitute for package validation.
-
-## Release Documentation Checks
-
-Before release, ensure:
-
-- the root `README.md` names the release target and current package versions correctly;
-- per-package README sources are current and included in packages;
-- getting-started and installation docs are current;
-- package inventory and descriptions are current;
-- public API and compatibility docs are current;
-- diagnostics documentation is current;
-- sample docs and commands are current;
-- versioning policy and release notes are current;
-- release notes include upgrade guidance and known limitations.
-
-## Package Checks
-
-Before publication, inspect `artifacts/nuget/` and verify:
+Inspect `artifacts/nuget/` and verify:
 
 - expected package IDs only;
-- requested version on every package;
-- expected target framework assets;
-- package README inclusion;
-- package description and repository/license metadata;
-- expected dependencies;
-- no unintended source-tree or build artifacts.
+- identical requested version across the SemanticTypeModel package suite;
+- expected target-framework assets;
+- shared README inclusion as `README.md` in every package;
+- package metadata and dependencies;
+- no unintended repository artifacts.
 
-## Publication Boundary
+## Publication boundary
 
-Passing `./eng/release-check.sh <version>` does not publish packages.
-
-Publication, tag creation, and GitHub release creation require separate explicit human approval and the repository's documented publish workflow or command.
+Passing release validation does not publish. Publication, tag creation, and GitHub release creation require
+separate explicit approval.

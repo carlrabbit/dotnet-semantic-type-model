@@ -2,53 +2,58 @@
 
 ## Purpose
 
-Specs define behavioral truth.
+Specifications define **exact current required behavior**. They are implementation authority, not implementation logs or historical release records.
 
-Specs are authoritative for behavior, invariants, contracts, inputs and outputs, failure semantics, and validation expectations.
+Prefer extending an existing subsystem specification over creating a feature-, bug-, release-, or milestone-specific spec.
 
-## Rules
+## Current Reading Map
 
-- Specs must use canonical terminology.
-- Specs must define invariants explicitly.
-- Specs must avoid implementation plans.
-- Specs should exist before implementation whenever practical.
+Read only the subsystem contracts relevant to the task.
 
-## Available Specs
+### Canonical model and semantic vocabulary
 
-| Spec | Purpose |
-|---|---|
-| specs/audience-specific-description-semantics.md | Projection-neutral user and technical descriptions, XML-summary derivation, precedence, target obligations, diagnostics, and breaking compatibility boundary |
-| specs/configuration-domain-model-and-options-projection.md | Configuration domain semantic model, Options registration, validation, and diagnostics |
-| specs/core-conditional-constraint-semantics.md | Projection-neutral conditional constraints |
-| specs/model-surface-unification.md | Unified public model surface |
-| specs/current-canonical-model-surface.md | Current canonical semantic model surface |
-| specs/type-schema-model.md | Canonical type schema contracts |
-| specs/type-model-core.md | Core type model contracts |
-| specs/core-semantic-vocabulary.md | Projection-neutral semantic vocabulary |
-| specs/type-model-annotations.md | Annotation namespace and preservation policy |
-| specs/type-model-json-schema-mapping.md | JSON Schema mapping baseline |
-| specs/json-schema-domain-model-and-export.md | JSON Schema domain model and export |
-| specs/envelope-projection-policies.md | Target-specific envelope policies |
-| specs/evolution-ownership-and-lifecycle-semantics.md | Evolution, ownership, and lifecycle semantics |
-| specs/type-model-dotnet-extraction.md | Roslyn .NET extraction |
-| specs/type-model-dotnet-attributes.md | .NET attribute vocabulary |
-| specs/type-model-dotnet-conventions.md | .NET extraction conventions |
-| specs/type-model-compile-time-generator.md | Compile-time model generation |
-| specs/type-model-runtime-api.md | Runtime model APIs |
-| specs/type-model-di-integration.md | Dependency-injection integration |
-| specs/type-model-query-and-inspection.md | Query and inspection APIs |
-| specs/type-model-transformation-and-domain-derivation.md | Transformations and domain derivation |
-| specs/type-model-ui-hints.md | UI hint vocabulary |
-| specs/type-model-projection-capabilities.md | Projection capability matrix |
-| specs/type-model-powerbi-tom-projection.md | Power BI projection |
-| specs/type-model-ef-core-projection.md | EF Core projection |
-| specs/ef-core-real-application-regression-fixtures.md | Required anonymized fixture, real ModelBuilder, and SQLite EF compatibility layers |
-| specs/ef-core-source-lineage-scope-filtering.md | Projection-scoped EF source lineage inclusion and exclusion rules |
-| specs/ef-core-source-lineage-diagnostics.md | Diagnostic-first EF source lineage and application-policy-aware derivation |
-| specs/ef-core-closed-modelbuilder-application.md | Closed, lineage-preserving EF ModelBuilder application |
-| specs/ef-core-clr-convention-suppression.md | EF Core CLR convention suppression and value-object root boundaries |
-| specs/ef-convention-suppression-and-exact-entity-allowlist.md | Preemptive EF convention suppression and exact semantic entity allowlist |
-| specs/system-text-json-contract-integration.md | System.Text.Json metadata import |
-| specs/system-text-json-domain-model-and-resolver-projection.md | System.Text.Json domain projection |
-| specs/diagnostics.md | Diagnostic policy |
-| specs/typed-literals-and-conditional-constraint-semantics.md | Typed literals and conditional constraint normalization |
+- [Core semantic vocabulary](specs/core-semantic-vocabulary.md)
+- [Current canonical model surface](specs/current-canonical-model-surface.md)
+- [Conditional constraint semantics](specs/core-conditional-constraint-semantics.md)
+- [Audience-specific description semantics](specs/audience-specific-description-semantics.md)
+- [Diagnostics](specs/diagnostics.md)
+
+### Code-first .NET acquisition and generation
+
+- [Code-first semantic model architecture](specs/code-first-semantic-model-architecture.md)
+- [Type-model .NET extraction](specs/type-model-dotnet-extraction.md)
+- [Type-model .NET attributes](specs/type-model-dotnet-attributes.md)
+- [Type-model .NET conventions](specs/type-model-dotnet-conventions.md)
+- [Compile-time generator](specs/type-model-compile-time-generator.md)
+- [Query and inspection](specs/type-model-query-and-inspection.md)
+- [Transformation and domain derivation](specs/type-model-transformation-and-domain-derivation.md)
+- [Runtime API](specs/type-model-runtime-api.md)
+- [Dependency injection](specs/type-model-di-integration.md)
+
+### Projection and integration contracts
+
+- [EF Core](specs/ef-core.md) — current EF relational inspection, manifest/generation, mapping, composition, and validation contract.
+- [JSON Schema domain model and export](specs/json-schema-domain-model-and-export.md)
+- [System.Text.Json domain model and resolver projection](specs/system-text-json-domain-model-and-resolver-projection.md)
+- [Configuration domain model and Options projection](specs/configuration-domain-model-and-options-projection.md)
+- [Power BI/TOM projection](specs/type-model-powerbi-tom-projection.md)
+- [Projection capability and compatibility contract](specs/type-model-projection-capabilities.md)
+
+## Supporting/Overlap Files
+
+Some non-EF specification families predate the living-subsystem-contract policy and still contain overlapping documents. They remain in the working tree until their detailed requirements are audited and safely consolidated.
+
+Do not treat the existence of a second overlapping file as permission to create a third. Prefer the primary reading-map contract above and reconcile supporting material when changing that subsystem.
+
+The documentation reset intentionally consolidates EF Core first because the supersession boundary is explicit and the old runtime application architecture is known to be retired.
+
+## Specification Lifecycle
+
+When replacing a specification:
+
+1. move all still-current behavior into the replacement contract;
+2. preserve historical architectural significance in `HISTORY.md` only when useful;
+3. move migration/version detail to compatibility/release documentation when consumer-relevant;
+4. delete the superseded spec from the working tree.
+
+Git history is the detailed historical record.

@@ -35,7 +35,7 @@ Projection packages that have not reached a stable diagnostic surface use a desc
 | `POWERBI_*`     | SemanticTypeModel.PowerBI    |
 | `JSONSCHEMA_*`  | SemanticTypeModel.JsonSchema projection/export and retained legacy/internal import compatibility |
 
-Preview codes are subject to change. Their stability expectations are documented in `public-docs/diagnostics/preview-status.md`.
+Descriptive projection diagnostic prefixes are not part of the stable STM numeric diagnostic scheme.
 
 ## Diagnostic Model
 
@@ -110,7 +110,6 @@ The following test coverage is required:
 - `public-docs/diagnostics/stm0xxx.md`
 - `public-docs/diagnostics/stm3xxx.md`
 - `public-docs/diagnostics/stm5xxx.md`
-- `public-docs/diagnostics/preview-status.md`
 
 
 M0034 core transformation diagnostics reserve `STM1014` through `STM1019` for ownership cycles, owned collection policy requirements, versioning semantic invalidity, temporal validity invalidity, lifecycle-state invalidity, and extension-data invalidity.

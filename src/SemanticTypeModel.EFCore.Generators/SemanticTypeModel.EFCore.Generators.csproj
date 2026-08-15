@@ -25,6 +25,6 @@
     <TfmSpecificPackageFile Include="$(TargetDir)$(AssemblyName).dll" PackagePath="analyzers/dotnet/cs" />
     <TfmSpecificPackageFile Include="$(TargetDir)$(AssemblyName).pdb" PackagePath="analyzers/dotnet/cs" Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
   </ItemGroup></Target>
-  <ItemGroup><None Include="../../public-docs/nuget/SemanticTypeModel.EFCore.Generators.md" Pack="true" PackagePath="README.md" /></ItemGroup>
+  <ItemGroup><None Include="../../public-docs/nuget/SemanticTypeModel.md" Pack="true" PackagePath="README.md" /></ItemGroup>
   <ItemGroup><Compile Include="../SemanticTypeModel.EFCore.Shared/EfStoragePolicy.cs" Link="Internal/EfStoragePolicy.cs" /></ItemGroup>
 </Project>

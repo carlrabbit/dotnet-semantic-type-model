@@ -78,4 +78,3 @@ Legacy/import-compatible behavior is:
 - [type-schema-model.md](type-schema-model.md)
 - [code-first-semantic-model-architecture.md](code-first-semantic-model-architecture.md)
 - ../decisions/code-first-only-model-source.md
-- ../decisions/json-schema-as-primary-dialect.md (superseded for model source authority)

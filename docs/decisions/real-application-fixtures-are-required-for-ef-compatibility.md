@@ -1,45 +1,35 @@
-# Decision: Real Application Fixtures Are Required for EF Compatibility
+# Real Application Fixtures Are Required for EF Compatibility
 
 ## Status
 
-Accepted for M0054.
+Accepted and current.
 
 ## Context
 
-The EF package has repeatedly passed isolated unit tests while failing realistic application-shaped models involving records, inherited semantic members, extension data, optional owned value objects, generic marker interfaces, record infrastructure, dictionaries, and real EF Core model building.
+EF compatibility defects can cross several boundaries at once: CLR/Roslyn extraction, generated semantic metadata, generated EF source, EF conventions/model finalization, provider metadata, persistence behavior, and analyzer/NuGet packaging.
 
-Synthetic tests alone are insufficient for EF compatibility confidence.
+Hand-built `TypeSchemaModel` tests can prove provider-neutral derivation logic but cannot prove behavior that depends on those real boundaries.
 
 ## Decision
 
-The repository will add anonymized real-application regression fixtures and require three EF validation layers:
+EF compatibility work must use tests at the boundary where the behavior actually exists.
+
+The permanent validation strategy includes:
 
 ```text
-unit projection/lineage tests
-real ModelBuilder tests with CLR DbContext
-SQLite in-memory integration tests
+semantic / relational unit tests
+  + real CLR extraction/generation tests
+  + EF generator source/compilation tests
+  + real DbContext/provider finalization tests
+  + persistence round-trip tests where storage behavior matters
+  + packed NuGet analyzer smoke for generator packaging
 ```
 
-EF source lineage must be projection-scope driven. It must not treat all canonical object definitions as EF source-lineage candidates.
+Real-application-shaped fixtures must be anonymized and repository-owned rather than copied from private/business source models.
 
 ## Consequences
 
-- EF compatibility tests become more representative.
-- Private/business source names are not copied into public repository assets.
-- Some fixtures may be larger than ordinary unit-test examples.
-- SQLite becomes part of the EF integration validation surface.
-- Future EF changes must preserve these real application regressions.
-
-## Rejected Alternatives
-
-### Keep only isolated unit tests
-
-Rejected because they missed repeated production-shaped failures.
-
-### Copy real source models verbatim
-
-Rejected because fixture code must be anonymized and aligned with repository sample terminology.
-
-### Treat every canonical object definition as EF lineage
-
-Rejected because it pulls framework/interface/compiler-adjacent types into EF diagnostics and model application.
+- A manually constructed semantic model cannot close a bug caused by Roslyn extraction, generated source, EF convention finalization, provider metadata, or packaging.
+- Provider regressions require provider-backed tests.
+- Generator packaging must be tested from the packed NuGet artifact when package layout/discovery is part of the contract.
+- Representative fixtures may be larger than ordinary unit examples, but they should remain deterministic and focused on the regression boundary.

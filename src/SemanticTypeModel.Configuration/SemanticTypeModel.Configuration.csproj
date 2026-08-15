@@ -27,6 +27,6 @@
     <ProjectReference Include="../SemanticTypeModel.Core/SemanticTypeModel.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="../../public-docs/nuget/SemanticTypeModel.Configuration.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../public-docs/nuget/SemanticTypeModel.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 </Project>

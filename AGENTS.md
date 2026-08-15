@@ -1,44 +1,58 @@
 # Agent Instructions
 
-## Authority and Conditional Reading
+Use this file as the repository router. Read only the authority required for the task.
 
-Start with this file. Read additional documents only when they are relevant to the task:
+## Route the task
 
-- Read `docs/ENGINEERING.md` and `docs/engineering/command-contract.md` when choosing validation commands or changing engineering policy.
-- Read relevant specs under `docs/specs/` when changing behavior covered by a specification.
-- Read `docs/PUBLIC-DOCS.md` and affected `public-docs/` pages when changing consumer-facing behavior, package metadata, diagnostics, samples, or release guidance.
-- Read workflow docs and workflow YAML together when changing CI, packaging, release, or publishing automation.
-- Read `.guide-profile.json` and `.guide-sync/` only when explicitly assigned guide migration, documentation synchronization, or release-readiness planning work.
+- Behavior: `docs/SPECS.md` + relevant spec.
+- Structural/package/compile-time boundaries: `docs/ARCHITECTURE.md` + relevant architecture.
+- Non-obvious current rationale: `docs/DECISIONS.md` + relevant decision.
+- Terminology: `docs/TERMINOLOGY.md`.
+- Commands, testing, packaging, documentation lifecycle: `docs/ENGINEERING.md` + relevant `docs/engineering/*`.
+- Consumer-facing behavior/configuration/diagnostics: `docs/PUBLIC-DOCS.md` + affected `public-docs/*`.
+- CI/release automation: `docs/WORKFLOWS.md`, workflow docs, and workflow YAML together.
+- Active milestone work: `docs/MILESTONES.md` + active milestone only when one exists.
+- Architectural evolution: `docs/HISTORY.md` only when historical context is relevant.
 
-Do not treat `docs/research/project-setup-guide-*` or `docs/research/engineering-guide-*` as authoritative. They are historical research copies and are not required reading.
+## Authority roles
 
-Do not read the external guide repository during ordinary implementation work. Use only target-repository authority documents listed by the assigned milestone or task.
-
-## Validation Tiers
-
-Use the smallest validation tier that can catch the expected regression during the inner loop, then run the completion tier required by the task.
-
-- **Tier 0 — static/documentation check:** formatting, documentation-only checks, or script linting for files touched.
-- **Tier 1 — focused validation:** a targeted project, filtered test run, or affected-area command such as `./eng/test-project.sh <project>` or `./eng/test-filter.sh <filter>`.
-- **Tier 2 — repository check:** `./eng/check.sh` (`restore`, `build`, short-running tests, and format verification). This is the standard completion gate for implementation work, not mandatory for every inner-loop edit.
-- **Tier 3 — package/release candidate validation:** package, package-smoke, public API, public docs, samples, and release-readiness commands appropriate to the release candidate.
-- **Tier 4 — publish validation:** final release validation plus the explicit publish workflow/command.
-
-Before completing implementation work, run Tier 2 unless the task is documentation-only or an environment limitation prevents it. For release and packaging work, also run:
-
-```sh
-./eng/release-check.sh <version>
+```text
+Specification = required behavior now
+Architecture  = how major pieces fit
+Decision      = why a non-obvious current choice exists
+Engineering   = how repository work is built/validated/packaged
+Public docs   = supported consumer guidance
+Milestone     = active implementation sequencing
+History       = concise architectural evolution
+Git           = detailed completed/superseded history
 ```
 
-## Repository Rules
+## Consumer-documentation rule
 
-- Use canonical `eng/` scripts.
-- Keep workflow docs and workflow YAML synchronized.
-- Keep public docs synchronized with consumer-facing changes.
-- Do not add README files outside repository root.
-- Keep changes scoped and avoid opportunistic refactoring.
-- Preserve public contracts unless an authoritative spec changes.
-- Do not introduce terminology that is absent from `docs/TERMINOLOGY.md`.
-- Prefer deterministic, short-running tests by default; do not add network, timing-dependent, or expensive tests to the short-running suite.
-- Do not copy external guide documents into this repository.
-- Do not introduce TBPs, broad guardrail documents, default issue templates, or workflow documents unless a project-specific milestone explicitly requires them as project truth.
+For every public capability touched, ensure users can find:
+
+1. how to use it;
+2. how to configure/customize it;
+3. what can fail and how to fix it.
+
+Public generator options belong in `public-docs/configuration.md`. Public diagnostics belong in
+`public-docs/diagnostics.md` or a diagnostic range page. Projection-specific use/configuration/failures belong
+in the target guide.
+
+Do not create per-package NuGet README sources: all packable packages use
+`public-docs/nuget/SemanticTypeModel.md`.
+
+Do not create per-sample Markdown pages. The sample project is the detailed example; route through
+`public-docs/samples.md`.
+
+All `SemanticTypeModel.*` package versions used together must match exactly.
+
+## Repository rules
+
+- Use canonical `eng/` commands.
+- Keep changes scoped; avoid opportunistic refactoring.
+- Preserve public contracts unless current authority changes them.
+- Do not add non-root `README.md` files.
+- Prefer extending current authority over creating new documentation.
+- Do not retain obsolete documentation as an archive; Git is history.
+- Run the validation tier required by `docs/ENGINEERING.md`.

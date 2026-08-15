@@ -1,159 +1,67 @@
 # Core Semantics
 
-## Goal
+## Use
 
-Model domain meaning once so JSON Schema, EF Core, Power BI, System.Text.Json, and configuration projections can make target-specific decisions from the same generated semantic model.
-
-## Prerequisites
-
-- .NET 10 SDK.
-- Annotated .NET types are the canonical authoring source.
-- A generated semantic model provider such as `AppSemanticTypeModel.Create()` is available.
-- The examples assume package version `2.4.0`.
-
-## Packages
-
-- `SemanticTypeModel.DotNet` for semantic attributes.
-- `SemanticTypeModel.Generators` for compile-time provider generation.
-- `SemanticTypeModel.Core` for core vocabulary, transformations, diagnostics, and inspection.
-
-## Minimal path
-
-1. Add `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, and `SemanticTypeModel.Core`.
-2. Mark entities, keys, value objects, ownership, envelopes, lifecycle, and extension data with semantic attributes.
-3. Build the project so the provider is generated.
-4. Call `AppSemanticTypeModel.Create()` and inspect diagnostics.
-5. Pass the model to the projection package needed by your scenario.
-
-## Full example
+Core semantics describe projection-neutral domain meaning once so target packages can make their own
+representation decisions.
 
 ```csharp
-using SemanticTypeModel;
-using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.DotNet;
 
 [SemanticType(SemanticTypeRole.Entity)]
-public sealed partial class Customer
+public sealed class Customer
 {
     [SemanticKey]
     public required string Id { get; init; }
 
-    [SemanticDisplayName("Customer name")]
+    [SemanticDisplayName("Customer")]
+    [SemanticUserDescription("A customer that can place orders.")]
     public required string Name { get; init; }
-
-    [SemanticOwned(Kind = SemanticOwnershipKind.Object)]
-    public required Address BillingAddress { get; init; }
 }
-
-[SemanticType(SemanticTypeRole.ValueObject)]
-public sealed partial class Address
-{
-    public required string City { get; init; }
-}
-
-TypeSchemaModel model = AppSemanticTypeModel.Create();
 ```
 
-## How it works
+Generate the canonical model and pass it to whichever target projection you need.
 
-Annotated .NET code is extracted by the generator into a `TypeSchemaModel`. Core transformations normalize projection-neutral semantics. Target packages then decide how much of that meaning can be represented in their own output.
+## Configure
 
-## Options and policies
+Core semantics themselves do not choose EF storage, JSON Schema UI behavior, Power BI layout, serializer
+contract names, or Options provider setup. Put domain meaning in core attributes and representation choices in
+target-specific configuration.
 
-Core semantics has no target-output option that changes JSON Schema, EF Core, Power BI, System.Text.Json, or Configuration by itself. The policy is to keep domain meaning projection-neutral and put representation choices in target packages.
+Common semantic concepts include:
 
-| Item / policy | Default | Allowed values / supported items | Effect | Diagnostics / unsupported cases |
-|---|---|---|---|---|
-| Authoring source | Annotated .NET types | Semantic attributes and imported supported BCL annotations | Produces the generated semantic model | Unsupported attribute placement or invalid values are diagnostics. |
-| Semantic role | `Unspecified` unless declared | `Entity`, `ValueObject`, `Dimension`, `Fact`, `Lookup`, `Event`, `Configuration`, `Form` | Gives target projections role-specific defaults | Unknown role strings are unsupported. |
-| Requiredness/nullability | CLR required/nullability plus annotations | Required, nullable, optional | Feeds schema `required`, EF requiredness, validation, and serializer metadata | Contradictory required/nullability can cause projection diagnostics. |
-| Target metadata | No target effect in Core | Namespaced annotations such as JSON Schema, EF, Power BI, System.Text.Json, Configuration | Preserved for target packages | Core does not validate every target-specific value. |
+| Concept | Meaning |
+|---|---|
+| Entity | Independently identifiable domain object |
+| ValueObject | Value contained by another semantic boundary, without independent identity by default |
+| Key | Identity member/group |
+| Relationship | Projection-neutral association metadata |
+| Required / Nullable | Presence and nullability semantics |
+| Constraint | Validation/shape constraint |
+| RequiredWhen | Conditional presence rule against a typed source value |
+| Format | Semantic scalar format hint |
+| DisplayName | User-facing label, not stable identity |
+| UserDescription | User-facing explanatory text |
+| TechnicalDescription | Technical explanatory text; XML summaries can contribute technical fallback |
+| Ownership | Lifecycle containment; target storage remains target-specific |
+| Envelope | Wrapper carrying a distinguished payload plus contextual/lifecycle metadata |
+| ExtensionData | Forward-compatible/unmodeled key/value data boundary |
+| Version / Revision / temporal validity | Evolution/lifecycle metadata, not automatic migrations/concurrency |
 
-## Vocabulary inventory
+For generator-wide configuration such as discovery, naming, or generated namespace, use
+[SemanticTypeModel Configuration](../configuration.md).
 
-| Semantic item | Use when | Authoring shape / attribute | Projection-neutral meaning | Major projection effects | Common mistake |
-|---|---|---|---|---|---|
-| Entity | Object has identity and lifecycle | `SemanticTypeRole.Entity` | Independently identifiable domain object | EF table/entity, Power BI table, JSON object schema | Omitting a key for EF scenarios. |
-| ValueObject | Object is identified by containing value | `SemanticTypeRole.ValueObject` | No independent identity | EF owned/flattened/JSON policy; Power BI flatten/diagnose policy | Modeling an aggregate root as a value object. |
-| Configuration | Type describes options binding | `SemanticTypeRole.Configuration` plus section metadata | Options contract root | Configuration options registration | Expecting provider setup. |
-| Dimension | Descriptive analytical table | `SemanticTypeRole.Dimension` | Analytical lookup context | Power BI dimension role | Using fact measures on dimensions. |
-| Fact | Measurable analytical event/table | `SemanticTypeRole.Fact` | Analytical measurement grain | Power BI fact role and summarization | Missing relationship keys. |
-| Event | Time/event occurrence | `SemanticTypeRole.Event` | Occurrence in domain time | May become schema/table metadata; limited target behavior | Assuming automatic event sourcing. |
-| Key | Identity member | `SemanticKey` | Primary identity | EF primary key; schema metadata; Power BI technical key | Marking nullable keys. |
-| AlternateKey | Secondary identity | `SemanticKey(Kind = KeyKind.Alternate)` | Alternative uniqueness | EF alternate key/unique index policy | Treating it as primary identity. |
-| Relationship | Association between types | `SemanticRelationship` | Domain link and cardinality | EF relationships; Power BI relationships | Leaving endpoint or FK ambiguous. |
-| Required | Value must be present | C# `required`, BCL validation, semantic required metadata | Presence requirement | JSON Schema `required`; options validation; EF required | Confusing required with non-null CLR default values. |
-| Nullable | Null is allowed when present | Nullable reference/value types | Nullability permission | JSON Schema null type, EF optional, STJ unchanged unless resolver supports it | Treating nullable as optional. |
-| Constraint | Scalar/collection bounds | `SemanticStringConstraints`, `SemanticNumericConstraints`, `SemanticCollectionConstraints` | Validation rule | JSON Schema keywords; configuration validation when representable | Expecting EF check constraints automatically. |
-| RequiredWhen | Conditional presence | `SemanticRequiredWhen` | Target required when source equals literal | JSON Schema conditional; Configuration validation; other targets diagnose/ignore | Referencing a misspelled source property. |
-| Enum | Closed set of named values | CLR enum, `SemanticEnumValue` | Enumerated domain value | JSON enum, EF/Power BI storage policy, schema labels | Depending on numeric values without policy. |
-| Format | Well-known scalar format | `SemanticFormat` | Formatting/validation hint | JSON Schema `format`; Power BI format metadata | Using format as custom parsing code. |
-| DisplayName | User-facing name | `SemanticDisplayName` / `SemanticName` | Label, not identity | Titles, table/column labels, UI text | Replacing stable member names with labels. |
-| UserDescription / TechnicalDescription | Audience-specific explanations | `SemanticUserDescription` / `SemanticTechnicalDescription` plus XML summaries for technical fallback | User-facing and technical text | JSON Schema/Power BI user descriptions; EF Core comments and inspection technical descriptions | Assuming one description fits every audience. |
-| Category | Grouping label | `SemanticCategory` | Logical grouping | UI groups, Power BI display folders/categories | Expecting storage changes. |
-| Order | Display order | `SemanticOrder` | Deterministic ordering hint | JSON/UI property order and docs | Treating it as sort-by-column data. |
-| Ownership | Containment/lifecycle dependency | `SemanticOwned` | Owned member follows owner lifecycle | EF owned mapping; Power BI flatten/diagnose | Marking shared entities as owned. |
-| OwnedObject | Single owned object | `SemanticOwned(Kind = Object)` | One owned value | EF owned reference; JSON nested object | Forgetting requiredness on owned object. |
-| OwnedCollection | Collection of owned values | `SemanticOwned(Kind = Collection)` | Owned element collection | EF collection policy; JSON array | Assuming every target supports nested collections. |
-| Envelope | Wrapper around payload and metadata | `SemanticEnvelope` | Separates payload from transport/context metadata | Target-specific envelope policies | Projecting both wrapper and payload accidentally. |
-| EnvelopePayload | Payload member inside envelope | `SemanticEnvelopePayload` | Business payload of envelope | JSON root policy; EF/Power BI payload policy | Omitting exactly one payload. |
-| Version | Contract or data version | `SemanticVersion` / `SemanticVersioned` | Version marker | Preserved or displayed; no migration | Expecting automatic migrations. |
-| Revision | Revision marker | `SemanticRevision` | Revision identity | Preserved/metadata; no concurrency behavior by default | Treating as EF rowversion. |
-| CurrentVersion | Current flag/version pointer | `SemanticCurrentVersion` | Marks current revision/version | Metadata for projections | Expecting filtering. |
-| TemporalValidity | Valid-time interval | `SemanticTemporalValidity`, `SemanticValidFrom`, `SemanticValidTo` | Domain validity range | Metadata or target-specific columns | Expecting EF temporal tables. |
-| LifecycleState | State/status member | `SemanticLifecycleState` | Domain state value | Schema/Power BI metadata | Expecting workflow enforcement. |
-| ExtensionData | Unknown/member extension bag | `SemanticExtensionData` | Extra data capture | JSON additional properties/STJ extension behavior; EF/Power BI limited | Using arbitrary object types instead of dictionary-like members. |
+## Diagnose
 
-## Diagnostics
-
-| Symptom / diagnostic | Likely cause | Fix |
+| Symptom | Likely cause | Fix |
 |---|---|---|
-| Invalid attribute usage | Semantic attribute placed on unsupported target | Move it to the supported type/member target. |
-| Ownership cycle | Owned members recursively own each other | Break the cycle or use relationship semantics. |
-| Envelope payload diagnostic | Envelope has zero or multiple payload members | Mark exactly one member with `SemanticEnvelopePayload`. |
-| RequiredWhen diagnostic | Source member, operator, or literal cannot be resolved | Use `nameof`, equality-compatible literals, and supported scalar/enum values. |
+| Semantic type/member missing | Discovery/accessibility configuration excludes it | Review [Configuration](../configuration.md). |
+| Key/relationship diagnostics | Metadata is incomplete/ambiguous | Prefer explicit semantic metadata over inference. |
+| `RequiredWhen` typed-literal diagnostic | Source member/value cannot be normalized safely | Use a supported scalar/enum source and a valid typed value. |
+| Target ignores a semantic concept | Target cannot represent/enforce it directly | Review target guide/capability matrix and diagnostics. |
 
-## Typed conditional literals
+## Reference
 
-`SemanticRequiredWhen` remains source compatible, but its value is normalized against the resolved source property's CLR and semantic types. For example:
-
-```csharp
-public enum ImportType { CsvFile, XmlFile, WebService1, WebService2 }
-
-public ImportType ImportType { get; init; }
-
-[SemanticRequiredWhen(nameof(ImportType), nameof(ImportType.CsvFile))]
-public CsvSourceSpecification? CsvSource { get; init; }
-```
-
-The condition stores `CsvFile` as an enum-member literal referencing `ImportType`, not as a string. Fully qualified enum values are not required. Strings remain strings only for string sources; Boolean, numeric, null, GUID, and date/time values use invariant typed normalization. Missing sources, invalid values, overflow, nullability violations, and unsupported source types produce stable extraction diagnostics rather than guessed comparisons.
-
-Strong-identifier structs without an unambiguous provider-scalar extraction contract are unsupported in 2.6.0. A condition using one emits `STM5027`; it is never downgraded to a string comparison.
-
-## Common mistakes
-
-- Using display names as stable model identifiers.
-- Putting EF, Power BI, or JSON Schema decisions into core semantics instead of target options.
-- Assuming preserved metadata means every projection enforces the behavior.
-
-## Limitations
-
-Core semantics does not create target output by itself. It does not choose database providers, publish analytical models, validate JSON documents at runtime, generate serializer contexts, or migrate configuration.
-
-## Related docs
-
-- [SemanticTypeModel.Core package](../nuget/SemanticTypeModel.Core.md)
-- [SemanticTypeModel.DotNet package](../nuget/SemanticTypeModel.DotNet.md)
-- [Projection capabilities](projection-capabilities.md)
-
-## 2.4.1 Extension-Data Dictionary Note
-
-2.4.1 corrects a 2.4.0 extraction defect for dictionary-backed extension data. Valid extension-data dictionaries such as `Dictionary<string, JsonElement>` are preserved in the canonical model with resolvable key and value types; projection-specific behavior remains unchanged.
-
-## URI scalars and ownership
-
-`System.Uri` properties are supported string-compatible scalars and receive URI format semantics by default. An explicit `SemanticFormat` remains available for string and other supported format-compatible scalars. Ownership describes lifecycle containment only; each target projection chooses storage separately.
-
-## 2.4.4 extension-data inheritance
-
-Semantic types inherit semantic extension-data members declared by CLR base classes, including abstract base classes that do not have `[SemanticType]`. The member remains canonical extension data for JSON-oriented projections. EF Core persists the member as an extension-data JSON column without turning the non-semantic base or a ValueKind into an independent EF root.
+Target projections may preserve, approximate, ignore, or diagnose a semantic concept. See
+[Projection capabilities](projection-capabilities.md) before assuming a core annotation implies identical
+runtime behavior in every target.
