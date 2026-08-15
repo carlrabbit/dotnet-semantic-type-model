@@ -60,7 +60,7 @@ Common generator settings include:
 - discovery mode and namespace filters;
 - internal type/member inclusion;
 - naming policy;
-- key/relationship inference;
+- key inference;
 - technical-description requirements;
 - System.Text.Json metadata import.
 

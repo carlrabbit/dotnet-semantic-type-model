@@ -66,30 +66,6 @@ Model paths in these diagnostics follow the form `/types/{TypeId}/...` as define
 
 ---
 
-## STM0006 — Relationship type missing
-
-**Severity:** Error
-
-**Message:** `Relationship endpoint on type '{typeId}' references type '{refId}' which is missing or is not an object type.`
-
-**Cause:** A relationship definition references a type that does not exist in the model or is not an object type.
-
-**Fix:** Ensure the target type is present in the model and is an object type.
-
----
-
-## STM0007 — Relationship property reference missing
-
-**Severity:** Error
-
-**Message:** `Relationship on type '{typeId}' references property '{propertyName}' which does not exist.`
-
-**Cause:** A relationship definition references a property that is not defined on its owning type.
-
-**Fix:** Correct the property reference in the relationship definition.
-
----
-
 ## STM0008 — Invalid cardinality bounds
 
 **Severity:** Error

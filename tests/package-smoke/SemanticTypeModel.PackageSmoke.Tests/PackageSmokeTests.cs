@@ -93,7 +93,7 @@ internal sealed class PackageSmokeTests
                     Name = "smokeId",
                     Type = new Model.TypeRef(scalar.Id),
                     Cardinality = new Model.Cardinality { IsRequired = true },
-                    Mutability = Model.Mutability.Mutable,
+                    Mutability = Model.SemanticMutability.Mutable,
                     Constraints = new Model.ConstraintSet(),
                     Annotations = new Model.AnnotationBag
                     {
@@ -106,7 +106,6 @@ internal sealed class PackageSmokeTests
                 },
             ],
             Keys = [],
-            Relationships = [],
         };
         return new Model.TypeSchemaModel { Id = new Model.SchemaModelId(customer.Id.Value), Types = [customer, scalar], TypesById = new Dictionary<Model.TypeId, Model.TypeDefinition> { [customer.Id] = customer, [scalar.Id] = scalar }, Annotations = new Model.AnnotationBag() };
     }

@@ -224,17 +224,7 @@ public static class SemanticTextExtensions
                 }
             }
 
-            foreach (RelationshipDefinition relationship in obj.Relationships.OrderBy(static relationship => relationship.Id.Value, StringComparer.Ordinal))
-            {
-                builder.Append("    Relationship ");
-                builder.Append(relationship.Id.Value);
-                builder.Append(": ");
-                builder.Append(relationship.DependentType.Id.Value);
-                builder.Append(" -> ");
-                builder.Append(relationship.PrincipalType.Id.Value);
-                builder.Append(' ');
-                builder.AppendLine(relationship.Cardinality.ToString());
-            }
+
         }
 
         if (options.IncludeAnnotations || options.Detail == SemanticTextDetail.Detailed)

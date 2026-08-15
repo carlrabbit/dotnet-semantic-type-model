@@ -11,7 +11,7 @@ internal static partial class PublicDocumentationValidator
         "public-docs/configuration.md", "public-docs/troubleshooting.md", "public-docs/diagnostics.md",
         "public-docs/versioning.md", "public-docs/release-notes.md", "public-docs/samples.md",
         "public-docs/api/compatibility.md", "public-docs/guides/core-semantics.md",
-        "public-docs/guides/json-schema.md", "public-docs/guides/json-editor-compatibility.md",
+        "public-docs/guides/json-schema.md",
         "public-docs/guides/ef-core.md", "public-docs/guides/power-bi.md",
         "public-docs/guides/system-text-json.md", "public-docs/guides/configuration-options.md",
         "public-docs/guides/projection-capabilities.md", "public-docs/nuget/SemanticTypeModel.md",

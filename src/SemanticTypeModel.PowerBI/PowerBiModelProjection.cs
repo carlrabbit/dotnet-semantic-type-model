@@ -79,18 +79,16 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
                 continue;
             }
 
-            IReadOnlySet<PropertyId> foreignKeyPropertyIds = GetForeignKeyPropertyIds(objectType);
+            IReadOnlySet<PropertyId> foreignKeyPropertyIds = new HashSet<PropertyId>();
             projectedTables.Add(ProjectTable(model, objectType, resolvedTableName, foreignKeyPropertyIds, diagnostics));
         }
 
         IReadOnlyDictionary<TypeId, ProjectedTableInfo> tablesByTypeId = projectedTables.ToDictionary(static table => table.SourceTypeId);
-        IReadOnlyList<PowerBiRelationshipDefinition> relationships = ProjectRelationships(model, tablesByTypeId, diagnostics);
 
         return new PowerBiProjectionModel
         {
             Name = model.Id.Value,
             Tables = projectedTables.Select(static table => table.Table).ToArray(),
-            Relationships = relationships,
             Diagnostics = diagnostics.ToArray(),
         };
     }
@@ -705,161 +703,6 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         return measures;
     }
 
-    private IReadOnlyList<PowerBiRelationshipDefinition> ProjectRelationships(
-        TypeSchemaModel model,
-        IReadOnlyDictionary<TypeId, ProjectedTableInfo> tablesByTypeId,
-        IList<SchemaDiagnostic> diagnostics)
-    {
-        var projectedRelationships = new List<PowerBiRelationshipDefinition>();
-        var relationshipNameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var dedupe = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (ObjectTypeDefinition objectType in model.Types.OfType<ObjectTypeDefinition>())
-        {
-            foreach (RelationshipDefinition relationship in objectType.Relationships)
-            {
-                var relationshipPath = ModelPath.ForRelationship(objectType.Id, relationship.Id);
-                if (!dedupe.Add(relationship.Id.Value))
-                {
-                    continue;
-                }
-
-                if (relationship.Cardinality == RelationshipCardinality.ManyToMany)
-                {
-                    Report(
-                        diagnostics,
-                        SchemaDiagnosticSeverity.Warning,
-                        "POWERBI_MANY_TO_MANY_RELATIONSHIP_UNSUPPORTED",
-                        $"Relationship '{relationship.Id.Value}' is many-to-many and is not projected by default.",
-                        relationshipPath);
-                    continue;
-                }
-
-                if (!tablesByTypeId.TryGetValue(relationship.DependentType.Id, out ProjectedTableInfo? fromTable))
-                {
-                    Report(
-                        diagnostics,
-                        SchemaDiagnosticSeverity.Warning,
-                        "POWERBI_RELATIONSHIP_ENDPOINT_TABLE_NOT_PROJECTED",
-                        $"Dependent relationship endpoint '{relationship.DependentType.Id.Value}' is not projected as a table.",
-                        relationshipPath);
-                    continue;
-                }
-
-                if (!tablesByTypeId.TryGetValue(relationship.PrincipalType.Id, out ProjectedTableInfo? toTable))
-                {
-                    Report(
-                        diagnostics,
-                        SchemaDiagnosticSeverity.Warning,
-                        "POWERBI_RELATIONSHIP_ENDPOINT_TABLE_NOT_PROJECTED",
-                        $"Principal relationship endpoint '{relationship.PrincipalType.Id.Value}' is not projected as a table.",
-                        relationshipPath);
-                    continue;
-                }
-
-                if (relationship.DependentProperties.Count == 0 || relationship.PrincipalProperties.Count == 0)
-                {
-                    Report(
-                        diagnostics,
-                        RelationshipDiagnosticSeverity(),
-                        "POWERBI_RELATIONSHIP_ENDPOINT_PROPERTY_MISSING",
-                        $"Relationship '{relationship.Id.Value}' does not include both endpoint properties.",
-                        relationshipPath);
-                    continue;
-                }
-
-                if (relationship.DependentProperties.Count > 1 || relationship.PrincipalProperties.Count > 1)
-                {
-                    Report(
-                        diagnostics,
-                        SchemaDiagnosticSeverity.Warning,
-                        "POWERBI_AMBIGUOUS_RELATIONSHIP_ENDPOINTS",
-                        $"Relationship '{relationship.Id.Value}' has composite or ambiguous endpoints and was not projected.",
-                        relationshipPath);
-                    continue;
-                }
-
-                PropertyId fromPropertyId = relationship.DependentProperties[0].Id;
-                PropertyId toPropertyId = relationship.PrincipalProperties[0].Id;
-
-                if (!fromTable.ColumnNameByProperty.TryGetValue(fromPropertyId, out var fromColumn))
-                {
-                    Report(
-                        diagnostics,
-                        SchemaDiagnosticSeverity.Warning,
-                        "POWERBI_RELATIONSHIP_ENDPOINT_COLUMN_NOT_PROJECTED",
-                        $"Dependent relationship endpoint property '{fromPropertyId.Value}' was not projected as a column.",
-                        relationshipPath);
-                    continue;
-                }
-
-                if (!toTable.ColumnNameByProperty.TryGetValue(toPropertyId, out var toColumn))
-                {
-                    Report(
-                        diagnostics,
-                        SchemaDiagnosticSeverity.Warning,
-                        "POWERBI_RELATIONSHIP_ENDPOINT_COLUMN_NOT_PROJECTED",
-                        $"Principal relationship endpoint property '{toPropertyId.Value}' was not projected as a column.",
-                        relationshipPath);
-                    continue;
-                }
-
-                if (!toTable.KeyPropertyIds.Contains(toPropertyId))
-                {
-                    Report(
-                        diagnostics,
-                        SchemaDiagnosticSeverity.Warning,
-                        "POWERBI_RELATIONSHIP_MISSING_KEY",
-                        $"Principal property '{toPropertyId.Value}' is not part of a key.",
-                        relationshipPath);
-                }
-
-                var desiredName = ResolveName(
-                    relationship.Annotations,
-                    null,
-                    relationship.Id.Value,
-                    relationshipPath,
-                    diagnostics,
-                    "tom.relationshipName",
-                    PowerBiAnnotationNames.RelationshipName);
-                var resolvedName = ResolveUniqueName(desiredName, relationshipNameSet, "relationship", relationshipPath, diagnostics);
-                if (resolvedName is null)
-                {
-                    continue;
-                }
-
-                var isActive = ResolveBooleanAnnotation(relationship.Annotations, relationshipPath, diagnostics, PowerBiAnnotationNames.RelationshipActive) ?? true;
-                PowerBiRelationshipDirection direction = ResolveRelationshipDirection(relationship.Annotations, relationshipPath, diagnostics);
-                projectedRelationships.Add(new PowerBiRelationshipDefinition
-                {
-                    Name = resolvedName,
-                    FromTable = fromTable.Table.Name,
-                    FromColumn = fromColumn,
-                    ToTable = toTable.Table.Name,
-                    ToColumn = toColumn,
-                    Cardinality = MapCardinality(relationship.Cardinality),
-                    IsActive = isActive,
-                    Direction = direction,
-                    SourceRelationshipId = relationship.Id,
-                });
-            }
-        }
-
-        return projectedRelationships;
-    }
-
-    private static PowerBiRelationshipCardinality MapCardinality(RelationshipCardinality cardinality)
-    {
-        return cardinality switch
-        {
-            RelationshipCardinality.OneToOne => PowerBiRelationshipCardinality.OneToOne,
-            RelationshipCardinality.OneToMany => PowerBiRelationshipCardinality.OneToMany,
-            RelationshipCardinality.ManyToOne => PowerBiRelationshipCardinality.ManyToOne,
-            RelationshipCardinality.ManyToMany => PowerBiRelationshipCardinality.ManyToMany,
-            _ => PowerBiRelationshipCardinality.ManyToOne,
-        };
-    }
-
     private string ResolveName(
         AnnotationBag annotations,
         string? displayName,
@@ -1020,14 +863,6 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         return null;
     }
 
-    private static IReadOnlySet<PropertyId> GetForeignKeyPropertyIds(ObjectTypeDefinition objectType)
-    {
-        return objectType.Relationships
-            .SelectMany(static relationship => relationship.DependentProperties)
-            .Select(static property => property.Id)
-            .ToHashSet();
-    }
-
     private PowerBiTableRole ResolveTableRole(ObjectTypeDefinition objectType, string modelPath, IList<SchemaDiagnostic> diagnostics)
     {
         if (TryGetStringAnnotation(objectType.Annotations, PowerBiAnnotationNames.TableRole, out var roleText) &&
@@ -1079,27 +914,6 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
     {
         return propertyType is ScalarTypeDefinition { ScalarKind: ScalarKind.Integer or ScalarKind.Number or ScalarKind.Decimal }
             or EnumTypeDefinition { StorageKind: EnumStorageKind.Integer or EnumStorageKind.Number };
-    }
-
-    private static PowerBiRelationshipDirection ResolveRelationshipDirection(AnnotationBag annotations, string modelPath, IList<SchemaDiagnostic> diagnostics)
-    {
-        if (!TryGetStringAnnotation(annotations, "powerBi.relationshipDirection", out var directionText))
-        {
-            return PowerBiRelationshipDirection.Single;
-        }
-
-        if (Enum.TryParse(directionText, ignoreCase: true, out PowerBiRelationshipDirection direction))
-        {
-            return direction;
-        }
-
-        Report(diagnostics, SchemaDiagnosticSeverity.Warning, "POWERBI_INVALID_RELATIONSHIP_DIRECTION", $"Annotation 'powerBi.relationshipDirection' has unsupported relationship direction '{directionText}'.", modelPath);
-        return PowerBiRelationshipDirection.Single;
-    }
-
-    private SchemaDiagnosticSeverity RelationshipDiagnosticSeverity()
-    {
-        return _options.TreatRelationshipsAsRequired ? SchemaDiagnosticSeverity.Error : SchemaDiagnosticSeverity.Warning;
     }
 
     private sealed record ProjectedTableInfo

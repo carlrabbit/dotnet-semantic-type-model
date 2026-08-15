@@ -111,7 +111,6 @@ public sealed class SemanticTypeModelJsonTypeInfoResolverTests
                 CreateProperty("displayName", "DisplayName", "display_name"),
             ],
             Keys = [],
-            Relationships = [],
         };
 
         return BuildModel(customer.Id.Value, customer, stringType);
@@ -133,7 +132,6 @@ public sealed class SemanticTypeModelJsonTypeInfoResolverTests
                 CreateProperty("duplicate", "DisplayName", "display_name"),
             ],
             Keys = [],
-            Relationships = [],
         };
 
         return BuildModel(customer.Id.Value, customer, stringType);
@@ -160,7 +158,7 @@ public sealed class SemanticTypeModelJsonTypeInfoResolverTests
             Name = semanticName,
             Type = new TypeRef(new TypeId("global::System.String")),
             Cardinality = new Cardinality { IsRequired = true },
-            Mutability = Mutability.InitOnly,
+            Mutability = null,
             Constraints = new ConstraintSet(),
             Annotations = Annotations(
                 Annotation("dotnet.memberName", memberName),

@@ -166,12 +166,12 @@ public static class FixtureModels
 
     private static ObjectTypeDefinition Object<T>(EntityRole role, IReadOnlyList<PropertyDefinition> properties, string? key = null)
     {
-        return new() { Id = new(typeof(T).FullName!), Name = typeof(T).Name, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = Clr(typeof(T)), Semantics = new() { Role = role, IsValueObject = role == EntityRole.ValueObject }, Properties = properties, Keys = key is null ? [] : [new KeyDefinition { Name = $"PK_{typeof(T).Name}", Kind = KeyKind.Primary, Properties = [new(new(key))], Annotations = new() }], Relationships = [] };
+        return new() { Id = new(typeof(T).FullName!), Name = typeof(T).Name, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = Clr(typeof(T)), Semantics = new() { Role = role, IsValueObject = role == EntityRole.ValueObject }, Properties = properties, Keys = key is null ? [] : [new KeyDefinition { Name = $"PK_{typeof(T).Name}", Kind = KeyKind.Primary, Properties = [new(new(key))], Annotations = new() }] };
     }
 
     private static ObjectTypeDefinition Object(Type type, EntityRole role, IReadOnlyList<PropertyDefinition> properties)
     {
-        return new() { Id = new(type.FullName!), Name = type.Name, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = Clr(type), Semantics = new() { Role = role }, Properties = properties, Keys = [], Relationships = [] };
+        return new() { Id = new(type.FullName!), Name = type.Name, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = Clr(type), Semantics = new() { Role = role }, Properties = properties, Keys = [] };
     }
 
     private static ArrayTypeDefinition Array<T>(TypeId itemType)
@@ -191,7 +191,7 @@ public static class FixtureModels
 
     private static PropertyDefinition Property(string name, TypeId type, bool required, params (string Key, string Value)[] annotations)
     {
-        return new() { Id = new(name), Name = name, Type = new(type), Cardinality = new() { IsRequired = required }, Mutability = Mutability.InitOnly, Constraints = new(), Annotations = new() { Items = [new Annotation { Key = new("dotnet.memberName"), Value = name, Scope = AnnotationScope.Member, Source = AnnotationSource.Declared }, .. annotations.Select(a => new Annotation { Key = new(a.Key), Value = a.Value, Scope = AnnotationScope.Member, Source = AnnotationSource.Declared })] } };
+        return new() { Id = new(name), Name = name, Type = new(type), Cardinality = new() { IsRequired = required }, Mutability = null, Constraints = new(), Annotations = new() { Items = [new Annotation { Key = new("dotnet.memberName"), Value = name, Scope = AnnotationScope.Member, Source = AnnotationSource.Declared }, .. annotations.Select(a => new Annotation { Key = new(a.Key), Value = a.Value, Scope = AnnotationScope.Member, Source = AnnotationSource.Declared })] } };
     }
 
     private static AnnotationBag Clr(Type type)

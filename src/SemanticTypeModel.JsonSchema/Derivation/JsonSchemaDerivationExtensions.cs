@@ -27,7 +27,7 @@ public static class JsonSchemaDerivationExtensions
         }
 
         SemanticModelTransformationResult transformed = options.Transformations.Run(model, options.PipelineOptions, cancellationToken);
-        JsonSchemaDomainMapper mapper = new(options.SchemaId, transformed.Diagnostics, options.Envelopes.Policies, options.TechnicalDescriptionExtensionName);
+        JsonSchemaDomainMapper mapper = new(options.SchemaId, transformed.Diagnostics, options.Envelopes.Policies);
         JsonSchemaSemanticModel domainModel = mapper.Map(transformed.Model);
 
         return new SemanticDerivationResult<JsonSchemaSemanticModel>
@@ -38,7 +38,7 @@ public static class JsonSchemaDerivationExtensions
         };
     }
 
-    private sealed class JsonSchemaDomainMapper(Uri? schemaId, IReadOnlyList<Model.SchemaDiagnostic> initialDiagnostics, IReadOnlyDictionary<string, JsonSchemaEnvelopeProjectionPolicy> envelopePolicies, string? technicalDescriptionExtensionName)
+    private sealed class JsonSchemaDomainMapper(Uri? schemaId, IReadOnlyList<Model.SchemaDiagnostic> initialDiagnostics, IReadOnlyDictionary<string, JsonSchemaEnvelopeProjectionPolicy> envelopePolicies)
     {
         private readonly List<Model.SchemaDiagnostic> _diagnostics = [.. initialDiagnostics];
         private Model.TypeSchemaModel? _model;
@@ -103,6 +103,7 @@ public static class JsonSchemaDerivationExtensions
                     Name = type.Name,
                     Title = type.DisplayName,
                     Description = type.UserDescription,
+                    Annotations = BuildTypeAnnotations(type),
                     Kind = JsonSchemaCompositionKind.OneOf,
                     Alternatives = [JsonSchemaSchemaRef.FromReference(reference.Target.Id.Value)],
                 },
@@ -140,7 +141,7 @@ public static class JsonSchemaDerivationExtensions
                 AdditionalPropertiesAllowed = additionalAllowed,
                 Properties = [.. type.Properties.Where(static property => !HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData)).OrderBy(static property => property.Name, StringComparer.Ordinal).Select(property => MapProperty(type, property))],
                 ConditionalConstraints = [.. supported.OrderBy(static constraint => constraint.TargetPropertyId.Value, StringComparer.Ordinal).Select(MapConditionalConstraint)],
-                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
+                Annotations = BuildTypeAnnotations(type),
             };
         }
 
@@ -160,8 +161,7 @@ public static class JsonSchemaDerivationExtensions
         private JsonSchemaProperty MapProperty(Model.ObjectTypeDefinition owner, Model.PropertyDefinition property)
         {
             JsonSchemaSchemaRef schema = MapReference(property.Type, $"/properties/{property.Name}");
-            Dictionary<string, JsonElement> annotations = MapProjectionAnnotations(property.Annotations);
-            _ = AddTechnicalDescriptionExtension(annotations, property.TechnicalDescription);
+            Dictionary<string, JsonElement> annotations = BuildPropertyAnnotations(property);
             if (IsEnvelopePayload(property) && TryGetEnvelopePolicy(owner, out JsonSchemaEnvelopeProjectionPolicy? policy))
             {
                 schema = MapEnvelopePayloadSchema(property, policy);
@@ -182,23 +182,6 @@ public static class JsonSchemaDerivationExtensions
                 Constraints = MapConstraints(property.Constraints),
                 Annotations = annotations,
             };
-        }
-
-        private Dictionary<string, JsonElement> AddTechnicalDescriptionExtension(Dictionary<string, JsonElement> annotations, string? technicalDescription)
-        {
-            if (string.IsNullOrWhiteSpace(technicalDescriptionExtensionName) || string.IsNullOrWhiteSpace(technicalDescription))
-            {
-                return annotations;
-            }
-
-            if (!technicalDescriptionExtensionName.StartsWith("x-", StringComparison.Ordinal) || technicalDescriptionExtensionName.Any(char.IsWhiteSpace))
-            {
-                AddDiagnostic("JSONSCHEMA_INVALID_TECHNICAL_DESCRIPTION_EXTENSION", $"JSON Schema technical description extension '{technicalDescriptionExtensionName}' must start with 'x-' and contain no whitespace.", "/options/technicalDescriptionExtensionName");
-                return annotations;
-            }
-
-            annotations[technicalDescriptionExtensionName] = ToJsonElement(technicalDescription);
-            return annotations;
         }
 
         private JsonSchemaSchemaRef MapEnvelopePayloadSchema(Model.PropertyDefinition property, JsonSchemaEnvelopeProjectionPolicy policy)
@@ -272,7 +255,7 @@ public static class JsonSchemaDerivationExtensions
                 Format = format,
                 IsNullable = type.Nullability.AllowsNull,
                 Constraints = new JsonSchemaConstraintSet(),
-                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
+                Annotations = BuildTypeAnnotations(type),
             };
         }
 
@@ -284,7 +267,7 @@ public static class JsonSchemaDerivationExtensions
                 Title = type.DisplayName,
                 Description = type.UserDescription,
                 Values = [.. type.Values.Select(static value => ToJsonElement(value.Value))],
-                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
+                Annotations = BuildTypeAnnotations(type),
             };
         }
 
@@ -297,7 +280,7 @@ public static class JsonSchemaDerivationExtensions
                 Description = type.UserDescription,
                 Items = MapReference(type.ItemType, $"/types/{type.Id.Value}/items"),
                 Constraints = new JsonSchemaConstraintSet { MinItems = type.MinItems, MaxItems = type.MaxItems, UniqueItems = type.UniqueItems },
-                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
+                Annotations = BuildTypeAnnotations(type),
             };
         }
 
@@ -309,7 +292,7 @@ public static class JsonSchemaDerivationExtensions
                 Title = type.DisplayName,
                 Description = type.UserDescription,
                 Values = MapReference(type.ValueType, $"/types/{type.Id.Value}/values"),
-                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
+                Annotations = BuildTypeAnnotations(type),
             };
         }
 
@@ -327,7 +310,7 @@ public static class JsonSchemaDerivationExtensions
                 Description = type.UserDescription,
                 Kind = type.Semantics == Model.UnionSemantics.AnyOf ? JsonSchemaCompositionKind.AnyOf : JsonSchemaCompositionKind.OneOf,
                 Alternatives = [.. type.Options.OrderBy(static option => option.Id.Value, StringComparer.Ordinal).Select(option => MapReference(option, $"/types/{type.Id.Value}/options"))],
-                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
+                Annotations = BuildTypeAnnotations(type),
             };
         }
 
@@ -350,7 +333,7 @@ public static class JsonSchemaDerivationExtensions
                 Title = type.DisplayName,
                 Description = type.UserDescription,
                 Type = "object",
-                Annotations = AddTechnicalDescriptionExtension(MapProjectionAnnotations(type.Annotations), type.TechnicalDescription),
+                Annotations = BuildTypeAnnotations(type),
             };
         }
 
@@ -388,12 +371,95 @@ public static class JsonSchemaDerivationExtensions
             };
         }
 
+        private Dictionary<string, JsonElement> BuildTypeAnnotations(Model.TypeDefinition type)
+        {
+            Dictionary<string, JsonElement> annotations = MapProjectionAnnotations(type.Annotations);
+            var stm = new SortedDictionary<string, object?>(StringComparer.Ordinal);
+            if (type is Model.ObjectTypeDefinition obj)
+            {
+                if (obj.Semantics.Role != Model.EntityRole.Unspecified)
+                {
+                    stm["role"] = obj.Semantics.Role.ToString().ToLowerInvariant();
+                }
+
+                if (obj.Semantics.IsAggregateRoot)
+                {
+                    stm["aggregateRoot"] = true;
+                }
+
+                if (obj.Mutability is { } mutability)
+                {
+                    stm["mutability"] = mutability.ToString().ToLowerInvariant();
+                }
+
+                if (obj.Keys.Count > 0)
+                {
+                    stm["keys"] = obj.Keys.Select(key => new SortedDictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["name"] = key.Name,
+                        ["kind"] = key.Kind.ToString().ToLowerInvariant(),
+                        ["properties"] = key.Properties.Select(reference => obj.Properties.FirstOrDefault(property => property.Id == reference.Id)?.Name ?? reference.Id.Value).ToArray(),
+                        ["generated"] = key.IsGenerated ? true : null,
+                    }.Where(static pair => pair.Value is not null).ToDictionary(static pair => pair.Key, static pair => pair.Value, StringComparer.Ordinal)).ToArray();
+                }
+            }
+            if (type is Model.ScalarTypeDefinition { Unit: { Length: > 0 } unit })
+            {
+                stm["unit"] = unit;
+            }
+
+            AddSharedSemantics(stm, type.TechnicalDescription, type.Annotations, $"/types/{type.Id.Value}");
+            if (stm.Count > 0)
+            {
+                annotations["x-stm"] = JsonSerializer.SerializeToElement(stm);
+            }
+
+            return annotations;
+        }
+
+        private Dictionary<string, JsonElement> BuildPropertyAnnotations(Model.PropertyDefinition property)
+        {
+            Dictionary<string, JsonElement> annotations = MapProjectionAnnotations(property.Annotations);
+            var stm = new SortedDictionary<string, object?>(StringComparer.Ordinal);
+            if (property.Mutability is { } mutability)
+            {
+                stm["mutability"] = mutability.ToString().ToLowerInvariant();
+            }
+
+            AddSharedSemantics(stm, property.TechnicalDescription, property.Annotations, $"/properties/{property.Name}");
+            if (stm.Count > 0)
+            {
+                annotations["x-stm"] = JsonSerializer.SerializeToElement(stm);
+            }
+
+            return annotations;
+        }
+
+        private void AddSharedSemantics(SortedDictionary<string, object?> stm, string? technicalDescription, Model.AnnotationBag bag, string path)
+        {
+            if (!string.IsNullOrWhiteSpace(technicalDescription))
+            {
+                stm["technicalDescription"] = technicalDescription;
+            }
+
+            var ui = new SortedDictionary<string, JsonElement>(StringComparer.Ordinal);
+            foreach (Model.Annotation annotation in bag.Items.Where(static annotation => annotation.Key.Value.StartsWith("ui.", StringComparison.Ordinal)).OrderBy(static annotation => annotation.Key.Value, StringComparer.Ordinal))
+            {
+                try { ui[annotation.Key.Value[3..]] = ToJsonElement(annotation.Value); }
+                catch (Exception exception) when (exception is NotSupportedException or JsonException) { AddDiagnostic("JSONSCHEMA_UI_VALUE_NOT_JSON_COMPATIBLE", $"UI annotation '{annotation.Key.Value}' is not JSON-compatible.", path); }
+            }
+            if (ui.Count > 0)
+            {
+                stm["ui"] = ui;
+            }
+        }
+
         private static Dictionary<string, JsonElement> MapProjectionAnnotations(Model.AnnotationBag bag)
         {
             return bag.Items
-                .Where(static annotation => annotation.Scope == Model.AnnotationScope.Projection || annotation.Key.Value.StartsWith("jsonSchema.keyword.", StringComparison.Ordinal) || annotation.Key.Value.StartsWith("schema.", StringComparison.Ordinal))
+                .Where(static annotation => annotation.Key.Value.StartsWith("jsonSchema.keyword.", StringComparison.Ordinal))
                 .OrderBy(static annotation => annotation.Key.Value, StringComparer.Ordinal)
-                .ToDictionary(static annotation => annotation.Key.Value.StartsWith("jsonSchema.keyword.", StringComparison.Ordinal) ? annotation.Key.Value["jsonSchema.keyword.".Length..] : annotation.Key.Value, static annotation => ToJsonElement(annotation.Value), StringComparer.Ordinal);
+                .ToDictionary(static annotation => annotation.Key.Value["jsonSchema.keyword.".Length..], static annotation => ToJsonElement(annotation.Value), StringComparer.Ordinal);
         }
 
         private static bool HasBooleanAnnotation(Model.AnnotationBag bag, string key)

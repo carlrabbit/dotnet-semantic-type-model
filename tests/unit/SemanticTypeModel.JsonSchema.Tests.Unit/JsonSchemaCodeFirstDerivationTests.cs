@@ -139,7 +139,6 @@ public sealed class JsonSchemaCodeFirstDerivationTests
                     Property("contact", "Customer_Contact", "ContactMethod", required: false),
                 ],
                 Keys = [],
-                Relationships = [],
             },
             Scalar("String", ScalarKind.String),
             Scalar("Email", ScalarKind.String, "email"),
@@ -222,7 +221,7 @@ public sealed class JsonSchemaCodeFirstDerivationTests
             UserDescription = description,
             Type = new TypeRef(new TypeId(typeId)),
             Cardinality = new Cardinality { IsRequired = required, AllowsNull = nullable },
-            Mutability = Mutability.Mutable,
+            Mutability = SemanticMutability.Mutable,
             Constraints = new ConstraintSet(),
             Annotations = EmptyAnnotations,
         };

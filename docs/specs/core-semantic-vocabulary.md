@@ -50,7 +50,6 @@ Diagnostics / ambiguity notes
 | Type has analytical dimensional meaning | `Dimension` | Power BI may choose table/display behavior by policy. |
 | Type represents analytical observations | `Fact` | Power BI may choose measure/table behavior by policy. |
 | Property identifies an entity | `Key` | EF Core may derive primary/alternate keys by policy. |
-| Property associates two types | `Relationship` | EF Core or Power BI may materialize relationships by policy. |
 | Property is required | `Required` | JSON Schema/EF Core derive target requiredness by policy. |
 | Property has a user-facing label | `DisplayName` | UI/Power BI may consume display metadata by policy. |
 | EF Core index | None | `efCore.index` |
@@ -73,12 +72,6 @@ The following canonical annotation keys preserve authoring intent before or afte
 | `schema.key.kind` | Member | Declares primary, alternate, natural, surrogate, or external key intent. |
 | `schema.key.order` | Member | Orders members in a composite key. |
 | `schema.key.generated` | Member | Declares generated key intent. |
-| `schema.relationship` | Member | Declares explicit or inferred relationship intent. |
-| `schema.relationship.target` | Member | References the related type. |
-| `schema.relationship.principalType` | Member | Names the principal type when explicitly supplied. |
-| `schema.relationship.principalKey` | Member | Names the principal key when explicitly supplied. |
-| `schema.relationship.foreignKey` | Member | Names the foreign-key member when explicitly supplied. |
-| `schema.relationship.cardinality` | Member | Declares relationship cardinality. |
 | `schema.title` | Type/member | Projection-neutral display name. |
 | `schema.userDescription` | Type/member | User-facing projection-neutral description. |
 | `schema.technicalDescription` | Type/member | Technical projection-neutral description. |
@@ -99,7 +92,7 @@ The following canonical annotation keys preserve authoring intent before or afte
 
 **Description:** A type with identity and lifecycle.
 
-**Best used when:** The object is referenced independently, has stable identity, or participates in relationships by identity.
+**Best used when:** The object is referenced independently, has stable identity, or participates in cross-object references by identity.
 
 **Avoid when:** The type is embedded only by value, is a DTO fragment with no independent identity, or is only a transport wrapper around another payload.
 
@@ -216,7 +209,7 @@ public sealed class SalesFact { }
 
 **Avoid when:** A simple enum or scalar constraint completely expresses the domain.
 
-**Projection implications:** JSON Schema may export an object or enum-like shape according to model structure. EF Core and Power BI need explicit policy for table or relationship decisions.
+**Projection implications:** JSON Schema may export an object or enum-like shape according to model structure. EF Core and Power BI need explicit policy for table or target-owned association decisions.
 
 **Example:**
 
@@ -296,11 +289,11 @@ public sealed class RegistrationForm { }
 
 **Description:** A property or property group that identifies an entity or semantic object.
 
-**Best used when:** The value participates in stable identity and relationships.
+**Best used when:** The value participates in stable identity and cross-object references.
 
 **Avoid when:** The value is only a display number, transient sequence, database index, or storage clustering choice.
 
-**Projection implications:** JSON Schema may preserve key metadata and requiredness. EF Core may map primary, alternate, natural, surrogate, or external keys by policy. Power BI may use keys for relationship endpoints by policy.
+**Projection implications:** JSON Schema may preserve key metadata and requiredness. EF Core may map primary, alternate, natural, surrogate, or external keys by policy. Power BI may preserve keys as analytical identity metadata.
 
 **Example:**
 
@@ -321,7 +314,7 @@ public required string Id { get; init; }
 
 **Avoid when:** The property is merely indexed, sorted, or frequently queried.
 
-**Projection implications:** JSON Schema may preserve uniqueness metadata but generally cannot enforce model-wide uniqueness. EF Core may map an alternate key by policy. Power BI may use it as relationship endpoint metadata by policy.
+**Projection implications:** JSON Schema may preserve uniqueness metadata but generally cannot enforce model-wide uniqueness. EF Core may map an alternate key by policy. Power BI may preserve it as key metadata.
 
 **Example:**
 
@@ -332,26 +325,21 @@ public required string CustomerNumber { get; init; }
 
 **Diagnostics / ambiguity notes:** Alternate keys without entity context are ambiguous and may emit diagnostics.
 
-### Relationship
+### Semantic Mutability
 
-**Kind:** Property or relationship semantic.
+**Kind:** Object-type and property semantic.
 
-**Description:** A semantic association between model elements.
+**Description:** Optional lifecycle mutability intent expressed only as `Mutable` or `Immutable`; absence means mutability is not part of the semantic contract.
 
-**Best used when:** A property references another entity or collection of entities and the association matters independently of object nesting.
+**Declared mutability:** `ObjectTypeDefinition.Mutability` and `PropertyDefinition.Mutability` preserve only declarations made at that location.
 
-**Avoid when:** The property is only embedded value-object composition, or when target/cardinality cannot be resolved.
+**Effective mutability:** `property.Mutability ?? containingObject.Mutability ?? unspecified`. A mutable property in an immutable object is valid and intentional.
 
-**Projection implications:** JSON Schema may preserve reference metadata or object graph references. EF Core may derive relationships by explicit policy. Power BI may derive model relationships by analytical policy.
+**CLR boundary:** Setter presence/accessibility, `init`, getter-only members, `readonly`, record syntax, and similar CLR access shape never infer semantic mutability.
 
-**Example:**
+**Authoring:** `[SemanticMutable]` and `[SemanticImmutable]` apply to classes, structs, properties, and fields. Applying both to one target is invalid and diagnosable.
 
-```csharp
-[SemanticRelationship("Customer", ForeignKey = "CustomerId", Cardinality = RelationshipCardinality.ManyToOne)]
-public Customer Customer { get; init; } = default!;
-```
-
-**Diagnostics / ambiguity notes:** Ambiguous cardinality, missing targets, invalid targets, and unresolved endpoints are diagnosable.
+**Projection implications:** JSON Schema emits only declared values at their declared nodes beneath `x-stm.mutability`; projections must not flatten inherited values into child declarations.
 
 ### Required
 
@@ -363,7 +351,7 @@ public Customer Customer { get; init; } = default!;
 
 **Avoid when:** Presence is required only by one projection target.
 
-**Projection implications:** JSON Schema may emit the property in `required`. EF Core may map a required property or relationship. Power BI may carry non-nullable metadata where representable.
+**Projection implications:** JSON Schema may emit the property in `required`. EF Core may map a required property. Power BI may carry non-nullable metadata where representable.
 
 **Example:**
 
@@ -383,7 +371,7 @@ public required string Name { get; init; }
 
 **Avoid when:** The property is optional or absent rather than explicitly nullable.
 
-**Projection implications:** JSON Schema uses the configured nullable representation. EF Core maps optional property or relationship metadata where applicable. Power BI maps null-capable column metadata where representable.
+**Projection implications:** JSON Schema uses the configured nullable representation. EF Core maps optional property metadata where applicable. Power BI maps null-capable column metadata where representable.
 
 **Example:**
 
@@ -403,7 +391,7 @@ public string? MiddleName { get; init; }
 
 **Avoid when:** A scalar string or JSON value happens to contain multiple serialized values.
 
-**Projection implications:** JSON Schema exports an array. EF Core may map a relationship, owned collection, JSON/serialized value, or unsupported case by policy. Power BI may require relationship tables, flattening, serialization, or omission by policy.
+**Projection implications:** JSON Schema exports an array. EF Core may map an owned collection, JSON/serialized value, or unsupported case by policy. Power BI may require flattening, serialization, or omission by policy.
 
 **Example:**
 
@@ -468,7 +456,7 @@ public string Email { get; init; } = string.Empty;
 
 **Avoid when:** The value is the entity key; use `Key` instead.
 
-**Projection implications:** JSON Schema may preserve identifier annotation or format metadata. EF Core treats it as an ordinary property unless key/relationship metadata is also present. Power BI may use it as category or key-like column metadata by policy.
+**Projection implications:** JSON Schema may preserve identifier annotation or format metadata. EF Core treats it as an ordinary property unless key metadata is also present. Power BI may use it as category or key-like column metadata by policy.
 
 **Example:**
 

@@ -55,7 +55,6 @@ The matrix covers these core features:
 - Entity role
 - Primary key
 - Alternate key
-- Relationship
 - Computed member
 - Validation constraints
 - Display metadata

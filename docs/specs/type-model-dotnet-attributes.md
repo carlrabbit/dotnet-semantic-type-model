@@ -82,13 +82,12 @@ Custom attributes do not mutate the canonical model directly. Extraction preserv
   - `Name` + `Order` support composite keys through shared key-name grouping;
   - `IsGenerated` maps to `schema.key.generated`.
 
-### `SemanticRelationshipAttribute`
+### `SemanticMutableAttribute` and `SemanticImmutableAttribute`
 
-- Targets: property (allow multiple).
-- Semantics:
-  - marks explicit relationships (`schema.relationship=explicit`);
-  - constructor accepts optional principal type metadata name string;
-  - `PrincipalKey`, `ForeignKey`, and `Cardinality` map to relationship annotations.
+- Targets: class, struct, property, field.
+- Semantics: declare optional lifecycle mutability on an object type or member.
+- Applying both to one target emits `STM5048`; neither attribute means unspecified.
+- Member declarations override the containing object declaration, including mutable members in immutable objects.
 
 ### `SemanticEnvelopeAttribute`
 
@@ -190,7 +189,6 @@ Concrete precedence examples:
 - `[SemanticTechnicalDescription]` overrides XML summary technical fallback; `[SemanticUserDescription]` is independent.
 - `[SemanticIgnore]` overrides convention discovery inclusion.
 - `[SemanticKey]` overrides key inference.
-- `[SemanticRelationship]` overrides relationship inference.
 - `[SemanticEnvelope]` declares envelope semantics explicitly.
 - `[SemanticEnvelopePayload]` declares the distinguished payload explicitly.
 - `[SemanticEnvelopeMetadata]` declares envelope metadata explicitly.

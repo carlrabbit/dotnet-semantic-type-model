@@ -191,11 +191,6 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             options = options with { InferKeys = inferKeys };
         }
 
-        if (TryParseBoolOption(globalOptions, "SemanticTypeModelInferRelationships", out bool inferRelationships))
-        {
-            options = options with { InferRelationships = inferRelationships };
-        }
-
         if (TryParseBoolOption(globalOptions, "SemanticTypeModelRequireTechnicalDescription", out bool requireTechnicalDescription))
         {
             options = options with { RequireTechnicalDescription = requireTechnicalDescription };
@@ -430,7 +425,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             source.AppendLine($"{indent}            Name = \"{EscapeString(property.Name)}\",");
             source.AppendLine($"{indent}            Type = new global::SemanticTypeModel.Abstractions.Model.TypeRef(new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(property.TypeId)}\")),");
             source.AppendLine($"{indent}            Cardinality = new global::SemanticTypeModel.Abstractions.Model.Cardinality {{ IsRequired = {property.IsRequired.ToString().ToLowerInvariant()}, AllowsNull = {property.IsNullable.ToString().ToLowerInvariant()} }},");
-            source.AppendLine($"{indent}            Mutability = global::SemanticTypeModel.Abstractions.Model.Mutability.Mutable,");
+            source.AppendLine($"{indent}            Mutability = {MutabilityLiteral(property.Mutability)},");
             source.AppendLine($"{indent}            UserDescription = {Literal(GetAnnotationValue(property.Annotations, "schema.userDescription"))},");
             source.AppendLine($"{indent}            TechnicalDescription = {Literal(GetAnnotationValue(property.Annotations, "schema.technicalDescription"))},");
             AppendConstraints(source, property, indentationLevel + 3);
@@ -439,8 +434,13 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         }
         source.AppendLine($"{indent}    ],");
         source.AppendLine($"{indent}    Keys = [],");
-        source.AppendLine($"{indent}    Relationships = [],");
+        source.AppendLine($"{indent}    Mutability = {MutabilityLiteral(descriptor.Mutability)},");
         source.AppendLine($"{indent}}}");
+    }
+
+    private static string MutabilityLiteral(Abstractions.Model.SemanticMutability? mutability)
+    {
+        return mutability is null ? "null" : $"global::SemanticTypeModel.Abstractions.Model.SemanticMutability.{mutability}";
     }
 
     private static void AppendConstraints(StringBuilder source, DotNetPropertyDescriptor property, int indentationLevel)

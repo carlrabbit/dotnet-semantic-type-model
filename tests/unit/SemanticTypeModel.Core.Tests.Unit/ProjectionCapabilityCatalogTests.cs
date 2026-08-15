@@ -15,7 +15,6 @@ public sealed class ProjectionCapabilityCatalogTests
         ProjectionTarget[] expected =
         [
             ProjectionTarget.JsonSchema,
-            ProjectionTarget.JsonEditor,
             ProjectionTarget.EfCore,
             ProjectionTarget.PowerBi,
         ];

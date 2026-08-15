@@ -1,3 +1,11 @@
+## Unreleased — M0062
+
+- Replaced mixed CLR/access mutability with optional lifecycle `SemanticMutability` and `[SemanticMutable]`/`[SemanticImmutable]` declarations.
+- Removed canonical general relationships, relationship authoring/inference, Power BI relationship projection, and JSON Editor compatibility APIs without shims.
+- Added optional JSON Schema `x-stm` preservation for `role`, `aggregateRoot`, `mutability`, `technicalDescription`, `keys`, `unit`, and open `ui.*` annotations.
+- These are breaking public-contract changes; all SemanticTypeModel package versions used together must match exactly.
+- Not published.
+
 ## 3.0.0 (release candidate)
 
 - Added `SemanticTypeModel.EFCore.Generators`, manifest schema version 1, explicit model selection, entity configurations, partial hooks, and deterministic registration.

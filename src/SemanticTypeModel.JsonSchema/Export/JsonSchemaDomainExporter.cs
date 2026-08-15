@@ -27,7 +27,7 @@ public static class JsonSchemaDomainExporter
             writer.WriteString("$id", model.Id.ToString());
         }
 
-        WriteNode(writer, model.Root, diagnostics, "/");
+        WriteNode(writer, model.Root, diagnostics, "/", options.IncludeSemanticAnnotations);
 
         var definitions = model.Definitions.OrderBy(static pair => pair.Key, StringComparer.Ordinal).ToList();
         if (definitions.Count > 0)
@@ -38,7 +38,7 @@ public static class JsonSchemaDomainExporter
             {
                 writer.WritePropertyName(name);
                 writer.WriteStartObject();
-                WriteNode(writer, node, diagnostics, $"/$defs/{name}");
+                WriteNode(writer, node, diagnostics, $"/$defs/{name}", options.IncludeSemanticAnnotations);
                 writer.WriteEndObject();
             }
 
@@ -50,7 +50,7 @@ public static class JsonSchemaDomainExporter
         return new JsonSchemaExportResult(JsonDocument.Parse(stream.ToArray()), diagnostics);
     }
 
-    private static void WriteNode(Utf8JsonWriter writer, JsonSchemaNode node, List<Model.SchemaDiagnostic> diagnostics, string pointer)
+    private static void WriteNode(Utf8JsonWriter writer, JsonSchemaNode node, List<Model.SchemaDiagnostic> diagnostics, string pointer, bool includeSemanticAnnotations)
     {
         if (!string.IsNullOrWhiteSpace(node.Title))
         {
@@ -64,6 +64,11 @@ public static class JsonSchemaDomainExporter
 
         foreach ((var key, JsonElement value) in node.Annotations.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
         {
+            if (!includeSemanticAnnotations && string.Equals(key, "x-stm", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             writer.WritePropertyName(key.Replace('.', ':'));
             value.WriteTo(writer);
         }
@@ -71,7 +76,7 @@ public static class JsonSchemaDomainExporter
         switch (node)
         {
             case JsonSchemaObjectNode obj:
-                WriteObject(writer, obj, diagnostics, pointer);
+                WriteObject(writer, obj, diagnostics, pointer, includeSemanticAnnotations);
                 break;
             case JsonSchemaScalarNode scalar:
                 WriteScalar(writer, scalar);
@@ -81,14 +86,14 @@ public static class JsonSchemaDomainExporter
                 WriteConstraints(writer, array.Constraints);
                 writer.WritePropertyName("items");
                 writer.WriteStartObject();
-                WriteRef(writer, array.Items, diagnostics, pointer + "/items");
+                WriteRef(writer, array.Items, diagnostics, pointer + "/items", includeSemanticAnnotations);
                 writer.WriteEndObject();
                 break;
             case JsonSchemaDictionaryNode dictionary:
                 writer.WriteString("type", "object");
                 writer.WritePropertyName("additionalProperties");
                 writer.WriteStartObject();
-                WriteRef(writer, dictionary.Values, diagnostics, pointer + "/additionalProperties");
+                WriteRef(writer, dictionary.Values, diagnostics, pointer + "/additionalProperties", includeSemanticAnnotations);
                 writer.WriteEndObject();
                 break;
             case JsonSchemaEnumNode enumNode:
@@ -101,14 +106,14 @@ public static class JsonSchemaDomainExporter
                 writer.WriteEndArray();
                 break;
             case JsonSchemaCompositionNode composition:
-                WriteComposition(writer, composition, diagnostics, pointer);
+                WriteComposition(writer, composition, diagnostics, pointer, includeSemanticAnnotations);
                 break;
             default:
                 break;
         }
     }
 
-    private static void WriteObject(Utf8JsonWriter writer, JsonSchemaObjectNode obj, List<Model.SchemaDiagnostic> diagnostics, string pointer)
+    private static void WriteObject(Utf8JsonWriter writer, JsonSchemaObjectNode obj, List<Model.SchemaDiagnostic> diagnostics, string pointer, bool includeSemanticAnnotations)
     {
         writer.WriteString("type", "object");
         if (obj.Properties.Count > 0)
@@ -131,6 +136,11 @@ public static class JsonSchemaDomainExporter
 
                 foreach ((var key, JsonElement value) in property.Annotations.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
                 {
+                    if (!includeSemanticAnnotations && string.Equals(key, "x-stm", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
                     writer.WritePropertyName(key.Replace('.', ':'));
                     value.WriteTo(writer);
                 }
@@ -141,7 +151,7 @@ public static class JsonSchemaDomainExporter
                     writer.WritePropertyName("oneOf");
                     writer.WriteStartArray();
                     writer.WriteStartObject();
-                    WriteRef(writer, property.Schema, diagnostics, pointer + "/properties/" + property.Name);
+                    WriteRef(writer, property.Schema, diagnostics, pointer + "/properties/" + property.Name, includeSemanticAnnotations);
                     writer.WriteEndObject();
                     writer.WriteStartObject();
                     writer.WriteString("type", "null");
@@ -150,7 +160,7 @@ public static class JsonSchemaDomainExporter
                 }
                 else
                 {
-                    WriteRef(writer, property.Schema, diagnostics, pointer + "/properties/" + property.Name);
+                    WriteRef(writer, property.Schema, diagnostics, pointer + "/properties/" + property.Name, includeSemanticAnnotations);
                 }
 
                 writer.WriteEndObject();
@@ -242,7 +252,7 @@ public static class JsonSchemaDomainExporter
         WriteConstraints(writer, scalar.Constraints);
     }
 
-    private static void WriteComposition(Utf8JsonWriter writer, JsonSchemaCompositionNode composition, List<Model.SchemaDiagnostic> diagnostics, string pointer)
+    private static void WriteComposition(Utf8JsonWriter writer, JsonSchemaCompositionNode composition, List<Model.SchemaDiagnostic> diagnostics, string pointer, bool includeSemanticAnnotations)
     {
         var keyword = composition.Kind == JsonSchemaCompositionKind.AnyOf ? "anyOf" : "oneOf";
         if (composition.Alternatives.Count == 0)
@@ -255,13 +265,13 @@ public static class JsonSchemaDomainExporter
         foreach (JsonSchemaSchemaRef alternative in composition.Alternatives.OrderBy(static alternative => alternative.Reference, StringComparer.Ordinal))
         {
             writer.WriteStartObject();
-            WriteRef(writer, alternative, diagnostics, pointer + "/" + keyword);
+            WriteRef(writer, alternative, diagnostics, pointer + "/" + keyword, includeSemanticAnnotations);
             writer.WriteEndObject();
         }
         writer.WriteEndArray();
     }
 
-    private static void WriteRef(Utf8JsonWriter writer, JsonSchemaSchemaRef schemaRef, List<Model.SchemaDiagnostic> diagnostics, string pointer)
+    private static void WriteRef(Utf8JsonWriter writer, JsonSchemaSchemaRef schemaRef, List<Model.SchemaDiagnostic> diagnostics, string pointer, bool includeSemanticAnnotations)
     {
         if (schemaRef.Reference is not null)
         {
@@ -276,7 +286,7 @@ public static class JsonSchemaDomainExporter
                 diagnostics.Add(Diagnostic("JSONSCHEMA_EXPORT_UNSUPPORTED_NESTED_COMPOSITION", "Nested inline composition is not part of baseline JSON Schema projection.", pointer));
             }
 
-            WriteNode(writer, schemaRef.Inline, diagnostics, pointer);
+            WriteNode(writer, schemaRef.Inline, diagnostics, pointer, includeSemanticAnnotations);
             return;
         }
 

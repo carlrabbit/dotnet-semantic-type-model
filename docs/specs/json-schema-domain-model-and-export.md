@@ -279,16 +279,6 @@ full allOf reduction
 
 Unsupported cases must emit diagnostics when encountered in derivation/export.
 
-## JSON Editor Compatibility
-
-JSON Editor compatibility remains an optional export mode.
-
-Rules:
-
-- JSON Editor-compatible keywords are emitted only when the option is enabled.
-- JSON Editor compatibility must not alter canonical requiredness/nullability semantics.
-- M0029 does not introduce a JSON Editor runtime or standalone package.
-
 ## Export API
 
 The exporter should support a clear two-step flow:
@@ -409,3 +399,7 @@ dependentSchemas
 unevaluatedProperties semantics
 full discriminator semantics
 ```
+
+## STM semantic extension
+
+`JsonSchemaExportOptions.IncludeSemanticAnnotations` defaults to `true`. When enabled, the exporter uses one `x-stm` object with exactly `role`, `aggregateRoot`, `mutability`, `technicalDescription`, `keys`, `unit`, and `ui` where applicable. When disabled, no `x-stm` is emitted. Standard `description` uses `UserDescription` only. Mutability is declaration-preserving, keys use emitted property names, and JSON-compatible `ui.*` annotations pass through deterministically. JSON Editor-specific translation is not supported.

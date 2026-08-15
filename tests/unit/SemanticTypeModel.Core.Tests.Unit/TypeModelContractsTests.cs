@@ -45,7 +45,6 @@ public sealed class TypeModelContractsTests
                 Property("status", "StatusProperty", statusType.Id, true, false, 1, 1, Annotation("ui.order", 3)),
             ],
             Keys = [],
-            Relationships = [],
         };
 
         TypeSchemaModel model = BuildModel(form, emailType, uriType, dateType, statusType);
@@ -76,7 +75,6 @@ public sealed class TypeModelContractsTests
                 Property("city", "AddressCityProperty", stringType.Id, true, false),
             ],
             Keys = [],
-            Relationships = [],
         };
 
         var orderType = new ObjectTypeDefinition
@@ -112,7 +110,6 @@ public sealed class TypeModelContractsTests
                     Annotations = EmptyAnnotations,
                 },
             ],
-            Relationships = [],
         };
 
         var orderLineType = new ObjectTypeDefinition
@@ -129,20 +126,6 @@ public sealed class TypeModelContractsTests
                 Property("quantity", "OrderLineQuantityProperty", intType.Id, true, false),
             ],
             Keys = [],
-            Relationships =
-            [
-                new RelationshipDefinition
-                {
-                    Id = new RelationshipId("Order_OrderLine"),
-                    PrincipalType = new TypeRef(orderType.Id),
-                    DependentType = new TypeRef(new TypeId("OrderLine")),
-                    PrincipalProperties = [new PropertyRef(new PropertyId("OrderIdProperty"))],
-                    DependentProperties = [new PropertyRef(new PropertyId("OrderLineOrderIdProperty"))],
-                    Cardinality = RelationshipCardinality.OneToMany,
-                    DeleteBehavior = DeleteBehaviorSemantics.Cascade,
-                    Annotations = EmptyAnnotations,
-                },
-            ],
         };
 
         TypeSchemaModel model = BuildModel(orderType, orderLineType, addressType, intType, stringType);
@@ -150,7 +133,6 @@ public sealed class TypeModelContractsTests
         var resolvedOrder = (ObjectTypeDefinition)model.GetType(orderType.Id);
         _ = await Assert.That(resolvedOrder.Keys.Count).IsEqualTo(2);
         _ = await Assert.That(resolvedOrder.Semantics.Role).IsEqualTo(EntityRole.Entity);
-        _ = await Assert.That(((ObjectTypeDefinition)model.GetType(orderLineType.Id)).Relationships.Count).IsEqualTo(1);
     }
 
     [Test]
@@ -184,7 +166,6 @@ public sealed class TypeModelContractsTests
                     Annotations = EmptyAnnotations,
                 },
             ],
-            Relationships = [],
         };
 
         var fact = new ObjectTypeDefinition
@@ -203,19 +184,6 @@ public sealed class TypeModelContractsTests
                 Property("amount", "FactSalesAmountProperty", decimalType.Id, true, false),
             ],
             Keys = [],
-            Relationships =
-            [
-                new RelationshipDefinition
-                {
-                    Id = new RelationshipId("FactSales_DimCustomer"),
-                    PrincipalType = new TypeRef(dimension.Id),
-                    DependentType = new TypeRef(new TypeId("FactSales")),
-                    PrincipalProperties = [new PropertyRef(new PropertyId("DimCustomerKeyProperty"))],
-                    DependentProperties = [new PropertyRef(new PropertyId("FactSalesCustomerKeyProperty"))],
-                    Cardinality = RelationshipCardinality.OneToMany,
-                    Annotations = EmptyAnnotations,
-                },
-            ],
             ComputedMembers =
             [
                 new ComputedMemberDefinition
@@ -233,7 +201,6 @@ public sealed class TypeModelContractsTests
         var resolvedFact = (ObjectTypeDefinition)model.GetType(fact.Id);
         _ = await Assert.That(resolvedFact.ComputedMembers.Count).IsEqualTo(1);
         _ = await Assert.That(resolvedFact.ComputedMembers[0].Expression.Language).IsEqualTo("DAX");
-        _ = await Assert.That(resolvedFact.Relationships[0].Cardinality).IsEqualTo(RelationshipCardinality.OneToMany);
     }
 
     [Test]
@@ -267,7 +234,6 @@ public sealed class TypeModelContractsTests
             Annotations = Annotation("jsonSchema.$defs", true),
             Properties = [Property("name", "ContactCoreNameProperty", stringType.Id, true, false)],
             Keys = [],
-            Relationships = [],
         };
 
         var composed = new ObjectTypeDefinition
@@ -283,7 +249,6 @@ public sealed class TypeModelContractsTests
                 Property("email", "ComposedContactEmailProperty", stringType.Id, false, true, annotations: Annotation("jsonSchema.default", "unknown@example.com")),
             ],
             Keys = [],
-            Relationships = [],
         };
 
         var union = new UnionTypeDefinition
@@ -348,7 +313,6 @@ public sealed class TypeModelContractsTests
                 Property("next", "NodeNextProperty", new TypeId("Node"), false, true),
             ],
             Keys = [],
-            Relationships = [],
         };
 
         TypeSchemaModel model = BuildModel(parent);
@@ -436,7 +400,7 @@ public sealed class TypeModelContractsTests
                 MinItems = minItems,
                 MaxItems = maxItems,
             },
-            Mutability = Mutability.Mutable,
+            Mutability = SemanticMutability.Mutable,
             Constraints = new ConstraintSet(),
             Annotations = annotations ?? EmptyAnnotations,
         };

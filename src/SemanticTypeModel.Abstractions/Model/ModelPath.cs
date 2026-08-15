@@ -20,12 +20,6 @@ public static class ModelPath
         return $"/types/{EscapeSegment(typeId.Value)}/properties/{EscapeSegment(propertyName)}";
     }
 
-    /// <summary>Returns the path for a relationship: <c>/types/{typeId}/relationships/{relationshipId}</c>.</summary>
-    public static string ForRelationship(TypeId typeId, RelationshipId relationshipId)
-    {
-        return $"/types/{EscapeSegment(typeId.Value)}/relationships/{EscapeSegment(relationshipId.Value)}";
-    }
-
     /// <summary>Returns the path for a key: <c>/types/{typeId}/keys/{keyName}</c>.</summary>
     public static string ForKey(TypeId typeId, string keyName)
     {

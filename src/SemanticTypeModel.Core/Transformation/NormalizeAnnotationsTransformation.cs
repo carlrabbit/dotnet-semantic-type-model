@@ -130,10 +130,6 @@ public sealed class NormalizeAnnotationsTransformation : ISchemaTransformation
                     {
                         Annotations = NormalizeBag(key.Annotations, ModelPath.ForKey(type.Id, key.Name)),
                     })],
-                    Relationships = [.. objectType.Relationships.Select(relationship => relationship with
-                    {
-                        Annotations = NormalizeBag(relationship.Annotations, ModelPath.ForRelationship(type.Id, relationship.Id)),
-                    })],
                     ComputedMembers = [.. objectType.ComputedMembers.Select(member => member with
                     {
                         Annotations = NormalizeBag(member.Annotations, ModelPath.ForComputedMember(type.Id, member.Name)),

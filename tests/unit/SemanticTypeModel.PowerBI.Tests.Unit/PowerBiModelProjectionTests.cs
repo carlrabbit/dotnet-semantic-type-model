@@ -21,7 +21,6 @@ public sealed class PowerBiModelProjectionTests
         ProjectionCompatibilityContract capabilities = new PowerBiModelProjection().GetCapabilities();
 
         _ = await Assert.That(capabilities.Projection).IsEqualTo(ProjectionTarget.PowerBi);
-        _ = await Assert.That(capabilities.GetSupport(SemanticModelFeature.Relationship).SupportLevel).IsEqualTo(ProjectionFeatureSupportLevel.SupportedWithOptions);
     }
 
     [Test]
@@ -56,7 +55,6 @@ public sealed class PowerBiModelProjectionTests
                     Annotations = EmptyAnnotations,
                 },
             ],
-            Relationships = [],
         };
 
         PowerBiProjectionModel projection = Project(BuildModel(dimension, stringType, dateType, intType));
@@ -67,91 +65,6 @@ public sealed class PowerBiModelProjectionTests
         _ = await Assert.That(table.DisplayFolder).IsEqualTo("Reference");
         _ = await Assert.That(keyColumn.IsKey).IsTrue();
         _ = await Assert.That(table.Columns.Single(static column => column.Name == "name").DataCategory).IsEqualTo("Category");
-    }
-
-    [Test]
-    public async Task Fixture_2_fact_dimension_relationship_and_measure_should_project()
-    {
-        ScalarTypeDefinition intType = Scalar("Int64", ScalarKind.Integer);
-        ScalarTypeDefinition decimalType = Scalar("Amount", ScalarKind.Decimal);
-
-        var dimension = new ObjectTypeDefinition
-        {
-            Id = new TypeId("DimCustomer"),
-            Name = "DimCustomer",
-            Kind = TypeKind.Object,
-            Nullability = Nullability.NonNullable,
-            Annotations = Annotation(("powerBi.tableRole", "Dimension")),
-            Semantics = new EntitySemantics { Role = EntityRole.Dimension },
-            Properties = [Property("customerKey", "DimCustomerKey", intType.Id, true, false)],
-            Keys =
-            [
-                new KeyDefinition
-                {
-                    Name = "PK_DimCustomer",
-                    Kind = KeyKind.Primary,
-                    Properties = [new PropertyRef(new PropertyId("DimCustomerKey"))],
-                    Annotations = EmptyAnnotations,
-                },
-            ],
-            Relationships = [],
-        };
-
-        var fact = new ObjectTypeDefinition
-        {
-            Id = new TypeId("FactSales"),
-            Name = "FactSales",
-            Kind = TypeKind.Object,
-            Nullability = Nullability.NonNullable,
-            Annotations = Annotation(("powerBi.tableRole", "Fact")),
-            Semantics = new EntitySemantics { Role = EntityRole.Fact },
-            Properties =
-            [
-                Property("salesKey", "FactSalesKey", intType.Id, true, false),
-                Property("customerKey", "FactCustomerKey", intType.Id, true, false),
-                Property("amount", "FactAmount", decimalType.Id, true, false),
-            ],
-            Keys =
-            [
-                new KeyDefinition
-                {
-                    Name = "PK_FactSales",
-                    Kind = KeyKind.Primary,
-                    Properties = [new PropertyRef(new PropertyId("FactSalesKey"))],
-                    Annotations = EmptyAnnotations,
-                },
-            ],
-            Relationships =
-            [
-                new RelationshipDefinition
-                {
-                    Id = new RelationshipId("FactSales_DimCustomer"),
-                    PrincipalType = new TypeRef(dimension.Id),
-                    DependentType = new TypeRef(new TypeId("FactSales")),
-                    PrincipalProperties = [new PropertyRef(new PropertyId("DimCustomerKey"))],
-                    DependentProperties = [new PropertyRef(new PropertyId("FactCustomerKey"))],
-                    Cardinality = RelationshipCardinality.ManyToOne,
-                    Annotations = EmptyAnnotations,
-                },
-            ],
-            ComputedMembers =
-            [
-                new ComputedMemberDefinition
-                {
-                    Name = "Total Sales",
-                    ResultType = new TypeRef(decimalType.Id),
-                    Expression = new ExpressionDefinition { Language = "DAX", Body = "SUM(FactSales[amount])" },
-                    Annotations = Annotation(("tom.measureFormatString", "$#,0.00")),
-                },
-            ],
-        };
-
-        PowerBiProjectionModel projection = Project(BuildModel(fact, dimension, intType, decimalType));
-
-        _ = await Assert.That(projection.Tables.Count).IsEqualTo(2);
-        _ = await Assert.That(projection.Relationships.Count).IsEqualTo(1);
-        _ = await Assert.That(projection.Relationships[0].Cardinality).IsEqualTo(PowerBiRelationshipCardinality.ManyToOne);
-        _ = await Assert.That(projection.Tables.Single(static table => table.Name == "FactSales").Measures.Single().Expression).IsEqualTo("SUM(FactSales[amount])");
     }
 
     [Test]
@@ -168,7 +81,6 @@ public sealed class PowerBiModelProjectionTests
             Semantics = new EntitySemantics { Role = EntityRole.Fact },
             Properties = [Property("amount", "Amount", decimalType.Id, true, false)],
             Keys = [],
-            Relationships = [],
             ComputedMembers =
             [
                 new ComputedMemberDefinition
@@ -214,7 +126,6 @@ public sealed class PowerBiModelProjectionTests
                 Property("city", "AddressCity", stringType.Id, true, false),
             ],
             Keys = [],
-            Relationships = [],
         };
 
         var entity = new ObjectTypeDefinition
@@ -227,7 +138,6 @@ public sealed class PowerBiModelProjectionTests
             Semantics = new EntitySemantics { Role = EntityRole.Entity },
             Properties = [Property("address", "CustomerAddress", address.Id, false, true)],
             Keys = [],
-            Relationships = [],
         };
 
         TypeSchemaModel model = BuildModel(entity, address, stringType);
@@ -289,7 +199,6 @@ public sealed class PowerBiModelProjectionTests
                 Property("status", "Status", unionType.Id, false, true),
             ],
             Keys = [],
-            Relationships = [],
         };
 
         TypeSchemaModel model = BuildModel(entity, stringType, arrayType, dictionaryType, unionType);
@@ -318,7 +227,6 @@ public sealed class PowerBiModelProjectionTests
                 Property("second", "Second", stringType.Id, true, false, annotations: Annotation(("tom.columnName", "Duplicate"))),
             ],
             Keys = [],
-            Relationships = [],
             ComputedMembers =
             [
                 new ComputedMemberDefinition
@@ -375,7 +283,6 @@ public sealed class PowerBiModelProjectionTests
                     Annotations = EmptyAnnotations,
                 },
             ],
-            Relationships = [],
         };
 
         PowerBiProjectionModel projection = BuildModel(fact, intType, decimalType).ToPowerBiModel(options =>
@@ -394,53 +301,6 @@ public sealed class PowerBiModelProjectionTests
         _ = await Assert.That(key.Summarization).IsEqualTo(PowerBiSummarization.None);
         _ = await Assert.That(amount.Summarization).IsEqualTo(PowerBiSummarization.Average);
         _ = await Assert.That(amount.SourcePropertyId).IsEqualTo(new PropertyId("FactAmount"));
-    }
-
-    [Test]
-    public async Task Composite_relationship_should_emit_ambiguity_diagnostic()
-    {
-        ScalarTypeDefinition intType = Scalar("Int64", ScalarKind.Integer);
-        var dimension = new ObjectTypeDefinition
-        {
-            Id = new TypeId("DimCustomer"),
-            Name = "DimCustomer",
-            Kind = TypeKind.Object,
-            Nullability = Nullability.NonNullable,
-            Annotations = Annotation((PowerBiAnnotationNames.TableRole, "Dimension")),
-            Semantics = new EntitySemantics { Role = EntityRole.Dimension },
-            Properties = [Property("customerKey", "CustomerKey", intType.Id, true, false), Property("tenantKey", "DimTenantKey", intType.Id, true, false)],
-            Keys = [],
-            Relationships = [],
-        };
-        var fact = new ObjectTypeDefinition
-        {
-            Id = new TypeId("FactSales"),
-            Name = "FactSales",
-            Kind = TypeKind.Object,
-            Nullability = Nullability.NonNullable,
-            Annotations = Annotation((PowerBiAnnotationNames.TableRole, "Fact")),
-            Semantics = new EntitySemantics { Role = EntityRole.Fact },
-            Properties = [Property("customerKey", "FactCustomerKey", intType.Id, true, false), Property("tenantKey", "FactTenantKey", intType.Id, true, false)],
-            Keys = [],
-            Relationships =
-            [
-                new RelationshipDefinition
-                {
-                    Id = new RelationshipId("FactSales_DimCustomer"),
-                    PrincipalType = new TypeRef(dimension.Id),
-                    DependentType = new TypeRef(new TypeId("FactSales")),
-                    PrincipalProperties = [new PropertyRef(new PropertyId("CustomerKey")), new PropertyRef(new PropertyId("DimTenantKey"))],
-                    DependentProperties = [new PropertyRef(new PropertyId("FactCustomerKey")), new PropertyRef(new PropertyId("FactTenantKey"))],
-                    Cardinality = RelationshipCardinality.ManyToOne,
-                    Annotations = EmptyAnnotations,
-                },
-            ],
-        };
-
-        PowerBiProjectionModel projection = Project(BuildModel(dimension, fact, intType));
-
-        _ = await Assert.That(projection.Relationships).IsEmpty();
-        _ = await Assert.That(projection.Diagnostics.Any(static diagnostic => diagnostic.Code == "POWERBI_AMBIGUOUS_RELATIONSHIP_ENDPOINTS")).IsTrue();
     }
 
     private static PowerBiProjectionModel Project(TypeSchemaModel model, PowerBiProjectionOptions? options = null)
@@ -493,7 +353,7 @@ public sealed class PowerBiModelProjectionTests
                 IsRequired = isRequired,
                 AllowsNull = allowsNull,
             },
-            Mutability = Mutability.Mutable,
+            Mutability = SemanticMutability.Mutable,
             Constraints = new ConstraintSet(),
             Annotations = annotations ?? EmptyAnnotations,
         };

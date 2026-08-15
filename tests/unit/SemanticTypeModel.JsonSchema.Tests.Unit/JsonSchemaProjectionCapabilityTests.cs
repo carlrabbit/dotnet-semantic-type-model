@@ -15,15 +15,8 @@ public sealed class JsonSchemaProjectionCapabilityTests
         ProjectionCompatibilityContract capabilities = new JsonSchemaRuntimeProjection().GetCapabilities();
 
         _ = await Assert.That(capabilities.Projection).IsEqualTo(ProjectionTarget.JsonSchema);
-        _ = await Assert.That(capabilities.GetSupport(SemanticModelFeature.UiHints).SupportLevel).IsEqualTo(ProjectionFeatureSupportLevel.SupportedWithOptions);
-    }
-
-    [Test]
-    public async Task Catalog_should_include_json_editor_projection_contract()
-    {
-        ProjectionCompatibilityContract capabilities = ProjectionCapabilityCatalog.ForTarget(ProjectionTarget.JsonEditor);
-
         _ = await Assert.That(capabilities.GetSupport(SemanticModelFeature.UiHints).SupportLevel).IsEqualTo(ProjectionFeatureSupportLevel.Supported);
     }
+
 }
 #pragma warning restore CS1591

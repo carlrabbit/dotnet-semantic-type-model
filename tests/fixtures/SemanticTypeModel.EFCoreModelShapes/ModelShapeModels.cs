@@ -148,7 +148,7 @@ public static class ModelShapeModels
 
     private static ObjectTypeDefinition Object<T>(EntityRole role, IReadOnlyList<PropertyDefinition> properties)
     {
-        return new() { Id = TypeIdOf<T>(), Name = typeof(T).Name, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = Clr(typeof(T)), Semantics = new() { Role = role, IsValueObject = role == EntityRole.ValueObject }, Properties = properties, Keys = [], Relationships = [] };
+        return new() { Id = TypeIdOf<T>(), Name = typeof(T).Name, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = Clr(typeof(T)), Semantics = new() { Role = role, IsValueObject = role == EntityRole.ValueObject }, Properties = properties, Keys = [] };
     }
 
     private static ArrayTypeDefinition Array<T>(TypeId item)
@@ -163,7 +163,7 @@ public static class ModelShapeModels
 
     private static PropertyDefinition P(string name, TypeId type, bool required, params (string Key, string Value)[] annotations)
     {
-        return new() { Id = new(name), Name = name, Type = new(type), Cardinality = new() { IsRequired = required }, Mutability = Mutability.InitOnly, Constraints = new(), Annotations = new() { Items = [new Annotation { Key = new("dotnet.memberName"), Value = name, Scope = AnnotationScope.Member, Source = AnnotationSource.Declared }, .. annotations.Select(annotation => new Annotation { Key = new(annotation.Key), Value = annotation.Value, Scope = AnnotationScope.Member, Source = AnnotationSource.Declared })] } };
+        return new() { Id = new(name), Name = name, Type = new(type), Cardinality = new() { IsRequired = required }, Mutability = null, Constraints = new(), Annotations = new() { Items = [new Annotation { Key = new("dotnet.memberName"), Value = name, Scope = AnnotationScope.Member, Source = AnnotationSource.Declared }, .. annotations.Select(annotation => new Annotation { Key = new(annotation.Key), Value = annotation.Value, Scope = AnnotationScope.Member, Source = AnnotationSource.Declared })] } };
     }
 
     private static TypeId TypeIdOf<T>()

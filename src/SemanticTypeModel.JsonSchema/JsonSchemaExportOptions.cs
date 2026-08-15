@@ -20,18 +20,6 @@ public sealed class JsonSchemaExportOptions
     /// </summary>
     public JsonSchemaDialect Dialect { get; init; } = JsonSchemaDialect.Draft202012;
 
-    /// <summary>
-    /// Gets a value indicating whether projection and unsupported keyword annotations should be emitted.
-    /// </summary>
-    public bool IncludeProjectionAnnotations { get; init; } = true;
-
-    /// <summary>
-    /// Gets UI hint normalization and validation options.
-    /// </summary>
-    public UiHintOptions UiHintOptions { get; init; } = UiHintOptions.Default;
-
-    /// <summary>
-    /// Gets JSON Schema export options for UI/editor projection keywords.
-    /// </summary>
-    public JsonSchemaUiExportOptions UiExport { get; init; } = JsonSchemaUiExportOptions.Default;
+    /// <summary>Gets a value indicating whether semantic metadata is emitted under <c>x-stm</c>.</summary>
+    public bool IncludeSemanticAnnotations { get; init; } = true;
 }

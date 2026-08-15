@@ -12,7 +12,6 @@ automatic behavior. Always inspect target diagnostics for the actual model.
 | `RequiredWhen` | Conditional schema when safely representable | No relationship/navigation behavior; unsupported target behavior is not inferred | Target-specific/diagnostic | Not general serializer validation | Conditional Options validation |
 | Enum | Schema enum | String provider representation | Analytical categorical representation | Existing serializer contract | Binding/validation |
 | `Uri` | string + `uri` format | String provider representation | Text-like analytical representation | Existing `Uri` contract | Binding where supported |
-| Relationship | Schema/reference metadata as applicable | No arbitrary navigation inference in current generated EF contract | Analytical relationship metadata | Contract shape only | Not an Options relationship system |
 | Extension data | Additional-properties style behavior | JSON storage | Limited/diagnostic | Existing extension-data behavior | Target-specific/limited |
 | Envelope | Target root/payload policy | Only retained supported storage semantics; no automatic navigation graph | Analytical target policy | Contract shape | Not generally applicable |
 | User description | Schema description | Not a substitute for technical EF comments | User-facing report metadata | Not a naming source by default | Inspection/docs metadata |

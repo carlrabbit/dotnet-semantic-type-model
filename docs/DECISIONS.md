@@ -27,6 +27,7 @@ Git history retains the detailed superseded record.
 - [Conditional constraint literals are typed](decisions/conditional-constraint-literals-are-typed.md)
 - [Envelope projection policies are target-specific](decisions/envelope-projection-policies-are-target-specific.md)
 - [Evolution semantics remain projection-neutral](decisions/evolution-semantics-remain-projection-neutral.md)
+- [General relationships are not canonical semantics](decisions/general-relationships-are-not-canonical-semantics.md)
 - [Remove old model compatibility and transition terminology](decisions/remove-legacy-model-compatibility-and-hardened-terminology.md)
 - [Replace the general description with audience-specific descriptions](decisions/replace-general-description-with-audience-specific-descriptions.md)
 - [Unify the public model surface under the Model namespace](decisions/unify-public-model-surface-under-model-namespace.md)
@@ -41,6 +42,7 @@ Git history retains the detailed superseded record.
 
 - [Configuration is an Options registration projection](decisions/configuration-domain-is-options-registration-projection.md)
 - [Configuration registration is explicit per options type](decisions/configuration-registration-is-explicit-per-options-type.md)
+- [JSON Schema uses `x-stm` for selected semantic preservation](decisions/json-schema-uses-x-stm-for-selected-semantics.md)
 - [Power BI integration stops at local metadata projection](decisions/power-bi-integration-stops-at-local-metadata-projection.md)
 - [Do not generate a System.Text.Json context](decisions/remove-system-text-json-context-generation.md)
 

@@ -87,12 +87,12 @@ public sealed class M0034EvolutionOwnershipLifecycleSemanticsTests
 
     private static ObjectTypeDefinition Object(string id, IReadOnlyList<PropertyDefinition> properties, AnnotationBag? annotations = null)
     {
-        return new() { Id = new TypeId(id), Name = id, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = annotations ?? new AnnotationBag(), Properties = properties, Keys = [], Relationships = [] };
+        return new() { Id = new TypeId(id), Name = id, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = annotations ?? new AnnotationBag(), Properties = properties, Keys = [] };
     }
 
     private static PropertyDefinition Property(string name, TypeId typeId, bool required = false, bool nullable = false, AnnotationBag? annotations = null)
     {
-        return new() { Id = new PropertyId(name), Name = name, Type = new TypeRef(typeId), Cardinality = new Cardinality { IsRequired = required, AllowsNull = nullable }, Mutability = Mutability.Mutable, Constraints = new ConstraintSet(), Annotations = annotations ?? new AnnotationBag() };
+        return new() { Id = new PropertyId(name), Name = name, Type = new TypeRef(typeId), Cardinality = new Cardinality { IsRequired = required, AllowsNull = nullable }, Mutability = SemanticMutability.Mutable, Constraints = new ConstraintSet(), Annotations = annotations ?? new AnnotationBag() };
     }
 
     private static AnnotationBag Annotations(params Annotation[] annotations)

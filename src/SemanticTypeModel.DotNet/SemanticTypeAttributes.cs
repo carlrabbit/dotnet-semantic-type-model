@@ -128,32 +128,13 @@ public sealed class SemanticKeyAttribute : Attribute
     public bool IsGenerated { get; init; }
 }
 
-/// <summary>
-/// Marks a member as participating in relationship semantics.
-/// </summary>
-[AttributeUsage(AttributeTargets.Property, AllowMultiple = true, Inherited = false)]
-public sealed class SemanticRelationshipAttribute(string? principalTypeName = null) : Attribute
-{
-    /// <summary>
-    /// Gets the principal type metadata name when explicitly provided.
-    /// </summary>
-    public string? PrincipalTypeName { get; } = principalTypeName;
+/// <summary>Declares mutable lifecycle semantics for an object type or member.</summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticMutableAttribute : Attribute;
 
-    /// <summary>
-    /// Gets or sets the principal key name.
-    /// </summary>
-    public string? PrincipalKey { get; init; }
-
-    /// <summary>
-    /// Gets or sets the foreign key property name.
-    /// </summary>
-    public string? ForeignKey { get; init; }
-
-    /// <summary>
-    /// Gets or sets the relationship cardinality.
-    /// </summary>
-    public RelationshipCardinality Cardinality { get; init; } = RelationshipCardinality.Unknown;
-}
+/// <summary>Declares immutable lifecycle semantics for an object type or member.</summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticImmutableAttribute : Attribute;
 
 /// <summary>
 /// Declares generator-wide compile-time options.
@@ -235,11 +216,6 @@ public sealed class SemanticTypeModelGeneratorOptionsAttribute : Attribute
     /// Gets or sets a value indicating whether key inference is enabled.
     /// </summary>
     public bool InferKeys { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether relationship inference is enabled.
-    /// </summary>
-    public bool InferRelationships { get; set; }
 
 }
 
@@ -529,37 +505,6 @@ public sealed class SemanticAnnotationAttribute(string key, string value) : Attr
     /// Gets the annotation value.
     /// </summary>
     public string Value { get; } = value;
-}
-
-/// <summary>
-/// Represents relationship cardinality semantics.
-/// </summary>
-public enum RelationshipCardinality
-{
-    /// <summary>
-    /// Unspecified cardinality.
-    /// </summary>
-    Unknown,
-
-    /// <summary>
-    /// One-to-one relationship.
-    /// </summary>
-    OneToOne,
-
-    /// <summary>
-    /// One-to-many relationship.
-    /// </summary>
-    OneToMany,
-
-    /// <summary>
-    /// Many-to-one relationship.
-    /// </summary>
-    ManyToOne,
-
-    /// <summary>
-    /// Many-to-many relationship.
-    /// </summary>
-    ManyToMany,
 }
 
 /// <summary>
