@@ -169,7 +169,7 @@ Derive core semantic type roles.
 Derive keys from explicit SemanticKey metadata.
 Normalize display metadata.
 Validate required core semantic primitives.
-Validate relationship metadata when model support is sufficient.
+Validate structural type references and ownership metadata when present.
 ```
 
 Core transformations must not derive domain-specific EF Core, Power BI, JSON Schema, or System.Text.Json semantics directly. Domain derivation belongs to domain packages.
@@ -201,17 +201,12 @@ Rules:
 - Multiple primary keys are allowed only if the model explicitly supports composite keys; otherwise emit a diagnostic.
 - Key derivation must not infer EF Core primary keys directly.
 
-## Relationship Derivation and Validation
+## Structural Reference and Ownership Validation
 
-Relationship derivation/validation may be limited in the first implementation.
-
-Rules:
-
-- explicit relationship metadata is validated when present;
-- missing targets emit diagnostics when derivation needs a target;
-- ambiguous cardinality emits diagnostics;
-- invalid relationship target kind emits diagnostics;
-- relationship derivation must not infer domain-specific foreign keys directly.
+Object-valued properties, collections, and type references describe structural shape and must resolve to model
+types. Ownership metadata describes lifecycle containment and is validated independently. Core transformations
+must not derive or infer a general relationship, foreign-key, cardinality, or delete-behavior model from those
+structures. Target-specific relationship configuration remains application or projection owned.
 
 ## Transformation Diagnostics
 
@@ -268,8 +263,8 @@ Transformation Pipeline: CoreDefaults
     Derived: /types/Customer/keys/Primary -> Id
     Diagnostics: 0
 
-[3] ValidateRelationships
-    warning STM5201 /types/Order/properties/Customer Relationship target is not marked as Entity.
+[3] ValidateStructuralReferences
+    Diagnostics: 0
 ```
 
 ## Domain Derivation Contract

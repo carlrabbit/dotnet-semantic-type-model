@@ -70,9 +70,9 @@ systemTextJson.*
 
 ### Ownership
 
-**Kind:** Relationship/property semantic.
+**Kind:** Object/property semantic.
 
-**Description:** A relationship or member is lifecycle-contained by an owner and is part of the owner's composition boundary.
+**Description:** An object-valued member or collection is lifecycle-contained by an owner and is part of the owner's composition boundary.
 
 **Best used when:** The owned object does not stand independently, is created/removed with the owner, or should be projected as contained data.
 

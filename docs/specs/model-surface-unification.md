@@ -19,7 +19,6 @@ TypeSchemaModel
 SchemaModelId
 TypeId
 PropertyId
-RelationshipId
 AnnotationKey
 AnnotationBag
 Annotation

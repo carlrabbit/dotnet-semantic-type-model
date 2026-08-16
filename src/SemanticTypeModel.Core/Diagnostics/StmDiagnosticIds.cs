@@ -7,6 +7,7 @@ namespace SemanticTypeModel.Core.Diagnostics;
 /// <para>ID ranges:</para>
 /// <list type="bullet">
 /// <item><description>STM0xxx — Semantic model validation (emitted by <c>SemanticTypeModel.Core</c>)</description></item>
+/// <item><description>STM1xxx — Core transformations and semantic normalization (emitted by <c>SemanticTypeModel.Core</c>)</description></item>
 /// <item><description>STM3xxx — JSON Schema runtime projection (emitted by <c>SemanticTypeModel.JsonSchema</c>)</description></item>
 /// </list>
 /// <para>
@@ -135,7 +136,7 @@ public static class StmDiagnosticIds
     /// <summary>STM3201 — Model root id did not match a type id; a fallback root type was used.</summary>
     public const string JsonSchemaRuntimeRootFallback = "STM3201";
 
-    /// <summary>STM3202 — Object type contains semantic members (keys, relationships, computed members, allOf composition) not projected by the current JSON Schema runtime adapter.</summary>
+    /// <summary>STM3202 — Object type contains semantic members (keys, computed members, allOf composition) not projected by the current JSON Schema runtime adapter.</summary>
     public const string JsonSchemaRuntimeSemanticMembersSkipped = "STM3202";
 
     /// <summary>STM3203 — Dictionary type projects to a JSON object with string keys; non-string key metadata is not represented.</summary>

@@ -8,7 +8,8 @@ and tested as one tightly coupled suite.
 **Use the same exact version for every `SemanticTypeModel.*` package in your application. Mixing SemanticTypeModel
 package versions is unsupported.**
 
-Generator/analyzer packages are part of that rule too.
+Generator/analyzer packages are part of that rule too. The compile-time semantic manifest requires exact
+producer/consumer suite-version alignment.
 
 ## Choose packages by scenario
 
@@ -23,6 +24,8 @@ Generator/analyzer packages are part of that rule too.
 | Power BI local metadata | `SemanticTypeModel.PowerBI` |
 | Runtime DI composition | `SemanticTypeModel.DependencyInjection` |
 
+`SemanticTypeModel.Configuration.Generators` is not part of the current package suite.
+
 `SemanticTypeModel.Abstractions` and `SemanticTypeModel.Core` provide shared model/runtime contracts used by the
 suite. Applications normally start from the scenario packages rather than selecting internal package layers
 first.
@@ -33,9 +36,11 @@ first.
 using SemanticTypeModel.DotNet;
 
 [SemanticType(SemanticTypeRole.Entity)]
+[SemanticMutable]
 public sealed class Customer
 {
     [SemanticKey]
+    [SemanticImmutable]
     public required string Id { get; init; }
 
     public required string Name { get; init; }
@@ -50,7 +55,7 @@ using SemanticTypeModel.Generated;
 TypeSchemaModel model = AppSemanticTypeModel.Create();
 ```
 
-The default generated namespace and provider name are configurable.
+Lifecycle mutability is optional. No mutability attribute means STM makes no lifecycle-mutability claim.
 
 ## Configure
 
@@ -64,7 +69,34 @@ Common generator settings include:
 - technical-description requirements;
 - System.Text.Json metadata import.
 
+General relationship inference is not a current generator capability.
+
 See the complete [configuration reference](../configuration.md).
+
+## JSON Schema semantic annotations
+
+`SemanticTypeModel.JsonSchema` exports Draft 2020-12 and can preserve selected STM-only semantics under one
+optional `x-stm` object:
+
+```text
+role
+aggregateRoot
+mutability
+technicalDescription
+keys
+unit
+ui
+```
+
+JSON Schema import and JSON Editor compatibility modes are not supported current APIs.
+
+## EF Core application
+
+`SemanticTypeModel.EFCore.Generators` emits composable `IEntityTypeConfiguration<TEntity>` implementations for
+explicitly selected semantic models. Applications own `DbContext` composition and unrelated/manual entities.
+
+The model assembly's semantic manifest is ephemeral compile-time transport. Model and EF generator packages must
+use the same exact SemanticTypeModel suite version.
 
 ## Diagnose
 
@@ -103,9 +135,15 @@ If generation or projection fails:
 
 ## Important boundaries
 
-SemanticTypeModel does not make target-specific infrastructure application-owned by the library. For example,
-EF Core remains responsible for providers/migrations/database lifecycle; applications own their `DbContext` and
-manual EF configuration. System.Text.Json serializer contexts remain application-owned. Power BI service
-publishing/authentication remains outside local metadata projection.
+SemanticTypeModel defines semantic meaning and target projection defaults; applications own global target
+infrastructure composition.
+
+For example:
+
+- EF Core remains responsible for providers/migrations/database lifecycle; applications own their `DbContext`,
+  manual EF configuration, and target-specific relationships;
+- System.Text.Json serializer contexts remain application-owned;
+- Power BI service publishing/authentication remains outside local metadata projection;
+- JSON Schema is an export target, not a canonical authoring source.
 
 See [Compatibility](../api/compatibility.md) for current breaking boundaries.

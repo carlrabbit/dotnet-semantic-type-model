@@ -15,8 +15,11 @@ result.Diagnostics.ThrowIfErrors();
 PowerBiLocalMetadataExporter.ExportJson(result.Model, "artifacts/powerbi/model.json");
 ```
 
-The package produces local metadata for analytical tables/columns/relationships/measures and related
-projection decisions. It does not publish to Power BI services.
+The package produces local analytical metadata for supported tables, columns, measures, and related projection
+decisions. It does not publish to Power BI services.
+
+General canonical STM relationships were removed. The Power BI projection does not infer replacement
+relationships from keys, CLR references, property names, or collection shape.
 
 ## Configure
 
@@ -27,12 +30,15 @@ current projection exposes those options.
 Use user-facing descriptions for report-author/analyst text. Technical descriptions are not an automatic
 fallback for user-facing Power BI descriptions.
 
+Lifecycle mutability is canonical semantic information but does not automatically change Power BI output.
+
 ## Diagnose
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Duplicate table/column name | Naming policy collapses semantic names | Change labels/naming or select supported collision behavior. |
-| Unresolved relationship/sort column | Referenced projected member does not exist after projection/naming | Correct semantic relationship/sort metadata. |
+| Unresolved sort column | Referenced projected member does not exist after projection/naming | Correct sort metadata or the projected member selection. |
+| Expected relationship missing | General STM relationship projection is not supported | Define target-specific analytical relationship behavior outside the canonical STM contract. |
 | Lossy scalar mapping | Source semantic has no exact analytical representation | Accept the diagnostic intentionally or change source/target metadata. |
 | Unsupported nested shape | Owned/nested shape lacks a supported policy | Choose supported flatten/serialize/diagnose behavior where available. |
 

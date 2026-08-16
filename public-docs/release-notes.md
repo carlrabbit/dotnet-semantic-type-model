@@ -1,19 +1,51 @@
-## Unreleased — M0062
+# 4.0.0 (release candidate)
 
-- Replaced mixed CLR/access mutability with optional lifecycle `SemanticMutability` and `[SemanticMutable]`/`[SemanticImmutable]` declarations.
-- Removed canonical general relationships, relationship authoring/inference, Power BI relationship projection, and JSON Editor compatibility APIs without shims.
-- Added optional JSON Schema `x-stm` preservation for `role`, `aggregateRoot`, `mutability`, `technicalDescription`, `keys`, `unit`, and open `ui.*` annotations.
-- These are breaking public-contract changes; all SemanticTypeModel package versions used together must match exactly.
-- Not published.
+4.0.0 is a coherent, breaking release candidate that consolidates the previously unreleased M0062 work and
+the unpublished 3.0.0 candidate. It has not been published. The latest package version verified on NuGet
+before preparing this candidate is 2.6.0.
 
-## 3.0.0 (release candidate)
+## Highlights
 
-- Added `SemanticTypeModel.EFCore.Generators`, manifest schema version 1, explicit model selection, entity configurations, partial hooks, and deterministic registration.
-- Replaced the supported runtime global EF cleanup/application path. This is a breaking migration: install the analyzer in the persistence project and call the generated apply extension.
-- Generated models configure only owned CLR Entities; multiple models and manual entities compose. Duplicate CLR ownership is `STM5041`.
-- Removed the unused `SemanticTypeModel.Configuration.Generators` package and the JSON Schema import compatibility API.
-- Semantic manifests now require an exact producer/consumer suite-version match (`STM5047`).
-- Not published; release validation is required.
+- EF Core application now uses generated `IEntityTypeConfiguration<TEntity>` implementations selected
+  explicitly with `[assembly: GenerateSemanticEfModel(typeof(ModelMarker))]`; the application applies the
+  generated extension and continues to own `DbContext`, unrelated/manual entities, providers, migrations, and
+  target-specific relationships.
+- The ephemeral model-assembly manifest has an exact producer/consumer suite-version contract; a mismatch is
+  reported as `STM5047`.
+- `SemanticTypeModel.Configuration.Generators` and JSON Schema import were removed without compatibility
+  packages or authoring-path shims. Configuration registration uses the runtime
+  `AddSemanticOptions<TOptions>` adapter.
+- Lifecycle mutability is optional and projection-neutral. `[SemanticMutable]` and `[SemanticImmutable]` are
+  the only declarations; a property declaration overrides its containing type, and CLR setter/init shape does
+  not infer mutability.
+- The general relationship model, relationship attribute, and relationship inference were removed. Structural
+  references, keys, ownership, aggregate roots, and envelopes remain distinct; applications configure
+  target-specific relationships.
+- JSON Schema Draft 2020-12 export can preserve the supported STM-only vocabulary in one optional `x-stm`
+  object: `role`, `aggregateRoot`, `mutability`, `technicalDescription`, `keys`, `unit`, and open `ui.*` data.
+- Standard JSON Schema `description` uses the user description. Technical descriptions remain separate in
+  `x-stm.technicalDescription`, and JSON-compatible `ui.*` annotations pass through under `x-stm.ui`.
+- JSON Editor compatibility, widget inference, and its configuration APIs were removed.
+
+## Migration
+
+1. Set every `SemanticTypeModel.*` runtime, projection, generator, and analyzer package used together to the
+   exact same `4.0.0` version.
+2. In each EF model project, run `SemanticTypeModel.Generators`; in the persistence project, reference
+   `SemanticTypeModel.EFCore.Generators`, select each semantic model explicitly, and call its generated apply
+   extension from `OnModelCreating`. Replace retired runtime global `ModelBuilder` application/cleanup calls.
+3. Remove `SemanticTypeModel.Configuration.Generators` and register every selected options type explicitly with
+   `AddSemanticOptions<TOptions>`.
+4. Replace JSON Schema import as a canonical authoring path with annotated .NET code and generated canonical
+   models.
+5. Replace relationship attributes/inference with target-owned configuration, including ordinary EF
+   configuration where applicable.
+6. Replace old mutability APIs with optional `[SemanticMutable]`/`[SemanticImmutable]` lifecycle declarations.
+7. Replace JSON Editor compatibility options with standard JSON Schema plus optional `x-stm` semantic
+   annotations.
+
+See [Compatibility](api/compatibility.md), [EF Core](guides/ef-core.md), and
+[JSON Schema](guides/json-schema.md) for detailed current boundaries.
 
 # 2.6.1
 

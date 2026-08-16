@@ -6,10 +6,11 @@ Define projection capability contracts for the canonical semantic model and keep
 
 ## Targets
 
-1. JSON Schema Draft 2020-12 runtime projection
-2. JSON editor/UI-hint projection mode
-3. EF Core metadata projection
-4. Power BI metadata projection
+1. JSON Schema Draft 2020-12 projection and export
+2. EF Core metadata inspection and generated configuration
+3. Power BI local metadata projection
+4. System.Text.Json resolver customization
+5. Configuration / Options registration
 
 ## Capability Metadata API
 
@@ -79,4 +80,7 @@ Examples:
 - JSON Schema runtime adapter warnings: `STM3202`, `STM3203`, `STM3204`.
 - EF Core projection diagnostics: `EFCORE_*`.
 - Power BI projection diagnostics: `POWERBI_*`.
-- JSON-editor compatibility diagnostics in JSON Schema projection modes: `JSONSCHEMA_UI_*`.
+- JSON Schema semantic-annotation diagnostics, including invalid open `ui.*` values: `JSONSCHEMA_*`.
+
+JSON Editor compatibility is not a projection target or capability mode. Open `ui.*` annotations may be
+preserved beneath JSON Schema `x-stm.ui` without editor-specific translation or widget inference.

@@ -10,6 +10,7 @@ All stable diagnostic IDs use the `STM` prefix followed by a four-digit category
 
 ```text
 STM0xxx  Semantic model validation
+STM1xxx  Core transformations and semantic normalization
 STM3xxx  JSON Schema runtime projection
 STM5xxx  .NET type extraction and compile-time source generator
 ```
@@ -19,9 +20,9 @@ The numeric sub-ranges are allocated as follows:
 | Range     | Package                        | Emitter                              |
 |-----------|--------------------------------|--------------------------------------|
 | STM0001–STM0013 | SemanticTypeModel.Core   | TypeSchemaModelValidator             |
-| STM1004–STM1019 | SemanticTypeModel.Core   | Core semantic transformations        |
+| STM1004–STM1036 | SemanticTypeModel.Core / SemanticTypeModel.Configuration | Core semantic transformations / Configuration derivation |
 | STM3201–STM3207 | SemanticTypeModel.JsonSchema | JsonSchemaRuntimeProjection      |
-| STM5001–STM5025 | SemanticTypeModel.DotNet / SemanticTypeModel.Generators | RoslynDotNetTypeExtractor / SemanticTypeModelSourceGenerator |
+| STM5001–STM5048 | SemanticTypeModel.DotNet / SemanticTypeModel.Generators / SemanticTypeModel.EFCore.Generators | RoslynDotNetTypeExtractor / SemanticTypeModelSourceGenerator / SemanticEfConfigurationGenerator |
 
 Gaps within a range are intentional reservations for future use.
 
@@ -77,7 +78,6 @@ Runtime validation diagnostics (`SchemaDiagnostic`) use `SchemaDiagnosticSeverit
 /types/{TypeId}
 /types/{TypeId}/properties/{PropertyName}
 /types/{TypeId}/keys/{KeyName}
-/types/{TypeId}/relationships/{RelationshipName}
 ```
 
 Use `ModelPath` from `SemanticTypeModel.Abstractions.Model` to generate canonical paths. Do not construct path strings inline.
