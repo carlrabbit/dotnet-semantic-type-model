@@ -25,7 +25,6 @@ This spec is authoritative for:
 
 - `schema.*`
 - `jsonSchema.*`
-- `jsonEditor.*`
 - `dotnet.*`
 - `efCore.*`
 - `powerBi.*`
@@ -36,8 +35,7 @@ This spec is authoritative for:
 
 - `ui.order`
 - `ui.category`
-- `jsonEditor.format`
-- `jsonEditor.options`
+- `ui.customThing`
 - `efCore.tableName`
 - `efCore.columnName`
 - `efCore.valueGenerated`

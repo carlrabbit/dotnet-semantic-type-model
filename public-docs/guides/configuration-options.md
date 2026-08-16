@@ -22,14 +22,12 @@ automatically.
 ## Configure
 
 Configuration semantics can describe section selection, section presence, DataAnnotations validation,
-`ValidateOnStart`, conditional `RequiredWhen` validation, named-options metadata, and generated-helper intent
-where supported.
+`ValidateOnStart`, conditional `RequiredWhen` validation, and named-options metadata.
 
 Application code remains responsible for configuration providers, files, secrets, and host setup.
 
-Generated helpers, when emitted by the selected package/build, are convenience wrappers and must delegate to
-the same runtime `AddSemanticOptions<TOptions>` behavior rather than implementing another binding/validation
-path.
+Registration uses the runtime `AddSemanticOptions<TOptions>` adapter. There is no separate
+`SemanticTypeModel.Configuration.Generators` package.
 
 ## Diagnose
 
@@ -38,7 +36,7 @@ path.
 | Missing/invalid section | Configuration semantic metadata does not identify a valid binding section | Add/fix section metadata or explicit call-site selection. |
 | Startup `OptionsValidationException` | Bound values violate DataAnnotations/RequiredWhen/required-section policy | Fix deployed configuration or intentionally change validation policy. |
 | `RequiredWhen` source unresolved | Source property/literal metadata is invalid | Use `nameof`, a supported typed literal, and a valid source property. |
-| Generated helper cannot be found | Generator package/build did not emit the optional helper | Use runtime `AddSemanticOptions<TOptions>` unless generated output is actually present. |
+| Generator package cannot be found | `SemanticTypeModel.Configuration.Generators` was removed | Reference `SemanticTypeModel.Configuration` and use runtime `AddSemanticOptions<TOptions>`. |
 | Unrelated options type was expected to register automatically | Registration is intentionally per-type | Call `AddSemanticOptions<TOptions>` for each type the application uses. |
 
 ## Reference

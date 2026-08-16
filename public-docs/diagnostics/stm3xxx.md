@@ -24,7 +24,7 @@ All STM3xxx diagnostics have `Warning` severity. The projection continues and pr
 
 **Message:** `Object type '{typeId}' contains semantic members that the current JSON Schema runtime projection does not project directly.`
 
-**Cause:** The type contains keys, relationships, computed members, or allOf composition that the runtime adapter does not have a JSON Schema equivalent for. These are omitted from the output.
+**Cause:** The type contains keys, computed members, or allOf composition that the runtime adapter does not have a JSON Schema equivalent for. These are omitted from the output.
 
 **Fix:** Use the full JSON Schema export path (`JsonSchemaExporter`) rather than the runtime projection adapter if you need these members in the output.
 

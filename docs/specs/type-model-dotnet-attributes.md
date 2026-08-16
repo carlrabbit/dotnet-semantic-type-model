@@ -10,7 +10,7 @@ Semantic attributes are the primary code-first declaration mechanism for canonic
 
 The built-in vocabulary may be extended by custom attributes that declare one of these roles:
 
-- core alias attribute: maps directly to a core primitive such as entity, value object, key, relationship, envelope, display name, description, format, constraint, or category;
+- core alias attribute: maps directly to a core primitive such as entity, value object, key, envelope, ownership, display name, description, format, constraint, or category;
 - core extension attribute: carries projection-neutral metadata that a transformation normalizes into canonical annotations or primitives;
 - domain attribute: carries domain-specific metadata for a domain semantic model such as JSON Schema, EF Core, Power BI, or System.Text.Json.
 

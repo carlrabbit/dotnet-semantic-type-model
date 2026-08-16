@@ -75,8 +75,8 @@ Typed queries require stable metadata linking model elements to CLR symbols.
 Required metadata direction:
 
 ```text
-TypeShape -> CLR type identity annotation
-PropertyShape -> CLR declaring type identity annotation + CLR member name annotation
+TypeDefinition -> CLR type identity annotation
+PropertyDefinition -> CLR declaring type identity annotation + CLR member name annotation
 ```
 
 Exact annotation keys are implementation-owned but must be deterministic and documented in the relevant extraction/generator tests.
@@ -244,7 +244,7 @@ The implementation may expose equivalent APIs, but must support:
 - deterministic model summary;
 - deterministic type listing;
 - deterministic property listing;
-- relationship/key display when available;
+- key and structural property display when available;
 - constraints display when enabled;
 - annotations display when enabled;
 - diagnostics display when enabled;
@@ -264,7 +264,7 @@ Types:
     Property Id: string required
     Property DisplayName: string required
     Property Email: string optional format=email
-    Relationship Orders -> Order many
+    Property Orders: Order[] required
 
 Diagnostics:
   warning STM5008 /types/Customer/properties/Email Missing semantic display name.

@@ -59,6 +59,8 @@ Default: `AppSemanticTypeModel`.
 | Import System.Text.Json attributes | `false` | `ImportSystemTextJsonAttributes` | `SemanticTypeModelImportSystemTextJsonAttributes` |
 | Use `JsonPropertyName` as semantic name | `false` | `UseJsonPropertyNameAsSemanticName` | `SemanticTypeModelUseJsonPropertyNameAsSemanticName` |
 
+Relationship inference is not a supported generator option.
+
 When both attribute and build-property configuration are supplied, the generator merges the configured
 sources deterministically. Prefer one mechanism for a given setting unless you intentionally rely on that
 merge; verify the generated result when combining them.
@@ -108,23 +110,45 @@ Internal types and members are excluded by default. Enable them independently:
 
 If an expected internal type/member is missing, verify both the discovery mode and the relevant inclusion flag.
 
-## Key and relationship inference
+## Key inference
 
-Inference is disabled by default:
+Key inference is disabled by default:
 
 ```csharp
 [assembly: SemanticTypeModelGeneratorOptions(
-    InferKeys = true,
+    InferKeys = true)]
 ```
 
-Prefer explicit semantic metadata when inference would be ambiguous or when the model is a durable public
-contract.
+Prefer `[SemanticKey]` when identity is part of a durable public semantic contract.
+
+SemanticTypeModel does not infer general semantic relationships. Object references and collections remain
+structural model shape; target-specific relationships are configured by the target/application.
+
+## Lifecycle mutability
+
+Lifecycle mutability is authored directly on semantic types or members rather than through generator-wide
+configuration:
+
+```csharp
+[SemanticImmutable]
+public sealed class Specification
+{
+    public required string Id { get; init; }
+
+    [SemanticMutable]
+    public TechnicalCache Cache { get; set; } = new();
+}
+```
+
+No declaration means mutability is unspecified. Member declarations override the containing object declaration.
 
 ## Technical descriptions
 
 `RequireTechnicalDescription` requires the extraction path to obtain a technical description for supported
 items. Explicit `SemanticTechnicalDescription` metadata and supported XML-summary fallback participate in
 technical-description extraction.
+
+`UserDescription` remains independent; requiring technical descriptions does not create user-facing text.
 
 ## System.Text.Json extraction options
 
@@ -146,7 +170,10 @@ Write generated source to disk when diagnosing configuration:
 </PropertyGroup>
 ```
 
-Look for `SemanticTypeModel.Generated.g.cs` and, when applicable, the emitted manifest source.
+Look for `SemanticTypeModel.Generated.g.cs` and, when applicable, the emitted internal semantic manifest source.
+
+The semantic manifest is regenerated compile-time transport between aligned generator packages, not a public
+model persistence/interchange format.
 
 ## Common configuration failures
 
@@ -159,6 +186,7 @@ Look for `SemanticTypeModel.Generated.g.cs` and, when applicable, the emitted ma
 | An internal type/member is missing | Internal inclusion disabled | Enable the appropriate internal type/member flag. |
 | `STM5008` | Unsupported discovery-mode value | Use a supported `DotNetTypeDiscoveryMode` value. |
 | `STM5018` | Unsupported naming-policy value | Use a supported `DotNetNamingPolicy` value. |
-| `STM5020` | Required technical documentation missing | Add technical description/XML summary or disable the requirement. |
+| Required technical documentation diagnostic | A required technical description could not be derived | Add `[SemanticTechnicalDescription]` or an XML summary, or disable the requirement. |
+| EF generator reports suite-version mismatch | Model manifest and consuming generator come from different STM suite versions | Align every `SemanticTypeModel.*` package to the same exact version. |
 
 See [Troubleshooting](troubleshooting.md) and [Diagnostics](diagnostics.md) for broader failures.

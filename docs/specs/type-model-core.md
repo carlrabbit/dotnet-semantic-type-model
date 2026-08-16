@@ -17,9 +17,9 @@ This specification is authoritative for:
 ## Canonical Layers
 
 1. Shape layer (`TypeDefinition`, `TypeKind`, concrete type definitions)
-2. Member layer (`PropertyDefinition`, `Cardinality`, `Mutability`)
+2. Member layer (`PropertyDefinition`, `Cardinality`, optional lifecycle `SemanticMutability`)
 3. Constraint layer (`ConstraintSet` and typed constraint objects)
-4. Semantic layer (`EntitySemantics`, `EntityRole`, keys, relationships, computed members)
+4. Semantic layer (`EntitySemantics`, `EntityRole`, keys, ownership, envelopes, lifecycle semantics, computed members)
 5. Projection annotation layer (`Annotation`, `AnnotationBag`, namespaced keys)
 
 ## Core Contracts
@@ -109,7 +109,6 @@ Model paths use stable slash-separated segments rooted at `/types`.
   - `/types/Customer`
   - `/types/Customer/properties/email`
   - `/types/Customer/keys/Primary`
-  - `/types/Order/relationships/Customer`
   - `/types/SalesFact/computedMembers/TotalAmount`
 
 ## Examples

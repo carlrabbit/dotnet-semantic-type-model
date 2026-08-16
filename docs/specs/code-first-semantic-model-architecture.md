@@ -77,7 +77,6 @@ Type role
 Entity
 Value object
 Key
-Relationship
 Property
 Requiredness
 Nullability
@@ -148,9 +147,9 @@ Canonical semantic model
 ```
 
 ```text
-Canonical semantic model
-  -> EF Core semantic model
-  -> ModelBuilder configuration
+Canonical semantic model + selected model manifest
+  -> generated EF entity configurations
+  -> application-owned ModelBuilder composition
 ```
 
 ```text
@@ -182,7 +181,7 @@ Required domain directions:
 | Domain | Direction |
 |---|---|
 | JSON Schema | Export from code-generated semantic models. No canonical model import. |
-| EF Core | Derive an EF Core semantic model before configuring `ModelBuilder`. |
+| EF Core | Generate entity configurations from an explicitly selected semantic manifest; provider-neutral relational derivation remains available for inspection. |
 | Power BI | Derive a local Power BI semantic model before exporting local metadata. |
 | System.Text.Json | Use metadata import and resolver customization; do not generate serializers or contexts. |
 
@@ -199,7 +198,6 @@ model.Type<Customer>();
 model.Types.AssignableTo<Customer>();
 model.Property<Customer>(x => x.Email);
 model.PropertiesOf<Customer>();
-model.RelationshipsFrom<Customer>();
 model.FindByClrType(typeof(Customer));
 model.FindByIdentifier("global::MyApp.Customer");
 ```
@@ -217,7 +215,6 @@ The library must support deterministic text-based inspection for:
 - canonical model summaries;
 - type summaries;
 - property summaries;
-- relationship summaries;
 - diagnostics;
 - transformation results;
 - domain semantic model summaries.
@@ -229,7 +226,7 @@ Type Customer [Entity]
   Key: Id
   Property Id: string, required, format uuid
   Property Email: string, required, format email
-  Relationship Orders: one-to-many CustomerOrder
+  Property Orders: CustomerOrder[], required
 
 Diagnostics:
   STM5008 warning /types/Customer/properties/Email: Missing display name.
@@ -280,7 +277,7 @@ PBIX generation
 full TOM parity
 EF Core database creation or migration execution
 custom JSON serializer
-standalone JsonEditor package/runtime
+JSON Editor compatibility mode or runtime
 broad website-style docs
 ```
 

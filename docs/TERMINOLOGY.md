@@ -95,7 +95,7 @@ Annotated .NET code used as the supported authoring source for a canonical seman
 A persisted representation of a code-generated semantic type model that can be loaded without access to the original codebase.
 
 ### Semantic Primitive
-A canonical semantic concept such as entity, value object, key, relationship, requiredness, nullability, format, constraint, conditional constraint, envelope, ownership, lifecycle state, extension data, or annotation.
+A canonical semantic concept such as entity, value object, key, requiredness, nullability, format, constraint, conditional constraint, envelope, ownership, lifecycle state, extension data, or annotation.
 
 ### Core Semantic Vocabulary
 The authoritative set of projection-neutral semantic primitives and usage rules available to code-first authors.

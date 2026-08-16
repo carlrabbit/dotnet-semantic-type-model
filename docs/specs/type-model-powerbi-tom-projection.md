@@ -13,7 +13,7 @@ This specification is authoritative for:
 - Power BI domain semantic model behavior;
 - Power BI derivation pipeline behavior;
 - Power BI metadata precedence;
-- tables, columns, relationships, measures, calculated tables, and analytical metadata;
+- tables, columns, measures, calculated tables, and analytical metadata;
 - user extension points for DAX artifacts;
 - local deterministic export behavior;
 - unsupported Power BI/TOM scope boundaries;
@@ -51,7 +51,6 @@ The domain semantic model must represent:
 model metadata
 tables
 columns
-relationships
 measures
 calculated tables
 hierarchies where explicitly modeled
@@ -146,7 +145,6 @@ tom.tableName
 tom.columnName
 tom.measureExpression
 tom.measureFormatString
-tom.relationshipName
 schema.*
 ui.*
 ```
@@ -380,7 +378,7 @@ Inheritance and union-like alternatives are not primary Power BI features. When 
 
 ## Name Collision Handling
 
-Duplicate projected names for tables, columns, measures, calculated tables, relationships, and hierarchies must be handled deterministically:
+Duplicate projected names for tables, columns, measures, calculated tables, and hierarchies must be handled deterministically:
 
 ```text
 diagnose-and-skip by default
@@ -406,7 +404,6 @@ object not projected
 invalid projection annotation type/value
 unsupported shape
 value object mode conflict
-relationship endpoint/table/column projection failure
 lossy scalar mapping
 unsupported measure expression language
 unsupported calculated table expression language
@@ -426,7 +423,6 @@ Required deterministic ordering:
 ```text
 tables by canonical type identifier or configured table name
 columns by declaration/order metadata when available, then name
-relationships by model path/name
 measures by table then name unless explicitly ordered
 calculated tables by name unless explicitly ordered
 hierarchies by table then name
@@ -480,7 +476,6 @@ Short-running tests must cover:
 domain model derivation from generated model
 table mapping
 column mapping
-relationship mapping
 measure addition
 calculated table addition
 custom transformation extension

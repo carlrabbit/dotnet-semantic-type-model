@@ -24,7 +24,7 @@ Model paths in these diagnostics follow the form `/types/{TypeId}/...` as define
 
 **Message:** `TypeRef '{ref}' on '{path}' could not be resolved.`
 
-**Cause:** A property, key, or relationship references a type ID that does not exist in the model.
+**Cause:** A property or other typed reference points to a type ID that does not exist in the model.
 
 **Fix:** Ensure all referenced types are included in the model, or remove the reference.
 

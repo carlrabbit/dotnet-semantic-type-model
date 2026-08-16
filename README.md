@@ -32,15 +32,22 @@ The complete package-role map is in the [shared NuGet README](public-docs/nuget/
 using SemanticTypeModel.DotNet;
 
 [SemanticType(SemanticTypeRole.Entity)]
+[SemanticMutable]
 public sealed class Customer
 {
     [SemanticKey]
+    [SemanticImmutable]
     public required string Id { get; init; }
 
     [SemanticDisplayName("Customer name")]
     public required string Name { get; init; }
 }
 ```
+
+Lifecycle mutability is optional semantic information. If neither the type nor a property declares
+`SemanticMutable` or `SemanticImmutable`, the semantic model makes no mutability claim. Property declarations
+override a type declaration in either direction; CLR setter, `init`, record, and `readonly` shape do not infer
+semantic mutability.
 
 Build the project with `SemanticTypeModel.Generators` referenced as an analyzer/package. The generated
 provider defaults to:
@@ -67,8 +74,7 @@ See [Using SemanticTypeModel](public-docs/usage.md) for the complete first flow.
 ## Configure generation
 
 Common generator settings include the generated namespace, provider name, discovery mode, namespace
-filters, internal-type/member inclusion, naming policy, key inference, and technical-description
-validation.
+filters, internal-type/member inclusion, naming policy, key inference, and technical-description validation.
 
 For example, change the generated namespace with an assembly option:
 
@@ -90,12 +96,20 @@ allowed values, and examples.
 
 ## Use the model
 
+- [Core semantics](public-docs/guides/core-semantics.md)
 - [JSON Schema](public-docs/guides/json-schema.md)
 - [EF Core](public-docs/guides/ef-core.md)
 - [System.Text.Json](public-docs/guides/system-text-json.md)
 - [Configuration / Options](public-docs/guides/configuration-options.md)
 - [Power BI](public-docs/guides/power-bi.md)
 - [Projection capability matrix](public-docs/guides/projection-capabilities.md)
+
+JSON Schema can preserve selected STM-only meaning under the optional `x-stm` object. The initial vocabulary
+covers role, aggregate-root semantics, lifecycle mutability, technical descriptions, keys, units, and open
+`ui.*` annotations. Standard JSON Schema keywords remain authoritative for semantics they already represent.
+
+SemanticTypeModel no longer defines a general canonical relationship abstraction. Applications and target
+projections own relationship behavior through target-native APIs and policies.
 
 Runnable examples live directly under [`samples/`](samples/). The compact sample index is
 [public-docs/samples.md](public-docs/samples.md).

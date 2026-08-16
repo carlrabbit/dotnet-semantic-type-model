@@ -5,23 +5,39 @@ automatic behavior. Always inspect target diagnostics for the actual model.
 
 | Semantic concept | JSON Schema | EF Core | Power BI | System.Text.Json | Configuration / Options |
 |---|---|---|---|---|---|
-| Entity | Object schema | Generated entity/table config | Analytical table | Existing JSON contract metadata | Not an options root by default |
+| Entity | Object schema + optional `x-stm.role` | Generated entity/table config | Analytical table | Existing JSON contract metadata | Not an options root by default |
 | ValueObject / ownership | Nested schema | Owned structural value uses retained JSON storage policy; not standalone Entity | Target policy/diagnostics | Preserved by contract shape | Nested binding where supported |
+| Key | Optional structured `x-stm.keys` metadata | Generated key configuration where supported | Analytical identity/key metadata where supported | No automatic behavior | No automatic behavior |
+| Semantic mutability | Declared values preserved as `x-stm.mutability` | No automatic lifecycle enforcement | No automatic behavior | No automatic serializer enforcement | No automatic reload/write policy |
 | Required / nullable | `required` + null-capable schema | Explicit property requiredness | Metadata/analytical shape | Resolver contract where supported | Options validation/binding |
 | Constraint | JSON Schema keyword when representable | Not general check-constraint generation | Metadata where supported | Usually not runtime validation | Validation when representable |
-| `RequiredWhen` | Conditional schema when safely representable | No relationship/navigation behavior; unsupported target behavior is not inferred | Target-specific/diagnostic | Not general serializer validation | Conditional Options validation |
+| `RequiredWhen` | Conditional schema when safely representable | No navigation/relationship behavior; unsupported target behavior is not inferred | Target-specific/diagnostic | Not general serializer validation | Conditional Options validation |
 | Enum | Schema enum | String provider representation | Analytical categorical representation | Existing serializer contract | Binding/validation |
 | `Uri` | string + `uri` format | String provider representation | Text-like analytical representation | Existing `Uri` contract | Binding where supported |
+| Unit | Optional `x-stm.unit` | No automatic conversion | Target-specific/metadata where supported | No automatic behavior | No automatic behavior |
 | Extension data | Additional-properties style behavior | JSON storage | Limited/diagnostic | Existing extension-data behavior | Target-specific/limited |
 | Envelope | Target root/payload policy | Only retained supported storage semantics; no automatic navigation graph | Analytical target policy | Contract shape | Not generally applicable |
-| User description | Schema description | Not a substitute for technical EF comments | User-facing report metadata | Not a naming source by default | Inspection/docs metadata |
-| Technical description | Optional target-specific extension | Table/column comments where mapped | Not automatic user-facing description | Technical metadata only | Inspection/docs metadata |
+| User description | Schema `description` | Not a substitute for technical EF comments | User-facing report metadata | Not a naming source by default | Inspection/docs metadata |
+| Technical description | Optional `x-stm.technicalDescription` | Table/column comments where mapped | Not automatic user-facing description | Technical metadata only | Inspection/docs metadata |
+| UI annotation | Optional `x-stm.ui` pass-through | No automatic behavior | Target-specific display metadata only where explicitly supported | No automatic behavior | No automatic behavior |
+
+## Important relationship boundary
+
+SemanticTypeModel no longer defines a general canonical relationship primitive. Object-valued properties,
+collections, keys, and ownership remain distinct semantic/structural concepts.
+
+Target applications configure relationships through target-native mechanisms. In particular, the current EF
+application contract deliberately does not infer arbitrary navigations, `OwnsOne`/`OwnsMany`, many-to-many
+relationships, or alternative TPH/TPC policies.
 
 ## Important EF boundary
 
-The current EF application contract is generated configuration for semantic Entities. It deliberately does not
-infer arbitrary navigations, `OwnsOne`/`OwnsMany`, many-to-many relationships, or alternative TPH/TPC policies.
-Owned structural values and extension data use the retained JSON storage policy.
+The current EF application contract is generated configuration for semantic Entities. Generated configuration
+owns only the STM-selected semantic entity configuration; the application owns its `DbContext`, unrelated
+entities, and manual EF composition.
+
+The compile-time semantic manifest is ephemeral internal transport and requires exact STM suite-version
+alignment between producer and consumer generators.
 
 ## Diagnose capability loss
 
