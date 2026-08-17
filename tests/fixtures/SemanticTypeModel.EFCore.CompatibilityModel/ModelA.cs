@@ -14,6 +14,7 @@ public sealed class InventoryItem
     public InventoryState State { get; set; }
     public byte[] Payload { get; set; } = [];
     public ReadOnlyMemory<byte> ReadOnlyPayload { get; set; }
+    public ReadOnlyMemory<byte>? OptionalReadOnlyPayload { get; set; }
     public Uri Endpoint { get; set; } = new("relative", UriKind.Relative);
     public Uri? OptionalEndpoint { get; set; }
     [SemanticOwned]

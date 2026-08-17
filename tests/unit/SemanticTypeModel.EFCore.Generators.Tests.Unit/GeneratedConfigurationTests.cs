@@ -30,7 +30,12 @@ public sealed class GeneratedConfigurationTests
                 public System.Uri Url { get; set; } = new("relative", System.UriKind.Relative);
                 public System.Uri? OptionalUrl { get; set; }
             }
-            public sealed class ImportSpecification : Specification { public byte[] Payload { get; set; } = []; public System.ReadOnlyMemory<byte> Memory { get; set; } }
+            public sealed class ImportSpecification : Specification
+            {
+                public byte[] Payload { get; set; } = [];
+                public System.ReadOnlyMemory<byte> Memory { get; set; }
+                public System.ReadOnlyMemory<byte>? OptionalMemory { get; set; }
+            }
             public readonly record struct StrongId(System.Guid Value);
             public sealed class Details { public string Name { get; set; } = ""; }
             public enum Mode { One, Two }
@@ -60,6 +65,7 @@ public sealed class GeneratedConfigurationTests
             [
                 Property("Id", "Domain.StrongId", key: true, declaring: "Domain.Specification"),
                 Property("Payload", "System.Byte[]"), Property("Memory", "System.ReadOnlyMemory`1[System.Byte]"),
+                Property("OptionalMemory", "System.ReadOnlyMemory`1[System.Byte]", nullable: true),
             ]),
         ]);
 
@@ -82,6 +88,7 @@ public sealed class GeneratedConfigurationTests
         _ = await Assert.That(combined).Contains("SemanticEfValueConverters.NullableUri()");
         _ = await Assert.That(combined).Contains("new global::Domain.StrongId(value)");
         _ = await Assert.That(combined).Contains("value.ToArray()");
+        _ = await Assert.That(combined).Contains("value.HasValue ? value.Value.ToArray() : null");
         _ = await Assert.That(combined).Contains("IsRequired(true)");
         _ = await Assert.That(combined).Contains("IsRequired(false)");
         _ = await Assert.That(combined.CountOccurrences("entity.LegacyCode")).IsEqualTo(1);

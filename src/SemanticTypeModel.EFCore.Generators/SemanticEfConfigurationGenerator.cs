@@ -321,7 +321,9 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
                 return true;
             case EfScalarStorageKind.ReadOnlyMemoryBinary:
                 source.Append("        ").Append(configuredProperty)
-                    .AppendLine(".HasConversion(value => value.ToArray(), value => new global::System.ReadOnlyMemory<byte>(value));");
+                    .AppendLine(nullableMember
+                        ? ".HasConversion(value => value.HasValue ? value.Value.ToArray() : null, value => value == null ? (global::System.ReadOnlyMemory<byte>?)null : new global::System.ReadOnlyMemory<byte>(value));"
+                        : ".HasConversion(value => value.ToArray(), value => new global::System.ReadOnlyMemory<byte>(value));");
                 error = null;
                 return true;
             case EfScalarStorageKind.StrongScalar:

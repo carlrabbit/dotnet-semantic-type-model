@@ -48,6 +48,7 @@ public sealed class RelationalDerivationTests
         await AssertColumnNullability(entity.ScalarColumns, nameof(StorageMatrixEntity.RequiredStrongId), nameof(StorageMatrixEntity.OptionalStrongId), typeof(Guid));
         await AssertColumnNullability(entity.ScalarColumns, nameof(StorageMatrixEntity.RequiredUri), nameof(StorageMatrixEntity.OptionalUri), typeof(string));
         await AssertColumnNullability(entity.BinaryColumns, nameof(StorageMatrixEntity.RequiredBinary), nameof(StorageMatrixEntity.OptionalBinary), typeof(byte[]));
+        await AssertColumnNullability(entity.BinaryColumns, nameof(StorageMatrixEntity.RequiredReadOnlyMemory), nameof(StorageMatrixEntity.OptionalReadOnlyMemory), typeof(byte[]));
         await AssertJsonNullability(entity.JsonColumns, nameof(StorageMatrixEntity.RequiredDetails), nameof(StorageMatrixEntity.OptionalDetails), EfJsonShape.Object);
         await AssertJsonNullability(entity.JsonColumns, nameof(StorageMatrixEntity.RequiredDetailsCollection), nameof(StorageMatrixEntity.OptionalDetailsCollection), EfJsonShape.Array);
         EfJsonColumn extensionData = entity.JsonColumns.Single(column => column.MemberName == nameof(StorageMatrixEntity.ExtensionData));

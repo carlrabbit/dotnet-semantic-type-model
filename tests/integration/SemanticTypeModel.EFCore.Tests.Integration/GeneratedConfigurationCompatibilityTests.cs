@@ -105,6 +105,7 @@ public sealed class GeneratedConfigurationTests
         await AssertPropertyPair(inventory, nameof(InventoryItem.Id), nameof(InventoryItem.OptionalExternalId), converterExpected: true);
         await AssertPropertyPair(inventory, nameof(InventoryItem.Endpoint), nameof(InventoryItem.OptionalEndpoint), converterExpected: true);
         await AssertPropertyPair(inventory, nameof(InventoryItem.Payload), nameof(InventoryItem.OptionalPayload), converterExpected: false);
+        await AssertPropertyPair(inventory, nameof(InventoryItem.ReadOnlyPayload), nameof(InventoryItem.OptionalReadOnlyPayload), converterExpected: true);
         await AssertPropertyPair(inventory, nameof(InventoryItem.Details), nameof(InventoryItem.OptionalDetails), converterExpected: true, comparerExpected: true);
         await AssertPropertyPair(inventory, nameof(InventoryItem.DetailHistory), nameof(InventoryItem.OptionalDetailHistory), converterExpected: true, comparerExpected: true);
         IProperty extensionData = inventory.FindProperty(nameof(InventoryItem.ExtensionData))!;
@@ -145,6 +146,8 @@ public sealed class GeneratedConfigurationTests
                 OptionalEndpoint = new("optional", UriKind.Relative),
                 Payload = [1],
                 OptionalPayload = [2],
+                ReadOnlyPayload = new byte[] { 3 },
+                OptionalReadOnlyPayload = new byte[] { 4 },
                 Details = new() { Warehouse = "required", Quantity = 1 },
                 OptionalDetails = new() { Warehouse = "optional", Quantity = 2 },
                 DetailHistory = [new() { Warehouse = "required", Quantity = 1 }],
@@ -168,6 +171,7 @@ public sealed class GeneratedConfigurationTests
             _ = await Assert.That(item.OptionalExternalId).IsEqualTo(optionalStrongId);
             _ = await Assert.That(item.OptionalEndpoint?.ToString()).IsEqualTo("optional");
             _ = await Assert.That(item.OptionalPayload).IsEquivalentTo(new byte[] { 2 });
+            _ = await Assert.That(item.OptionalReadOnlyPayload?.ToArray()).IsEquivalentTo(new byte[] { 4 });
             _ = await Assert.That(item.ExtensionData?["metadata"].GetProperty("source").GetString()).IsEqualTo("matrix");
             SpecializedInventoryDocument document = await context.Documents.OfType<SpecializedInventoryDocument>().SingleAsync();
             _ = await Assert.That(document.OptionalDetails).IsNull();

@@ -120,6 +120,7 @@ public static class ModelShapeModels
     {
         ScalarTypeDefinition strong = Scalar<MatrixStrongId>(ScalarKind.Guid);
         ScalarTypeDefinition binary = Scalar<byte[]>(ScalarKind.Binary);
+        ScalarTypeDefinition readOnlyMemory = Scalar<ReadOnlyMemory<byte>>(ScalarKind.Binary);
         EnumTypeDefinition state = Enum<MatrixState>();
         ObjectTypeDefinition details = Value<MatrixDetails>([P(nameof(MatrixDetails.Name), StringId)]);
         ArrayTypeDefinition detailsCollection = Array<IReadOnlyList<MatrixDetails>>(details.Id);
@@ -132,11 +133,12 @@ public static class ModelShapeModels
             P(nameof(StorageMatrixEntity.RequiredStrongId), strong.Id), P(nameof(StorageMatrixEntity.OptionalStrongId), strong.Id, false),
             P(nameof(StorageMatrixEntity.RequiredUri), UriId), P(nameof(StorageMatrixEntity.OptionalUri), UriId, false),
             P(nameof(StorageMatrixEntity.RequiredBinary), binary.Id), P(nameof(StorageMatrixEntity.OptionalBinary), binary.Id, false),
+            P(nameof(StorageMatrixEntity.RequiredReadOnlyMemory), readOnlyMemory.Id), P(nameof(StorageMatrixEntity.OptionalReadOnlyMemory), readOnlyMemory.Id, false),
             P(nameof(StorageMatrixEntity.RequiredDetails), details.Id, ("schema.ownedObject", "true")), P(nameof(StorageMatrixEntity.OptionalDetails), details.Id, false, ("schema.ownedObject", "true")),
             P(nameof(StorageMatrixEntity.RequiredDetailsCollection), detailsCollection.Id, ("schema.ownedCollection", "true")), P(nameof(StorageMatrixEntity.OptionalDetailsCollection), detailsCollection.Id, false, ("schema.ownedCollection", "true")),
             P(nameof(StorageMatrixEntity.ExtensionData), extensionData.Id, false, ("schema.extensionData", "true")),
         ], nameof(StorageMatrixEntity.Id));
-        return Build("StorageNullabilityMatrix", [strong, binary, state, details, detailsCollection, extensionData, entity]);
+        return Build("StorageNullabilityMatrix", [strong, binary, readOnlyMemory, state, details, detailsCollection, extensionData, entity]);
     }
 
     private static readonly TypeId GuidId = TypeIdOf<Guid>();
