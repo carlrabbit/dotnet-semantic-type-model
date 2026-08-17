@@ -6,12 +6,12 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-No milestone is active.
+None.
 
 ## Next Number
 
 ```text
-M0064
+M0065
 ```
 
 Never restart or reuse milestone numbers.
@@ -19,7 +19,13 @@ Never restart or reuse milestone numbers.
 ## Lifecycle
 
 ```text
-plan -> implement -> synchronize durable truth -> validate -> complete -> delete completed milestone
+draft/planning -> ready -> implementing -> done
 ```
 
-Promote current behavior to specifications, structural outcomes to architecture, durable rationale to decisions, and consumer-visible behavior to public documentation before deleting a completed milestone. Do not archive milestone files in the working tree.
+Planning resolves material architecture, semantic, compatibility, scope, acceptance, and validation decisions before a coding milestone becomes `ready`.
+
+Implementation starts from the ready milestone and repository-local authority, re-inspects the live source and tests, and owns concrete implementation mechanics that fit the contract.
+
+If implementation discovers a material unresolved decision, return that issue to planning rather than silently changing project policy.
+
+After implementation, synchronize durable outcomes into specifications, architecture, decisions, engineering, tests, and public documentation as appropriate. Delete the completed milestone file; Git retains history.

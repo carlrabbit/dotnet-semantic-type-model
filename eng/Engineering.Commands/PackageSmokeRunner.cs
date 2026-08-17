@@ -161,7 +161,10 @@ internal static class PackageSmokeRunner
         {
             [SemanticKey] public int Id { get; set; }
             public string Status { get; set; } = string.Empty;
+            [SemanticOwned] public SmokeOrderDetails? Details { get; set; }
         }
+        [SemanticType(SemanticTypeRole.ValueObject)]
+        public sealed class SmokeOrderDetails { public string Note { get; set; } = string.Empty; }
         """;
 
     private const string ConsumerSource = """
@@ -178,6 +181,8 @@ internal static class PackageSmokeRunner
                 builder.ApplyAppSemanticModel();
                 if (builder.Model.FindEntityType(typeof(SmokeOrder)) is null)
                     throw new InvalidOperationException("Packed EF generator did not execute.");
+                if (builder.Model.FindEntityType(typeof(SmokeOrder))!.FindProperty(nameof(SmokeOrder.Details)) is null)
+                    throw new InvalidOperationException("Packed EF generator did not configure nullable owned JSON.");
                 Console.WriteLine("Package smoke consumer succeeded.");
             }
         }

@@ -11,7 +11,11 @@ public abstract record ExtensibleObject { public Dictionary<string, JsonElement>
 public sealed record ExtensibleOrder(Guid Id) : ExtensibleObject;
 public abstract record SourceConfiguredObject { public SourceOptions? Source { get; init; } }
 public sealed record SourceOrder(Guid Id) : SourceConfiguredObject;
-public abstract record FieldConfiguredObject { public IReadOnlyList<DerivedField> DerivedFields { get; init; } = []; }
+public abstract record FieldConfiguredObject
+{
+    public IReadOnlyList<DerivedField> DerivedFields { get; init; } = [];
+    public IReadOnlyList<DerivedField>? OptionalDerivedFields { get; init; }
+}
 public sealed record FieldConfiguredOrder(Guid Id) : FieldConfiguredObject;
 public abstract record VersionedExtensibleObject : ExtensibleObject { public int SchemaVersion { get; init; } }
 public abstract record Specification(Guid Id, string DisplayName) : VersionedExtensibleObject;
@@ -33,6 +37,28 @@ public abstract record SemanticChainBase(Guid Id) : StructuralGrandbase;
 public sealed record SemanticChainDerived(Guid Id) : SemanticChainBase(Id);
 public abstract record JsonBase(Guid Id) { public SourceOptions? OptionalSource { get; init; } }
 public sealed record JsonDerived(Guid Id, SourceOptions RequiredSource) : JsonBase(Id);
+public readonly record struct MatrixStrongId(Guid Value);
+public enum MatrixState { Active, Archived }
+public sealed record MatrixDetails(string Name);
+public sealed class StorageMatrixEntity
+{
+    public Guid Id { get; set; }
+    public string RequiredText { get; set; } = string.Empty;
+    public string? OptionalText { get; set; }
+    public MatrixState RequiredState { get; set; }
+    public MatrixState? OptionalState { get; set; }
+    public MatrixStrongId RequiredStrongId { get; set; }
+    public MatrixStrongId? OptionalStrongId { get; set; }
+    public Uri RequiredUri { get; set; } = new("relative", UriKind.Relative);
+    public Uri? OptionalUri { get; set; }
+    public byte[] RequiredBinary { get; set; } = [];
+    public byte[]? OptionalBinary { get; set; }
+    public MatrixDetails RequiredDetails { get; set; } = new(string.Empty);
+    public MatrixDetails? OptionalDetails { get; set; }
+    public IReadOnlyList<MatrixDetails> RequiredDetailsCollection { get; set; } = [];
+    public IReadOnlyList<MatrixDetails>? OptionalDetailsCollection { get; set; }
+    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+}
 
 public static class ModelShapeInventory
 {

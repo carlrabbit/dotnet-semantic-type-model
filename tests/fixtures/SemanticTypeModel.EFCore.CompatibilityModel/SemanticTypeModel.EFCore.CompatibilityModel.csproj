@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><RootNamespace>SemanticTypeModel.M0060.ModelB</RootNamespace><NoWarn>$(NoWarn);CS1591</NoWarn></PropertyGroup>
+  <PropertyGroup><RootNamespace>SemanticTypeModel.EFCore.CompatibilityModel</RootNamespace><NoWarn>$(NoWarn);CS1591</NoWarn></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../../src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

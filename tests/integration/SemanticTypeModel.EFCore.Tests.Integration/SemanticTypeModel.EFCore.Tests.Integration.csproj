@@ -14,8 +14,8 @@
     <ProjectReference Include="../../../src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.EFCore/SemanticTypeModel.EFCore.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.EFCore.Generators/SemanticTypeModel.EFCore.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="../../fixtures/SemanticTypeModel.M0060.ModelA/SemanticTypeModel.M0060.ModelA.csproj" />
-    <ProjectReference Include="../../fixtures/SemanticTypeModel.M0060.ModelB/SemanticTypeModel.M0060.ModelB.csproj" />
+    <ProjectReference Include="../../fixtures/SemanticTypeModel.EFCore.CompatibilityModel/SemanticTypeModel.EFCore.CompatibilityModel.csproj" />
+    <ProjectReference Include="../../fixtures/SemanticTypeModel.EFCore.CompositionModel/SemanticTypeModel.EFCore.CompositionModel.csproj" />
     <ProjectReference Include="../../fixtures/SemanticTypeModel.EFCoreModelShapes/SemanticTypeModel.EFCoreModelShapes.csproj" />
     <ProjectReference Include="../../fixtures/SemanticTypeModel.RealWorldFixtures/SemanticTypeModel.RealWorldFixtures.csproj" />
   </ItemGroup>
