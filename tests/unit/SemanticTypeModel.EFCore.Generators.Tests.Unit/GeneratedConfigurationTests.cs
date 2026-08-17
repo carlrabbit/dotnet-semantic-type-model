@@ -9,11 +9,11 @@ using SemanticTypeModel.DotNet.Diagnostics;
 
 namespace SemanticTypeModel.EFCore.Generators.Tests.Unit;
 
-public sealed class M0060GeneratedConfigurationTests
+public sealed class GeneratedConfigurationTests
 {
     // PartialHook compilation and MultiModel ownership/name diagnostics are intentionally kept in this focused fixture.
     [Test]
-    public async Task M0060_GeneratedConfiguration_mapping_hooks_inheritance_and_text_are_deterministic_and_compile()
+    public async Task GeneratedConfiguration_mapping_hooks_inheritance_and_text_are_deterministic_and_compile()
     {
         const string source = """
             [assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Domain.Marker))]
@@ -25,10 +25,17 @@ public sealed class M0060GeneratedConfigurationTests
                 public StrongId Id { get; set; }
                 public Mode Mode { get; set; }
                 public Details Details { get; set; } = new();
+                public Details? OptionalDetails { get; set; }
+                public System.Collections.Generic.IReadOnlyList<Details>? OptionalDetailHistory { get; set; }
                 public System.Uri Url { get; set; } = new("relative", System.UriKind.Relative);
                 public System.Uri? OptionalUrl { get; set; }
             }
-            public sealed class ImportSpecification : Specification { public byte[] Payload { get; set; } = []; public System.ReadOnlyMemory<byte> Memory { get; set; } }
+            public sealed class ImportSpecification : Specification
+            {
+                public byte[] Payload { get; set; } = [];
+                public System.ReadOnlyMemory<byte> Memory { get; set; }
+                public System.ReadOnlyMemory<byte>? OptionalMemory { get; set; }
+            }
             public readonly record struct StrongId(System.Guid Value);
             public sealed class Details { public string Name { get; set; } = ""; }
             public enum Mode { One, Two }
@@ -43,17 +50,22 @@ public sealed class M0060GeneratedConfigurationTests
             Type("System.String", "String", "Scalar"), Type("System.Guid", "Guid", "Scalar"), Type("System.Uri", "Uri", "Scalar"),
             Type("Domain.StrongId", "StrongId", "Object"), Type("Domain.Mode", "Mode", "Enum"),
             Type("Domain.Details", "Details", "Object", "ValueObject"), Type("System.Byte[]", "Bytes", "Array"),
+            Type("System.Collections.Generic.IReadOnlyList`1[Domain.Details]", "DetailsArray", "Array", itemType: "Domain.Details"),
             Type("System.ReadOnlyMemory`1[System.Byte]", "Memory", "Object"),
             Type("Domain.Specification", "Specification", "Object", "Entity", properties:
             [
                 Property("Id", "Domain.StrongId", key: true), Property("Mode", "Domain.Mode"),
-                Property("Details", "Domain.Details", ownership: "Object"), Property("LegacyCode", "System.String", declaring: "Domain.LegacyBase"),
+                Property("Details", "Domain.Details", ownership: "Object"),
+                Property("OptionalDetails", "Domain.Details", ownership: "Object", nullable: true),
+                Property("OptionalDetailHistory", "System.Collections.Generic.IReadOnlyList`1[Domain.Details]", ownership: "Collection", nullable: true),
+                Property("LegacyCode", "System.String", declaring: "Domain.LegacyBase"),
                 Property("Url", "System.Uri"), Property("OptionalUrl", "System.Uri", nullable: true),
             ]),
             Type("Domain.ImportSpecification", "ImportSpecification", "Object", "Entity", "Domain.Specification",
             [
                 Property("Id", "Domain.StrongId", key: true, declaring: "Domain.Specification"),
                 Property("Payload", "System.Byte[]"), Property("Memory", "System.ReadOnlyMemory`1[System.Byte]"),
+                Property("OptionalMemory", "System.ReadOnlyMemory`1[System.Byte]", nullable: true),
             ]),
         ]);
 
@@ -70,10 +82,13 @@ public sealed class M0060GeneratedConfigurationTests
         string combined = string.Join("\n", firstText);
         _ = await Assert.That(combined).Contains("HasConversion<string>()");
         _ = await Assert.That(combined).Contains("SemanticEfValueConverters.Json<");
+        _ = await Assert.That(combined).Contains("Json<global::Domain.Details?>()");
+        _ = await Assert.That(combined).Contains("Json<global::System.Collections.Generic.IReadOnlyList<global::Domain.Details>?>()");
         _ = await Assert.That(combined).Contains("SemanticEfValueConverters.Uri()");
         _ = await Assert.That(combined).Contains("SemanticEfValueConverters.NullableUri()");
         _ = await Assert.That(combined).Contains("new global::Domain.StrongId(value)");
         _ = await Assert.That(combined).Contains("value.ToArray()");
+        _ = await Assert.That(combined).Contains("value.HasValue ? value.Value.ToArray() : null");
         _ = await Assert.That(combined).Contains("IsRequired(true)");
         _ = await Assert.That(combined).Contains("IsRequired(false)");
         _ = await Assert.That(combined.CountOccurrences("entity.LegacyCode")).IsEqualTo(1);
@@ -201,9 +216,9 @@ public sealed class M0060GeneratedConfigurationTests
         return Type(name, name.Split('.').Last(), "Object", "Entity", properties: [Property("Id", "System.Int32", key: true)]);
     }
 
-    private static object Type(string id, string name, string kind, string? role = null, string? baseClr = null, object[]? properties = null)
+    private static object Type(string id, string name, string kind, string? role = null, string? baseClr = null, object[]? properties = null, string? itemType = null)
     {
-        return new { Id = id, Name = name, ClrName = id, BaseClrName = baseClr, Kind = kind, Role = role, ItemTypeId = (string?)null, Properties = properties ?? [] };
+        return new { Id = id, Name = name, ClrName = id, BaseClrName = baseClr, Kind = kind, Role = role, ItemTypeId = itemType, Properties = properties ?? [] };
     }
 
     private static object Property(string name, string type, bool key = false, string? declaring = null, string? ownership = null, bool nullable = false)

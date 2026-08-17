@@ -1,3 +1,4 @@
+using System.Text.Json;
 using SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.EFCoreModelShapes;
@@ -46,8 +47,8 @@ public static class ModelShapeModels
     [
         Value<DerivedField>([P(nameof(DerivedField.Name), StringId)]),
         Array<IReadOnlyList<DerivedField>>(TypeIdOf<DerivedField>()),
-        Structural<FieldConfiguredObject>([P(nameof(FieldConfiguredObject.DerivedFields), TypeIdOf<IReadOnlyList<DerivedField>>(), ("schema.ownedCollection", "true"))]),
-        Entity<FieldConfiguredOrder>([P(nameof(FieldConfiguredOrder.Id), GuidId), P(nameof(FieldConfiguredObject.DerivedFields), TypeIdOf<IReadOnlyList<DerivedField>>(), ("schema.ownedCollection", "true"))], nameof(FieldConfiguredOrder.Id)),
+        Structural<FieldConfiguredObject>([P(nameof(FieldConfiguredObject.DerivedFields), TypeIdOf<IReadOnlyList<DerivedField>>(), ("schema.ownedCollection", "true")), P(nameof(FieldConfiguredObject.OptionalDerivedFields), TypeIdOf<IReadOnlyList<DerivedField>>(), false, ("schema.ownedCollection", "true"))]),
+        Entity<FieldConfiguredOrder>([P(nameof(FieldConfiguredOrder.Id), GuidId), P(nameof(FieldConfiguredObject.DerivedFields), TypeIdOf<IReadOnlyList<DerivedField>>(), ("schema.ownedCollection", "true")), P(nameof(FieldConfiguredObject.OptionalDerivedFields), TypeIdOf<IReadOnlyList<DerivedField>>(), false, ("schema.ownedCollection", "true"))], nameof(FieldConfiguredOrder.Id)),
     ]);
     }
 
@@ -115,6 +116,31 @@ public static class ModelShapeModels
     ]);
     }
 
+    public static TypeSchemaModel StorageNullabilityMatrix()
+    {
+        ScalarTypeDefinition strong = Scalar<MatrixStrongId>(ScalarKind.Guid);
+        ScalarTypeDefinition binary = Scalar<byte[]>(ScalarKind.Binary);
+        ScalarTypeDefinition readOnlyMemory = Scalar<ReadOnlyMemory<byte>>(ScalarKind.Binary);
+        EnumTypeDefinition state = Enum<MatrixState>();
+        ObjectTypeDefinition details = Value<MatrixDetails>([P(nameof(MatrixDetails.Name), StringId)]);
+        ArrayTypeDefinition detailsCollection = Array<IReadOnlyList<MatrixDetails>>(details.Id);
+        DictionaryTypeDefinition extensionData = Dictionary<Dictionary<string, JsonElement>>(StringId, TypeIdOf<JsonElement>());
+        ObjectTypeDefinition entity = Entity<StorageMatrixEntity>(
+        [
+            P(nameof(StorageMatrixEntity.Id), GuidId),
+            P(nameof(StorageMatrixEntity.RequiredText), StringId), P(nameof(StorageMatrixEntity.OptionalText), StringId, false),
+            P(nameof(StorageMatrixEntity.RequiredState), state.Id), P(nameof(StorageMatrixEntity.OptionalState), state.Id, false),
+            P(nameof(StorageMatrixEntity.RequiredStrongId), strong.Id), P(nameof(StorageMatrixEntity.OptionalStrongId), strong.Id, false),
+            P(nameof(StorageMatrixEntity.RequiredUri), UriId), P(nameof(StorageMatrixEntity.OptionalUri), UriId, false),
+            P(nameof(StorageMatrixEntity.RequiredBinary), binary.Id), P(nameof(StorageMatrixEntity.OptionalBinary), binary.Id, false),
+            P(nameof(StorageMatrixEntity.RequiredReadOnlyMemory), readOnlyMemory.Id), P(nameof(StorageMatrixEntity.OptionalReadOnlyMemory), readOnlyMemory.Id, false),
+            P(nameof(StorageMatrixEntity.RequiredDetails), details.Id, ("schema.ownedObject", "true")), P(nameof(StorageMatrixEntity.OptionalDetails), details.Id, false, ("schema.ownedObject", "true")),
+            P(nameof(StorageMatrixEntity.RequiredDetailsCollection), detailsCollection.Id, ("schema.ownedCollection", "true")), P(nameof(StorageMatrixEntity.OptionalDetailsCollection), detailsCollection.Id, false, ("schema.ownedCollection", "true")),
+            P(nameof(StorageMatrixEntity.ExtensionData), extensionData.Id, false, ("schema.extensionData", "true")),
+        ], nameof(StorageMatrixEntity.Id));
+        return Build("StorageNullabilityMatrix", [strong, binary, readOnlyMemory, state, details, detailsCollection, extensionData, entity]);
+    }
+
     private static readonly TypeId GuidId = TypeIdOf<Guid>();
     private static readonly TypeId StringId = TypeIdOf<string>();
     private static readonly TypeId IntId = TypeIdOf<int>();
@@ -154,6 +180,16 @@ public static class ModelShapeModels
     private static ArrayTypeDefinition Array<T>(TypeId item)
     {
         return new() { Id = TypeIdOf<T>(), Name = typeof(T).Name, Kind = TypeKind.Array, Nullability = Nullability.NonNullable, ItemType = new(item), Annotations = Clr(typeof(T)) };
+    }
+
+    private static DictionaryTypeDefinition Dictionary<T>(TypeId key, TypeId value)
+    {
+        return new() { Id = TypeIdOf<T>(), Name = typeof(T).Name, Kind = TypeKind.Dictionary, Nullability = Nullability.NonNullable, KeyType = new(key), ValueType = new(value), Annotations = Clr(typeof(T)) };
+    }
+
+    private static EnumTypeDefinition Enum<T>() where T : struct, Enum
+    {
+        return new() { Id = TypeIdOf<T>(), Name = typeof(T).Name, Kind = TypeKind.Enum, Nullability = Nullability.NonNullable, StorageKind = EnumStorageKind.String, Values = [.. System.Enum.GetNames<T>().Select(name => new EnumValueDefinition { Name = name, Value = name, Annotations = new() })], Annotations = Clr(typeof(T)) };
     }
 
     private static PropertyDefinition P(string name, TypeId type, params (string Key, string Value)[] annotations)

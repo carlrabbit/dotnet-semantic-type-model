@@ -47,7 +47,7 @@ The repository working tree carries **current truth and active work**. Git carri
 ### Completion and supersession
 
 - After a milestone is implemented and durable outcomes are synchronized into specs/decisions/architecture/public docs/tests as appropriate, delete the completed milestone file.
-- Never reuse milestone numbers. After M0060, numbering continues with M0061.
+- Never reuse milestone numbers.
 - Delete superseded decisions/specifications after promoting any still-current requirement or rationale into replacement authority.
 - Do not create an archive directory merely to retain files already preserved by Git.
 - `.guide-sync/pending/` contains only unresolved current synchronization work and should normally be empty.
@@ -74,6 +74,7 @@ A new feature, bug fix, diagnostic, mapping rule, release, or implementation det
 - Long-running tests, benchmarks, stress tests, and release-only integration scenarios must be explicit and isolated from the default short-running test path.
 - Prefer focused Tier 1 validation during implementation, then Tier 2 before completion.
 - Boundary-crossing generator/provider/package defects require tests that exercise the actual boundary; do not substitute hand-built internal models for the integration being validated.
+- EF Core compatibility tests follow `docs/engineering/ef-core-testing.md`.
 
 ## Public Documentation Synchronization
 
@@ -106,6 +107,7 @@ See `docs/specs/diagnostics.md` for the full diagnostic specification.
 |---|---|
 | engineering/dotnet.md | .NET engineering profile |
 | engineering/command-contract.md | Canonical repository command contract |
+| engineering/ef-core-testing.md | EF Core compatibility matrix, test layers, fixture architecture, and package-smoke requirements |
 | engineering/packaging.md | NuGet packaging and publishing policy |
 | engineering/package-documentation.md | Package README and usage-guide documentation expectations |
 | engineering/release-readiness.md | Release gate sequence |

@@ -1,8 +1,9 @@
+using System.Text.Json;
 using SemanticTypeModel.DotNet;
 
-[assembly: SemanticTypeModelGeneratorOptions("SemanticTypeModel.M0060.ModelA.Generated", "InventorySemanticTypeModel")]
+[assembly: SemanticTypeModelGeneratorOptions("SemanticTypeModel.EFCore.CompatibilityModel.Generated", "InventorySemanticTypeModel")]
 
-namespace SemanticTypeModel.M0060.ModelA;
+namespace SemanticTypeModel.EFCore.CompatibilityModel;
 
 [SemanticType(SemanticTypeRole.Entity)]
 public sealed class InventoryItem
@@ -13,10 +14,23 @@ public sealed class InventoryItem
     public InventoryState State { get; set; }
     public byte[] Payload { get; set; } = [];
     public ReadOnlyMemory<byte> ReadOnlyPayload { get; set; }
+    public ReadOnlyMemory<byte>? OptionalReadOnlyPayload { get; set; }
     public Uri Endpoint { get; set; } = new("relative", UriKind.Relative);
     public Uri? OptionalEndpoint { get; set; }
     [SemanticOwned]
     public InventoryDetails Details { get; set; } = new();
+    [SemanticOwned]
+    public InventoryDetails? OptionalDetails { get; set; }
+    [SemanticOwned(Kind = SemanticOwnershipKind.Collection)]
+    public IReadOnlyList<InventoryDetails> DetailHistory { get; set; } = [];
+    [SemanticOwned(Kind = SemanticOwnershipKind.Collection)]
+    public IReadOnlyList<InventoryDetails>? OptionalDetailHistory { get; set; }
+    public string? OptionalDisplayName { get; set; }
+    public InventoryState? OptionalState { get; set; }
+    public InventoryItemId? OptionalExternalId { get; set; }
+    public byte[]? OptionalPayload { get; set; }
+    [SemanticExtensionData]
+    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 }
 
 [SemanticType(SemanticTypeRole.ValueObject)]
@@ -24,6 +38,22 @@ public sealed class InventoryDetails
 {
     public string Warehouse { get; set; } = string.Empty;
     public int Quantity { get; set; }
+}
+
+[SemanticType(SemanticTypeRole.Entity)]
+public abstract class InventoryDocument
+{
+    [SemanticKey]
+    public Guid Id { get; set; }
+    [SemanticOwned]
+    public InventoryDetails? OptionalDetails { get; set; }
+}
+
+[SemanticType(SemanticTypeRole.Entity)]
+public sealed class SpecializedInventoryDocument : InventoryDocument
+{
+    [SemanticOwned]
+    public InventoryDetails RequiredDetails { get; set; } = new();
 }
 
 [SemanticType]
