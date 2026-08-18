@@ -40,6 +40,15 @@ public sealed record SystemTextJsonTypeDefinition
 
     /// <summary>Gets projected properties in deterministic order.</summary>
     public required IReadOnlyList<SystemTextJsonPropertyDefinition> Properties { get; init; }
+
+    /// <summary>Gets the imported object-level creation behavior, when declared.</summary>
+    public string? ObjectCreationHandling { get; init; }
+
+    /// <summary>Gets the imported object-level unmapped-member behavior, when declared.</summary>
+    public string? UnmappedMemberHandling { get; init; }
+
+    /// <summary>Gets a value indicating whether explicit STJ polymorphism metadata was present.</summary>
+    public bool HasPolymorphism { get; init; }
 }
 
 /// <summary>
@@ -64,4 +73,31 @@ public sealed record SystemTextJsonPropertyDefinition
 
     /// <summary>Gets the projected JSON name when determinable before resolver matching.</summary>
     public string? ProjectedJsonName { get; init; }
+
+    /// <summary>Gets a value indicating whether the member is ignored by STJ.</summary>
+    public bool IsIgnored { get; init; }
+
+    /// <summary>Gets the imported ignore condition.</summary>
+    public string? IgnoreCondition { get; init; }
+
+    /// <summary>Gets a value indicating whether the member is explicitly included.</summary>
+    public bool IsIncluded { get; init; }
+
+    /// <summary>Gets the imported converter metadata.</summary>
+    public string? Converter { get; init; }
+
+    /// <summary>Gets the imported number handling metadata.</summary>
+    public string? NumberHandling { get; init; }
+
+    /// <summary>Gets a value indicating whether the member is serializer-required.</summary>
+    public bool IsRequired { get; init; }
+
+    /// <summary>Gets the imported object creation handling metadata.</summary>
+    public string? ObjectCreationHandling { get; init; }
+
+    /// <summary>Gets the imported unmapped-member handling metadata.</summary>
+    public string? UnmappedMemberHandling { get; init; }
+
+    /// <summary>Gets a value indicating whether explicit STJ polymorphism metadata was present.</summary>
+    public bool HasPolymorphism { get; init; }
 }

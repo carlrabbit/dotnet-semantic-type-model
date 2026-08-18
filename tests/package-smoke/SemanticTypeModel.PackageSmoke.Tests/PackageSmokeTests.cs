@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Json.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Model = SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Abstractions.Runtime;
@@ -10,6 +11,8 @@ using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.JsonSchema.Derivation;
 using SemanticTypeModel.PowerBI;
 using SemanticTypeModel.SystemTextJson;
+
+[assembly: SemanticTypeModelGeneratorOptions("SemanticTypeModel.PackageSmoke.Tests.Generated", "PackageSmokeSemanticTypeModel", IncludeInternalTypes = true)]
 
 namespace SemanticTypeModel.PackageSmoke.Tests;
 
@@ -53,64 +56,27 @@ internal sealed class PackageSmokeTests
         _ = typeof(SemanticFormatAttribute);
         _ = typeof(SemanticStringConstraintsAttribute);
         _ = typeof(SemanticAnnotationAttribute);
+        Model.TypeSchemaModel generatedSmokeModel = Generated.PackageSmokeSemanticTypeModel.Create();
         JsonSerializerOptions jsonOptions = new()
         {
             TypeInfoResolver = PackageSmokeJsonContext.Default.WithSemanticTypeModelJson(
-                BuildPackageSmokeJsonModel(),
+                generatedSmokeModel,
                 projectionOptions => projectionOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName),
         };
-        string smokeJson = JsonSerializer.Serialize(new SmokeJsonCustomer { Id = "C-001" }, jsonOptions);
-        SmokeJsonCustomer? smokeCustomer = JsonSerializer.Deserialize<SmokeJsonCustomer>("""
-            { "smokeId": "C-002" }
+        string smokeJson = JsonSerializer.Serialize(new SmokeCustomer { Id = "C-001" }, jsonOptions);
+        SmokeCustomer? smokeCustomer = JsonSerializer.Deserialize<SmokeCustomer>("""
+            { "Id": "C-002" }
             """, jsonOptions);
 
-        _ = SystemTextJsonAnnotationNames.PropertyName;
-        _ = await Assert.That(smokeJson).Contains("smokeId");
-        _ = await Assert.That(smokeCustomer?.Id).IsEqualTo("C-002");
-        _ = await Assert.That(nameof(SmokeCustomer)).IsEqualTo("SmokeCustomer");
-    }
+        Json.Schema.JsonSchema smokeSchema = Json.Schema.JsonSchema.FromText(JsonSchemaExporter.Export(generatedSmokeModel).Document.RootElement.GetRawText());
+        using JsonDocument smokeDocument = JsonDocument.Parse(smokeJson);
+        EvaluationResults smokeValidation = smokeSchema.Evaluate(smokeDocument.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
 
-    private static Model.TypeSchemaModel BuildPackageSmokeJsonModel()
-    {
-        Model.ScalarTypeDefinition scalar = new()
-        {
-            Id = new Model.TypeId("global::System.String"),
-            Name = "String",
-            Kind = Model.TypeKind.Scalar,
-            Nullability = Model.Nullability.NonNullable,
-            Annotations = new Model.AnnotationBag(),
-            ScalarKind = Model.ScalarKind.String,
-        };
-        var customer = new Model.ObjectTypeDefinition
-        {
-            Id = new Model.TypeId("global::SemanticTypeModel.PackageSmoke.Tests.SmokeJsonCustomer"),
-            Name = "SmokeJsonCustomer",
-            Kind = Model.TypeKind.Object,
-            Nullability = Model.Nullability.NonNullable,
-            Annotations = new Model.AnnotationBag(),
-            Properties =
-            [
-                new Model.PropertyDefinition
-                {
-                    Id = new Model.PropertyId("Id"),
-                    Name = "smokeId",
-                    Type = new Model.TypeRef(scalar.Id),
-                    Cardinality = new Model.Cardinality { IsRequired = true },
-                    Mutability = Model.SemanticMutability.Mutable,
-                    Constraints = new Model.ConstraintSet(),
-                    Annotations = new Model.AnnotationBag
-                    {
-                        Items =
-                        [
-                            new Model.Annotation { Key = new Model.AnnotationKey("dotnet.memberName"), Value = "Id", Scope = Model.AnnotationScope.Member, Source = Model.AnnotationSource.Imported },
-                            new Model.Annotation { Key = new Model.AnnotationKey(SystemTextJsonAnnotationNames.PropertyName), Value = "smoke_id", Scope = Model.AnnotationScope.Member, Source = Model.AnnotationSource.Imported },
-                        ],
-                    },
-                },
-            ],
-            Keys = [],
-        };
-        return new Model.TypeSchemaModel { Id = new Model.SchemaModelId(customer.Id.Value), Types = [customer, scalar], TypesById = new Dictionary<Model.TypeId, Model.TypeDefinition> { [customer.Id] = customer, [scalar.Id] = scalar }, Annotations = new Model.AnnotationBag() };
+        _ = SystemTextJsonAnnotationNames.PropertyName;
+        _ = await Assert.That(smokeJson).Contains("Id");
+        _ = await Assert.That(smokeCustomer?.Id).IsEqualTo("C-002");
+        _ = await Assert.That(smokeValidation.IsValid).IsTrue();
+        _ = await Assert.That(nameof(SmokeCustomer)).IsEqualTo("SmokeCustomer");
     }
 
     private static Model.TypeSchemaModel BuildCanonicalModel()
@@ -140,13 +106,7 @@ internal sealed class PackageSmokeTests
     }
 }
 
-internal sealed class SmokeJsonCustomer
-{
-    [JsonPropertyName("smoke_id")]
-    public required string Id { get; init; }
-}
-
-[JsonSerializable(typeof(SmokeJsonCustomer))]
+[JsonSerializable(typeof(SmokeCustomer))]
 internal sealed partial class PackageSmokeJsonContext : JsonSerializerContext
 {
 }

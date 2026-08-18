@@ -49,6 +49,9 @@ public sealed record JsonSchemaObjectNode : JsonSchemaNode
     /// <summary>Gets a value indicating whether additional properties are permitted.</summary>
     public bool AdditionalPropertiesAllowed { get; init; } = true;
 
+    /// <summary>Gets the typed schema for additional properties when the source extension-data value is representable.</summary>
+    public JsonSchemaSchemaRef? AdditionalPropertiesSchema { get; init; }
+
     /// <summary>Gets deterministic conditional required constraints.</summary>
     public IReadOnlyList<JsonSchemaConditionalConstraint> ConditionalConstraints { get; init; } = [];
 }
@@ -69,6 +72,9 @@ public sealed record JsonSchemaProperty
 {
     /// <summary>Gets the property name.</summary>
     public required string Name { get; init; }
+
+    /// <summary>Gets the optional semantic presentation order used for deterministic export.</summary>
+    public int? Order { get; init; }
 
     /// <summary>Gets the referenced or inline property schema.</summary>
     public required JsonSchemaSchemaRef Schema { get; init; }

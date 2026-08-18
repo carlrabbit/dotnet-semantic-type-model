@@ -95,6 +95,28 @@ Target packages derive package-owned domain models before target functionality i
 
 ## Target Pipelines
 
+### JSON Representation Fidelity
+
+JSON Schema and System.Text.Json remain **sibling target projections** over the same canonical model.
+
+Their coordinated role is:
+
+```text
+canonical TypeSchemaModel
+        |
+        +--> System.Text.Json domain model --> JSON wire output
+        |
+        +--> JSON Schema domain model ------> declarative schema / validation contract
+```
+
+System.Text.Json owns supported runtime serialization representation. JSON Schema owns declarative representation of structural/validation semantics and selected STM-only semantic preservation.
+
+The repository may define a supported configuration under which successfully serialized System.Text.Json output is required to conform to the JSON Schema derived from the same canonical model. That guarantee is one-way output conformance, not bidirectional serializer/schema equivalence.
+
+This coordination does **not** introduce a new shared JSON package, a new canonical JSON contract model, or a dependency from `SemanticTypeModel.JsonSchema` to `SemanticTypeModel.SystemTextJson` or vice versa. Shared internal implementation helpers are allowed only when normal dependency direction remains intact.
+
+System.Text.Json does not become the semantic validation engine. JSON Schema export does not become a serializer.
+
 ### JSON Schema
 
 ```text
@@ -147,6 +169,8 @@ canonical TypeSchemaModel
 ```
 
 SemanticTypeModel does not generate a custom `JsonSerializerContext` or serializer implementation.
+
+The base resolver/context remains application-owned and is preserved by default. Semantic validation constraints are not reimplemented as serializer validation.
 
 ### Configuration
 
@@ -201,5 +225,7 @@ Persistence project
 - Target packages own representation choices, not canonical meaning.
 - Diagnostics are preferred over ambiguous target guessing.
 - Compile-time output and target behavior must be deterministic.
+- JSON Schema and System.Text.Json may coordinate through shared project truth and tests but remain sibling packages without a direct dependency.
+- System.Text.Json output/schema fidelity is a bounded one-way guarantee for supported configurations, not a claim of complete JSON contract equivalence.
 - EF generated configuration owns only selected semantic entities; the application owns the global `DbContext`.
 - Historical adapter/application architectures do not remain equal authority in the working tree after they are superseded.

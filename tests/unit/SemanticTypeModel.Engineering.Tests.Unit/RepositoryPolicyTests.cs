@@ -62,7 +62,19 @@ internal sealed class RepositoryPolicyTests
     [Test]
     public async Task PackageSmokeLauncherForwardsInvalidUsageExitCode()
     {
-        using Process process = Process.Start(new ProcessStartInfo(Path.Combine(FindRoot(), "eng", "package-smoke.sh")) { UseShellExecute = false })!;
+        string root = FindRoot();
+        string script = Path.Combine(root, "eng", OperatingSystem.IsWindows() ? "package-smoke.ps1" : "package-smoke.sh");
+        ProcessStartInfo startInfo = OperatingSystem.IsWindows()
+            ? new ProcessStartInfo("pwsh") { UseShellExecute = false }
+            : new ProcessStartInfo(script) { UseShellExecute = false };
+        if (OperatingSystem.IsWindows())
+        {
+            startInfo.ArgumentList.Add("-NoProfile");
+            startInfo.ArgumentList.Add("-File");
+            startInfo.ArgumentList.Add(script);
+        }
+
+        using Process process = Process.Start(startInfo)!;
         await process.WaitForExitAsync();
         _ = await Assert.That(process.ExitCode).IsEqualTo(1);
     }

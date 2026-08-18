@@ -6,10 +6,17 @@
   <ItemGroup>
     <PackageReference Include="TUnit" />
     <PackageReference Include="TUnit.Assertions" />
+    <PackageReference Include="JsonSchema.Net" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../../src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj" />
     <ProjectReference Include="../../fixtures/SemanticTypeModel.RealWorldFixtures/SemanticTypeModel.RealWorldFixtures.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <Analyzer Include="../../../src/SemanticTypeModel.DotNet/bin/$(Configuration)/net10.0/SemanticTypeModel.DotNet.dll" />
+    <Analyzer Include="../../../src/SemanticTypeModel.Core/bin/$(Configuration)/net10.0/SemanticTypeModel.Core.dll" />
+    <Analyzer Include="../../../src/SemanticTypeModel.Abstractions/bin/$(Configuration)/net10.0/SemanticTypeModel.Abstractions.dll" />
   </ItemGroup>
 </Project>

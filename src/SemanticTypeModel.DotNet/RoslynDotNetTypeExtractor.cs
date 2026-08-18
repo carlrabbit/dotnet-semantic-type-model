@@ -1138,6 +1138,14 @@ public sealed class RoslynDotNetTypeExtractor
                         attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? property.Locations.FirstOrDefault()));
                 }
             }
+            else if (string.Equals(metadataName, JsonObjectCreationHandlingAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["systemTextJson.objectCreationHandling"] = GetFirstConstructorArgument(attribute);
+            }
+            else if (string.Equals(metadataName, JsonUnmappedMemberHandlingAttributeMetadataName, StringComparison.Ordinal))
+            {
+                annotations["systemTextJson.unmappedMemberHandling"] = GetFirstConstructorArgument(attribute);
+            }
         }
     }
 
