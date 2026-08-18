@@ -206,6 +206,10 @@ The default mapping is intentionally narrow and opinionated.
 
 Requiredness/nullability is applied from semantic meaning rather than left solely to EF convention inference.
 
+When a generated generic EF API represents the model-side CLR property type, its generated type argument preserves
+the nullable-reference modifier of the declared CLR property. Storage classification may normalize nullable and
+non-nullable references when selecting a strategy, but that normalized type is not substituted into those APIs.
+
 ## Ownership and Structural Values
 
 Semantic ownership is lifecycle containment, not EF owned-entity configuration.

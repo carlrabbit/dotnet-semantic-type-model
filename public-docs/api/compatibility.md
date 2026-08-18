@@ -126,13 +126,15 @@ The retired runtime global `ModelBuilder` cleanup/application path is not the cu
 There is no compatibility bridge that reintroduces broad relationship inference, `OwnsOne`/`OwnsMany`, or
 alternative inheritance modes into the current generated contract.
 
-## 4.0.0 migration boundary
+## 4.0 release boundary
 
-4.0.0 is prepared as a major compatibility boundary for the accumulated breaking changes described above.
+4.0.0 established the major compatibility boundary for the accumulated breaking changes described above.
+4.0.1 is a patch-compatible EF Core nullability correction and does not introduce a new public API, semantic
+nullability contract, relationship model, or JSON storage policy.
 
-Consumers moving to 4.0.0 should, where applicable:
+Consumers moving from pre-4.0 releases should, where applicable:
 
-1. align every SemanticTypeModel package/analyzer to exactly `4.0.0`;
+1. align every SemanticTypeModel package/analyzer to exactly the same 4.0.x version;
 2. migrate EF application to `SemanticTypeModel.EFCore.Generators` and explicit selected-model configuration;
 3. remove references to `SemanticTypeModel.Configuration.Generators`;
 4. remove JSON Schema import usage;
@@ -141,8 +143,9 @@ Consumers moving to 4.0.0 should, where applicable:
    `[SemanticImmutable]` semantics when lifecycle mutability matters;
 7. replace JSON Editor compatibility options with JSON Schema `x-stm`/open `ui.*` metadata where needed.
 
-Do not infer the previously published package version from repository release-candidate notes. Publication truth
-must be verified from the actual package/release channel during release work.
+Consumers already on 4.0.0 can move to 4.0.1 without application configuration changes. Update every
+`SemanticTypeModel.*` runtime, projection, generator, and analyzer package together so the suite remains exactly
+version-aligned.
 
 ## Migration history
 

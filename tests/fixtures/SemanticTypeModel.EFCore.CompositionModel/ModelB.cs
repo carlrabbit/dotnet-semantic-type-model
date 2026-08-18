@@ -1,8 +1,8 @@
 using SemanticTypeModel.DotNet;
 
-[assembly: SemanticTypeModelGeneratorOptions("SemanticTypeModel.M0060.ModelB.Generated", "BillingSemanticTypeModel")]
+[assembly: SemanticTypeModelGeneratorOptions("SemanticTypeModel.EFCore.CompositionModel.Generated", "BillingSemanticTypeModel")]
 
-namespace SemanticTypeModel.M0060.ModelB;
+namespace SemanticTypeModel.EFCore.CompositionModel;
 
 [SemanticType(SemanticTypeRole.Entity)]
 public class BillingRecord

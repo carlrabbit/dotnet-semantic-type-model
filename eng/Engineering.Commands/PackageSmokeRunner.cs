@@ -161,7 +161,10 @@ internal static class PackageSmokeRunner
         {
             [SemanticKey, SemanticDisplayIdentity, SemanticAccessPath("ById")] public int Id { get; set; }
             public string Status { get; set; } = string.Empty;
+            [SemanticOwned] public SmokeOrderDetails? Details { get; set; }
         }
+        [SemanticType(SemanticTypeRole.ValueObject)]
+        public sealed class SmokeOrderDetails { public string Note { get; set; } = string.Empty; }
         """;
 
     private const string ConsumerSource = """
@@ -185,6 +188,8 @@ internal static class PackageSmokeRunner
                 if (!id.Annotations.Items.Any(annotation => annotation.Key.Value == "schema.displayIdentity" && annotation.Value == "0")
                     || !id.Annotations.Items.Any(annotation => annotation.Key.Value == "schema.accessPath.ById" && annotation.Value == "0"))
                     throw new InvalidOperationException("Packed generator did not preserve M0065 annotations.");
+                if (builder.Model.FindEntityType(typeof(SmokeOrder))!.FindProperty(nameof(SmokeOrder.Details)) is null)
+                    throw new InvalidOperationException("Packed EF generator did not configure nullable owned JSON.");
                 Console.WriteLine("Package smoke consumer succeeded.");
             }
         }

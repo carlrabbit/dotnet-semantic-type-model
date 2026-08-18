@@ -10,6 +10,9 @@ namespace SemanticTypeModel.EFCore.Generators;
 [Generator]
 public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
 {
+    private static readonly SymbolDisplayFormat DeclaredTypeDisplayFormat = SymbolDisplayFormat.FullyQualifiedFormat
+        .WithMiscellaneousOptions(SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions
+            | SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
     private const string SelectionAttribute = "SemanticTypeModel.EFCore.GenerateSemanticEfModelAttribute";
     private const string ManifestMetadataName = "SemanticTypeModel.Manifest";
 
@@ -258,7 +261,9 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
     {
         string expression = "builder.Property(entity => entity." + Safe(property.MemberName) + ")";
         string configuredProperty = expression + ".IsRequired(" + (!property.IsNullable ? "true" : "false") + ")";
-        string memberType = member.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        // Storage classification deliberately normalizes nullable types below, but EF's generic
+        // converter/comparer APIs must use the property's declared Roslyn type exactly.
+        string memberType = member.Type.ToDisplayString(DeclaredTypeDisplayFormat);
         if (EfStoragePolicy.IsJsonStorage(property.IsExtensionData, property.Ownership))
         {
             SemanticType? valueTarget = target?.Kind == "Array"
@@ -316,13 +321,28 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
                 return true;
             case EfScalarStorageKind.ReadOnlyMemoryBinary:
                 source.Append("        ").Append(configuredProperty)
-                    .AppendLine(".HasConversion(value => value.ToArray(), value => new global::System.ReadOnlyMemory<byte>(value));");
+                    .AppendLine(nullableMember
+                        ? ".HasConversion(value => value.HasValue ? value.Value.ToArray() : null, value => value == null ? (global::System.ReadOnlyMemory<byte>?)null : new global::System.ReadOnlyMemory<byte>(value));"
+                        : ".HasConversion(value => value.ToArray(), value => new global::System.ReadOnlyMemory<byte>(value));");
                 error = null;
                 return true;
             case EfScalarStorageKind.StrongScalar:
-                string access = !SymbolEqualityComparer.Default.Equals(actual, member.Type) ? "value.Value.Value" : "value.Value";
+                bool nullableValueType = !SymbolEqualityComparer.Default.Equals(actual, member.Type);
+                if (nullableValueType)
+                {
+                    string valueType = valueProperty!.Type.ToDisplayString(DeclaredTypeDisplayFormat);
+                    string strongType = actual.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                    source.Append("        ").Append(configuredProperty)
+                        .Append(".HasConversion(value => value.HasValue ? value.Value.Value : (")
+                        .Append(valueType).Append("?)null, value => value.HasValue ? new ")
+                        .Append(strongType).Append("(value.Value) : (")
+                        .Append(strongType).AppendLine("?)null);");
+                    error = null;
+                    return true;
+                }
+
                 source.Append("        ").Append(configuredProperty).Append(".HasConversion(value => ")
-                    .Append(access).Append(", value => new ")
+                    .Append("value.Value").Append(", value => new ")
                     .Append(actual.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)).AppendLine("(value));");
                 error = null;
                 return true;
