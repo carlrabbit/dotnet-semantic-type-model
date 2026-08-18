@@ -1265,7 +1265,13 @@ public sealed class RoslynDotNetTypeExtractor
             long numericValue = Convert.ToInt64(field.ConstantValue, CultureInfo.InvariantCulture);
             string valueName = GetEnumValueName(field);
             TryAddEnumValueMetadata(field, valueName, enumDisplayNames, enumDescriptions);
-            values.Add(new DotNetEnumValueDescriptor { Name = valueName, NumericValue = numericValue });
+            values.Add(new DotNetEnumValueDescriptor
+            {
+                Name = valueName,
+                NumericValue = numericValue,
+                DisplayName = enumDisplayNames.GetValueOrDefault(valueName),
+                UserDescription = enumDescriptions.GetValueOrDefault(valueName),
+            });
 
             if (seenNumeric.TryGetValue(numericValue, out string? firstName))
             {

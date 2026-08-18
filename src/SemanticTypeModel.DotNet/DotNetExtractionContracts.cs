@@ -321,6 +321,12 @@ public sealed record DotNetEnumValueDescriptor
     /// Gets enum numeric value.
     /// </summary>
     public required long NumericValue { get; init; }
+
+    /// <summary>Gets the optional semantic display name.</summary>
+    public string? DisplayName { get; init; }
+
+    /// <summary>Gets the optional semantic user description.</summary>
+    public string? UserDescription { get; init; }
 }
 
 /// <summary>

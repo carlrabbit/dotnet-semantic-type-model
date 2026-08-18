@@ -36,6 +36,7 @@ public sealed class M0066JsonRepresentationFidelityTests
             CustomerNumber = "C-001",
             Status = M0066Status.Active,
             Tags = ["vip"],
+            Address = new M0066Address { Street = "Main Street" },
             ExtensionData = new Dictionary<string, JsonElement>(),
         }, options);
         DraftSchema schema = DraftSchema.FromText(JsonSchemaExporter.Export(model).Document.RootElement.GetRawText());
@@ -43,6 +44,11 @@ public sealed class M0066JsonRepresentationFidelityTests
         EvaluationResults validation = schema.Evaluate(instance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
 
         _ = await Assert.That(validation.IsValid).IsTrue();
+        JsonElement enumSchema = JsonSchemaExporter.Export(model).Document.RootElement.GetProperty("$defs").EnumerateObject().Single(static item => item.Value.TryGetProperty("enum", out _)).Value;
+        _ = await Assert.That(enumSchema.GetProperty("x-stm").GetProperty("enumValues")[0].GetProperty("displayName").GetString()).IsEqualTo("Active value");
+        JsonElement customerSchema = JsonSchemaExporter.Export(model).Document.RootElement;
+        _ = await Assert.That(customerSchema.GetProperty("properties").GetProperty("Address").GetProperty("x-stm").GetProperty("ownership").GetString()).IsEqualTo("object");
+        _ = await Assert.That(customerSchema.GetProperty("properties").GetProperty("Tags").GetProperty("minItems").GetInt32()).IsEqualTo(1);
     }
 
     [Test]
@@ -94,6 +100,36 @@ public sealed class M0066JsonRepresentationFidelityTests
         _ = await Assert.That(root.GetProperty("additionalProperties").GetProperty("$ref").GetString()).IsEqualTo("#/$defs/ExtensionValue");
     }
 
+    [Test]
+    public async Task Unsupported_extension_data_shape_should_remain_permissive_and_diagnosed()
+    {
+        var text = Scalar("Text", ScalarKind.String);
+        var customer = new ObjectTypeDefinition
+        {
+            Id = new TypeId("UnsupportedExtensionCustomer"),
+            Name = "UnsupportedExtensionCustomer",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag(),
+            Properties = [Property("ExtensionData", text.Id, false, Annotations((CoreSemanticAnnotationKeys.ExtensionData, true)))],
+            Keys = [],
+        };
+        TypeDefinition[] types = [customer, text];
+        var model = new TypeSchemaModel
+        {
+            Id = new SchemaModelId(customer.Id.Value),
+            Types = types,
+            TypesById = types.ToDictionary(static type => type.Id),
+            Annotations = new AnnotationBag(),
+        };
+
+        JsonSchemaExportResult result = JsonSchemaExporter.Export(model);
+
+        _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Code == "JSONSCHEMA_EXTENSION_DATA_VALUE_UNREPRESENTABLE")).IsTrue();
+        _ = await Assert.That(result.Document.RootElement.GetProperty("x-stm").GetProperty("extensionData").GetBoolean()).IsTrue();
+        _ = await Assert.That(result.Document.RootElement.TryGetProperty("additionalProperties", out _)).IsFalse();
+    }
+
     private static ScalarTypeDefinition Scalar(string id, ScalarKind kind) => new()
     {
         Id = new TypeId(id),
@@ -129,20 +165,33 @@ public sealed class M0066Customer
 
     public M0066Status Status { get; set; }
 
+    [SemanticCollectionConstraints(MinItems = 1)]
     public List<string> Tags { get; set; } = [];
 
     [SemanticExtensionData]
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+
+    [SemanticOwned]
+    public M0066Address Address { get; set; } = new();
 }
 
 public enum M0066Status
 {
     Inactive,
+
+    [SemanticEnumValue(DisplayName = "Active value", Description = "An active customer.")]
     Active,
 }
 
+public sealed class M0066Address
+{
+    [SemanticStringConstraints(MinLength = 1)]
+    public string Street { get; set; } = string.Empty;
+}
+
 [JsonSerializable(typeof(M0066Customer))]
+[JsonSerializable(typeof(M0066Address))]
 internal sealed partial class M0066JsonContext : JsonSerializerContext
 {
 }

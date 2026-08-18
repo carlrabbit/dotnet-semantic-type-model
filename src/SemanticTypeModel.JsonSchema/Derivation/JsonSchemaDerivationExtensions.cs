@@ -121,6 +121,13 @@ public static class JsonSchemaDerivationExtensions
             {
                 additionalPropertiesSchema = MapReference(dictionary.ValueType, $"/types/{type.Id.Value}/additionalProperties");
             }
+            else if (extensionData is not null)
+            {
+                AddDiagnostic(
+                    "JSONSCHEMA_EXTENSION_DATA_VALUE_UNREPRESENTABLE",
+                    $"Extension-data member '{type.Name}.{extensionData.Name}' does not expose a representable dictionary value type; additional properties remain permissive.",
+                    $"/types/{type.Id.Value}/properties/{extensionData.Name}");
+            }
             if (GetStringAnnotation(type.Annotations, "runtime.additionalPropertiesAllowed") is { } legacyAdditional)
             {
                 additionalAllowed = string.Equals(legacyAdditional, "true", StringComparison.OrdinalIgnoreCase);
@@ -444,6 +451,10 @@ public static class JsonSchemaDerivationExtensions
                     foreach (Model.Annotation annotation in property.Annotations.Items.Where(static annotation => annotation.Key.Value.StartsWith(CoreSemanticAnnotationKeys.AccessPathPrefix, StringComparison.Ordinal)))
                     {
                         string name = annotation.Key.Value[CoreSemanticAnnotationKeys.AccessPathPrefix.Length..];
+                        if (string.IsNullOrWhiteSpace(name))
+                        {
+                            continue;
+                        }
                         if (!accessPaths.TryGetValue(name, out object? existing))
                         {
                             existing = new List<(int Order, string Name)>();
