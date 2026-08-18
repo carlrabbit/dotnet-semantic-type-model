@@ -82,14 +82,17 @@ public sealed class M0066SystemTextJsonFidelityTests
         _ = await Assert.That(projected.Diagnostics.Any(static diagnostic => diagnostic.Code == "STJ102")).IsTrue();
     }
 
-    private static AnnotationBag Annotations(params (string Key, object Value)[] values) => new()
+    private static AnnotationBag Annotations(params (string Key, object Value)[] values)
     {
-        Items = [.. values.Select(static value => new Annotation
+        return new()
+        {
+            Items = [.. values.Select(static value => new Annotation
         {
             Key = new AnnotationKey(value.Key),
             Value = value.Value,
             Scope = AnnotationScope.Member,
             Source = AnnotationSource.Imported,
         })],
-    };
+        };
+    }
 }

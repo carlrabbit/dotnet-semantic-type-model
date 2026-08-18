@@ -1,12 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Json.Schema;
-using DraftSchema = Json.Schema.JsonSchema;
 using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Semantics;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.SystemTextJson;
+using DraftSchema = Json.Schema.JsonSchema;
 
 [assembly: SemanticTypeModelGeneratorOptions("SemanticTypeModel.JsonSchema.Tests.Unit.Generated", "M0066SemanticTypeModel")]
 
@@ -31,7 +31,7 @@ public sealed class M0066JsonRepresentationFidelityTests
         };
         options.Converters.Add(new JsonStringEnumConverter());
 
-        string json = JsonSerializer.Serialize(new M0066Customer
+        var json = JsonSerializer.Serialize(new M0066Customer
         {
             CustomerNumber = "C-001",
             Status = M0066Status.Active,
@@ -39,8 +39,8 @@ public sealed class M0066JsonRepresentationFidelityTests
             Address = new M0066Address { Street = "Main Street" },
             ExtensionData = new Dictionary<string, JsonElement>(),
         }, options);
-        DraftSchema schema = DraftSchema.FromText(JsonSchemaExporter.Export(model).Document.RootElement.GetRawText());
-        using JsonDocument instance = JsonDocument.Parse(json);
+        var schema = DraftSchema.FromText(JsonSchemaExporter.Export(model).Document.RootElement.GetRawText());
+        using var instance = JsonDocument.Parse(json);
         EvaluationResults validation = schema.Evaluate(instance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
 
         _ = await Assert.That(validation.IsValid).IsTrue();
@@ -54,8 +54,8 @@ public sealed class M0066JsonRepresentationFidelityTests
     [Test]
     public async Task Export_should_preserve_structured_semantics_and_typed_extension_data()
     {
-        var text = Scalar("Text", ScalarKind.String);
-        var extensionValue = Scalar("ExtensionValue", ScalarKind.String);
+        ScalarTypeDefinition text = Scalar("Text", ScalarKind.String);
+        ScalarTypeDefinition extensionValue = Scalar("ExtensionValue", ScalarKind.String);
         var extension = new DictionaryTypeDefinition
         {
             Id = new TypeId("Extensions"),
@@ -103,7 +103,7 @@ public sealed class M0066JsonRepresentationFidelityTests
     [Test]
     public async Task Unsupported_extension_data_shape_should_remain_permissive_and_diagnosed()
     {
-        var text = Scalar("Text", ScalarKind.String);
+        ScalarTypeDefinition text = Scalar("Text", ScalarKind.String);
         var customer = new ObjectTypeDefinition
         {
             Id = new TypeId("UnsupportedExtensionCustomer"),
@@ -130,30 +130,39 @@ public sealed class M0066JsonRepresentationFidelityTests
         _ = await Assert.That(result.Document.RootElement.TryGetProperty("additionalProperties", out _)).IsFalse();
     }
 
-    private static ScalarTypeDefinition Scalar(string id, ScalarKind kind) => new()
+    private static ScalarTypeDefinition Scalar(string id, ScalarKind kind)
     {
-        Id = new TypeId(id),
-        Name = id,
-        Kind = TypeKind.Scalar,
-        Nullability = Nullability.NonNullable,
-        ScalarKind = kind,
-        Annotations = new AnnotationBag(),
-    };
+        return new()
+        {
+            Id = new TypeId(id),
+            Name = id,
+            Kind = TypeKind.Scalar,
+            Nullability = Nullability.NonNullable,
+            ScalarKind = kind,
+            Annotations = new AnnotationBag(),
+        };
+    }
 
-    private static PropertyDefinition Property(string name, TypeId type, bool required, AnnotationBag annotations) => new()
+    private static PropertyDefinition Property(string name, TypeId type, bool required, AnnotationBag annotations)
     {
-        Id = new PropertyId($"Customer.{name}"),
-        Name = name,
-        Type = new TypeRef(type),
-        Cardinality = new Cardinality { IsRequired = required },
-        Constraints = new ConstraintSet(),
-        Annotations = annotations,
-    };
+        return new()
+        {
+            Id = new PropertyId($"Customer.{name}"),
+            Name = name,
+            Type = new TypeRef(type),
+            Cardinality = new Cardinality { IsRequired = required },
+            Constraints = new ConstraintSet(),
+            Annotations = annotations,
+        };
+    }
 
-    private static AnnotationBag Annotations(params (string Key, object Value)[] values) => new()
+    private static AnnotationBag Annotations(params (string Key, object Value)[] values)
     {
-        Items = [.. values.Select(static item => new Annotation { Key = new AnnotationKey(item.Key), Value = item.Value, Scope = AnnotationScope.Member, Source = AnnotationSource.Declared })],
-    };
+        return new()
+        {
+            Items = [.. values.Select(static item => new Annotation { Key = new AnnotationKey(item.Key), Value = item.Value, Scope = AnnotationScope.Member, Source = AnnotationSource.Declared })],
+        };
+    }
 }
 
 [SemanticType]

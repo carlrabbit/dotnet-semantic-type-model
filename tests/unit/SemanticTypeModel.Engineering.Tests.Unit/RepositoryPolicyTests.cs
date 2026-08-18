@@ -62,8 +62,8 @@ internal sealed class RepositoryPolicyTests
     [Test]
     public async Task PackageSmokeLauncherForwardsInvalidUsageExitCode()
     {
-        string root = FindRoot();
-        string script = Path.Combine(root, "eng", OperatingSystem.IsWindows() ? "package-smoke.ps1" : "package-smoke.sh");
+        var root = FindRoot();
+        var script = Path.Combine(root, "eng", OperatingSystem.IsWindows() ? "package-smoke.ps1" : "package-smoke.sh");
         ProcessStartInfo startInfo = OperatingSystem.IsWindows()
             ? new ProcessStartInfo("pwsh") { UseShellExecute = false }
             : new ProcessStartInfo(script) { UseShellExecute = false };
