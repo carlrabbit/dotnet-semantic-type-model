@@ -31,6 +31,8 @@ Diagnostic message text is not an API contract. Prefer IDs/categories and docume
 | `STM5020` | Required technical description is missing | Add technical description/XML summary or change the requirement. |
 | `STM5025` | A CLR member shape cannot be extracted safely | Change/annotate the member to a supported shape. |
 | `STM5026`-`STM5036` | Conditional/typed literal metadata is invalid | Fix the source property, literal value/type, nullability, or enum member. |
+| `STM5049` | Display Identity order is negative or ambiguous | Use non-negative, unique orders; the invalid group is omitted. |
+| `STM5050` | Access Path name/order/membership is invalid or ambiguous | Use a valid name and unique non-negative orders for each path. |
 
 ## Generated EF diagnostics
 

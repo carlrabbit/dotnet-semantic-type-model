@@ -82,6 +82,41 @@ Custom attributes do not mutate the canonical model directly. Extraction preserv
   - `Name` + `Order` support composite keys through shared key-name grouping;
   - `IsGenerated` maps to `schema.key.generated`.
 
+### `SemanticDisplayIdentityAttribute`
+
+- Targets: property (allow multiple: false).
+- Public shape:
+  - `int Order { get; init; }`, default `0`.
+- Semantics:
+  - marks the property as one component of the containing object's single Display Identity;
+  - maps to `schema.displayIdentity=<order>`;
+  - the non-negative `Order` value defines component ordering;
+  - order values must be unique within the effective extracted property set of each object;
+  - gaps are allowed;
+  - there are no named Display Identity variants in this contract.
+- Boundaries:
+  - does not imply `SemanticKey`, uniqueness, `SemanticDisplayName`, `SemanticOrder`, string concatenation, or any target-specific rendering behavior;
+  - can coexist with key and Access Path semantics on the same property.
+
+### `SemanticAccessPathAttribute`
+
+- Targets: property (allow multiple).
+- Public shape:
+  - constructor `SemanticAccessPathAttribute(string name)`;
+  - `string Name { get; }`;
+  - `int Order { get; init; }`, default `0`.
+- Semantics:
+  - each attribute adds the property to one named Access Path scoped to the containing object;
+  - maps to `schema.accessPath.<name>=<order>`;
+  - names are case-sensitive ordinal semantic identifiers and must match `[A-Za-z][A-Za-z0-9_.-]*`;
+  - the non-negative `Order` value defines property order inside that named path;
+  - order values must be unique within each path;
+  - gaps are allowed;
+  - a property may participate in multiple differently named Access Paths.
+- Boundaries:
+  - does not imply a database index, uniqueness, key semantics, query operator, equality/range/prefix behavior, sort order, query completeness, frequency guarantee, UI order, or API surface;
+  - target packages do not gain behavior from this attribute until a target-specific contract explicitly adopts it.
+
 ### `SemanticMutableAttribute` and `SemanticImmutableAttribute`
 
 - Targets: class, struct, property, field.
@@ -159,6 +194,36 @@ Custom attributes do not mutate the canonical model directly. Extraction preserv
   - preserves custom namespaced annotations;
   - invalid keys and conflicting duplicate values are diagnosable.
 
+## Display Identity and Access Path Examples
+
+```csharp
+[SemanticType(SemanticTypeRole.Entity)]
+public sealed class Customer
+{
+    [SemanticKey]
+    public required Guid Id { get; init; }
+
+    [SemanticDisplayIdentity(Order = 0)]
+    [SemanticAccessPath("ByCustomerNumber")]
+    public required string CustomerNumber { get; init; }
+
+    [SemanticDisplayIdentity(Order = 1)]
+    public required string Name { get; init; }
+}
+```
+
+Composite Access Path:
+
+```csharp
+[SemanticAccessPath("ByDeviceAndTimestamp", Order = 0)]
+public required Guid DeviceId { get; init; }
+
+[SemanticAccessPath("ByDeviceAndTimestamp", Order = 1)]
+public required DateTimeOffset Timestamp { get; init; }
+```
+
+A property may simultaneously be a key, Display Identity component, and member of one or more Access Paths. No semantic is inferred from another.
+
 ## Envelope Attribute Example
 
 ```csharp
@@ -189,6 +254,8 @@ Concrete precedence examples:
 - `[SemanticTechnicalDescription]` overrides XML summary technical fallback; `[SemanticUserDescription]` is independent.
 - `[SemanticIgnore]` overrides convention discovery inclusion.
 - `[SemanticKey]` overrides key inference.
+- `[SemanticDisplayIdentity]` is explicit only; no key/display-name convention infers it.
+- `[SemanticAccessPath]` is explicit only; no key/index/query convention infers it.
 - `[SemanticEnvelope]` declares envelope semantics explicitly.
 - `[SemanticEnvelopePayload]` declares the distinguished payload explicitly.
 - `[SemanticEnvelopeMetadata]` declares envelope metadata explicitly.
@@ -207,9 +274,19 @@ Extraction/generator diagnostics in `STM5xxx` include:
 - `STM5023` invalid numeric constraint range;
 - `STM5024` invalid collection constraint range;
 - `STM5025` invalid scalar format usage.
+- `STM5049` invalid or ambiguous Display Identity definition.
+- `STM5050` invalid or ambiguous Access Path definition.
 - envelope-specific diagnostics use stable core transformation IDs for missing payload, duplicate payloads, misplaced payload markers, misplaced metadata markers, missing payload type representation, and ambiguous projection-root declarations.
 
 Diagnostics are contractually stable by code; message text is non-authoritative.
+
+For M0065:
+
+- negative Display Identity order or duplicate effective Display Identity order emits `STM5049`;
+- invalid Access Path name, negative Access Path order, duplicate membership in the same named path, or duplicate effective order in one named path emits `STM5050`;
+- an invalid Display Identity is omitted as a whole for the affected object;
+- an invalid named Access Path is omitted as a whole for the affected object while unrelated valid Access Paths remain;
+- generator diagnostics follow the existing `STM5xxx` extraction warning policy; this milestone does not introduce a new diagnostic-severity policy.
 
 ## Evolution, Ownership, Lifecycle, Temporal Validity, and Extension Data Attributes
 

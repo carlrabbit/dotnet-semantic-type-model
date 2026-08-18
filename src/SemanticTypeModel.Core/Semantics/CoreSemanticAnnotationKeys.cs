@@ -5,6 +5,12 @@ namespace SemanticTypeModel.Core.Semantics;
 /// </summary>
 public static class CoreSemanticAnnotationKeys
 {
+    /// <summary>Stores the order of a property in the containing object's display identity.</summary>
+    public const string DisplayIdentity = "schema.displayIdentity";
+
+    /// <summary>Prefix for an annotation storing a property's order in a named access path.</summary>
+    public const string AccessPathPrefix = "schema.accessPath.";
+
     /// <summary>Marks an object type as an envelope wrapper boundary.</summary>
     public const string Envelope = "schema.envelope";
 
