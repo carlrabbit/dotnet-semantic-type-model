@@ -35,6 +35,8 @@ public sealed class RoslynDotNetTypeExtractor
     private const string SemanticEnumValueAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticEnumValueAttribute";
     private const string SemanticAnnotationAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticAnnotationAttribute";
     private const string SemanticKeyAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticKeyAttribute";
+    private const string SemanticDisplayIdentityAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticDisplayIdentityAttribute";
+    private const string SemanticAccessPathAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticAccessPathAttribute";
     private const string SemanticMutableAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticMutableAttribute";
     private const string SemanticImmutableAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticImmutableAttribute";
     private const string SemanticEnvelopeAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticEnvelopeAttribute";
@@ -572,6 +574,10 @@ public sealed class RoslynDotNetTypeExtractor
         var conventionPrimaryKeyCandidates = new List<string>();
         var seenMemberNames = new Dictionary<string, string>(StringComparer.Ordinal);
         var compositeKeyGroups = new Dictionary<string, List<(string PropertyName, int? Order)>>(StringComparer.Ordinal);
+        var displayIdentityMembers = new List<(Dictionary<string, string> Annotations, string PropertyName, int Order, Location? Location)>();
+        var accessPathMembers = new Dictionary<string, List<(Dictionary<string, string> Annotations, string PropertyName, int Order, Location? Location)>>(StringComparer.Ordinal);
+        var invalidAccessPathNames = new HashSet<string>(StringComparer.Ordinal);
+        bool invalidDisplayIdentity = false;
 
         foreach (ISymbol member in GetMembersIncludingInheritedProperties(type))
         {
@@ -621,6 +627,8 @@ public sealed class RoslynDotNetTypeExtractor
                     conventionPrimaryKeyCandidates.Add(propertyName);
                 }
             }
+
+            CollectIdentityAnnotations(memberAttributes, property, memberAnnotations, displayIdentityMembers, accessPathMembers, invalidAccessPathNames, ref invalidDisplayIdentity);
 
             if (!seenMemberNames.TryAdd(propertyName, property.Name))
             {
@@ -706,6 +714,7 @@ public sealed class RoslynDotNetTypeExtractor
         }
 
         ValidateCompositeKeyGroups(type, compositeKeyGroups);
+        ValidateIdentityAnnotations(type, displayIdentityMembers, accessPathMembers, invalidAccessPathNames, ref invalidDisplayIdentity);
 
         properties.Sort(static (left, right) => string.CompareOrdinal(left.Name, right.Name));
 
@@ -2391,6 +2400,162 @@ public sealed class RoslynDotNetTypeExtractor
                     type.Locations.FirstOrDefault()));
             }
         }
+    }
+
+    private void CollectIdentityAnnotations(
+        ImmutableArray<AttributeData> attributes,
+        IPropertySymbol property,
+        Dictionary<string, string> annotations,
+        List<(Dictionary<string, string> Annotations, string PropertyName, int Order, Location? Location)> displayIdentityMembers,
+        Dictionary<string, List<(Dictionary<string, string> Annotations, string PropertyName, int Order, Location? Location)>> accessPathMembers,
+        HashSet<string> invalidAccessPathNames,
+        ref bool invalidDisplayIdentity)
+    {
+        foreach (AttributeData attribute in attributes)
+        {
+            string? metadataName = attribute.AttributeClass?.ToDisplayString();
+            Location? location = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? property.Locations.FirstOrDefault();
+            if (string.Equals(metadataName, SemanticDisplayIdentityAttributeMetadataName, StringComparison.Ordinal))
+            {
+                int order = GetAttributeOrder(attribute, nameof(SemanticDisplayIdentityAttribute.Order));
+                if (order >= 0)
+                {
+                    displayIdentityMembers.Add((annotations, property.Name, order, location));
+                }
+                else
+                {
+                    invalidDisplayIdentity = true;
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        DotNetExtractionDiagnosticIds.DisplayIdentityDefinitionInvalid,
+                        $"Display Identity order on '{property.ToDisplayString()}' must be non-negative.",
+                        location));
+                }
+            }
+            else if (string.Equals(metadataName, SemanticAccessPathAttributeMetadataName, StringComparison.Ordinal))
+            {
+                string? name = attribute.ConstructorArguments is [{ Value: string pathName }] ? pathName : null;
+                int order = GetAttributeOrder(attribute, nameof(SemanticAccessPathAttribute.Order));
+                if (!IsValidAccessPathName(name))
+                {
+                    _ = invalidAccessPathNames.Add(name ?? string.Empty);
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        DotNetExtractionDiagnosticIds.AccessPathDefinitionInvalid,
+                        $"Access Path name on '{property.ToDisplayString()}' is null, empty, or invalid.",
+                        location));
+                    continue;
+                }
+
+                if (order < 0)
+                {
+                    _ = invalidAccessPathNames.Add(name!);
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        DotNetExtractionDiagnosticIds.AccessPathDefinitionInvalid,
+                        $"Access Path '{name}' order on '{property.ToDisplayString()}' must be non-negative.",
+                        location));
+                    continue;
+                }
+
+                if (!accessPathMembers.TryGetValue(name!, out List<(Dictionary<string, string> Annotations, string PropertyName, int Order, Location? Location)>? members))
+                {
+                    members = [];
+                    accessPathMembers[name!] = members;
+                }
+
+                if (members.Any(member => string.Equals(member.PropertyName, property.Name, StringComparison.Ordinal)))
+                {
+                    _ = invalidAccessPathNames.Add(name!);
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        DotNetExtractionDiagnosticIds.AccessPathDefinitionInvalid,
+                        $"Access Path '{name}' contains duplicate membership for '{property.ToDisplayString()}'.",
+                        location));
+                }
+                members.Add((annotations, property.Name, order, location));
+            }
+        }
+    }
+
+    private void ValidateIdentityAnnotations(
+        INamedTypeSymbol type,
+        List<(Dictionary<string, string> Annotations, string PropertyName, int Order, Location? Location)> displayIdentityMembers,
+        Dictionary<string, List<(Dictionary<string, string> Annotations, string PropertyName, int Order, Location? Location)>> accessPathMembers,
+        HashSet<string> invalidAccessPathNames,
+        ref bool invalidDisplayIdentity)
+    {
+        var displayOrders = new HashSet<int>();
+        bool displayIdentityInvalid = false;
+        foreach ((_, string _, int order, Location? location) in displayIdentityMembers)
+        {
+            if (!displayOrders.Add(order))
+            {
+                displayIdentityInvalid = true;
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    DotNetExtractionDiagnosticIds.DisplayIdentityDefinitionInvalid,
+                    $"Display Identity on '{type.ToDisplayString()}' has duplicate order '{order}'.",
+                    location ?? type.Locations.FirstOrDefault()));
+            }
+        }
+
+        if (!displayIdentityInvalid && !invalidDisplayIdentity)
+        {
+            foreach ((Dictionary<string, string> annotations, _, int order, _) in displayIdentityMembers)
+            {
+                annotations["schema.displayIdentity"] = order.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        invalidDisplayIdentity |= displayIdentityInvalid;
+
+        foreach ((string pathName, List<(Dictionary<string, string> Annotations, string PropertyName, int Order, Location? Location)> members) in accessPathMembers)
+        {
+            bool invalid = invalidAccessPathNames.Contains(pathName);
+            var orders = new HashSet<int>();
+            foreach ((_, string _, int order, Location? location) in members)
+            {
+                if (!orders.Add(order))
+                {
+                    invalid = true;
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        DotNetExtractionDiagnosticIds.AccessPathDefinitionInvalid,
+                        $"Access Path '{pathName}' on '{type.ToDisplayString()}' has duplicate order '{order}'.",
+                        location ?? type.Locations.FirstOrDefault()));
+                }
+            }
+
+            if (invalid)
+            {
+                _ = invalidAccessPathNames.Add(pathName);
+            }
+            else
+            {
+                foreach ((Dictionary<string, string> annotations, _, int order, _) in members)
+                {
+                    annotations[$"schema.accessPath.{pathName}"] = order.ToString(CultureInfo.InvariantCulture);
+                }
+            }
+        }
+    }
+
+    private static int GetAttributeOrder(AttributeData attribute, string propertyName)
+    {
+        foreach ((string key, TypedConstant value) in attribute.NamedArguments)
+        {
+            if (string.Equals(key, propertyName, StringComparison.Ordinal) && value.Value is int order)
+            {
+                return order;
+            }
+        }
+
+        return 0;
+    }
+
+    private static bool IsValidAccessPathName(string? name)
+    {
+        if (string.IsNullOrEmpty(name) || !char.IsAsciiLetter(name[0]))
+        {
+            return false;
+        }
+
+        return name.Skip(1).All(static character => char.IsAsciiLetterOrDigit(character) || character is '_' or '.' or '-');
     }
 
     private static bool TryGetCollectionItemType(ITypeSymbol memberType, out ITypeSymbol? itemType)

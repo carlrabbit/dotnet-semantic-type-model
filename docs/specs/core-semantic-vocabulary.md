@@ -50,6 +50,8 @@ Diagnostics / ambiguity notes
 | Type has analytical dimensional meaning | `Dimension` | Power BI may choose table/display behavior by policy. |
 | Type represents analytical observations | `Fact` | Power BI may choose measure/table behavior by policy. |
 | Property identifies an entity | `Key` | EF Core may derive primary/alternate keys by policy. |
+| Human recognition uses an ordered property group | `DisplayIdentity` | UI, API, reporting, or selection projections may later choose rendering behavior by explicit target policy. |
+| Consumers commonly locate/narrow instances through an ordered property group | `AccessPath` | EF Core may later derive an index candidate; API/UI projections may later derive query/filter affordances by explicit target policy. |
 | Property is required | `Required` | JSON Schema/EF Core derive target requiredness by policy. |
 | Property has a user-facing label | `DisplayName` | UI/Power BI may consume display metadata by policy. |
 | EF Core index | None | `efCore.index` |
@@ -59,6 +61,8 @@ Diagnostics / ambiguity notes
 | JSON Schema-only format override | None | `jsonSchema.format` |
 | Projection-neutral scalar format | `Format` | Target projections may map when compatible. |
 | Wrapper with distinguished payload | `Envelope` + `EnvelopePayload` | Target decides envelope-root/payload-root and payload representation policy. |
+
+`AccessPath` is not an EF Core index declaration. It describes projection-neutral intended access; a physical index remains target-specific unless an EF policy explicitly derives one.
 
 ## Canonical Annotation Keys
 
@@ -72,6 +76,8 @@ The following canonical annotation keys preserve authoring intent before or afte
 | `schema.key.kind` | Member | Declares primary, alternate, natural, surrogate, or external key intent. |
 | `schema.key.order` | Member | Orders members in a composite key. |
 | `schema.key.generated` | Member | Declares generated key intent. |
+| `schema.displayIdentity` | Member | Non-negative decimal order of this member in the containing object's single Display Identity. |
+| `schema.accessPath.<name>` | Member | Non-negative decimal order of this member in the named Access Path scoped to the containing object. |
 | `schema.title` | Type/member | Projection-neutral display name. |
 | `schema.userDescription` | Type/member | User-facing projection-neutral description. |
 | `schema.technicalDescription` | Type/member | Technical projection-neutral description. |
@@ -324,6 +330,54 @@ public required string CustomerNumber { get; init; }
 ```
 
 **Diagnostics / ambiguity notes:** Alternate keys without entity context are ambiguous and may emit diagnostics.
+
+### DisplayIdentity
+
+**Kind:** Property-group semantic.
+
+**Description:** The single ordered property group that defines how a human should recognize an instance.
+
+**Best used when:** A selector, list, form, report, API, log, or other consumer benefits from stable human-recognition components that are distinct from machine identity.
+
+**Avoid when:** The intent is machine/domain identity, uniqueness, a property caption, arbitrary display formatting, or a target-specific layout rule.
+
+**Projection implications:** This milestone adds no target-specific behavior. Future UI, API, reporting, or selection projections may use Display Identity as input to explicit target policy. EF Core must not infer keys, indexes, or storage changes from it.
+
+**Example:**
+
+```csharp
+[SemanticDisplayIdentity(Order = 0)]
+public required string CustomerNumber { get; init; }
+
+[SemanticDisplayIdentity(Order = 1)]
+public required string Name { get; init; }
+```
+
+**Diagnostics / ambiguity notes:** An object has at most one Display Identity. Component order is non-negative and unique within the object's effective extracted property set; gaps are allowed. Display Identity does not define separators, formatting, null rendering, uniqueness, or fallback behavior. It is not inferred from Key, DisplayName, SemanticOrder, or AccessPath.
+
+### AccessPath
+
+**Kind:** Named property-group semantic.
+
+**Description:** A named ordered property sequence expressing an intended way consumers may locate or narrow instances of an object.
+
+**Best used when:** A property or composite property sequence is an expected lookup/filter route that could be useful to data stores, APIs, list/grid filters, selectors, forms, or analytical consumers.
+
+**Avoid when:** The intent is machine identity, uniqueness, a physical database index, a query operator, sort order, UI presentation order, or a target-specific query contract.
+
+**Projection implications:** This milestone adds no target-specific behavior. Future EF Core policy may use Access Paths as index candidates; future API/UI/reporting policies may use them as query/filter or prominence hints. Such behavior requires a separate target contract.
+
+**Example:**
+
+```csharp
+[SemanticAccessPath("ByDeviceAndTimestamp", Order = 0)]
+public required Guid DeviceId { get; init; }
+
+[SemanticAccessPath("ByDeviceAndTimestamp", Order = 1)]
+public required DateTimeOffset Timestamp { get; init; }
+```
+
+**Diagnostics / ambiguity notes:** Access Path names are case-sensitive and scoped to the containing object. Names must match `[A-Za-z][A-Za-z0-9_.-]*`. Orders are non-negative and unique within one named path; gaps are allowed. A property may participate in multiple paths. An Access Path does not define equality/range/prefix semantics, whether all members must be supplied by a query, index prefix behavior, uniqueness, frequency, or performance guarantees. No Access Path is inferred from Key or Display Identity.
 
 ### Semantic Mutability
 
@@ -723,6 +777,8 @@ Required envelope diagnostic classes include:
 - envelope payload not represented in canonical model;
 - envelope and payload both selected as projection root without explicit policy;
 - unsupported payload representation for a target.
+
+Display Identity and Access Path extraction diagnostics are defined in `docs/specs/type-model-dotnet-attributes.md`; malformed/ambiguous groups must not survive as valid reserved `schema.*` semantics.
 
 ## M0034 Evolution, Ownership, Lifecycle, Temporal Validity, and Extension Data Semantics
 

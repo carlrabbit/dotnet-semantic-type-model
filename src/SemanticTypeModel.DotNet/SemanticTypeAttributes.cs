@@ -328,6 +328,33 @@ public sealed class SemanticOrderAttribute(int order) : Attribute
 }
 
 /// <summary>
+/// Marks a property as an ordered component of the containing object's display identity.
+/// This annotation describes human recognition components only; it does not define keys,
+/// formatting, uniqueness, or target-specific behavior.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticDisplayIdentityAttribute : Attribute
+{
+    /// <summary>Gets or sets the zero-based display identity order.</summary>
+    public int Order { get; init; }
+}
+
+/// <summary>
+/// Marks a property as an ordered member of a named access path.
+/// This annotation describes intended lookup or narrowing semantics only; it does not define
+/// keys, indexes, operators, priorities, or target-specific behavior.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = true, Inherited = false)]
+public sealed class SemanticAccessPathAttribute(string name) : Attribute
+{
+    /// <summary>Gets the case-sensitive access path name.</summary>
+    public string Name { get; } = name;
+
+    /// <summary>Gets or sets the zero-based access path order.</summary>
+    public int Order { get; init; }
+}
+
+/// <summary>
 /// Represents common semantic scalar format names.
 /// </summary>
 public enum SemanticScalarFormat

@@ -131,4 +131,10 @@ public static class DotNetExtractionDiagnosticIds
     public const string EfManifestSuiteVersionMismatch = "STM5047";
     /// <summary>STM5048 — Conflicting lifecycle mutability declarations.</summary>
     public const string ConflictingSemanticMutability = "STM5048";
+
+    /// <summary>STM5049 — A Display Identity definition was invalid or ambiguous.</summary>
+    public const string DisplayIdentityDefinitionInvalid = "STM5049";
+
+    /// <summary>STM5050 — An Access Path definition was invalid or ambiguous.</summary>
+    public const string AccessPathDefinitionInvalid = "STM5050";
 }

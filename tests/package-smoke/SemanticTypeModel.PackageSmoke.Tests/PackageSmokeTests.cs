@@ -16,6 +16,7 @@ namespace SemanticTypeModel.PackageSmoke.Tests;
 [SemanticType(Name = "SmokeCustomer")]
 internal sealed partial class SmokeCustomer
 {
+    [SemanticDisplayIdentity, SemanticAccessPath("ById")]
     public string Id { get; set; } = string.Empty;
 }
 
@@ -46,6 +47,8 @@ internal sealed class PackageSmokeTests
         _ = await Assert.That(modelResult.Model).IsNotNull();
 
         _ = typeof(SemanticTypeAttribute);
+        _ = typeof(SemanticDisplayIdentityAttribute);
+        _ = typeof(SemanticAccessPathAttribute);
         _ = typeof(SemanticDisplayNameAttribute);
         _ = typeof(SemanticFormatAttribute);
         _ = typeof(SemanticStringConstraintsAttribute);

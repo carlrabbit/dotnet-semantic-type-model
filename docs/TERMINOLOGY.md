@@ -231,3 +231,9 @@ The optional `x-stm` JSON Schema object that preserves the approved subset of ST
 
 ### UI Annotation
 An open JSON-compatible canonical annotation whose key begins with `ui.`.
+
+### Display Identity
+The single ordered property group that identifies how a human should recognize an instance without defining machine identity, uniqueness, or display formatting.
+
+### Access Path
+A named ordered property group that expresses an intended way consumers may locate or narrow instances without defining query operators, uniqueness, or target-specific implementation.

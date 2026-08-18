@@ -6,12 +6,12 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-None.
+- `M0065` — `docs/milestones/m0065-display-identity-and-access-paths.md` — `ready`
 
 ## Next Number
 
 ```text
-M0065
+M0066
 ```
 
 Never restart or reuse milestone numbers.

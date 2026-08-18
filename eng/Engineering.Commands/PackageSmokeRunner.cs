@@ -159,7 +159,7 @@ internal static class PackageSmokeRunner
         [SemanticType(SemanticTypeRole.Entity)]
         public sealed class SmokeOrder
         {
-            [SemanticKey] public int Id { get; set; }
+            [SemanticKey, SemanticDisplayIdentity, SemanticAccessPath("ById")] public int Id { get; set; }
             public string Status { get; set; } = string.Empty;
             [SemanticOwned] public SmokeOrderDetails? Details { get; set; }
         }
@@ -181,6 +181,13 @@ internal static class PackageSmokeRunner
                 builder.ApplyAppSemanticModel();
                 if (builder.Model.FindEntityType(typeof(SmokeOrder)) is null)
                     throw new InvalidOperationException("Packed EF generator did not execute.");
+                var model = SemanticTypeModel.Generated.AppSemanticTypeModel.Create();
+                var order = model.Types.OfType<SemanticTypeModel.Abstractions.Model.ObjectTypeDefinition>()
+                    .Single(type => type.Name == "SmokeOrder");
+                var id = order.Properties.Single(property => property.Name == "Id");
+                if (!id.Annotations.Items.Any(annotation => annotation.Key.Value == "schema.displayIdentity" && annotation.Value == "0")
+                    || !id.Annotations.Items.Any(annotation => annotation.Key.Value == "schema.accessPath.ById" && annotation.Value == "0"))
+                    throw new InvalidOperationException("Packed generator did not preserve M0065 annotations.");
                 if (builder.Model.FindEntityType(typeof(SmokeOrder))!.FindProperty(nameof(SmokeOrder.Details)) is null)
                     throw new InvalidOperationException("Packed EF generator did not configure nullable owned JSON.");
                 Console.WriteLine("Package smoke consumer succeeded.");

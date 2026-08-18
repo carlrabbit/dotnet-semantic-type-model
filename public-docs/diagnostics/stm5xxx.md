@@ -338,3 +338,10 @@ STM5027 in 2.6.0 rather than being interpreted as strings.
 | Code | Severity | Cause | Fix |
 |---|---|---|---|
 | STM5048 | Error | `[SemanticMutable]` and `[SemanticImmutable]` are both declared on the same type, property, or field. | Keep exactly one lifecycle-mutability declaration on that target, or remove both to leave mutability unspecified. |
+
+## Display Identity and Access Path extraction (STM5049–STM5050)
+
+| Code | Severity | Cause | Fix |
+|---|---|---|---|
+| STM5049 | Warning | A Display Identity order is negative or duplicated in an effective object property set. | Use non-negative, unique orders; the whole invalid Display Identity group is omitted. |
+| STM5050 | Warning | An Access Path name/order or effective membership is invalid or ambiguous. | Use a valid path name and non-negative, unique orders per path; only the invalid named path is omitted. |

@@ -16,9 +16,12 @@ public sealed class Customer
     [SemanticImmutable]
     public required string Id { get; init; }
 
-    [SemanticDisplayName("Customer")]
-    [SemanticUserDescription("A customer that can place orders.")]
+    [SemanticDisplayIdentity(Order = 0)]
+    [SemanticAccessPath("ByName", Order = 0)]
     public required string Name { get; init; }
+
+    [SemanticUserDescription("A customer that can place orders.")]
+    public required string Description { get; init; }
 }
 ```
 
@@ -37,6 +40,8 @@ Common semantic concepts include:
 | Entity | Independently identifiable domain object |
 | ValueObject | Value contained by another semantic boundary, without independent identity by default |
 | Key | Identity member/group |
+| DisplayIdentity | Ordered human-recognition property group; does not define keys, formatting, or UI behavior |
+| AccessPath | Named ordered lookup/narrowing property group; does not define keys, indexes, operators, or priorities |
 | SemanticMutability | Optional lifecycle mutability intent: `Mutable` or `Immutable` |
 | Required / Nullable | Presence and nullability semantics |
 | Constraint | Validation/shape constraint |
@@ -102,6 +107,8 @@ JSON Schema preserves these values beneath `x-stm.ui` when semantic annotations 
 | Key diagnostic | Identity metadata is incomplete or ambiguous | Prefer explicit `[SemanticKey]` metadata when identity matters. |
 | Conflicting mutability diagnostic | Both mutable and immutable semantics were declared on one target | Keep one explicit lifecycle declaration. |
 | `RequiredWhen` typed-literal diagnostic | Source member/value cannot be normalized safely | Use a supported scalar/enum source and a valid typed value. |
+| `STM5049` | Display Identity order is negative or ambiguous | Use non-negative, unique orders; the invalid group is omitted. |
+| `STM5050` | Access Path name/order/membership is invalid or ambiguous | Use a valid name and unique non-negative orders for each path. |
 | Target ignores a semantic concept | Target cannot represent/enforce it directly | Review target guide/capability matrix and diagnostics. |
 
 ## Reference
