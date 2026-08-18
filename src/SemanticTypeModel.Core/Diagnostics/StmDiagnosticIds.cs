@@ -125,8 +125,6 @@ public static class StmDiagnosticIds
     /// <summary>STM1024 — RequiredWhen is unsupported by the selected target projection policy.</summary>
     public const string RequiredWhenProjectionUnsupported = "STM1024";
 
-    /// <summary>STM1025 — Configuration metadata is missing, invalid, or unsupported.</summary>
-    public const string ConfigurationMetadataInvalid = "STM1025";
 
     // -------------------------------------------------------------------------
     // STM3xxx — JSON Schema runtime projection

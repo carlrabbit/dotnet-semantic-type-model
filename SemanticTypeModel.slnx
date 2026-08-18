@@ -13,7 +13,6 @@
     <Project Path="src/SemanticTypeModel.EFCore.Generators/SemanticTypeModel.EFCore.Generators.csproj" />
     <Project Path="src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj" />
     <Project Path="src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj" />
-    <Project Path="src/SemanticTypeModel.Configuration/SemanticTypeModel.Configuration.csproj" />
   </Folder>
   <Folder Name="/eng/">
     <Project Path="eng/Engineering.Commands/Engineering.Commands.csproj" />
@@ -38,7 +37,6 @@
     <Project Path="tests/unit/SemanticTypeModel.EFCore.Generators.Tests.Unit/SemanticTypeModel.EFCore.Generators.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.PowerBI.Tests.Unit/SemanticTypeModel.PowerBI.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.SystemTextJson.Tests.Unit/SemanticTypeModel.SystemTextJson.Tests.Unit.csproj" />
-    <Project Path="tests/unit/SemanticTypeModel.Configuration.Tests.Unit/SemanticTypeModel.Configuration.Tests.Unit.csproj" />
     <Project Path="tests/unit/SemanticTypeModel.Engineering.Tests.Unit/SemanticTypeModel.Engineering.Tests.Unit.csproj" />
   </Folder>
 </Solution>

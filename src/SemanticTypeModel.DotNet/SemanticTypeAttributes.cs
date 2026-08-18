@@ -655,53 +655,6 @@ public sealed class SemanticExtensionDataAttribute : Attribute;
 
 
 /// <summary>
-/// Represents Configuration section presence requirements.
-/// </summary>
-public enum SemanticConfigurationSectionPresence
-{
-    /// <summary>Section data is optional.</summary>
-    Optional,
-
-    /// <summary>Section data must be present in effective configuration.</summary>
-    Required,
-}
-
-/// <summary>
-/// Declares a configuration section name for an options type.
-/// </summary>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
-public sealed class SemanticConfigurationSectionAttribute(string sectionName) : Attribute
-{
-    /// <summary>Gets the configuration section name.</summary>
-    public string SectionName { get; } = sectionName;
-
-    /// <summary>Gets or sets the required effective section data policy.</summary>
-    public SemanticConfigurationSectionPresence Presence { get; init; } = SemanticConfigurationSectionPresence.Optional;
-}
-
-/// <summary>
-/// Enables data-annotations validation in the Configuration projection.
-/// </summary>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
-public sealed class SemanticValidateDataAnnotationsAttribute : Attribute;
-
-/// <summary>
-/// Enables ValidateOnStart in the Configuration projection.
-/// </summary>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
-public sealed class SemanticValidateOnStartAttribute : Attribute;
-
-/// <summary>
-/// Requests a generated options registration helper for the Configuration projection.
-/// </summary>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
-public sealed class SemanticGenerateOptionsRegistrationAttribute : Attribute
-{
-    /// <summary>Gets or sets the generated extension method name.</summary>
-    public string? ExtensionMethodName { get; init; }
-}
-
-/// <summary>
 /// Declares that the attributed property is required when another property equals a literal value.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]

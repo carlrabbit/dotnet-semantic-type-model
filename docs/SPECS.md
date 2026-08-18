@@ -37,7 +37,6 @@ Read only the subsystem contracts relevant to the task.
 - [JSON Schema domain model and export](specs/json-schema-domain-model-and-export.md)
 - [System.Text.Json domain model and resolver projection](specs/system-text-json-domain-model-and-resolver-projection.md)
 - [System.Text.Json contract integration](specs/system-text-json-contract-integration.md)
-- [Configuration domain model and Options projection](specs/configuration-domain-model-and-options-projection.md)
 - [Power BI/TOM projection](specs/type-model-powerbi-tom-projection.md)
 - [Projection capability and compatibility contract](specs/type-model-projection-capabilities.md)
 

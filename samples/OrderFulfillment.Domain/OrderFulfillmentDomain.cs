@@ -130,9 +130,6 @@ public sealed class OrderSubmittedPayload
     public decimal? InitialDiscount { get; init; }
 }
 
-[SemanticConfigurationSection("orderProcessing", Presence = SemanticConfigurationSectionPresence.Required)]
-[SemanticValidateDataAnnotations]
-[SemanticValidateOnStart]
 [SemanticType(SemanticTypeRole.Configuration, Name = "OrderProcessingOptions")]
 public sealed class OrderProcessingOptions
 {
@@ -144,7 +141,6 @@ public sealed class OrderProcessingOptions
     public string? ColdChainProvider { get; init; }
 }
 
-[SemanticConfigurationSection("coldStorage")]
 [SemanticType(SemanticTypeRole.Configuration, Name = "ColdStorageOptions")]
 public sealed class ColdStorageOptions
 {
@@ -152,7 +148,6 @@ public sealed class ColdStorageOptions
     public decimal? MinimumTemperatureCelsius { get; init; }
 }
 
-[SemanticConfigurationSection("notifications")]
 [SemanticType(SemanticTypeRole.Configuration, Name = "NotificationOptions")]
 public sealed class NotificationOptions
 {

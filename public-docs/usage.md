@@ -18,7 +18,6 @@ Add the target package you need:
 JSON Schema             SemanticTypeModel.JsonSchema
 EF Core                 SemanticTypeModel.EFCore + SemanticTypeModel.EFCore.Generators
 System.Text.Json        SemanticTypeModel.SystemTextJson
-Configuration / Options SemanticTypeModel.Configuration
 Power BI                SemanticTypeModel.PowerBI
 Runtime DI              SemanticTypeModel.DependencyInjection
 ```
@@ -93,11 +92,6 @@ See [EF Core](guides/ef-core.md).
 
 SemanticTypeModel customizes an application-owned resolver/context; it does not generate a serializer context.
 See [System.Text.Json](guides/system-text-json.md).
-
-### Configuration / Options
-
-Select each options type explicitly through the runtime adapter. See
-[Configuration / Options](guides/configuration-options.md).
 
 ### Power BI
 

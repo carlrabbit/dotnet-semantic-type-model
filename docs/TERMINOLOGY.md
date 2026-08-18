@@ -116,7 +116,7 @@ The distinguished property inside an envelope that carries the semantic value be
 A property on an envelope that describes the envelope lifecycle, context, transport, audit, revision, status, or management state rather than the payload domain state.
 
 ### Projection-Specific Metadata
-Metadata that describes representation for one projection target, such as JSON Schema, EF Core, Power BI, System.Text.Json, or Configuration, rather than projection-neutral domain meaning.
+Metadata that describes representation for one projection target, such as JSON Schema, EF Core, Power BI, or System.Text.Json, rather than projection-neutral domain meaning.
 
 ### Envelope Projection Root
 The type selected by target policy as the root projection for an envelope scenario; it may be the envelope wrapper or the envelope payload.
@@ -158,25 +158,7 @@ A semantic state/status value describing the lifecycle phase of an entity, envel
 Instance-level unknown, unmodeled, forward-compatible, or externally supplied data preserved for compatibility across model revisions.
 
 ### Domain Semantic Model
-A package-owned semantic model derived from the canonical semantic type model for a specific domain such as JSON Schema, EF Core, Power BI, System.Text.Json, or Configuration.
-
-### Configuration Domain Model
-The Configuration package-owned domain semantic model that describes configuration options, sections, binding, validation, and options-registration decisions derived from the canonical semantic model.
-
-### Options Registration Projection
-A Configuration package projection that produces Microsoft.Extensions.Options registration behavior or generated registration helpers from a Configuration Domain Model.
-
-### Configuration Section
-A configuration-domain path that selects the configuration subtree bound to an options type.
-
-### Bind Policy
-A configuration-domain policy describing how an options type is bound from configuration data.
-
-### Options Validation Model
-A configuration-domain model of validation rules applied to bound options, including data-annotation validation, conditional constraints, and startup validation policy.
-
-### Validate On Start
-A configuration-domain policy requiring options validation during host startup.
+A package-owned semantic model derived from the canonical semantic type model for a specific supported domain such as JSON Schema, EF Core, Power BI, or System.Text.Json.
 
 ### System.Text.Json Domain Model
 The System.Text.Json package-owned domain semantic model that describes resolver customization decisions derived from the canonical semantic model.
@@ -201,21 +183,6 @@ Deferred documentation-synchronization metadata stored under `.guide-sync/` for 
 
 ### Guide Migration
 A repository-local migration that adopts external guide-system conventions while keeping operational project authority inside the target repository.
-
-### Configuration Section Presence
-A Configuration policy declaring whether effective data under a selected options section is optional or required.
-
-### Explicit Per-Type Options Registration
-The Configuration application-registration pattern in which a service calls `AddSemanticOptions<TOptions>` once for each options type it chooses to use.
-
-### Selected-Type Configuration Derivation
-The Configuration derivation mode in which `DeriveConfigurationType<TOptions>` selects one options type from a complete canonical model and ignores other Configuration candidates for that registration.
-
-### Runtime Registration Adapter
-The `SemanticTypeModel.Configuration` runtime API that binds one selected options type, attaches validation, applies registration overrides, and returns `OptionsBuilder<TOptions>`.
-
-### Generated Registration Helper
-A source-generated convenience method that calls the runtime registration adapter instead of implementing independent Configuration binding or validation behavior.
 
 ### Semantic Mutability
 Optional lifecycle mutability intent expressed only as `Mutable` or `Immutable`.

@@ -10,7 +10,6 @@ Define projection capability contracts for the canonical semantic model and keep
 2. EF Core metadata inspection and generated configuration
 3. Power BI local metadata projection
 4. System.Text.Json resolver customization
-5. Configuration / Options registration
 
 ## Capability Metadata API
 

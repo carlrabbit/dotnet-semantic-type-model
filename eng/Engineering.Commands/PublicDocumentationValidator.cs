@@ -13,7 +13,7 @@ internal static partial class PublicDocumentationValidator
         "public-docs/api/compatibility.md", "public-docs/guides/core-semantics.md",
         "public-docs/guides/json-schema.md",
         "public-docs/guides/ef-core.md", "public-docs/guides/power-bi.md",
-        "public-docs/guides/system-text-json.md", "public-docs/guides/configuration-options.md",
+        "public-docs/guides/system-text-json.md",
         "public-docs/guides/projection-capabilities.md", "public-docs/nuget/SemanticTypeModel.md",
         "public-docs/diagnostics/stm0xxx.md", "public-docs/diagnostics/stm1xxx.md",
         "public-docs/diagnostics/stm3xxx.md", "public-docs/diagnostics/stm5xxx.md",

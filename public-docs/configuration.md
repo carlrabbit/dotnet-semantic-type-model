@@ -1,8 +1,8 @@
 # SemanticTypeModel Configuration
 
 This page is the consumer reference for configuring .NET extraction and generated semantic-model providers.
-It is separate from the `SemanticTypeModel.Configuration` package, which projects semantic configuration types
-into Microsoft.Extensions.Options; see [Configuration / Options](guides/configuration-options.md).
+It covers STM's own generator and extraction settings; application configuration binding is outside the
+current SemanticTypeModel package suite.
 
 ## Quick examples
 

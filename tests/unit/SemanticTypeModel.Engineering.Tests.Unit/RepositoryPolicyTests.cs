@@ -28,7 +28,6 @@ internal sealed class RepositoryPolicyTests
     [Test]
     public async Task PackageInventoryContainsOnlyRealPackages()
     {
-        _ = await Assert.That(RepositoryPolicy.Packages.Select(package => package.Id)).DoesNotContain("SemanticTypeModel.Configuration.Generators");
         foreach (PackageProject package in RepositoryPolicy.Packages)
         {
             _ = await Assert.That(File.Exists(Path.Combine(FindRoot(), package.ProjectPath))).IsTrue();
@@ -50,7 +49,7 @@ internal sealed class RepositoryPolicyTests
         {
             File.WriteAllText(Path.Combine(directory, "Unexpected.1.2.3.nupkg"), "");
             IReadOnlyList<string> errors = PackageSmokeRunner.ValidateArtifacts(directory, "1.2.3");
-            _ = await Assert.That(errors.Any(error => error.Contains("Expected 11 publishable packages", StringComparison.Ordinal))).IsTrue();
+            _ = await Assert.That(errors.Any(error => error.Contains("Expected 10 publishable packages", StringComparison.Ordinal))).IsTrue();
             _ = await Assert.That(errors.Any(error => error.Contains("SemanticTypeModel.Abstractions", StringComparison.Ordinal))).IsTrue();
         }
         finally

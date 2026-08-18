@@ -1,8 +1,7 @@
 # SemanticTypeModel
 
 SemanticTypeModel is a .NET 10 package suite for defining semantic meaning on .NET types once and using
-that model across targets such as JSON Schema, EF Core, Power BI, System.Text.Json, and
-Microsoft.Extensions.Options.
+that model across targets such as JSON Schema, EF Core, Power BI, and System.Text.Json.
 
 Annotated .NET code is the supported authoring source. The source generator builds a canonical
 `TypeSchemaModel`; target packages derive or generate target-specific behavior from it.
@@ -20,7 +19,6 @@ Install the packages for the scenario you need:
 | JSON Schema | + `SemanticTypeModel.JsonSchema` |
 | EF Core | + `SemanticTypeModel.EFCore`, `SemanticTypeModel.EFCore.Generators` |
 | System.Text.Json | + `SemanticTypeModel.SystemTextJson` |
-| Configuration / Options | + `SemanticTypeModel.Configuration` |
 | Power BI metadata | + `SemanticTypeModel.PowerBI` |
 | Runtime DI composition | + `SemanticTypeModel.DependencyInjection` |
 
@@ -100,7 +98,6 @@ allowed values, and examples.
 - [JSON Schema](public-docs/guides/json-schema.md)
 - [EF Core](public-docs/guides/ef-core.md)
 - [System.Text.Json](public-docs/guides/system-text-json.md)
-- [Configuration / Options](public-docs/guides/configuration-options.md)
 - [Power BI](public-docs/guides/power-bi.md)
 - [Projection capability matrix](public-docs/guides/projection-capabilities.md)
 

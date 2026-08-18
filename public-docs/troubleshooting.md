@@ -115,12 +115,6 @@ Semantic names and JSON contract names are separate by default. Check `PropertyN
 System.Text.Json integration and whether `UseJsonPropertyNameAsSemanticName` was enabled during extraction.
 See [System.Text.Json](guides/system-text-json.md).
 
-## Configuration validation fails at startup
-
-Startup validation is normal Options validation after binding. Check the selected section, required-section
-policy, DataAnnotations, and `RequiredWhen` rules. See
-[Configuration / Options](guides/configuration-options.md).
-
 ## Package behavior looks inconsistent across projects
 
 Check package versions first. Every `SemanticTypeModel.*` package in the application must use the same exact

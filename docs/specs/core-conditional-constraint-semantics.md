@@ -14,7 +14,7 @@ This specification is authoritative for conditional constraint meaning, the `Req
 
 A conditional constraint is core only when it describes model validity independent of a projection target.
 
-Do not promote target-only validation behavior to core. Use target metadata namespaces such as `configuration.*`, `jsonSchema.*`, `systemTextJson.*`, `efCore.*`, or `powerBi.*` when the condition exists only to drive one target's implementation mechanics.
+Do not promote target-only validation behavior to core. Use the remaining target metadata namespaces such as `jsonSchema.*`, `systemTextJson.*`, `efCore.*`, or `powerBi.*` when the condition exists only to drive one target's implementation mechanics.
 
 ## Initial Scope
 
@@ -53,7 +53,6 @@ schema.condition.requiredWhen.message
 Projection-specific registration or validation behavior must use target namespaces, for example:
 
 ```text
-configuration.validation.*
 jsonSchema.condition.*
 systemTextJson.validation.*
 efCore.*
@@ -89,7 +88,6 @@ public string? TargetFilePath { get; init; }
 
 | Target | Expected behavior |
 |---|---|
-| Configuration | Generate or apply conditional options validation when the Configuration domain projection is selected. |
 | JSON Schema | Map to conditional schema constructs such as `if`/`then` when supported by the selected JSON Schema dialect and policy. |
 | System.Text.Json | Preserve metadata or use explicit validation policy; do not silently add runtime validation unless selected. |
 | EF Core | Ignore or preserve metadata by default; do not generate check constraints unless an explicit EF policy is selected. |
