@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for M0062.
+Accepted.
 
 ## Decision
 
@@ -10,7 +10,9 @@ Accepted for M0062.
 
 `x-stm` is not a serialized canonical model and is not an alternative authoring format.
 
-The initial extension vocabulary is intentionally bounded to:
+Standard JSON Schema keywords remain authoritative for concepts JSON Schema already represents.
+
+The approved extension vocabulary is:
 
 ```text
 role
@@ -20,9 +22,38 @@ technicalDescription
 keys
 unit
 ui
+displayIdentity
+accessPaths
+ownership
+envelope
+versioned
+version
+revision
+currentVersion
+temporalValidity
+validFrom
+validTo
+lifecycleState
+extensionData
+enumValues
 ```
 
-Standard JSON Schema keywords remain authoritative for concepts JSON Schema already represents.
+The detailed stable shapes are defined by `docs/specs/json-schema-domain-model-and-export.md` and the cross-target fidelity contract.
+
+## Structured Group Semantics
+
+Semantics that are property groups in the canonical model are exported in consumer-usable object-level form rather than leaking the internal annotation encoding.
+
+Examples:
+
+```text
+Display Identity -> ordered emitted-property-name array
+Access Paths     -> path-name to ordered emitted-property-name arrays
+Keys             -> structured key records
+Envelope         -> purpose/payload/metadata structure
+```
+
+This preserves semantic meaning without serializing canonical STM internals such as property IDs or annotation keys.
 
 ## UI Metadata
 
@@ -44,9 +75,9 @@ Do not add JSON Editor-specific behavior, widget inference, strict widget vocabu
 
 ## Description Semantics
 
-JSON Schema `description` continues to use canonical `UserDescription`.
+JSON Schema `description` uses canonical `UserDescription`.
 
-Canonical `TechnicalDescription` is independent and, when semantic annotations are enabled, is preserved as:
+Canonical `TechnicalDescription` remains independent and, when semantic annotations are enabled, is preserved as:
 
 ```json
 {
@@ -56,7 +87,9 @@ Canonical `TechnicalDescription` is independent and, when semantic annotations a
 }
 ```
 
-The JSON Schema projection must not substitute technical description for missing user description.
+Technical description must not substitute for missing user description.
+
+Enum-value user/technical descriptions may be preserved through the structured `enumValues` semantic metadata defined by the JSON Schema specification.
 
 ## Extension Boundary
 
@@ -67,30 +100,35 @@ requiredness
 nullability
 string/numeric/collection constraints
 format
-enum values
+enum JSON values
 oneOf/anyOf/allOf
 title
 user description
 additionalProperties
 ```
 
-Do not put source/compiler or projection-specific implementation details in `x-stm`, including:
+Do not put source/compiler or target-specific implementation details in `x-stm`, including:
 
 ```text
 CLR setter/init shape
 Roslyn identities
 generator/manifest versions
-EF mappings
-database names
+System.Text.Json contract annotations
+EF mappings/database names
 Power BI target metadata
+Configuration/Options metadata
 ```
+
+Arbitrary custom semantic annotations are not generically serialized into `x-stm`; only explicitly supported semantic namespaces/vocabulary are exported.
 
 ## Compatibility and Versioning
 
-The exporter must allow callers to disable STM semantic annotations and obtain plain JSON Schema.
+The exporter allows callers to disable STM semantic annotations and obtain plain JSON Schema.
 
-Do not add an `x-stm` protocol version, compatibility negotiation, reader ranges, or adapters in M0062.
+No `x-stm` protocol version, compatibility negotiation, reader ranges, or adapters are introduced.
 
-Unknown future `x-stm` members should be treated as extension data by tolerant consumers.
+Unknown future `x-stm` members must be tolerated by consumers.
 
-If the extension later becomes a separately versioned interoperability contract, that requires an explicit future decision.
+Because tolerant unknown fields are part of the extension contract, expanding the approved semantic vocabulary is additive and does not require a protocol-version field.
+
+If `x-stm` later becomes a separately versioned interoperability protocol, that requires a new explicit decision.

@@ -49,6 +49,15 @@ public static class SystemTextJsonDerivationExtensions
                     SystemTextJsonPropertyName = jsonName,
                     IsExtensionData = GetAnnotationBool(property.Annotations, SystemTextJsonAnnotationNames.ExtensionData),
                     ProjectedJsonName = projectedName,
+                    IsIgnored = GetAnnotationBool(property.Annotations, SystemTextJsonAnnotationNames.Ignore),
+                    IgnoreCondition = GetAnnotationString(property.Annotations, SystemTextJsonAnnotationNames.IgnoreCondition),
+                    IsIncluded = GetAnnotationBool(property.Annotations, SystemTextJsonAnnotationNames.Include),
+                    Converter = GetAnnotationString(property.Annotations, SystemTextJsonAnnotationNames.Converter),
+                    NumberHandling = GetAnnotationString(property.Annotations, SystemTextJsonAnnotationNames.NumberHandling),
+                    IsRequired = GetAnnotationBool(property.Annotations, SystemTextJsonAnnotationNames.Required),
+                    ObjectCreationHandling = GetAnnotationString(property.Annotations, SystemTextJsonAnnotationNames.ObjectCreationHandling),
+                    UnmappedMemberHandling = GetAnnotationString(property.Annotations, SystemTextJsonAnnotationNames.UnmappedMemberHandling),
+                    HasPolymorphism = GetAnnotationBool(property.Annotations, SystemTextJsonAnnotationNames.Polymorphism),
                 };
                 properties.Add(projected);
 
@@ -81,6 +90,9 @@ public static class SystemTextJsonDerivationExtensions
                 Id = obj.Id,
                 Name = obj.Name,
                 Properties = properties,
+                ObjectCreationHandling = GetAnnotationString(obj.Annotations, SystemTextJsonAnnotationNames.ObjectCreationHandling),
+                UnmappedMemberHandling = GetAnnotationString(obj.Annotations, SystemTextJsonAnnotationNames.UnmappedMemberHandling),
+                HasPolymorphism = GetAnnotationBool(obj.Annotations, SystemTextJsonAnnotationNames.Polymorphism),
             };
         }
 

@@ -237,3 +237,6 @@ The single ordered property group that identifies how a human should recognize a
 
 ### Access Path
 A named ordered property group that expresses an intended way consumers may locate or narrow instances without defining query operators, uniqueness, or target-specific implementation.
+
+### JSON Representation Fidelity
+The one-way compatibility contract under which JSON successfully emitted by a supported SemanticTypeModel System.Text.Json configuration conforms to the JSON Schema derived from the same canonical semantic model.

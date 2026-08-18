@@ -115,6 +115,19 @@ public static class JsonSchemaDerivationExtensions
         private JsonSchemaObjectNode MapObject(Model.ObjectTypeDefinition type)
         {
             var additionalAllowed = true;
+            JsonSchemaSchemaRef? additionalPropertiesSchema = null;
+            Model.PropertyDefinition? extensionData = type.Properties.FirstOrDefault(static property => HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData));
+            if (extensionData is not null && _model?.TryGetType(extensionData.Type.Id) is Model.DictionaryTypeDefinition dictionary)
+            {
+                additionalPropertiesSchema = MapReference(dictionary.ValueType, $"/types/{type.Id.Value}/additionalProperties");
+            }
+            else if (extensionData is not null)
+            {
+                AddDiagnostic(
+                    "JSONSCHEMA_EXTENSION_DATA_VALUE_UNREPRESENTABLE",
+                    $"Extension-data member '{type.Name}.{extensionData.Name}' does not expose a representable dictionary value type; additional properties remain permissive.",
+                    $"/types/{type.Id.Value}/properties/{extensionData.Name}");
+            }
             if (GetStringAnnotation(type.Annotations, "runtime.additionalPropertiesAllowed") is { } legacyAdditional)
             {
                 additionalAllowed = string.Equals(legacyAdditional, "true", StringComparison.OrdinalIgnoreCase);
@@ -139,7 +152,8 @@ public static class JsonSchemaDerivationExtensions
                 Title = type.DisplayName ?? GetStringAnnotation(type.Annotations, "schema.title") ?? GetStringAnnotation(type.Annotations, "title"),
                 Description = type.UserDescription,
                 AdditionalPropertiesAllowed = additionalAllowed,
-                Properties = [.. type.Properties.Where(static property => !HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData)).OrderBy(static property => property.Name, StringComparer.Ordinal).Select(property => MapProperty(type, property))],
+                AdditionalPropertiesSchema = additionalPropertiesSchema,
+                Properties = [.. type.Properties.Where(static property => !HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData)).Select(property => MapProperty(type, property)).OrderBy(static property => property.Order ?? int.MaxValue).ThenBy(static property => property.Name, StringComparer.Ordinal)],
                 ConditionalConstraints = [.. supported.OrderBy(static constraint => constraint.TargetPropertyId.Value, StringComparer.Ordinal).Select(MapConditionalConstraint)],
                 Annotations = BuildTypeAnnotations(type),
             };
@@ -174,6 +188,7 @@ public static class JsonSchemaDerivationExtensions
             return new JsonSchemaProperty
             {
                 Name = property.Name,
+                Order = GetIntAnnotation(property.Annotations, "ui.order"),
                 Schema = schema,
                 IsRequired = property.Cardinality.IsRequired,
                 IsNullable = property.Cardinality.AllowsNull,
@@ -261,13 +276,30 @@ public static class JsonSchemaDerivationExtensions
 
         private JsonSchemaEnumNode MapEnum(Model.EnumTypeDefinition type)
         {
+            var enumValues = type.Values.Select(static value => new
+            {
+                Value = ToJsonElement(value.Value),
+                Metadata = new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["name"] = value.Name,
+                    ["displayName"] = value.DisplayName,
+                    ["description"] = value.UserDescription,
+                    ["technicalDescription"] = value.TechnicalDescription,
+                },
+            }).ToArray();
+            Dictionary<string, object?>?[] metadata = [.. enumValues.Select(static item => item.Metadata.Any(pair => pair.Value is not null) ? item.Metadata.Where(static pair => pair.Value is not null).ToDictionary(static pair => pair.Key, static pair => pair.Value, StringComparer.Ordinal) : null)];
+            Dictionary<string, JsonElement> annotations = BuildTypeAnnotations(type);
+            if (metadata.Any(static item => item is not null))
+            {
+                annotations["x-stm"] = MergeXStm(annotations, new Dictionary<string, object?> { ["enumValues"] = metadata });
+            }
             return new JsonSchemaEnumNode
             {
                 Name = type.Name,
                 Title = type.DisplayName,
                 Description = type.UserDescription,
-                Values = [.. type.Values.Select(static value => ToJsonElement(value.Value))],
-                Annotations = BuildTypeAnnotations(type),
+                Values = [.. enumValues.Select(static value => value.Value)],
+                Annotations = annotations,
             };
         }
 
@@ -402,6 +434,72 @@ public static class JsonSchemaDerivationExtensions
                         ["generated"] = key.IsGenerated ? true : null,
                     }.Where(static pair => pair.Value is not null).ToDictionary(static pair => pair.Key, static pair => pair.Value, StringComparer.Ordinal)).ToArray();
                 }
+
+                string[] displayIdentity = [.. obj.Properties
+                    .Where(static property => GetIntAnnotation(property.Annotations, CoreSemanticAnnotationKeys.DisplayIdentity) is not null)
+                    .OrderBy(property => GetIntAnnotation(property.Annotations, CoreSemanticAnnotationKeys.DisplayIdentity))
+                    .ThenBy(static property => property.Name, StringComparer.Ordinal)
+                    .Select(static property => property.Name)];
+                if (displayIdentity.Length > 0)
+                {
+                    stm["displayIdentity"] = displayIdentity;
+                }
+
+                var accessPaths = new SortedDictionary<string, object?>(StringComparer.Ordinal);
+                foreach (Model.PropertyDefinition property in obj.Properties)
+                {
+                    foreach (Model.Annotation annotation in property.Annotations.Items.Where(static annotation => annotation.Key.Value.StartsWith(CoreSemanticAnnotationKeys.AccessPathPrefix, StringComparison.Ordinal)))
+                    {
+                        var name = annotation.Key.Value[CoreSemanticAnnotationKeys.AccessPathPrefix.Length..];
+                        if (string.IsNullOrWhiteSpace(name))
+                        {
+                            continue;
+                        }
+                        if (!accessPaths.TryGetValue(name, out var existing))
+                        {
+                            existing = new List<(int Order, string Name)>();
+                            accessPaths[name] = existing;
+                        }
+                        if (existing is List<(int Order, string Name)> members && int.TryParse(annotation.Value?.ToString(), out var order))
+                        {
+                            members.Add((order, property.Name));
+                        }
+                    }
+                }
+                if (accessPaths.Count > 0)
+                {
+                    stm["accessPaths"] = accessPaths.ToDictionary(static pair => pair.Key, static pair => ((List<(int Order, string Name)>)pair.Value!).OrderBy(static item => item.Order).ThenBy(static item => item.Name, StringComparer.Ordinal).Select(static item => item.Name).ToArray(), StringComparer.Ordinal);
+                }
+
+                if (HasBooleanAnnotation(type.Annotations, CoreSemanticAnnotationKeys.Envelope))
+                {
+                    var envelope = new SortedDictionary<string, object?>(StringComparer.Ordinal);
+                    var purpose = GetStringAnnotation(type.Annotations, CoreSemanticAnnotationKeys.EnvelopePurpose);
+                    if (!string.IsNullOrWhiteSpace(purpose))
+                    {
+                        envelope["purpose"] = purpose;
+                    }
+
+                    var payload = obj.Properties.FirstOrDefault(static property => HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.EnvelopePayload))?.Name;
+                    if (!string.IsNullOrWhiteSpace(payload))
+                    {
+                        envelope["payload"] = payload;
+                    }
+
+                    string[] metadata = [.. obj.Properties.Where(static property => HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.EnvelopeMetadata)).Select(static property => property.Name).Order(StringComparer.Ordinal)];
+                    if (metadata.Length > 0)
+                    {
+                        envelope["metadata"] = metadata;
+                    }
+
+                    stm["envelope"] = envelope;
+                }
+                AddBooleanSemantic(stm, type.Annotations, CoreSemanticAnnotationKeys.Versioned, "versioned");
+                AddBooleanSemantic(stm, type.Annotations, CoreSemanticAnnotationKeys.TemporalValidity, "temporalValidity");
+                if (obj.Properties.Any(static property => HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.ExtensionData)))
+                {
+                    stm["extensionData"] = true;
+                }
             }
             if (type is Model.ScalarTypeDefinition { Unit: { Length: > 0 } unit })
             {
@@ -424,6 +522,19 @@ public static class JsonSchemaDerivationExtensions
             if (property.Mutability is { } mutability)
             {
                 stm["mutability"] = mutability.ToString().ToLowerInvariant();
+            }
+
+            AddBooleanSemantic(stm, property.Annotations, CoreSemanticAnnotationKeys.Version, "version");
+            AddBooleanSemantic(stm, property.Annotations, CoreSemanticAnnotationKeys.Revision, "revision");
+            AddBooleanSemantic(stm, property.Annotations, CoreSemanticAnnotationKeys.CurrentVersion, "currentVersion");
+            AddBooleanSemantic(stm, property.Annotations, CoreSemanticAnnotationKeys.ValidFrom, "validFrom");
+            AddBooleanSemantic(stm, property.Annotations, CoreSemanticAnnotationKeys.ValidTo, "validTo");
+            AddBooleanSemantic(stm, property.Annotations, CoreSemanticAnnotationKeys.LifecycleState, "lifecycleState");
+            var ownership = GetStringAnnotation(property.Annotations, CoreSemanticAnnotationKeys.OwnershipKind)
+                ?? (HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.OwnedCollection) ? "collection" : HasBooleanAnnotation(property.Annotations, CoreSemanticAnnotationKeys.OwnedObject) ? "object" : null);
+            if (ownership is not null)
+            {
+                stm["ownership"] = ownership.ToLowerInvariant();
             }
 
             AddSharedSemantics(stm, property.TechnicalDescription, property.Annotations, $"/properties/{property.Name}");
@@ -466,6 +577,37 @@ public static class JsonSchemaDerivationExtensions
         {
             return bag.Items.Where(annotation => string.Equals(annotation.Key.Value, key, StringComparison.Ordinal)).Select(static annotation => annotation.Value?.ToString()).LastOrDefault(static value => !string.IsNullOrWhiteSpace(value)) is string value
                 && string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int? GetIntAnnotation(Model.AnnotationBag bag, string key)
+        {
+            var value = GetStringAnnotation(bag, key);
+            return int.TryParse(value, out var result) ? result : null;
+        }
+
+        private static void AddBooleanSemantic(SortedDictionary<string, object?> target, Model.AnnotationBag bag, string key, string outputKey)
+        {
+            if (HasBooleanAnnotation(bag, key))
+            {
+                target[outputKey] = true;
+            }
+        }
+
+        private static JsonElement MergeXStm(Dictionary<string, JsonElement> annotations, Dictionary<string, object?> additions)
+        {
+            var merged = new SortedDictionary<string, JsonElement>(StringComparer.Ordinal);
+            if (annotations.TryGetValue("x-stm", out JsonElement existing) && existing.ValueKind == JsonValueKind.Object)
+            {
+                foreach (JsonProperty property in existing.EnumerateObject())
+                {
+                    merged[property.Name] = property.Value.Clone();
+                }
+            }
+            foreach ((var key, var value) in additions)
+            {
+                merged[key] = ToJsonElement(value);
+            }
+            return JsonSerializer.SerializeToElement(merged);
         }
 
         private static string? GetStringAnnotation(Model.AnnotationBag bag, string key)

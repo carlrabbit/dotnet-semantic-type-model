@@ -448,7 +448,22 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
     private static void AppendConstraints(StringBuilder source, DotNetPropertyDescriptor property, int indentationLevel)
     {
         string indent = new(' ', indentationLevel * 4);
-        if (property.ConditionalConstraints.Count == 0)
+        string? minLength = IntegerLiteral(property.Annotations, "schema.minLength");
+        string? maxLength = IntegerLiteral(property.Annotations, "schema.maxLength");
+        string? pattern = GetAnnotationValue(property.Annotations, "schema.pattern");
+        string? minimum = DecimalLiteral(property.Annotations, "schema.minimum");
+        string? maximum = DecimalLiteral(property.Annotations, "schema.maximum");
+        string? multipleOf = DecimalLiteral(property.Annotations, "schema.multipleOf");
+        string? minItems = IntegerLiteral(property.Annotations, "schema.minItems");
+        string? maxItems = IntegerLiteral(property.Annotations, "schema.maxItems");
+        bool uniqueItems = string.Equals(GetAnnotationValue(property.Annotations, "schema.uniqueItems"), "true", StringComparison.OrdinalIgnoreCase);
+        bool hasString = minLength is not null || maxLength is not null || pattern is not null;
+        bool hasNumeric = minimum is not null || maximum is not null || multipleOf is not null
+            || property.Annotations.ContainsKey("schema.exclusiveMinimum")
+            || property.Annotations.ContainsKey("schema.exclusiveMaximum");
+        bool hasArray = minItems is not null || maxItems is not null || uniqueItems;
+
+        if (property.ConditionalConstraints.Count == 0 && !hasString && !hasNumeric && !hasArray)
         {
             source.AppendLine($"{indent}Constraints = new global::SemanticTypeModel.Abstractions.Model.ConstraintSet(),");
             return;
@@ -456,6 +471,23 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
 
         source.AppendLine($"{indent}Constraints = new global::SemanticTypeModel.Abstractions.Model.ConstraintSet");
         source.AppendLine($"{indent}{{");
+        if (hasString)
+        {
+            source.AppendLine($"{indent}    String = new global::SemanticTypeModel.Abstractions.Model.StringConstraints {{ MinLength = {minLength ?? "null"}, MaxLength = {maxLength ?? "null"}, Pattern = {Literal(pattern)} }},");
+        }
+        if (hasNumeric)
+        {
+            source.AppendLine($"{indent}    Numeric = new global::SemanticTypeModel.Abstractions.Model.NumericConstraints {{ Minimum = {minimum ?? "null"}, Maximum = {maximum ?? "null"}, ExclusiveMinimum = {property.Annotations.ContainsKey("schema.exclusiveMinimum").ToString().ToLowerInvariant()}, ExclusiveMaximum = {property.Annotations.ContainsKey("schema.exclusiveMaximum").ToString().ToLowerInvariant()}, MultipleOf = {multipleOf ?? "null"} }},");
+        }
+        if (hasArray)
+        {
+            source.AppendLine($"{indent}    Array = new global::SemanticTypeModel.Abstractions.Model.ArrayConstraints {{ MinItems = {minItems ?? "null"}, MaxItems = {maxItems ?? "null"}, UniqueItems = {uniqueItems.ToString().ToLowerInvariant()} }},");
+        }
+        if (property.ConditionalConstraints.Count == 0)
+        {
+            source.AppendLine($"{indent}}},");
+            return;
+        }
         source.AppendLine($"{indent}    Conditional =");
         source.AppendLine($"{indent}    [");
         foreach (Abstractions.Model.ConditionalConstraint constraint in property.ConditionalConstraints)
@@ -491,6 +523,18 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         }
         source.AppendLine($"{indent}    ],");
         source.AppendLine($"{indent}}},");
+    }
+
+    private static string? IntegerLiteral(IReadOnlyDictionary<string, string> annotations, string key)
+    {
+        return int.TryParse(GetAnnotationValue(annotations, key), out int value) ? value.ToString(System.Globalization.CultureInfo.InvariantCulture) : null;
+    }
+
+    private static string? DecimalLiteral(IReadOnlyDictionary<string, string> annotations, string key)
+    {
+        return decimal.TryParse(GetAnnotationValue(annotations, key), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out decimal value)
+            ? value.ToString(System.Globalization.CultureInfo.InvariantCulture) + "m"
+            : null;
     }
 
     private static void AppendScalarType(StringBuilder source, DotNetScalarTypeDescriptor descriptor, int indentationLevel)
@@ -530,7 +574,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         source.AppendLine($"{indent}    [");
         foreach (DotNetEnumValueDescriptor value in descriptor.Values)
         {
-            source.AppendLine($"{indent}        new global::SemanticTypeModel.Abstractions.Model.EnumValueDefinition {{ Name = \"{EscapeString(value.Name)}\", Value = \"{EscapeString(value.Name)}\", Annotations = new global::SemanticTypeModel.Abstractions.Model.AnnotationBag() }},");
+            source.AppendLine($"{indent}        new global::SemanticTypeModel.Abstractions.Model.EnumValueDefinition {{ Name = \"{EscapeString(value.Name)}\", Value = \"{EscapeString(value.Name)}\", DisplayName = {Literal(value.DisplayName)}, UserDescription = {Literal(value.UserDescription)}, Annotations = new global::SemanticTypeModel.Abstractions.Model.AnnotationBag() }},");
         }
         source.AppendLine($"{indent}    ],");
         source.AppendLine($"{indent}}}");

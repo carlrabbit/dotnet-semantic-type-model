@@ -120,7 +120,7 @@ public static class JsonSchemaDomainExporter
         {
             writer.WritePropertyName("properties");
             writer.WriteStartObject();
-            foreach (JsonSchemaProperty property in obj.Properties.OrderBy(static property => property.Name, StringComparer.Ordinal))
+            foreach (JsonSchemaProperty property in obj.Properties.OrderBy(static property => property.Order ?? int.MaxValue).ThenBy(static property => property.Name, StringComparer.Ordinal))
             {
                 writer.WritePropertyName(property.Name);
                 writer.WriteStartObject();
@@ -167,7 +167,7 @@ public static class JsonSchemaDomainExporter
             }
 
             writer.WriteEndObject();
-            string[] required = [.. obj.Properties.Where(static property => property.IsRequired).Select(static property => property.Name).Order(StringComparer.Ordinal)];
+            string[] required = [.. obj.Properties.Where(static property => property.IsRequired).OrderBy(static property => property.Order ?? int.MaxValue).ThenBy(static property => property.Name, StringComparer.Ordinal).Select(static property => property.Name)];
             if (required.Length > 0)
             {
                 writer.WritePropertyName("required");
@@ -180,7 +180,14 @@ public static class JsonSchemaDomainExporter
             }
         }
 
-        if (!obj.AdditionalPropertiesAllowed)
+        if (obj.AdditionalPropertiesSchema is not null)
+        {
+            writer.WritePropertyName("additionalProperties");
+            writer.WriteStartObject();
+            WriteRef(writer, obj.AdditionalPropertiesSchema, diagnostics, pointer + "/additionalProperties", includeSemanticAnnotations);
+            writer.WriteEndObject();
+        }
+        else if (!obj.AdditionalPropertiesAllowed)
         {
             writer.WriteBoolean("additionalProperties", false);
         }
