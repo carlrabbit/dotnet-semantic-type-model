@@ -10,7 +10,6 @@ this page is only an index.
 | Code-first Power BI | `samples/code-first-powerbi/` | Generated model -> local analytical metadata |
 | System.Text.Json resolver | `samples/system-text-json-resolver/` | Application-owned resolver/context customized with semantic metadata |
 | Runtime DI | `samples/runtime-di/` | Runtime provider/projection composition |
-| Configuration options | `samples/configuration-options/` | Explicit `AddSemanticOptions<TOptions>` registration from a generated model |
 | Shared model | `samples/OrderFulfillment.Domain/` | Shared annotated domain consumed by multiple target samples |
 
 ## Run

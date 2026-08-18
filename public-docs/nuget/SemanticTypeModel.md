@@ -20,11 +20,8 @@ producer/consumer suite-version alignment.
 | JSON Schema | `SemanticTypeModel.JsonSchema` |
 | EF Core | `SemanticTypeModel.EFCore`, `SemanticTypeModel.EFCore.Generators` |
 | System.Text.Json | `SemanticTypeModel.SystemTextJson` |
-| Microsoft.Extensions.Options | `SemanticTypeModel.Configuration` |
 | Power BI local metadata | `SemanticTypeModel.PowerBI` |
 | Runtime DI composition | `SemanticTypeModel.DependencyInjection` |
-
-`SemanticTypeModel.Configuration.Generators` is not part of the current package suite.
 
 `SemanticTypeModel.Abstractions` and `SemanticTypeModel.Core` provide shared model/runtime contracts used by the
 suite. Applications normally start from the scenario packages rather than selecting internal package layers
@@ -113,7 +110,6 @@ If generation or projection fails:
 - [JSON Schema](../guides/json-schema.md)
 - [EF Core](../guides/ef-core.md)
 - [System.Text.Json](../guides/system-text-json.md)
-- [Configuration / Options](../guides/configuration-options.md)
 - [Power BI](../guides/power-bi.md)
 - [Projection capabilities](../guides/projection-capabilities.md)
 
@@ -129,7 +125,6 @@ If generation or projection fails:
 | `SemanticTypeModel.EFCore` | EF relational inspection, selection contract, converters/comparers/helpers |
 | `SemanticTypeModel.EFCore.Generators` | Generated composable `IEntityTypeConfiguration<TEntity>` application |
 | `SemanticTypeModel.SystemTextJson` | Resolver metadata derivation/customization |
-| `SemanticTypeModel.Configuration` | Configuration semantic model and explicit Options registration |
 | `SemanticTypeModel.PowerBI` | Deterministic local analytical metadata projection |
 | `SemanticTypeModel.DependencyInjection` | Runtime provider/projection service registration |
 

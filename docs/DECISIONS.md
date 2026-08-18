@@ -40,8 +40,7 @@ Git history retains the detailed superseded record.
 
 ### Other projections
 
-- [Configuration is an Options registration projection](decisions/configuration-domain-is-options-registration-projection.md)
-- [Configuration registration is explicit per options type](decisions/configuration-registration-is-explicit-per-options-type.md)
+- [Configuration role does not imply Options integration](decisions/configuration-role-does-not-imply-options-integration.md)
 - [JSON Schema uses `x-stm` for selected semantic preservation](decisions/json-schema-uses-x-stm-for-selected-semantics.md)
 - [Power BI integration stops at local metadata projection](decisions/power-bi-integration-stops-at-local-metadata-projection.md)
 - [Do not generate a System.Text.Json context](decisions/remove-system-text-json-context-generation.md)

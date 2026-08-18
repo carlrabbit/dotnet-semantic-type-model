@@ -52,10 +52,6 @@ public sealed class RoslynDotNetTypeExtractor
     private const string SemanticValidToAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticValidToAttribute";
     private const string SemanticLifecycleStateAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticLifecycleStateAttribute";
     private const string SemanticExtensionDataAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticExtensionDataAttribute";
-    private const string SemanticConfigurationSectionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticConfigurationSectionAttribute";
-    private const string SemanticValidateDataAnnotationsAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticValidateDataAnnotationsAttribute";
-    private const string SemanticValidateOnStartAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticValidateOnStartAttribute";
-    private const string SemanticGenerateOptionsRegistrationAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticGenerateOptionsRegistrationAttribute";
     private const string SemanticRequiredWhenAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticRequiredWhenAttribute";
     private const string GeneratorOptionsAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticTypeModelGeneratorOptionsAttribute";
     private const string JsonPropertyNameAttributeMetadataName = "System.Text.Json.Serialization.JsonPropertyNameAttribute";
@@ -564,7 +560,6 @@ public sealed class RoslynDotNetTypeExtractor
         TryAddRoleAnnotation(typeAttributes, annotations, type.Locations.FirstOrDefault());
         TryAddEnvelopeAnnotations(typeAttributes, annotations, type);
         TryAddEvolutionTypeAnnotations(typeAttributes, annotations);
-        TryAddConfigurationTypeAnnotations(typeAttributes, annotations);
         ValidateTypeAttributeUsage(typeAttributes, type);
         AddInheritanceAnnotations(type, annotations, cancellationToken);
         DiagnoseMissingTechnicalDescriptionIfRequired(type, type.Locations.FirstOrDefault());
@@ -746,46 +741,6 @@ public sealed class RoslynDotNetTypeExtractor
         }
 
         return properties.Values;
-    }
-
-    private static void TryAddConfigurationTypeAnnotations(ImmutableArray<AttributeData> attributes, Dictionary<string, string> annotations)
-    {
-        foreach (AttributeData attribute in attributes)
-        {
-            string? metadataName = attribute.AttributeClass?.ToDisplayString();
-            if (string.Equals(metadataName, SemanticConfigurationSectionAttributeMetadataName, StringComparison.Ordinal))
-            {
-                annotations["configuration.options"] = "true";
-                annotations["configuration.section"] = "true";
-                annotations["configuration.section.name"] = GetFirstConstructorArgument(attribute);
-                foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
-                {
-                    if (string.Equals(key, "Presence", StringComparison.Ordinal) && value.Value is int presenceValue)
-                    {
-                        annotations["configuration.section.presence"] = presenceValue == 1 ? "Required" : "Optional";
-                    }
-                }
-            }
-            else if (string.Equals(metadataName, SemanticValidateDataAnnotationsAttributeMetadataName, StringComparison.Ordinal))
-            {
-                annotations["configuration.validateDataAnnotations"] = "true";
-            }
-            else if (string.Equals(metadataName, SemanticValidateOnStartAttributeMetadataName, StringComparison.Ordinal))
-            {
-                annotations["configuration.validateOnStart"] = "true";
-            }
-            else if (string.Equals(metadataName, SemanticGenerateOptionsRegistrationAttributeMetadataName, StringComparison.Ordinal))
-            {
-                annotations["configuration.registration.generateExtensionMethod"] = "true";
-                foreach ((string? key, TypedConstant value) in attribute.NamedArguments)
-                {
-                    if (string.Equals(key, "ExtensionMethodName", StringComparison.Ordinal) && value.Value is string methodName)
-                    {
-                        annotations["configuration.registration.extensionMethodName"] = methodName;
-                    }
-                }
-            }
-        }
     }
 
     private List<ConditionalConstraint> NormalizeRequiredWhen(

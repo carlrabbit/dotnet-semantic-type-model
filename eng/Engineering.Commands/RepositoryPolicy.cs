@@ -8,7 +8,7 @@ internal static class RepositoryPolicy
     [
         Package("Abstractions"), Package("Core"), Package("JsonSchema"), Package("DotNet"),
         Package("Generators"), Package("DependencyInjection"), Package("PowerBI"), Package("EFCore"),
-        Package("EFCore.Generators"), Package("SystemTextJson"), Package("Configuration"),
+        Package("EFCore.Generators"), Package("SystemTextJson"),
     ];
 
     internal static IReadOnlyList<string> CommandsForAffectedPaths(IEnumerable<string> paths)
@@ -41,7 +41,7 @@ internal static class RepositoryPolicy
 
     private static IReadOnlyList<string> TestAreas { get; } =
     [
-        "Configuration", "Core", "DependencyInjection", "DotNet", "EFCore", "EFCore.Generators",
+        "Core", "DependencyInjection", "DotNet", "EFCore", "EFCore.Generators",
         "Generators", "JsonSchema", "PowerBI", "SystemTextJson",
     ];
 

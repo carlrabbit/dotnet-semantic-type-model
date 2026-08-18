@@ -11,7 +11,7 @@ $versions = foreach ($id in $packageIds) {
 }
 $version = $versions | Group-Object | Where-Object Count -eq $packageIds.Count | Sort-Object Name | Select-Object -Last 1 -ExpandProperty Name
 if (-not $version) { throw "Could not find one SemanticTypeModel package version shared by all packages in $packageDir." }
-$projects = @('samples/code-first-json-schema/code-first-json-schema.csproj','samples/code-first-ef-core/code-first-ef-core.csproj','samples/code-first-powerbi/code-first-powerbi.csproj','samples/system-text-json-resolver/system-text-json-resolver.csproj','samples/runtime-di/runtime-di.csproj','samples/configuration-options/configuration-options.csproj')
+$projects = @('samples/code-first-json-schema/code-first-json-schema.csproj','samples/code-first-ef-core/code-first-ef-core.csproj','samples/code-first-powerbi/code-first-powerbi.csproj','samples/system-text-json-resolver/system-text-json-resolver.csproj','samples/runtime-di/runtime-di.csproj')
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
 New-Item -ItemType Directory -Path $tempRoot | Out-Null
 try {

@@ -9,6 +9,22 @@ namespace SemanticTypeModel.DotNet.Tests.Unit;
 public sealed class M0058TypedLiteralExtractionTests
 {
     [Test]
+    public async Task Configuration_role_remains_projection_neutral_without_options_metadata()
+    {
+        const string source = """
+            using SemanticTypeModel.DotNet;
+            [SemanticType(SemanticTypeRole.Configuration)] public sealed class Settings { public string? Name { get; init; } }
+            """;
+
+        DotNetExtractionResult extraction = Extract(source);
+        DotNetObjectTypeDescriptor settings = extraction.TypesById.Values.OfType<DotNetObjectTypeDescriptor>().Single(static type => type.Name == "Settings");
+
+        _ = await Assert.That(extraction.Diagnostics).IsEmpty();
+        _ = await Assert.That(settings.Annotations["schema.role"]).IsEqualTo("Configuration");
+        _ = await Assert.That(settings.Annotations.Keys.Any(static key => key.StartsWith("configuration.", StringComparison.Ordinal))).IsFalse();
+    }
+
+    [Test]
     public async Task Import_specification_extracts_four_typed_enum_conditions_without_object_pollution()
     {
         const string source = """

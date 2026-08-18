@@ -23,16 +23,16 @@ Annotated .NET code
         query / inspect / validate / transform
                  |
         +--------+-------------+-------------+----------------+---------------+
-        |                      |             |                |               |
-        v                      v             v                v               v
-   JSON Schema              EF Core       Power BI    System.Text.Json  Configuration
-   domain model             domain/       domain       domain model     domain model
+        |                      |             |                |
+        v                      v             v                v
+   JSON Schema              EF Core       Power BI    System.Text.Json
+   domain model             domain/       domain       domain model
                             relational      model
                             model
-        |                      |             |                |               |
-        v                      v             v                v               v
-   document export        generated EF   local          resolver/options   Options
-                          configuration   metadata       behavior           registration
+        |                      |             |                |
+        v                      v             v                v
+        document export        generated EF   local          resolver/options
+                          configuration   metadata       behavior
 ```
 
 The canonical model owns semantic meaning. Target packages own representation and integration choices.
@@ -171,17 +171,6 @@ canonical TypeSchemaModel
 SemanticTypeModel does not generate a custom `JsonSerializerContext` or serializer implementation.
 
 The base resolver/context remains application-owned and is preserved by default. Semantic validation constraints are not reimplemented as serializer validation.
-
-### Configuration
-
-```text
-canonical TypeSchemaModel
-  -> Configuration derivation
-  -> Configuration domain model
-  -> Microsoft.Extensions.Options registration / validation
-```
-
-SemanticTypeModel does not become a configuration provider or own source data loading.
 
 ## Package and Dependency Boundaries
 

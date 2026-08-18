@@ -145,10 +145,6 @@ Every current public attribute in the `SemanticTypeModel.DotNet` semantic author
 | `SemanticValidToAttribute` | Property-level `x-stm.validTo = true`. |
 | `SemanticLifecycleStateAttribute` | Property-level `x-stm.lifecycleState = true`; enum/scalar shape remains native. |
 | `SemanticExtensionDataAttribute` | Native `additionalProperties` representation plus containing-object `x-stm.extensionData = true`; bag is not a normal schema property. |
-| `SemanticConfigurationSectionAttribute` | Configuration-target metadata; not exported. |
-| `SemanticValidateDataAnnotationsAttribute` | Configuration-target validation policy; not exported. |
-| `SemanticValidateOnStartAttribute` | Configuration-target startup policy; not exported. |
-| `SemanticGenerateOptionsRegistrationAttribute` | Configuration-target generation policy; not exported. |
 | `SemanticRequiredWhenAttribute` | Native conditional schema generated from canonical typed equality semantics. |
 
 The classification is exhaustive for the current `SemanticTypeModel.DotNet` public semantic authoring attributes. New semantic attributes added later must receive an explicit JSON Schema classification before the JSON Schema projection can claim semantic-fidelity coverage for them.
@@ -209,11 +205,6 @@ The exact stable shapes are defined below and by the JSON Schema subsystem speci
 The following must not be generically copied into `x-stm`:
 
 - `SemanticTypeModelGeneratorOptionsAttribute`;
-- Configuration-only attributes:
-  - `SemanticConfigurationSectionAttribute`;
-  - `SemanticValidateDataAnnotationsAttribute`;
-  - `SemanticValidateOnStartAttribute`;
-  - `SemanticGenerateOptionsRegistrationAttribute`;
 - `systemTextJson.*` annotations;
 - EF Core or Power BI target metadata;
 - CLR/Roslyn/source identities;
