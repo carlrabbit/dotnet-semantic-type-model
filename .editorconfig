@@ -38,6 +38,9 @@ dotnet_style_null_propagation = true:suggestion
 
 # Analyzer severity baseline
 dotnet_analyzer_diagnostic.category-Style.severity = warning
+dotnet_diagnostic.IDE0007.severity = error
+dotnet_diagnostic.IDE0008.severity = error
+dotnet_diagnostic.IDE0022.severity = error
 dotnet_analyzer_diagnostic.category-Performance.severity = warning
 dotnet_analyzer_diagnostic.category-Reliability.severity = warning
 dotnet_analyzer_diagnostic.category-Security.severity = warning
