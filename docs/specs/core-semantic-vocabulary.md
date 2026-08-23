@@ -492,6 +492,12 @@ public enum OrderStatus
 
 **Projection implications:** JSON Schema exports a scalar type and format when available. EF Core maps a scalar property or converted value. Power BI maps a column data type.
 
+### Strong Scalar
+
+**Kind:** Projection-neutral nominal atomic type whose complete representation is one underlying canonical scalar; it does not imply identity, key, ownership, or target-specific conversion.
+
+**Projection implications:** JSON Schema and System.Text.Json use the underlying scalar representation, EF Core maps the underlying provider scalar including inside supported STM-owned JSON, and Power BI uses the underlying scalar classification; explicit authoring and supported CLR shape are defined by `docs/specs/strong-scalar-semantics.md`.
+
 **Example:**
 
 ```csharp

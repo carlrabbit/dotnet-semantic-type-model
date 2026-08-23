@@ -84,6 +84,7 @@ public abstract record TypeDefinition
 public enum TypeKind
 {
     Scalar,
+    StrongScalar,
     Object,
     Array,
     Dictionary,
@@ -93,6 +94,11 @@ public enum TypeKind
     Reference,
     Any,
     Never,
+}
+
+public sealed record StrongScalarTypeDefinition : TypeDefinition
+{
+    public required TypeRef ValueType { get; init; }
 }
 
 public sealed record ObjectTypeDefinition : TypeDefinition

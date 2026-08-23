@@ -277,10 +277,10 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
 
             source.Append("        ").Append(configuredProperty)
                 .Append(".HasConversion(global::SemanticTypeModel.EFCore.SemanticEfValueConverters.Json<")
-                .Append(memberType).AppendLine(">());");
+                .Append(memberType).Append(">(").Append(StrongScalarConverterArguments(manifest)).AppendLine("));");
             source.Append("        ").Append(expression)
                 .Append(".Metadata.SetValueComparer(global::SemanticTypeModel.EFCore.SemanticEfValueConverters.JsonComparer<")
-                .Append(memberType).AppendLine(">());");
+                .Append(memberType).Append(">(").Append(StrongScalarConverterArguments(manifest)).AppendLine("));");
             error = null;
             return true;
         }
@@ -512,6 +512,14 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
         return identifier.Length == 0 ? "Model" : char.IsDigit(identifier[0]) ? "_" + identifier : identifier;
     }
 
+    private static string StrongScalarConverterArguments(SemanticManifest manifest)
+    {
+        return string.Join(", ", manifest.Types
+            .Where(static type => type.Kind == "StrongScalar")
+            .OrderBy(static type => type.ClrName, StringComparer.Ordinal)
+            .Select(static type => "typeof(" + type.ClrName + ")"));
+    }
+
     private static string Escape(string value)
     {
         return value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
@@ -522,7 +530,7 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
 
 internal sealed class SemanticManifest
 {
-    internal const int CurrentVersion = 1;
+    internal const int CurrentVersion = 2;
     public int Version { get; set; }
     public string SemanticTypeModelVersion { get; set; } = string.Empty;
     public string ModelName { get; set; } = string.Empty;
@@ -549,6 +557,7 @@ internal sealed class SemanticType
     public string Kind { get; set; } = string.Empty;
     public string? Role { get; set; }
     public string? ItemTypeId { get; set; }
+    public string? ValueTypeId { get; set; }
     public IReadOnlyList<SemanticProperty> Properties { get; set; } = [];
 }
 

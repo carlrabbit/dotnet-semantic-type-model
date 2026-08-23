@@ -6,15 +6,15 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-- `M0067` — `docs/milestones/m0067-remove-configuration-options-integration.md` — `ready`
+- `M0069` — `docs/milestones/m0069-forward-port-strong-scalar-to-main.md` — `ready`
 
 ## Next Number
 
 ```text
-M0068
+M0070
 ```
 
-Never restart or reuse milestone numbers.
+Never restart or reuse milestone numbers across maintenance or mainline work.
 
 ## Lifecycle
 
@@ -22,7 +22,9 @@ Never restart or reuse milestone numbers.
 draft/planning -> ready -> implementing -> done
 ```
 
-Planning resolves material architecture, semantic, compatibility, scope, acceptance, and validation decisions before a coding milestone becomes `ready`.
+Planning resolves material architecture, semantic, compatibility, scope, acceptance, validation, human-review, and project-invariant decisions before a coding milestone becomes `ready`.
+
+A `ready` milestone must also be executable by the configured baseline implementation model using the milestone, referenced project authority, the live repository, and normal repository tooling without inventing a new material project decision.
 
 Implementation starts from the ready milestone and repository-local authority, re-inspects the live source and tests, and owns concrete implementation mechanics that fit the contract.
 
