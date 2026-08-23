@@ -199,7 +199,7 @@ public sealed class GeneratedConfigurationTests
         return [.. result.Results.SelectMany(run => run.GeneratedSources).OrderBy(source => source.HintName, StringComparer.Ordinal).Select(source => source.SourceText.ToString())];
     }
 
-    private static object Manifest(string name, object[] types, int version = 1, string? semanticTypeModelVersion = null)
+    private static object Manifest(string name, object[] types, int version = 2, string? semanticTypeModelVersion = null)
     {
         return new { Version = version, SemanticTypeModelVersion = semanticTypeModelVersion ?? SuiteVersion(), ModelName = name, Types = types };
     }
@@ -218,7 +218,7 @@ public sealed class GeneratedConfigurationTests
 
     private static object Type(string id, string name, string kind, string? role = null, string? baseClr = null, object[]? properties = null, string? itemType = null)
     {
-        return new { Id = id, Name = name, ClrName = id, BaseClrName = baseClr, Kind = kind, Role = role, ItemTypeId = itemType, Properties = properties ?? [] };
+        return new { Id = id, Name = name, ClrName = id, BaseClrName = baseClr, Kind = kind, Role = role, ItemTypeId = itemType, ValueTypeId = (string?)null, Properties = properties ?? [] };
     }
 
     private static object Property(string name, string type, bool key = false, string? declaring = null, string? ownership = null, bool nullable = false)

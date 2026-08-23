@@ -302,6 +302,15 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
             return ProjectEnvelopePayload(owner, property, propertyType, isHidden, diagnostics);
         }
 
+        if (propertyType is StrongScalarTypeDefinition strongScalar
+            && model.TryGetType(strongScalar.ValueType.Id) is ScalarTypeDefinition underlyingScalar)
+        {
+            return
+            [
+                CreateColumn(columnName, property.DisplayName, MapScalarDataType(underlyingScalar, propertyPath, diagnostics), isNullable, isKey, isHidden, property.UserDescription, summarization, property.Id, dataCategory, formatString, sortByColumn, property.Annotations),
+            ];
+        }
+
         if (propertyType is ScalarTypeDefinition scalar)
         {
             return

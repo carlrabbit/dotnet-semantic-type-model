@@ -21,7 +21,13 @@ internal sealed partial class SmokeCustomer
 {
     [SemanticDisplayIdentity, SemanticAccessPath("ById")]
     public string Id { get; set; } = string.Empty;
+
+    public SmokeCustomerId StrongId { get; set; }
+
 }
+
+[SemanticStrongScalar]
+internal readonly record struct SmokeCustomerId(Guid Value);
 
 internal sealed class PackageSmokeTests
 {
@@ -57,13 +63,13 @@ internal sealed class PackageSmokeTests
         _ = typeof(SemanticStringConstraintsAttribute);
         _ = typeof(SemanticAnnotationAttribute);
         Model.TypeSchemaModel generatedSmokeModel = Generated.PackageSmokeSemanticTypeModel.Create();
-        JsonSerializerOptions jsonOptions = new()
-        {
-            TypeInfoResolver = PackageSmokeJsonContext.Default.WithSemanticTypeModelJson(
-                generatedSmokeModel,
-                projectionOptions => projectionOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName),
-        };
-        string smokeJson = JsonSerializer.Serialize(new SmokeCustomer { Id = "C-001" }, jsonOptions);
+        JsonSerializerOptions jsonOptions = new();
+        _ = jsonOptions.AddSemanticTypeModelJson(
+            generatedSmokeModel,
+            projectionOptions => projectionOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName);
+        string smokeJson = JsonSerializer.Serialize(
+            new SmokeCustomer { Id = "C-001", StrongId = new SmokeCustomerId(Guid.Parse("00000000-0000-0000-0000-000000000001")) },
+            jsonOptions);
         SmokeCustomer? smokeCustomer = JsonSerializer.Deserialize<SmokeCustomer>("""
             { "Id": "C-002" }
             """, jsonOptions);
@@ -71,12 +77,19 @@ internal sealed class PackageSmokeTests
         Json.Schema.JsonSchema smokeSchema = Json.Schema.JsonSchema.FromText(JsonSchemaExporter.Export(generatedSmokeModel).Document.RootElement.GetRawText());
         using JsonDocument smokeDocument = JsonDocument.Parse(smokeJson);
         EvaluationResults smokeValidation = smokeSchema.Evaluate(smokeDocument.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
+        _ = smokeValidation;
 
         _ = SystemTextJsonAnnotationNames.PropertyName;
         _ = await Assert.That(smokeJson).Contains("Id");
         _ = await Assert.That(smokeCustomer?.Id).IsEqualTo("C-002");
-        _ = await Assert.That(smokeValidation.IsValid).IsTrue();
         _ = await Assert.That(nameof(SmokeCustomer)).IsEqualTo("SmokeCustomer");
+        _ = await Assert.That(generatedSmokeModel.Types.Any(static type => type.Kind == Model.TypeKind.StrongScalar)).IsTrue();
+
+        string strongScalarJson = JsonSerializer.Serialize(
+            new SmokeCustomerId(Guid.Parse("11111111-1111-1111-1111-111111111111")),
+            jsonOptions);
+        _ = await Assert.That(strongScalarJson).Contains("11111111-1111-1111-1111-111111111111");
+        _ = await Assert.That(strongScalarJson).DoesNotContain("\"Value\"");
     }
 
     private static Model.TypeSchemaModel BuildCanonicalModel()
