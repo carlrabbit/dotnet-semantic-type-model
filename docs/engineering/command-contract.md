@@ -2,52 +2,66 @@
 
 ## Purpose
 
-Define the stable set of repository commands used by humans, CI, and agents.
+Define the stable repository engineering commands used by humans, CI, and agents.
+
+The logical command contract is platform-neutral. PowerShell and Bash files are equivalent platform launchers over the same repository command.
+
+## Platform Launchers
+
+Use the launcher native to the execution environment:
+
+```text
+Windows / PowerShell: .\eng\<command>.ps1
+Linux/macOS / Bash:   ./eng/<command>.sh
+```
+
+CI may use Bash launchers on Linux. Windows development uses the PowerShell launchers.
 
 ## Validation Tiers
 
-| Tier | Command scope | Commands |
-|---|---|---|
-| Tier 0 | Static/documentation checks | `./eng/public-docs.sh` for public docs, format verification for touched code, shell syntax checks for scripts |
-| Tier 1 | Focused affected-area validation | `./eng/test-project.sh <project>`, `./eng/test-filter.sh <filter>`, `./eng/check-affected.sh [paths...]` |
-| Tier 2 | Full repository implementation check | `./eng/check.sh` |
-| Tier 3 | Release candidate/package validation | `./eng/package.sh <version>`, `./eng/package-smoke.sh <version>`, `./eng/public-docs.sh`, `./eng/samples.sh`, `./eng/release-check.sh <version>` |
-| Tier 4 | Publish validation | `./eng/release-check.sh <version>`, then `./eng/publish.sh <version>` or the publish workflow |
+| Tier | Command scope | Windows | Bash / CI |
+|---|---|---|---|
+| Tier 0 | Static/documentation checks | `.\eng\public-docs.ps1` as applicable | `./eng/public-docs.sh` as applicable |
+| Tier 1 | Focused affected-area validation | `.\eng\test-project.ps1 <project>`, `.\eng\test-filter.ps1 <filter>`, `.\eng\check-affected.ps1 [paths...]` | matching `.sh` launchers |
+| Tier 2 | Full repository implementation check | `.\eng\check.ps1` | `./eng/check.sh` |
+| Tier 3 | Release candidate/package validation | `.\eng\package.ps1 <version>`, `.\eng\package-smoke.ps1 <version>`, `.\eng\public-docs.ps1`, `.\eng\samples.ps1`, `.\eng\release-check.ps1 <version>` | matching `.sh` launchers |
+| Tier 4 | Publish validation | `.\eng\release-check.ps1 <version>` then explicit publish operation | matching `.sh` launcher or publish workflow |
 
-`./eng/check.sh` is Tier 2. Use it before completing implementation work, but prefer Tier 1 commands for fast inner-loop validation when the affected area is known.
+Tier 2 is the normal implementation completion gate. Prefer Tier 1 for fast inner-loop validation when the affected area is known.
 
-## Canonical Commands
+## Canonical Logical Commands
 
 | Command | Purpose |
 |---|---|
-| `./eng/restore.sh` | Restore all dependencies |
-| `./eng/build.sh` | Build the solution |
-| `./eng/test.sh` | Run all short-running tests |
-| `./eng/test-project.sh <project>` | Run short-running tests for one test project |
-| `./eng/test-filter.sh <filter>` | Run short-running tests in unit-test projects whose path or C# source contains a bare focused term; arguments beginning with `/` are passed through as MTP tree-node filters |
-| `./eng/check-affected.sh [paths...]` | Run focused validation guidance for changed paths, or Tier 2 when no focused mapping is available; sample paths prepare local packages before running sample validation |
-| `./eng/format.sh` | Format all code |
-| `./eng/check.sh` | Tier 2 validation (restore + build + short-running tests + format check) |
-| `./eng/benchmark.sh` | Run benchmarks in Release mode |
-| `./eng/samples.sh` | Build and run runnable samples against locally prepared packages in `artifacts/nuget`; run `./eng/package.sh <version>` first |
-| `./eng/public-docs.sh` | Validate public documentation surfaces and package documentation consistency |
-| `./eng/package.sh <version>` | Pack release NuGet packages into `artifacts/nuget` |
-| `./eng/package-smoke.sh <version>` | Validate local package consumption from `artifacts/nuget` |
-| `./eng/release-check.sh <version>` | Run release-readiness gate without publishing |
-| `./eng/publish.sh <version>` | Publish local `artifacts/nuget` packages to NuGet.org |
+| `restore` | Restore all dependencies |
+| `build` | Build the solution |
+| `test` | Run all short-running tests |
+| `test-project <project>` | Run short-running tests for one test project |
+| `test-filter <filter>` | Run focused short-running tests; a leading `/` continues to denote a complete MTP tree-node filter |
+| `check-affected [paths...]` | Select focused validation from changed paths or fall back to Tier 2 |
+| `format` | Apply repository formatting |
+| `check` | Restore, build, run short-running tests, and verify formatting |
+| `benchmark` | Run benchmarks in Release mode |
+| `samples` | Build and run runnable samples against prepared local packages |
+| `public-docs` | Validate public-documentation surfaces and package-documentation consistency |
+| `package <version>` | Pack the aligned SemanticTypeModel NuGet suite into `artifacts/nuget` |
+| `package-smoke <version>` | Validate consumption of the packed suite |
+| `release-check <version>` | Run release-readiness validation without publishing |
+| `publish <version>` | Publish local package artifacts; requires explicit release intent and credentials |
 
 ## Rules
 
-- Humans, agents, and CI must use these commands.
-- Bare focused terms are repository source/project selectors rather than MTP expressions; use a leading `/` when supplying a complete MTP tree-node filter.
-- Do not invent alternative commands.
-- CI must call `./eng/check.sh` instead of duplicating logic.
-- `./eng/release-check.sh <version>` must not publish artifacts.
-- `./eng/publish.sh <version>` requires `NUGET_API_KEY`.
-- All required commands for the relevant validation tier must succeed before work is considered complete.
+- Humans, agents, and CI use the canonical `eng` command surface rather than duplicating repository policy.
+- PowerShell and Bash launchers for one logical command must remain behaviorally equivalent.
+- Bare focused terms remain repository source/project selectors; use a leading `/` for a complete MTP tree-node filter.
+- CI uses the platform-appropriate `check` launcher instead of duplicating logic.
+- `release-check <version>` must not publish.
+- `publish <version>` requires explicit release intent and configured credentials.
+- All commands required for the applicable validation tier must succeed before that validation tier is considered complete.
+- Validation success is evidence; milestone completion additionally requires the milestone completion audit.
 
 ## Implementation Levels
 
-The `eng/` filenames remain the stable command API. Direct `dotnet` launchers (`restore`, `build`, `test`, `test-project`, `format`, and `benchmark`) are Level 1. Small sequencing commands (`check`, `package`, `samples`, `release-check`, and `publish`) are Level 2. Repository policy commands (`check-affected` and `public-docs`) are Level 3: their shell files are thin launchers into the tested `eng/Engineering.Commands` host. `package-smoke` is also Level 3: its thin launcher delegates package policy, temporary consumer construction, and scenario orchestration to the tested command host.
+The `eng/` filenames remain the stable command API. Direct process launchers remain thin. Repository policy, package inventory, documentation validation, and package-smoke orchestration belong in tested .NET engineering code where practical.
 
-Complex path classification, package inventory, and documentation policy belong in tested .NET engineering code. Shell remains responsible for direct process invocation and short, readable sequencing. Launchers forward arguments and return the host or subprocess exit status unchanged.
+Platform launchers forward arguments and subprocess exit status unchanged.

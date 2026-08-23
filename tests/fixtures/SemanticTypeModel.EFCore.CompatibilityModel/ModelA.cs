@@ -40,6 +40,25 @@ public sealed class InventoryDetails
     public int Quantity { get; set; }
 }
 
+[SemanticType(SemanticTypeRole.ValueObject)]
+public sealed class SpecificationStateEntry
+{
+    public SpecificationVersionId SpecificationVersionId { get; set; }
+}
+
+[SemanticType(SemanticTypeRole.Entity)]
+public sealed class SpecificationState
+{
+    [SemanticKey]
+    public Guid Id { get; set; }
+
+    [SemanticOwned(Kind = SemanticOwnershipKind.Collection)]
+    public IReadOnlyList<SpecificationStateEntry> Entries { get; set; } = [];
+}
+
+[SemanticStrongScalar]
+public readonly record struct SpecificationVersionId(Guid Value);
+
 [SemanticType(SemanticTypeRole.Entity)]
 public abstract class InventoryDocument
 {

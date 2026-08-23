@@ -14,6 +14,7 @@ Read only the subsystem contracts relevant to the task.
 
 - [Core semantic vocabulary](specs/core-semantic-vocabulary.md)
 - [Current canonical model surface](specs/current-canonical-model-surface.md)
+- [Strong Scalar semantics](specs/strong-scalar-semantics.md) — nominal atomic wrapper types and their cross-projection representation contract.
 - [Conditional constraint semantics](specs/core-conditional-constraint-semantics.md)
 - [Audience-specific description semantics](specs/audience-specific-description-semantics.md)
 - [Diagnostics](specs/diagnostics.md)
@@ -47,7 +48,7 @@ Some non-EF specification families predate the living-subsystem-contract policy 
 
 Do not treat the existence of a second overlapping file as permission to create a third. Prefer the primary reading-map contract above and reconcile supporting material when changing that subsystem.
 
-The documentation reset intentionally consolidates EF Core first because the supersession boundary is explicit and the old runtime application architecture is known to be retired.
+The Strong Scalar specification is intentionally cross-cutting because the same nominal atomic type must have one canonical meaning shared by extraction, JSON Schema, System.Text.Json, EF Core, Power BI, and capability diagnostics.
 
 ## Specification Lifecycle
 

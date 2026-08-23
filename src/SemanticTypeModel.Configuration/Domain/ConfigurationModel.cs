@@ -76,6 +76,14 @@ public static class ConfigurationDerivationExtensions
             {
                 typeDiagnostics.Add(Error("STM1032", $"Configuration type '{objectType.Name}' declares required section presence while binding is disabled.", $"/types/{objectType.Id.Value}", ConfigurationAnnotationKeys.SectionPresence));
             }
+
+            foreach (PropertyDefinition property in objectType.Properties)
+            {
+                if (model.TryGetType(property.Type.Id) is StrongScalarTypeDefinition)
+                {
+                    typeDiagnostics.Add(Error("STM1037", $"Configuration property '{objectType.Name}.{property.Name}' uses Strong Scalar binding, which is unsupported in 4.1.", $"/types/{objectType.Id.Value}/properties/{property.Name}", ConfigurationAnnotationKeys.Options));
+                }
+            }
             var rules = new List<RequiredWhenConstraint>();
             foreach (PropertyDefinition property in objectType.Properties.OrderBy(static p => p.Name, StringComparer.Ordinal))
             {

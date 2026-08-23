@@ -14,6 +14,8 @@ This specification is authoritative for configuration-domain derivation, options
 
 Configuration is a domain projection.
 
+Strong Scalar-valued options members remain an explicitly unsupported 4.1 binding boundary; derivation/registration must diagnose or reject them deterministically rather than silently treating the wrapper as an ordinary bindable object. See `docs/specs/strong-scalar-semantics.md`.
+
 The canonical semantic model describes projection-neutral meaning. The Configuration package derives Configuration domain information and projects one explicitly selected options type into Microsoft.Extensions.Options registration behavior.
 
 The Configuration package must not own application configuration sources. Host applications own configuration provider setup, environment layering, secret management, deployment-specific section paths, and the decision about which options types a service registers.

@@ -10,7 +10,6 @@ namespace SemanticTypeModel.EFCore;
 /// <summary>Derives and applies the opinionated EF relational contract.</summary>
 public static class EfRelationalExtensions
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.General);
 
     /// <summary>Derives the fixed relational representation of a semantic model.</summary>
     public static SemanticDerivationResult<EfRelationalModel> DeriveEfRelationalModel(this TypeSchemaModel model, Action<EfRelationalOptions>? configure = null)
@@ -146,7 +145,7 @@ public static class EfRelationalExtensions
         try
         {
             var value = clrType.IsValueType ? Activator.CreateInstance(clrType) : System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(clrType);
-            _ = JsonSerializer.Serialize(value, clrType, JsonOptions);
+            _ = JsonSerializer.Serialize(value, clrType, CreateJsonOptions(model));
         }
         catch (Exception exception) when (exception is NotSupportedException or InvalidOperationException)
         {
@@ -206,6 +205,27 @@ public static class EfRelationalExtensions
             }
         }
         return valid;
+    }
+
+    private static JsonSerializerOptions CreateJsonOptions(TypeSchemaModel model)
+    {
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.General);
+        Type[] wrappers = [.. model.Types.OfType<StrongScalarTypeDefinition>()
+            .Select(static type => ResolveClrTypeName(type.Id.Value))
+            .Where(static type => type is not null)
+            .Select(static type => type!)];
+        if (wrappers.Length > 0)
+        {
+            options.Converters.Insert(0, new StrongScalarJsonConverterFactory(wrappers));
+        }
+
+        return options;
+    }
+
+    private static Type? ResolveClrTypeName(string name)
+    {
+        name = name.Replace("global::", string.Empty, StringComparison.Ordinal);
+        return Type.GetType(name, false) ?? AppDomain.CurrentDomain.GetAssemblies().Select(assembly => assembly.GetType(name, false)).FirstOrDefault(static candidate => candidate is not null);
     }
 
     private static bool SameTypeId(string left, string right)
