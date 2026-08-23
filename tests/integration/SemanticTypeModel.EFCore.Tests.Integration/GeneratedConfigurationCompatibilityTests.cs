@@ -16,6 +16,36 @@ namespace SemanticTypeModel.EFCore.Tests.Integration;
 public sealed class GeneratedConfigurationTests
 {
     [Test]
+    public async Task Strong_scalar_round_trips_as_a_scalar_inside_owned_JSON_collection()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        DbContextOptions<GeneratedCompatibilityContext> options = new DbContextOptionsBuilder<GeneratedCompatibilityContext>().UseSqlite(connection).Options;
+        var expected = Guid.NewGuid();
+
+        await using (var context = new GeneratedCompatibilityContext(options))
+        {
+            _ = await context.Database.EnsureCreatedAsync();
+            context.SpecificationStates.Add(new SpecificationState
+            {
+                Id = Guid.NewGuid(),
+                Entries = [new SpecificationStateEntry { SpecificationVersionId = new SpecificationVersionId(expected) }],
+            });
+            _ = await context.SaveChangesAsync();
+        }
+
+        await using (var context = new GeneratedCompatibilityContext(options))
+        {
+            SpecificationState state = await context.SpecificationStates.SingleAsync();
+            _ = await Assert.That(state.Entries.Single().SpecificationVersionId.Value).IsEqualTo(expected);
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = "SELECT \"Entries\" FROM \"SpecificationState\"";
+            var json = (string)(await command.ExecuteScalarAsync())!;
+            _ = await Assert.That(json).Contains(expected.ToString("D"));
+            _ = await Assert.That(json).DoesNotContain("Value");
+        }
+    }
+    [Test]
     public async Task MultiModel_generated_configurations_preserve_manual_entity_and_round_trip_with_sqlite()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -58,7 +88,7 @@ public sealed class GeneratedConfigurationTests
             _ = await Assert.That(await context.ModelBExternal.CountAsync()).IsEqualTo(1);
             await AssertExactEntityTypes(context,
                 typeof(InventoryItem), typeof(InventoryDocument), typeof(SpecializedInventoryDocument), typeof(BillingRecord), typeof(SpecializedBillingRecord),
-                typeof(ManualAudit), typeof(ModelAExternalEntity), typeof(ModelBExternalEntity));
+                typeof(SpecificationState), typeof(ManualAudit), typeof(ModelAExternalEntity), typeof(ModelBExternalEntity));
             _ = await Assert.That(context.Model.FindEntityType(typeof(SpecializedBillingRecord))!.BaseType!.ClrType).IsEqualTo(typeof(BillingRecord));
             _ = await Assert.That(context.Model.FindEntityType(typeof(InventoryDetails))).IsNull();
             _ = await Assert.That(context.Model.FindEntityType(typeof(InventoryItemId))).IsNull();
@@ -237,7 +267,7 @@ public sealed class GeneratedConfigurationTests
         DbContextOptions<InventoryOnlyContext> inventoryOptions = new DbContextOptionsBuilder<InventoryOnlyContext>().UseSqlite("Data Source=:memory:").Options;
         await using (var inventory = new InventoryOnlyContext(inventoryOptions))
         {
-            await AssertExactEntityTypes(inventory, typeof(InventoryItem), typeof(InventoryDocument), typeof(SpecializedInventoryDocument), typeof(ModelBExternalEntity));
+            await AssertExactEntityTypes(inventory, typeof(InventoryItem), typeof(InventoryDocument), typeof(SpecializedInventoryDocument), typeof(SpecificationState), typeof(ModelBExternalEntity));
         }
 
         DbContextOptions<BillingOnlyContext> billingOptions = new DbContextOptionsBuilder<BillingOnlyContext>().UseSqlite("Data Source=:memory:").Options;
@@ -287,6 +317,8 @@ public sealed class GeneratedConfigurationTests
 internal sealed class GeneratedCompatibilityContext(DbContextOptions<GeneratedCompatibilityContext> options) : DbContext(options)
 {
     public DbSet<InventoryItem> Inventory => Set<InventoryItem>();
+
+    public DbSet<SpecificationState> SpecificationStates => Set<SpecificationState>();
     public DbSet<BillingRecord> Billing => Set<BillingRecord>();
     public DbSet<SpecializedBillingRecord> SpecializedBilling => Set<SpecializedBillingRecord>();
     public DbSet<InventoryDocument> Documents => Set<InventoryDocument>();

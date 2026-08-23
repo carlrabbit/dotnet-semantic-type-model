@@ -94,6 +94,7 @@ public static class JsonSchemaDerivationExtensions
             {
                 Model.ObjectTypeDefinition obj => MapObject(obj),
                 Model.ScalarTypeDefinition scalar => MapScalar(scalar),
+                Model.StrongScalarTypeDefinition strongScalar => MapStrongScalar(strongScalar),
                 Model.EnumTypeDefinition enumType => MapEnum(enumType),
                 Model.ArrayTypeDefinition array => MapArray(array),
                 Model.DictionaryTypeDefinition dictionary => MapDictionary(dictionary),
@@ -272,6 +273,18 @@ public static class JsonSchemaDerivationExtensions
                 Constraints = new JsonSchemaConstraintSet(),
                 Annotations = BuildTypeAnnotations(type),
             };
+        }
+
+        private JsonSchemaScalarNode MapStrongScalar(Model.StrongScalarTypeDefinition type)
+        {
+            if (_model?.TryGetType(type.ValueType.Id) is not Model.ScalarTypeDefinition scalar)
+            {
+                AddDiagnostic("JSONSCHEMA_STRONG_SCALAR_INVALID_VALUE", $"Strong Scalar '{type.Name}' does not resolve to a scalar value type.", $"/types/{type.Id.Value}");
+                return new JsonSchemaScalarNode { Name = type.Name, Type = "object", Annotations = BuildTypeAnnotations(type) };
+            }
+
+            JsonSchemaScalarNode mapped = MapScalar(scalar);
+            return mapped with { Name = type.Name, Title = type.DisplayName, Description = type.UserDescription, Annotations = BuildTypeAnnotations(type) };
         }
 
         private JsonSchemaEnumNode MapEnum(Model.EnumTypeDefinition type)
@@ -504,6 +517,10 @@ public static class JsonSchemaDerivationExtensions
             if (type is Model.ScalarTypeDefinition { Unit: { Length: > 0 } unit })
             {
                 stm["unit"] = unit;
+            }
+            if (type is Model.StrongScalarTypeDefinition)
+            {
+                stm["strongScalar"] = true;
             }
 
             AddSharedSemantics(stm, type.TechnicalDescription, type.Annotations, $"/types/{type.Id.Value}");

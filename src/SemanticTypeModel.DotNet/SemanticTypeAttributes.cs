@@ -33,6 +33,10 @@ public sealed class SemanticTypeAttribute : Attribute
     public string? Role { get; init; }
 }
 
+/// <summary>Marks a readonly struct as an explicit Strong Scalar.</summary>
+[AttributeUsage(AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticStrongScalarAttribute : Attribute;
+
 /// <summary>
 /// Excludes a type or member from semantic-model extraction.
 /// </summary>

@@ -232,6 +232,13 @@ public sealed record DotNetScalarTypeDescriptor : DotNetTypeDescriptor
     public string? Format { get; init; }
 }
 
+/// <summary>Represents an explicitly authored nominal scalar wrapper.</summary>
+public sealed record DotNetStrongScalarTypeDescriptor : DotNetTypeDescriptor
+{
+    /// <summary>Gets the underlying scalar type id.</summary>
+    public required string ValueTypeId { get; init; }
+}
+
 /// <summary>
 /// Represents an extracted enum descriptor.
 /// </summary>

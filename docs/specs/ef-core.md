@@ -66,7 +66,7 @@ One persistence project may select multiple semantic-model assemblies.
 
 `SemanticTypeModel.Generators` emits deterministic semantic manifest metadata for generator-to-generator consumption.
 
-The current manifest schema version is 1.
+The current manifest schema version is 2. Version 2 carries explicit Strong Scalar kind and underlying value-type identity; aligned 4.1 generators consume it under the existing exact suite-version rule.
 
 The manifest contains enough canonical semantics and CLR lineage for EF generation, including the identities/shapes required to locate semantic types and members, determine entity/value roles, apply keys/requiredness, classify scalar/value storage, and preserve inheritance/member placement.
 
