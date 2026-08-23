@@ -97,11 +97,11 @@ A persisted representation of a code-generated semantic type model that can be l
 ### Semantic Primitive
 A canonical semantic concept such as entity, value object, strong scalar, key, requiredness, nullability, format, constraint, conditional constraint, envelope, ownership, lifecycle state, extension data, or annotation.
 
+### Strong Scalar
+A distinct nominal semantic type whose complete data representation is exactly one underlying canonical scalar value.
+
 ### Core Semantic Vocabulary
 The authoritative set of projection-neutral semantic primitives and usage rules available to code-first authors.
-
-### Strong Scalar
-A distinct nominal semantic type whose complete data representation is exactly one underlying canonical scalar value without implying identity, key, ownership, or target-specific conversion semantics.
 
 ### Conditional Constraint
 A projection-neutral constraint whose applicability depends on another modeled value or a simple modeled condition.

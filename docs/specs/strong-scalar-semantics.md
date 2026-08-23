@@ -2,7 +2,7 @@
 
 ## Status
 
-Authoritative behavioral specification for the 4.1 line.
+Authoritative behavioral specification.
 
 ## Purpose
 
@@ -81,7 +81,7 @@ Any
 Never
 ```
 
-Nested Strong Scalars are deliberately not supported in 4.1.
+Nested Strong Scalars are deliberately not supported.
 
 The Strong Scalar's CLR `Value` member is representation metadata, not a canonical `PropertyDefinition`. A consumer inspecting the canonical model sees one `StrongScalarTypeDefinition`, not an object containing a `Value` property.
 
@@ -96,7 +96,7 @@ The explicit authoring marker is:
 public readonly record struct SpecificationVersionId(Guid Value);
 ```
 
-`SemanticStrongScalarAttribute` targets structs. The 4.1 authoring contract supports non-generic readonly structs and readonly record structs only.
+`SemanticStrongScalarAttribute` targets structs. The authoring contract supports non-generic readonly structs and readonly record structs only.
 
 Automatic inference from a one-property class/struct, a `*Id` suffix, key usage, or a `Value` property is forbidden.
 
@@ -129,13 +129,13 @@ Invalid Strong Scalar declarations emit stable diagnostic `STM5051` and do not p
 
 ## Compatibility
 
-Strong Scalar is additive in 4.1.
+Strong Scalar is explicit opt-in semantics and does not change unannotated wrapper behavior.
 
-Existing unannotated CLR wrappers continue to follow existing projection behavior. In particular, existing EF direct-column fallback for a supported `Value` + matching-constructor wrapper remains supported for 4.1 and MUST NOT be removed merely because canonical Strong Scalar now exists.
+Existing unannotated CLR wrappers continue to follow existing projection behavior. In particular, existing EF direct-column fallback for a supported `Value` + matching-constructor wrapper remains supported and MUST NOT be removed merely because canonical Strong Scalar now exists.
 
 Only the explicit `[SemanticStrongScalar]` opt-in changes canonical and JSON representation from object-like wrapper shape to scalar shape.
 
-Do not rename or remove the existing `SemanticLiteralKind.StrongIdentifier` public enum member in 4.1. Strong Scalar conditional-literal authoring is not expanded by this contract.
+Do not rename or remove the existing `SemanticLiteralKind.StrongIdentifier` public enum member as part of Strong Scalar support. Strong Scalar conditional-literal authoring is not expanded by this contract.
 
 ## Compile-Time Generation and Manifest
 
@@ -143,7 +143,7 @@ Runtime extraction and compile-time generation MUST produce equivalent canonical
 
 The compile-time semantic manifest MUST represent Strong Scalar kind and its underlying value type without requiring the EF generator to re-infer semantic meaning from an arbitrary CLR one-property shape.
 
-The manifest schema version advances from `1` to `2` for the 4.1 line.
+The current compile-time semantic manifest schema version is `2`.
 
 Existing manifest policy remains deliberately simple:
 
@@ -236,13 +236,6 @@ Power BI type/data classification treats a supported Strong Scalar as its underl
 
 Strong Scalar does not infer table keys, relationships, display behavior, or analytical role.
 
-## Configuration / Options
-
-The 4.1 branch retains `SemanticTypeModel.Configuration`, but Strong Scalar Options binding is not added in this milestone.
-
-A selected Configuration/Options model containing a Strong Scalar-valued member is outside the supported Configuration binding contract for 4.1 and MUST be rejected or diagnosed deterministically rather than silently claiming supported scalar binding.
-
-Do not add TypeConverter, custom Configuration Binder, generated Options converter, or application-host behavior for Strong Scalar as part of this contract.
 
 ## Query, Inspection, Transformation, and Cloning
 
@@ -292,7 +285,6 @@ This contract does not add:
 - nested Strong Scalars;
 - enum-backed Strong Scalars;
 - Strong Scalar conditional-literal parsing;
-- Configuration/Options scalar-wrapper binding;
 - relational `OwnsOne` / `OwnsMany` storage;
 - arbitrary user converter inference;
 - a shared JSON runtime package/model;
