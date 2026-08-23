@@ -27,11 +27,15 @@ The important policy is where final JSON property names come from:
 - semantic property name.
 
 The integration preserves application-owned resolver/context/converter boundaries. Semantic metadata cannot
-safely replace behavior hidden inside arbitrary converters.
+safely replace behavior hidden inside arbitrary converters. For the bounded JSON representation-fidelity
+contract, STM-configured `JsonSerializerOptions.AddSemanticTypeModelJson(...)` also establishes supported
+Strong Scalar converters; resolver-only customization satisfies that wire guarantee only when equivalent
+converters are already present.
 
 During semantic-model extraction, System.Text.Json attributes can be imported as target-specific annotations;
-`JsonPropertyName` is not promoted to a semantic name unless explicitly configured. See
-[SemanticTypeModel Configuration](../configuration.md).
+`JsonPropertyName` is not promoted to a semantic name unless explicitly configured. See the
+[generator configuration reference](../configuration.md). STM does not own application configuration binding
+or Options registration.
 
 ## Diagnose
 
@@ -46,6 +50,8 @@ During semantic-model extraction, System.Text.Json attributes can be imported as
 ## Reference
 
 SemanticTypeModel does not generate `JsonSerializerContext`, replace arbitrary converters, or make semantic
-names replace serialization names by default.
+names replace serialization names by default. Supported STM-configured output is the one-way fidelity contract
+with the derived schema; schema-to-serializer equivalence and representation-changing custom contracts are not
+guaranteed.
 
 See [Troubleshooting](../troubleshooting.md) and `samples/system-text-json-resolver/`.

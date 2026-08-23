@@ -10,7 +10,8 @@ unsupported, including generator/analyzer packages.
 
 The compile-time semantic manifest is ephemeral internal build transport. A consuming generator must use the
 same exact SemanticTypeModel suite version as the manifest producer; cross-version manifest consumption is not
-supported.
+supported. The current manifest schema is v2; it carries explicit Strong Scalar kind/value identity and is not
+a persisted interchange format. There is no cross-version negotiation.
 
 ## Canonical model authoring
 
@@ -101,12 +102,26 @@ SemanticTypeModel does not generate `JsonSerializerContext`. Applications own co
 them with SemanticTypeModel resolver customization. Removed generated-context switches are not a supported
 current path.
 
-## Configuration / Options
+## Configuration role and Options boundary
 
-Application registration is explicit per options type through `AddSemanticOptions<TOptions>`. A complete
-semantic model may contain multiple Configuration types without registering all of them automatically.
+`SemanticTypeRole.Configuration` remains projection-neutral semantic meaning, and `SemanticRequiredWhen`
+remains independently supported. STM does not own application configuration binding, Options registration,
+named options, or startup validation.
 
-`SemanticTypeModel.Configuration.Generators` has been removed; there is no compatibility/tombstone package.
+`SemanticTypeModel.Configuration` and its former authoring/runtime integration were removed in the 5.0 major
+boundary. There is no compatibility or tombstone package. Applications that need configuration use
+Microsoft.Extensions.Configuration and Microsoft.Extensions.Options directly.
+
+## Display Identity, Access Path, and Strong Scalar
+
+`SemanticDisplayIdentity` and `SemanticAccessPath` are projection-neutral annotation semantics. They do not
+imply EF indexes, API query parameters, UI behavior, Power BI behavior, or relationships. An explicit
+`[SemanticStrongScalar]` gives a supported readonly wrapper its underlying scalar representation across the
+supported projections; it does not imply Identifier, Key, Entity, ownership, or one-property inference.
+
+The supported JSON fidelity claim is bounded and one-way: STM-configured System.Text.Json output validates
+against the derived JSON Schema. Bidirectional serializer/schema equivalence and representation-changing
+custom contracts are outside the guarantee.
 
 ## EF Core
 
@@ -126,6 +141,14 @@ The retired runtime global `ModelBuilder` cleanup/application path is not the cu
 There is no compatibility bridge that reintroduces broad relationship inference, `OwnsOne`/`OwnsMany`, or
 alternative inheritance modes into the current generated contract.
 
+## 5.0 release boundary
+
+5.0.0 is the next major boundary after 4.0.1. Consumers moving from 4.0.x must remove the
+`SemanticTypeModel.Configuration` package and former STM Configuration/Options authoring/runtime APIs, then
+use application-owned Microsoft.Extensions.Configuration/Options registration as needed. Keep
+`SemanticTypeRole.Configuration` and `SemanticRequiredWhen` when their projection-neutral meanings remain
+relevant. Use the aligned ten-package 5.0.0 suite; do not mix 4.0.x and 5.0.0 packages.
+
 ## 4.0 release boundary
 
 4.0.0 established the major compatibility boundary for the accumulated breaking changes described above.
@@ -136,7 +159,7 @@ Consumers moving from pre-4.0 releases should, where applicable:
 
 1. align every SemanticTypeModel package/analyzer to exactly the same 4.0.x version;
 2. migrate EF application to `SemanticTypeModel.EFCore.Generators` and explicit selected-model configuration;
-3. remove references to `SemanticTypeModel.Configuration.Generators`;
+3. remove references to the former Configuration/Options integration;
 4. remove JSON Schema import usage;
 5. replace relationship attributes/inference with target-owned relationship configuration;
 6. replace assumptions about CLR access mutability with explicit optional `[SemanticMutable]` /

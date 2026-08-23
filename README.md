@@ -108,6 +108,12 @@ covers role, aggregate-root semantics, lifecycle mutability, technical descripti
 SemanticTypeModel no longer defines a general canonical relationship abstraction. Applications and target
 projections own relationship behavior through target-native APIs and policies.
 
+Strong Scalar is explicit nominal scalar semantics authored with `[SemanticStrongScalar]`; supported targets
+use its underlying scalar representation. Display Identity and Access Path are projection-neutral ordered
+annotations only: they do not generate indexes, API queries, UI behavior, Power BI behavior, or relationships.
+`SemanticTypeRole.Configuration` and `SemanticRequiredWhen` remain projection-neutral semantics, while STM-owned
+Configuration/Options binding and registration are not part of the current suite.
+
 Runnable examples live directly under [`samples/`](samples/). The compact sample index is
 [public-docs/samples.md](public-docs/samples.md).
 

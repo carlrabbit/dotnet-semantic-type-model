@@ -9,12 +9,17 @@ Run release-readiness validation without publishing artifacts.
 - Must be manual (`workflow_dispatch`).
 - Must not publish.
 - Must run canonical engineering commands.
+- Must validate the exact requested candidate version.
 
 ## Validation Steps
 
-1. `./eng/release-check.sh <version>`
+The workflow runs:
 
-`./eng/release-check.sh <version>` must run:
+```bash
+./eng/release-check.sh <version>
+```
+
+That aggregate command must run:
 
 1. `./eng/check.sh`
 2. `dotnet build --configuration Release`
@@ -22,4 +27,5 @@ Run release-readiness validation without publishing artifacts.
 4. `./eng/package-smoke.sh <version>`
 5. `./eng/samples.sh` when present
 6. `./eng/public-docs.sh`
-7. `./eng/public-docs.sh`
+
+A successful workflow run is release-readiness evidence for the commit and version it actually validated. It does not publish packages or authorize publication.

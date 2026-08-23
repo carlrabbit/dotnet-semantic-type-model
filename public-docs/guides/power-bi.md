@@ -32,6 +32,10 @@ fallback for user-facing Power BI descriptions.
 
 Lifecycle mutability is canonical semantic information but does not automatically change Power BI output.
 
+Supported `[SemanticStrongScalar]` values are classified using their underlying scalar kind where the
+projection can represent it. Strong Scalar does not infer analytical identity, keys, relationships, or display
+behavior.
+
 ## Diagnose
 
 | Symptom | Likely cause | Fix |
