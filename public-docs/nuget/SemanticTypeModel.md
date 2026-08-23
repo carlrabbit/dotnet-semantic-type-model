@@ -9,7 +9,8 @@ and tested as one tightly coupled suite.
 package versions is unsupported.**
 
 Generator/analyzer packages are part of that rule too. The compile-time semantic manifest requires exact
-producer/consumer suite-version alignment.
+producer/consumer suite-version alignment. The current ephemeral manifest schema is v2 and is not a persisted
+interchange format.
 
 ## Choose packages by scenario
 
@@ -70,6 +71,23 @@ General relationship inference is not a current generator capability.
 
 See the complete [configuration reference](../configuration.md).
 
+## Current 5.0 boundaries and capabilities
+
+The 5.0 suite retains `SemanticTypeRole.Configuration` as projection-neutral meaning and retains
+`SemanticRequiredWhen`; it does not include STM-owned Configuration/Options binding or registration. The
+removed `SemanticTypeModel.Configuration` package and `AddSemanticOptions<TOptions>` API have no tombstone or
+forwarding replacement.
+
+Use `[SemanticDisplayIdentity(Order = 0)]` and `[SemanticAccessPath("ByCustomerNumber")]` for ordered,
+projection-neutral recognition and locate/filter semantics. These annotations do not generate indexes, API
+queries, UI behavior, Power BI behavior, or relationships.
+
+Use `[SemanticStrongScalar]` for an explicit readonly nominal scalar wrapper. Supported projections use its
+underlying scalar representation; it is not itself an Identifier, Key, Entity, ownership declaration, or
+one-property inference convention. The STM-configured System.Text.Json and derived JSON Schema contract is
+bounded and one-way: supported output validates against the schema, without a promise of bidirectional
+serializer/schema equivalence.
+
 ## JSON Schema semantic annotations
 
 `SemanticTypeModel.JsonSchema` exports Draft 2020-12 and can preserve selected STM-only semantics under one
@@ -127,6 +145,12 @@ If generation or projection fails:
 | `SemanticTypeModel.SystemTextJson` | Resolver metadata derivation/customization |
 | `SemanticTypeModel.PowerBI` | Deterministic local analytical metadata projection |
 | `SemanticTypeModel.DependencyInjection` | Runtime provider/projection service registration |
+
+The 5.0.0 release suite contains exactly these ten packages. All ten must be kept at the same exact version:
+`SemanticTypeModel.Abstractions`, `SemanticTypeModel.Core`, `SemanticTypeModel.JsonSchema`,
+`SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, `SemanticTypeModel.DependencyInjection`,
+`SemanticTypeModel.PowerBI`, `SemanticTypeModel.EFCore`, `SemanticTypeModel.EFCore.Generators`, and
+`SemanticTypeModel.SystemTextJson`. `SemanticTypeModel.Configuration` is not part of the suite.
 
 ## Important boundaries
 

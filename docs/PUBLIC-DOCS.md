@@ -37,7 +37,6 @@ For every meaningful public capability, documentation must make these answers di
 - `public-docs/guides/ef-core.md`
 - `public-docs/guides/power-bi.md`
 - `public-docs/guides/system-text-json.md`
-- `public-docs/guides/configuration-options.md`
 - `public-docs/guides/projection-capabilities.md`
 
 ## One shared NuGet README

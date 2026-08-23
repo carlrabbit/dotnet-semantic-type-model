@@ -14,6 +14,11 @@ Semantic annotations are enabled by default. STM-only semantics appear in one `x
 
 Declared mutability is emitted only at the node where it was declared. Object keys retain composite member order and refer to emitted property names. Arbitrary JSON-compatible `ui.*` values pass through beneath `x-stm.ui` after stripping the `ui.` prefix.
 
+The JSON representation fidelity contract is one-way: supported STM-configured System.Text.Json output
+validates against the derived schema. SemanticTypeModel does not promise bidirectional serializer/schema
+equivalence. `x-stm` preserves the implemented semantic vocabulary, including roles, keys, Display Identity,
+Access Paths, lifecycle/evolution, ownership, envelope, extension-data, enum-value, and Strong Scalar metadata.
+
 ## Configure
 
 ```csharp
@@ -27,6 +32,12 @@ JsonSchemaExportResult export = JsonSchemaExporter.Export(
 ```
 
 There is no JSON Editor compatibility mode, widget inference option, or closed UI vocabulary.
+
+For the tandem fidelity path, use canonical semantic property names, compatible string-enum serialization,
+and otherwise bounded serializer settings. Existing `ExistingJsonContract` remains the System.Text.Json
+default and has no blanket schema-fidelity guarantee. Representation-changing converters or number handling,
+reference-preservation wire shapes, unmatched noncanonical members, and explicit polymorphism are outside this
+initial guarantee. System.Text.Json is not a general JSON Schema validation framework.
 
 ## Diagnose
 

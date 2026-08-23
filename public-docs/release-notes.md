@@ -1,3 +1,35 @@
+# 5.0.0
+
+5.0.0 is the next major release after 4.0.1. It contains the current aligned ten-package suite and the
+following consumer-visible boundaries and additions.
+
+- STM-owned Configuration/Options integration is removed: `SemanticTypeModel.Configuration`, former
+  Configuration-specific authoring/runtime APIs, and `AddSemanticOptions<TOptions>` are not part of 5.0.0.
+  Applications use Microsoft.Extensions.Configuration and Microsoft.Extensions.Options directly when needed;
+  `SemanticTypeRole.Configuration` and `SemanticRequiredWhen` remain projection-neutral semantics.
+- The suite is exactly `SemanticTypeModel.Abstractions`, `Core`, `JsonSchema`, `DotNet`, `Generators`,
+  `DependencyInjection`, `PowerBI`, `EFCore`, `EFCore.Generators`, and `SystemTextJson`, all at 5.0.0.
+- Strong Scalar is explicit `[SemanticStrongScalar]` nominal scalar semantics. Supported JSON Schema,
+  STM-configured System.Text.Json, EF scalar/owned-JSON, and Power BI paths use the underlying scalar
+  representation. It does not imply Identifier, Key, Entity, ownership, or one-property inference.
+- Display Identity and Access Path provide projection-neutral ordered recognition/locate semantics. They do
+  not generate EF indexes, API queries, UI behavior, Power BI behavior, or relationships.
+- JSON representation fidelity is a bounded one-way contract: supported STM-configured System.Text.Json
+  output validates against derived JSON Schema. Bidirectional serializer/schema equivalence and
+  representation-changing custom contracts are outside the guarantee. JSON Schema `x-stm` preserves the
+  implemented semantic vocabulary, and the ephemeral compile-time manifest is schema v2 with exact suite
+  version alignment.
+- `STM5051` diagnoses invalid Strong Scalar declarations; `STM5049` and `STM5050` diagnose invalid Display
+  Identity and Access Path definitions.
+
+## Upgrade from 4.0.x
+
+Remove the `SemanticTypeModel.Configuration` package and former STM Configuration/Options APIs. Replace their
+application binding, registration, and validation with application-owned Microsoft.Extensions.Configuration /
+Options policy. Keep the projection-neutral Configuration role and `SemanticRequiredWhen` where applicable.
+Upgrade every SemanticTypeModel package and analyzer together to exactly 5.0.0. The chronology is 4.0.1
+directly to 5.0.0; there is no 4.1.0 release in this line.
+
 # 4.0.1
 
 4.0.1 is a patch release for EF Core nullability regressions found after 4.0.0.
@@ -6,6 +38,8 @@
 - Fixed nullable `ReadOnlyMemory<byte>?` EF conversion so null and non-null values use the correct generated conversion path.
 - Expanded EF Core compatibility coverage across provider-neutral projection, real source-generator compilation, finalized EF metadata, SQLite persistence/change tracking, and packed-package generator smoke.
 - No public API, semantic nullability contract, relationship model, or JSON storage policy changed in this patch.
+- This nullable owned-JSON correction is the 4.0.1 patch-line fix; it adds no new storage model or public
+  configuration API.
 
 ## Upgrade guidance
 

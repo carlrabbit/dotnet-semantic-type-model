@@ -63,7 +63,7 @@ internal partial class AccountConfiguration
 | Scalar | Property/column |
 | Enum | String provider representation |
 | `Uri` | String provider representation |
-| Strong scalar/identifier | Underlying provider scalar when supported |
+| Strong Scalar | Underlying provider scalar when supported; in owned JSON it is serialized as the scalar, not `{ "Value": ... }` |
 | `byte[]` / `ReadOnlyMemory<byte>` | Binary mapping/conversion |
 | Owned ValueKind/object/collection | JSON-converted property according to retained ownership/storage policy |
 | Extension data | JSON storage |
@@ -72,6 +72,10 @@ internal partial class AccountConfiguration
 The integration deliberately does **not** infer arbitrary navigations, call `OwnsOne`/`OwnsMany`, create
 many-to-many mappings, offer TPH/TPC alternatives, generate a `DbContext`, choose a provider, create migrations,
 or own database lifecycle.
+
+`[SemanticStrongScalar]` is explicit nominal scalar meaning. It does not infer keys, identifiers, ownership,
+or relational storage policy. The `SpecificationVersionId(Guid Value)` owned-JSON shape is supported through
+the underlying GUID representation.
 
 ## Diagnose
 
