@@ -6,135 +6,242 @@ Authoritative behavioral specification.
 
 ## Purpose
 
-Define the System.Text.Json domain semantic model and resolver projection behavior used by `SemanticTypeModel.SystemTextJson`.
+Define the System.Text.Json domain semantic model and runtime resolver projection behavior used by `SemanticTypeModel.SystemTextJson`.
 
 This spec complements `docs/specs/system-text-json-contract-integration.md` and is authoritative for:
 
 - System.Text.Json domain semantic model shape;
 - derivation from the current canonical semantic model;
-- resolver customization driven by the domain model;
+- runtime `JsonSerializerOptions` / resolver customization driven by the domain model;
+- Strong Scalar runtime representation descriptors;
+- automatic semantic-Entity polymorphism descriptors;
+- multi-model runtime composition;
 - diagnostics and inspection behavior;
-- sample and test expectations for the current projection methodology.
+- runtime-focused sample and test expectations.
+
+M0071 does not establish new behavioral coverage for source-generated `JsonSerializerContext` consumption.
 
 ## Pipeline
 
-The System.Text.Json package must follow the domain projection pipeline:
+The System.Text.Json package follows:
 
 ```text
 Canonical semantic model
   -> System.Text.Json derivation transformations
   -> System.Text.Json domain semantic model
-  -> resolver customization
+  -> runtime composition
   -> IJsonTypeInfoResolver / JsonSerializerOptions behavior
 ```
 
-The resolver must not use scattered annotation lookups over the canonical model as its primary behavior model.
+Convenience APIs accepting `TypeSchemaModel` derive the System.Text.Json domain semantic model internally and delegate to the same runtime composition behavior as the domain-model overload.
 
-Convenience APIs may accept the canonical semantic model, but they must derive the System.Text.Json domain semantic model internally before applying resolver behavior.
+The canonical-model overload must not maintain hidden runtime semantics absent from `SystemTextJsonSemanticModel`.
 
 ## Domain Semantic Model
 
-The System.Text.Json domain semantic model must contain deterministic, package-owned metadata needed for resolver behavior.
+The domain model contains deterministic package-owned metadata required for supported runtime behavior.
 
-At minimum it must represent:
+At minimum it represents:
 
-- projected JSON contract types;
-- CLR type identifiers used for resolver matching;
+- projected JSON contract object types;
+- stable CLR type identity used for resolver matching;
 - property-level CLR member matching data;
 - existing JSON contract preservation policy;
 - selected property-name source policy;
-- imported `System.Text.Json` metadata relevant to resolver behavior;
+- imported System.Text.Json metadata relevant to runtime behavior;
 - unsupported metadata diagnostics;
 - duplicate final-name detection inputs;
 - extension-data metadata when present;
+- Strong Scalar wrapper CLR identity and underlying scalar CLR representation;
+- semantic Entity hierarchy descriptors required for automatic polymorphism;
 - inspection-friendly summaries.
 
-The domain model must not mutate the canonical semantic model.
+The domain model does not mutate the canonical semantic model.
 
-## Derivation Entry Point
+## Primary Runtime Entry Point
 
-The package must expose a derivation entry point from the current canonical semantic model to the System.Text.Json domain semantic model.
-
-The exact public API may vary, but the supported shape is:
+Normal usage is runtime `JsonSerializerOptions` configuration:
 
 ```csharp
-var stjModel = semanticModel.DeriveSystemTextJsonModel(options =>
-{
-    options.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName;
-});
+var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+options.AddSemanticTypeModelJson(model);
 ```
 
-The derivation result should include:
+No `JsonSerializerContext` is required for normal STM runtime behavior.
 
-- the System.Text.Json domain semantic model;
-- diagnostics;
-- transformation trace when available.
+When `JsonSerializerOptions.TypeInfoResolver` is null, STM composes over `DefaultJsonTypeInfoResolver`.
 
-## Resolver Entry Points
+When an existing resolver is present, STM preserves it as the base resolver and adds STM behavior around it.
 
-Resolver customization should accept the System.Text.Json domain semantic model directly.
+## Canonical/Domain Overload Equivalence
 
-Supported resolver composition patterns:
+For equivalent projection options/model content:
+
+```text
+AddSemanticTypeModelJson(TypeSchemaModel)
+```
+
+and:
+
+```text
+AddSemanticTypeModelJson(SystemTextJsonSemanticModel)
+```
+
+provide the same supported runtime behavior.
+
+This includes:
+
+- property-name projection;
+- Strong Scalar conversion;
+- automatic semantic-Entity polymorphism;
+- runtime diagnostics/failures required by this contract.
+
+Strong Scalar converter discovery must therefore be represented by or derivable from the System.Text.Json domain model rather than being a canonical-overload-only side path.
+
+## Runtime Composition and Materialization
+
+STM runtime behavior must not depend on appending callbacks to `DefaultJsonTypeInfoResolver.Modifiers`.
+
+Reason: the modifier collection becomes immutable after the resolver has materialized metadata, and tying STM registration to that mutable collection would make repeated composition timing-sensitive.
+
+Required composition model:
+
+```text
+base IJsonTypeInfoResolver
+  -> STM runtime composition
+  -> baseResolver.GetTypeInfo(...)
+  -> STM customizes still-mutable JsonTypeInfo before returning it
+```
+
+The concrete internal implementation is package-owned, but observable behavior must satisfy this contract.
+
+All STM models intended for one `JsonSerializerOptions` instance must be registered before that options instance is first used for serialization/deserialization. Registration after STJ freezes the options/metadata is unsupported and may surface the normal System.Text.Json immutability exception.
+
+## Multi-Model Runtime Composition
+
+This is a first-class supported runtime scenario:
 
 ```csharp
-IJsonTypeInfoResolver resolver = AppJsonContext.Default.WithSemanticTypeModelJson(stjModel);
+var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+options.AddSemanticTypeModelJson(modelA);
+options.AddSemanticTypeModelJson(modelB);
 ```
 
-and optionally:
+For non-conflicting models registered before first serializer use:
 
-```csharp
-jsonOptions.AddSemanticTypeModelJson(stjModel);
-```
+- behavior is independent of registration order;
+- property customization applies only to the owning model's CLR types;
+- Strong Scalar mappings from both models coexist;
+- automatic Entity hierarchies remain model-local;
+- a derived type from one model is never added to another model's hierarchy merely because names match;
+- registration must not create ordering-dependent converter precedence between the models.
 
-Convenience overloads accepting the canonical semantic model are allowed only when they derive the domain semantic model internally before composing the resolver.
+When the same CLR contract type or Strong Scalar wrapper is claimed incompatibly by multiple registered STM models, runtime registration must fail deterministically rather than select a winner by registration order.
+
+When possible, additional STM registrations should extend an existing package-owned STM composition layer rather than blindly nesting independent package-owned wrappers/factories. Exact internal mechanics remain implementation-owned.
 
 ## Property Name Source
 
-The resolver must support the property-name source policies defined in `docs/specs/system-text-json-contract-integration.md`:
+The runtime projection supports:
 
 | Policy | Meaning |
 |---|---|
-| `ExistingJsonContract` | Preserve the base resolver or user-owned context property name. |
+| `ExistingJsonContract` | Preserve the base resolver property name. |
 | `SystemTextJsonPropertyNameAnnotation` | Use imported `JsonPropertyNameAttribute` metadata when present. |
 | `SemanticPropertyName` | Use the canonical semantic property name as the JSON property name. |
 
-The default must preserve the existing JSON contract.
+Default behavior preserves the existing JSON contract.
 
 ## Matching Strategy
 
-The derived domain model must provide stable matching data so resolver customization does not rely only on the current `JsonPropertyInfo.Name`.
+Matching uses stable identity rather than only the current `JsonPropertyInfo.Name`.
 
-Matching should use, in order when available:
+Use, in order when available:
 
 - original CLR member metadata captured during extraction;
 - `JsonPropertyInfo.AttributeProvider` member identity;
 - imported System.Text.Json property-name metadata;
-- conservative fallback to current JSON name only when it is known to match the semantic property.
+- conservative current-name fallback only when known safe.
 
-If a property cannot be matched safely, resolver customization must leave it unchanged and emit or preserve an explicit diagnostic when the API can surface diagnostics.
+Unsafe matching must leave unrelated properties unchanged and produce/surface an explicit failure/diagnostic where the public API can do so.
+
+## Strong Scalars
+
+The domain model carries enough information to install the supported Strong Scalar runtime representation without returning to the canonical model at options-application time.
+
+Supported Strong Scalars serialize as their underlying scalar representation and deserialize through the supported wrapper constructor.
+
+A Guid-backed Strong Scalar therefore writes a JSON Guid string rather than an object containing `Value`.
+
+Strong Scalar conversion composes with automatic Entity polymorphism and multi-model registration.
+
+## Automatic Semantic-Entity Polymorphism
+
+Semantic Entity inheritance is opinionated runtime representation input.
+
+For a modeled CLR inheritance hierarchy in which a semantic Entity base has modeled concrete semantic Entity descendants, STM automatically establishes a System.Text.Json polymorphism contract when the effective base resolver has not already supplied one.
+
+This applies to abstract or concrete semantic Entity bases with modeled concrete Entity descendants.
+
+Default generated contract:
+
+```text
+discriminator property: "$type"
+derived discriminator:  canonical semantic type Name
+comparison:             ordinal, case-sensitive
+unknown discriminator:   normal STJ failure/default handling
+undeclared runtime type:  normal STJ failure/default handling
+```
+
+The discriminator property name may be exposed as a projection option if implementation needs/benefits from public customization, but automatic Entity polymorphism itself is not opt-in.
+
+No key/relationship/display semantics are inferred from the discriminator.
+
+### Explicit Application Polymorphism Wins
+
+If the effective base resolver already supplies `JsonTypeInfo.PolymorphismOptions` for the base type, STM leaves that explicit application-owned contract unchanged.
+
+STM does not merge, augment, or overwrite an existing application polymorphism contract.
+
+Therefore precedence is:
+
+```text
+explicit base-resolver/application polymorphism
+  -> preserve as-is
+otherwise semantic Entity hierarchy
+  -> STM automatic polymorphism
+```
+
+### Invalid Semantic Hierarchy
+
+Reserve `STJ009` for invalid automatic semantic-hierarchy construction, including at least:
+
+- duplicate discriminator values among descendants of one base;
+- unresolved CLR type identity needed to construct the runtime hierarchy;
+- canonical/CLR inheritance disagreement that prevents safe assignment;
+- incompatible duplicate hierarchy ownership across registered STM models.
+
+A hierarchy that cannot be represented safely must fail explicitly; silently dropping a descendant is not allowed.
 
 ## Extension Data
 
-When M0034 extension-data semantics are present, the System.Text.Json domain model must represent extension-data members explicitly.
+Extension-data behavior remains base-resolver/STJ-owned unless the current supported STM projection explicitly customizes matching metadata.
 
-Projection behavior:
+Imported `JsonExtensionDataAttribute` metadata may normalize into extension-data metadata when configured. Unsupported shapes produce diagnostics.
 
-- imported `JsonExtensionDataAttribute` metadata may normalize into extension-data metadata when configured;
-- unsupported extension-data member shapes must produce diagnostics;
-- extension-data metadata must not be treated as a normal serializable property-name override unless explicitly configured;
-- resolver customization must preserve System.Text.Json's extension-data behavior unless the user explicitly chooses a supported override.
+## Resolver-Only API
 
-## Generated Contexts
+Resolver-only APIs remain valid for resolver metadata customization that can be expressed by `JsonTypeInfo`.
 
-SemanticTypeModel must not generate `JsonSerializerContext` declarations.
+Normal complete runtime usage should prefer `JsonSerializerOptions.AddSemanticTypeModelJson(...)`, because supported Strong Scalar converter installation requires options-level composition.
 
-Consumers who use System.Text.Json source generation own their context declarations. SemanticTypeModel composes with the user-owned context as an `IJsonTypeInfoResolver`.
+M0071 does not add source-generated-context-specific behavioral guarantees.
 
 ## Diagnostics
 
 Diagnostics must be deterministic and target System.Text.Json behavior.
 
-At minimum, implementation must cover:
+Current required categories include:
 
 - duplicate final JSON property names;
 - conflicting semantic-name and JSON-name policy;
@@ -142,63 +249,51 @@ At minimum, implementation must cover:
 - unsupported converter metadata when behavior cannot be modeled;
 - unsupported extension-data member type;
 - ambiguous or unsafe resolver-property matching;
-- removed generated-context settings or references if still detected.
+- invalid automatic semantic Entity hierarchy (`STJ009`).
 
-New public diagnostics must follow `docs/specs/diagnostics.md` and update the public diagnostics reference.
+New/changed public diagnostics update the public diagnostics reference.
 
 ## Inspection
 
-The System.Text.Json domain semantic model must support deterministic inspection output.
+Deterministic inspection includes, as applicable:
 
-Inspection should include:
-
-- projected type name or CLR identifier;
-- matched properties;
-- selected JSON name source;
+- projected type/CLR identity;
+- matched properties and selected name source;
 - final JSON names when determinable;
-- ignored or unsupported properties;
+- Strong Scalar runtime descriptors;
+- automatic hierarchy base/descendant/discriminator metadata;
+- existing explicit-polymorphism preservation marker;
+- ignored/unsupported properties;
 - extension-data members;
 - diagnostics.
 
-## Samples
-
-System.Text.Json samples must demonstrate current code-first usage.
-
-Samples must:
-
-- obtain a canonical semantic model from code-first extraction or a generated provider;
-- derive the System.Text.Json domain semantic model;
-- compose a user-owned `JsonSerializerContext` or default resolver with SemanticTypeModel;
-- show default contract preservation;
-- show explicit semantic-property-name projection when configured;
-- avoid manual old model shape construction.
-
-Samples must not:
-
-- construct old model shapes as the primary model source;
-- demonstrate JSON Schema import as a model source;
-- imply that SemanticTypeModel generates `JsonSerializerContext` declarations.
-
 ## Tests
 
-Tests must cover both domain derivation and resolver behavior.
+M0071 runtime tests use real generated annotated fixture assemblies rather than hand-built canonical models for positive boundary behavior.
 
-Required test categories:
+Required STJ-focused categories:
 
-- derivation produces deterministic System.Text.Json domain model metadata;
-- default resolver behavior preserves existing JSON contract names;
-- explicit semantic property names are applied;
-- imported `JsonPropertyNameAttribute` metadata is applied when selected;
-- duplicate final names fail deterministically;
-- unsafe property matching does not mutate unrelated properties;
-- extension-data metadata is represented and validated;
-- samples use the current code-first flow.
+- plain `JsonSerializerOptions` + default resolver behavior;
+- canonical/domain options-overload equivalence;
+- Strong Scalar backing-kind matrix, including Guid;
+- abstract Entity base -> concrete Entity round-trip;
+- concrete Entity base with descendants where applicable;
+- derived type containing Guid Strong Scalar;
+- explicit application STJ polymorphism preserved unchanged;
+- Model A + Model B registered on one options instance;
+- registration order independence;
+- deterministic duplicate/conflict failure;
+- registration before first use succeeds and post-freeze mutation is not claimed/supported;
+- imported naming/ignore/extension-data behavior already supported by runtime projection.
+
+Source-generated `JsonSerializerContext` coverage is out of scope for M0071.
 
 ## Invariants
 
-- System.Text.Json metadata is projection-specific metadata, not projection-neutral core structure.
-- Resolver behavior is driven by a System.Text.Json domain semantic model.
-- The canonical semantic model remains immutable during derivation and resolver composition.
-- Existing serializer behavior is preserved by default.
-- Source-generated contexts are user-owned and never generated by SemanticTypeModel.
-- Unsupported or ambiguous behavior must be explicit; silent lossy behavior is not allowed.
+- System.Text.Json metadata remains projection-specific, not projection-neutral canonical structure.
+- Resolver/runtime behavior is driven by `SystemTextJsonSemanticModel`.
+- The canonical semantic model remains immutable during derivation/runtime composition.
+- Existing serializer behavior is preserved by default except for opinionated automatic semantic-Entity polymorphism when no explicit application contract exists.
+- STM does not depend on mutable `DefaultJsonTypeInfoResolver.Modifiers` composition.
+- Multiple independent STM models can coexist on one runtime options instance before first use.
+- Unsupported or ambiguous behavior is explicit; silent lossy behavior is not allowed.

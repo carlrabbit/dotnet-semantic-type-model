@@ -29,6 +29,18 @@ internal sealed partial class SmokeCustomer
 [SemanticStrongScalar]
 internal readonly record struct SmokeCustomerId(Guid Value);
 
+[SemanticType(SemanticTypeRole.Entity)]
+internal abstract class SmokeEntity
+{
+    public Guid Id { get; set; }
+}
+
+[SemanticType(SemanticTypeRole.Entity)]
+internal sealed class SmokeSpecialEntity : SmokeEntity
+{
+    public SmokeCustomerId SpecialId { get; set; }
+}
+
 internal sealed class PackageSmokeTests
 {
     [Test]
@@ -90,6 +102,13 @@ internal sealed class PackageSmokeTests
             jsonOptions);
         _ = await Assert.That(strongScalarJson).Contains("11111111-1111-1111-1111-111111111111");
         _ = await Assert.That(strongScalarJson).DoesNotContain("\"Value\"");
+
+        SmokeSpecialEntity entity = new() { Id = Guid.Empty, SpecialId = new SmokeCustomerId(Guid.Parse("22222222-2222-2222-2222-222222222222")) };
+        string entityJson = JsonSerializer.Serialize<SmokeEntity>(entity, jsonOptions);
+        SmokeEntity? entityRoundTrip = JsonSerializer.Deserialize<SmokeEntity>(entityJson, jsonOptions);
+        _ = await Assert.That(entityJson).Contains("\"$type\":\"SmokeSpecialEntity\"");
+        _ = await Assert.That(entityJson).Contains("22222222-2222-2222-2222-222222222222");
+        _ = await Assert.That(entityRoundTrip).IsTypeOf<SmokeSpecialEntity>();
     }
 
     private static Model.TypeSchemaModel BuildCanonicalModel()

@@ -5,11 +5,8 @@ using SemanticTypeModel.Samples.OrderFulfillment.Domain;
 using SemanticTypeModel.SystemTextJson;
 
 TypeSchemaModel model = OrderFulfillmentSemanticModel.Create();
-SystemTextJsonSemanticModel stjModel = model.DeriveSystemTextJsonModel(options => options.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName).Model;
-JsonSerializerOptions options = new(JsonSerializerDefaults.Web)
-{
-    TypeInfoResolver = AppJsonContext.Default.WithSemanticTypeModelJson(stjModel),
-};
+JsonSerializerOptions options = new(JsonSerializerDefaults.Web);
+options.AddSemanticTypeModelJson(model, projectionOptions => projectionOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName);
 Customer customer = new() { CustomerId = "C-001", DisplayName = "Ada Lovelace", EmailAddress = "ada@example.test", LoyaltyTier = null, BillingAddress = new Address { Line1 = "1 Logic Ln", City = "London", CountryCode = "GB" }, LastContactedAt = null };
 string json = JsonSerializer.Serialize(customer, options);
 Customer? roundTripped = JsonSerializer.Deserialize<Customer>(json, options);

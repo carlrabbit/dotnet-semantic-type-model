@@ -448,6 +448,9 @@ The application-owned/default base resolver/context remains authoritative for se
 
 ## Polymorphism Boundary
 
+All polymorphic and discriminator output is outside the JSON Schema/System.Text.Json fidelity baseline,
+including automatic semantic-Entity polymorphism supplied by the System.Text.Json runtime projection.
+
 Explicit System.Text.Json polymorphism is deliberately **not** completed by this milestone.
 
 Current imported polymorphism metadata is not rich enough to reconstruct discriminator property names, discriminator values, derived-type mappings, unknown-derived-type behavior, or fallback behavior faithfully.
