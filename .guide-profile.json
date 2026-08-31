@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "guideSystem": {
     "repository": "carlrabbit/agentic-project-guides",
-    "version": "0.7.2"
+    "version": "0.7.4"
   },
   "appliedProfiles": [
     {
       "id": "base",
-      "version": "0.7.2"
+      "version": "0.7.4"
     },
     {
       "id": "dotnet-library",
-      "version": "0.7.2"
+      "version": "0.7.4"
     }
   ],
   "repositoryRole": "capability-provider",
@@ -19,7 +19,7 @@
   "executionModel": {
     "baselineImplementationModel": "GPT-5.6 Luna",
     "defaultImplementationMode": "ai-executed-human-reviewed",
-    "documentationSync": "separate-pass",
+    "documentationSync": "direct-for-touched-surfaces",
     "releaseReadiness": "separate-pass",
     "humanReview": "milestone-scoped"
   },

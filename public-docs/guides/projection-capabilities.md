@@ -5,7 +5,7 @@ automatic behavior. Always inspect target diagnostics for the actual model.
 
 | Semantic concept | JSON Schema | EF Core | Power BI | System.Text.Json |
 |---|---|---|---|---|
-| Entity | Object schema + optional `x-stm.role` | Generated entity/table config | Analytical table | Existing JSON contract metadata |
+| Entity | Object schema + optional `x-stm.role` | Generated entity/table config | Analytical table | Runtime options; automatic semantic Entity polymorphism |
 | ValueObject / ownership | Nested schema | Owned structural value uses retained JSON storage policy; not standalone Entity | Target policy/diagnostics | Preserved by contract shape | Nested binding where supported |
 | Key | Optional structured `x-stm.keys` metadata | Generated key configuration where supported | Analytical identity/key metadata where supported | No automatic behavior |
 | Semantic mutability | Declared values preserved as `x-stm.mutability` | No automatic lifecycle enforcement | No automatic behavior | No automatic serializer enforcement |

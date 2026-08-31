@@ -15,10 +15,32 @@ Use validation tiers to keep local feedback focused while preserving reliable co
 | Tier 0 | Static/documentation | `public-docs` as applicable, format verification for touched code, script syntax checks | Documentation-only edits, script edits, and very small static changes. |
 | Tier 1 | Focused validation | `test-project <project>`, `test-filter <filter>`, targeted tests through canonical wrappers | Inner-loop implementation validation for the affected project or scenario. |
 | Tier 2 | Repository check | `check` | Standard completion gate for implementation work; restores, builds, runs short tests, and verifies formatting. |
-| Tier 3 | Release candidate | `package <version>`, `package-smoke <version>`, `public-docs`, `samples`, `release-check <version>` | Packaging and release-readiness validation before publishing. |
+| Tier 3 | Release candidate / consumer surface | `package <version>`, `package-smoke <version>`, `public-docs`, `samples`, `release-check <version>` | Packaging, representative packed-artifact consumption, and release-readiness validation before publishing. |
 | Tier 4 | Publish | `release-check <version>` then explicit publish operation | Final release publication; requires configured credentials and explicit release intent. |
 
 Use `.\eng\check.ps1` on Windows or `./eng/check.sh` on Bash-capable platforms for Tier 2. Prefer Tier 1 commands for fast iteration when a narrower command is appropriate.
+
+## AI-Executed Milestones
+
+For every AI-executed coding milestone, implementation creates or reconciles:
+
+```text
+.execution/<milestone-id>.md
+```
+
+before production edits.
+
+The ledger maps milestone obligations into bounded implementation work packages and records current evidence/resume state. It is operational implementation state, not project authority.
+
+Before `COMPLETE`, the executor must freshly reread the primary milestone and reconcile:
+
+```text
+milestone obligations
+<-> execution ledger
+<-> live repository and concrete validation evidence
+```
+
+A checked ledger row without repository/evidence support is not proof. After milestone completion, remove the completed milestone's operational ledger unless a current repository policy explicitly requires retention.
 
 ## Implementation Constraints
 
@@ -49,6 +71,7 @@ The repository working tree carries **current truth and active work**. Git carri
 ### Completion and supersession
 
 - After a milestone is implemented and durable outcomes are synchronized into specs/decisions/architecture/public docs/tests as appropriate, delete the completed milestone file.
+- Delete the completed milestone's `.execution/<milestone-id>.md` operational ledger after completion.
 - Never reuse milestone numbers.
 - Delete superseded decisions/specifications after promoting any still-current requirement or rationale into replacement authority.
 - Do not create an archive directory merely to retain files already preserved by Git.
@@ -77,6 +100,9 @@ A new feature, bug fix, diagnostic, mapping rule, release, or implementation det
 - Prefer focused Tier 1 validation during implementation, then Tier 2 before completion.
 - Boundary-crossing generator/provider/package defects require tests that exercise the actual boundary; do not substitute hand-built internal models for the integration being validated.
 - EF Core compatibility tests follow `docs/engineering/ef-core-testing.md`.
+- A distributable NuGet surface affected by a milestone requires representative acceptance against the packages produced by the current build, consumed through the intended local NuGet mechanism.
+- Packed-artifact acceptance must not accidentally pass through project references, stale/global packages, or unrelated repository build outputs.
+- Keep consumer-surface acceptance small and representative; detailed behavior belongs primarily in lower-level tests.
 
 ## Public Documentation Synchronization
 
@@ -98,9 +124,9 @@ Do not infer publication state from a completed release-preparation milestone, a
 When adding or modifying diagnostics:
 
 - Reserve a new ID in the appropriate STM range; never reuse a retired ID.
-- Add a `public const string` to `StmDiagnosticIds` (STM0xxx/STM3xxx) or `DotNetExtractionDiagnosticIds` (STM5xxx).
+- Add a `public const string` to `StmDiagnosticIds` (STM0xxx/STM3xxx) or `DotNetExtractionDiagnosticIds` (STM5xxx), or the target package's established diagnostic surface where applicable.
 - For compile-time diagnostics, add a static `DiagnosticDescriptor` field to `GeneratorDiagnosticDescriptors`; do not create descriptors inline.
-- Add a reference entry to the relevant `public-docs/diagnostics/stm{range}.md` page.
+- Add a reference entry to the relevant `public-docs/diagnostics/` page.
 - Run diagnostic stability tests to confirm uniqueness.
 
 See `docs/specs/diagnostics.md` for the full diagnostic specification.

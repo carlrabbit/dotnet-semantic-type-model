@@ -34,7 +34,9 @@ public static class SemanticTypeModelJsonTypeInfoResolver
         ArgumentNullException.ThrowIfNull(baseResolver);
         ArgumentNullException.ThrowIfNull(model);
 
-        return new SemanticTypeModelResolver(baseResolver, model);
+        return baseResolver is SemanticTypeModelResolver existing
+            ? existing.Add(model)
+            : new SemanticTypeModelResolver(baseResolver, [model]);
     }
 
     /// <summary>
@@ -82,7 +84,7 @@ public static class SemanticTypeModelJsonTypeInfoResolver
         return Create(resolver, stjModel);
     }
 
-    private static void ApplyProjection(JsonTypeInfo typeInfo, SystemTextJsonSemanticModel model)
+    private static void ApplyProjection(JsonTypeInfo typeInfo, IReadOnlyList<SystemTextJsonSemanticModel> models)
     {
         if (typeInfo.Kind != JsonTypeInfoKind.Object)
         {
@@ -90,7 +92,7 @@ public static class SemanticTypeModelJsonTypeInfoResolver
         }
 
         var typeId = new TypeId("global::" + typeInfo.Type.FullName);
-        SystemTextJsonTypeDefinition? type = model.TryGetType(typeId);
+        SystemTextJsonTypeDefinition? type = models.Select(model => model.TryGetType(typeId)).FirstOrDefault(static type => type is not null);
         if (type is null)
         {
             return;
@@ -112,6 +114,58 @@ public static class SemanticTypeModelJsonTypeInfoResolver
                     $"SemanticTypeModel System.Text.Json customization produced duplicate JSON property name '{jsonProperty.Name}' for type '{typeInfo.Type.FullName}'.");
             }
         }
+
+        ApplyEntityPolymorphism(typeInfo, typeId, type, models);
+    }
+
+    private static void ApplyEntityPolymorphism(
+        JsonTypeInfo typeInfo,
+        TypeId typeId,
+        SystemTextJsonTypeDefinition type,
+        IReadOnlyList<SystemTextJsonSemanticModel> models)
+    {
+        if (!type.IsEntity || typeInfo.PolymorphismOptions is not null)
+        {
+            return;
+        }
+
+        List<(Type ClrType, string Name)> descendants = [];
+        foreach (SystemTextJsonSemanticModel model in models)
+        {
+            foreach (SystemTextJsonTypeDefinition candidate in model.TypesById.Values.Where(static candidate => candidate.IsEntity))
+            {
+                Type? candidateType = Resolve(candidate.Id) ?? throw new InvalidOperationException($"STJ009: Unable to resolve CLR type identity for semantic Entity '{candidate.Id.Value}'.");
+                if (candidateType != typeInfo.Type && typeInfo.Type.IsAssignableFrom(candidateType) && !candidateType.IsAbstract)
+                {
+                    descendants.Add((candidateType, candidate.Name));
+                }
+            }
+        }
+
+        if (descendants.Count == 0)
+        {
+            return;
+        }
+
+        var discriminatorValues = new HashSet<string>(StringComparer.Ordinal);
+        var polymorphism = new JsonPolymorphismOptions { TypeDiscriminatorPropertyName = "$type" };
+        foreach ((Type clrType, var name) in descendants.OrderBy(static item => item.Name, StringComparer.Ordinal))
+        {
+            if (!discriminatorValues.Add(name))
+            {
+                throw new InvalidOperationException($"STJ009: Duplicate semantic Entity discriminator '{name}' under '{typeId.Value}'.");
+            }
+
+            polymorphism.DerivedTypes.Add(new JsonDerivedType(clrType, name));
+        }
+
+        typeInfo.PolymorphismOptions = polymorphism;
+    }
+
+    private static Type? Resolve(TypeId id)
+    {
+        var name = id.Value.StartsWith("global::", StringComparison.Ordinal) ? id.Value[8..] : id.Value;
+        return Type.GetType(name) ?? AppDomain.CurrentDomain.GetAssemblies().Select(assembly => assembly.GetType(name, false)).FirstOrDefault(static type => type is not null);
     }
 
     private static Dictionary<string, SystemTextJsonPropertyDefinition> BuildPropertyMap(SystemTextJsonTypeDefinition type)
@@ -160,14 +214,19 @@ public static class SemanticTypeModelJsonTypeInfoResolver
         target.PipelineOptions = source.PipelineOptions;
     }
 
-    private sealed class SemanticTypeModelResolver(IJsonTypeInfoResolver baseResolver, SystemTextJsonSemanticModel model) : IJsonTypeInfoResolver
+    private sealed class SemanticTypeModelResolver(IJsonTypeInfoResolver baseResolver, IReadOnlyList<SystemTextJsonSemanticModel> models) : IJsonTypeInfoResolver
     {
+        public SemanticTypeModelResolver Add(SystemTextJsonSemanticModel model)
+        {
+            return new(baseResolver, [.. models, model]);
+        }
+
         public JsonTypeInfo? GetTypeInfo(Type type, JsonSerializerOptions optionsFromSerializer)
         {
             JsonTypeInfo? typeInfo = baseResolver.GetTypeInfo(type, optionsFromSerializer);
             if (typeInfo is not null)
             {
-                ApplyProjection(typeInfo, model);
+                ApplyProjection(typeInfo, models);
             }
 
             return typeInfo;

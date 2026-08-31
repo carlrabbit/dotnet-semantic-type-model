@@ -19,6 +19,7 @@ public static class SemanticTypeModelJsonSerializerOptionsExtensions
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(model);
 
+        AddStrongScalarConverters(options, model);
         IJsonTypeInfoResolver baseResolver = options.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
         options.TypeInfoResolver = baseResolver.WithSemanticTypeModelJson(model);
         return options;
@@ -35,21 +36,20 @@ public static class SemanticTypeModelJsonSerializerOptionsExtensions
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(model);
 
-        AddStrongScalarConverters(options, model);
+        SystemTextJsonSemanticModel stjModel = model.DeriveSystemTextJsonModel(configure).Model;
+        AddStrongScalarConverters(options, stjModel);
         IJsonTypeInfoResolver baseResolver = options.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
-        options.TypeInfoResolver = baseResolver.WithSemanticTypeModelJson(model, configure);
+        options.TypeInfoResolver = baseResolver.WithSemanticTypeModelJson(stjModel);
         return options;
     }
 
-    private static void AddStrongScalarConverters(JsonSerializerOptions options, TypeSchemaModel model)
+    private static void AddStrongScalarConverters(JsonSerializerOptions options, SystemTextJsonSemanticModel model)
     {
         var mappings = new List<(Type Wrapper, Type Value)>();
-        foreach (StrongScalarTypeDefinition strongScalar in model.Types.OfType<StrongScalarTypeDefinition>())
+        foreach (SystemTextJsonStrongScalarDefinition strongScalar in model.StrongScalars)
         {
             Type? wrapper = StrongScalarJsonConverterFactory.Resolve(strongScalar.Id.Value);
-            Type? value = model.TryGetType(strongScalar.ValueType.Id) is ScalarTypeDefinition scalar
-                ? StrongScalarJsonConverterFactory.Resolve(scalar.Id.Value) ?? ResolveScalarClrType(scalar)
-                : null;
+            Type? value = StrongScalarJsonConverterFactory.Resolve(strongScalar.ValueType.Id.Value);
             if (wrapper is not null && value is not null)
             {
                 mappings.Add((wrapper, value));
@@ -62,24 +62,4 @@ public static class SemanticTypeModelJsonSerializerOptionsExtensions
         }
     }
 
-    private static Type? ResolveScalarClrType(ScalarTypeDefinition scalar)
-    {
-        return scalar.ScalarKind switch
-        {
-            ScalarKind.Boolean => typeof(bool),
-            ScalarKind.String => typeof(string),
-            ScalarKind.Integer => typeof(long),
-            ScalarKind.Number => typeof(double),
-            ScalarKind.Decimal => typeof(decimal),
-            ScalarKind.Date => typeof(DateOnly),
-            ScalarKind.Time => typeof(TimeOnly),
-            ScalarKind.DateTime => typeof(DateTime),
-            ScalarKind.DateTimeOffset => typeof(DateTimeOffset),
-            ScalarKind.Duration => typeof(TimeSpan),
-            ScalarKind.Guid => typeof(Guid),
-            ScalarKind.Binary => typeof(byte[]),
-            ScalarKind.Json or ScalarKind.Unknown => null,
-            _ => null,
-        };
-    }
 }

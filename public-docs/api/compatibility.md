@@ -98,9 +98,10 @@ content from older APIs requires intentional classification when migrating.
 
 ## System.Text.Json
 
-SemanticTypeModel does not generate `JsonSerializerContext`. Applications own contexts/resolvers and may wrap
-them with SemanticTypeModel resolver customization. Removed generated-context switches are not a supported
-current path.
+Plain `JsonSerializerOptions.AddSemanticTypeModelJson(...)` is the complete runtime integration path and does
+not require `JsonSerializerContext`. It supports Strong Scalars and automatic semantic Entity polymorphism;
+explicit application-owned polymorphism contracts remain authoritative. Register models before first serializer
+use because normal System.Text.Json options freeze after metadata materialization.
 
 ## Configuration role and Options boundary
 

@@ -2,8 +2,17 @@
 
 ## Use
 
-SemanticTypeModel customizes metadata produced by an application-owned `IJsonTypeInfoResolver` or
-`JsonSerializerContext`. It does not generate a serializer context.
+The primary runtime path uses ordinary `JsonSerializerOptions`; no `JsonSerializerContext` is required:
+
+```csharp
+var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+options.AddSemanticTypeModelJson(AppSemanticTypeModel.Create());
+```
+
+Supported Strong Scalars use their underlying JSON scalar representation. Semantic Entity inheritance receives
+automatic `$type` polymorphism using the canonical derived type name.
+
+Applications may also compose an existing `IJsonTypeInfoResolver` or `JsonSerializerContext`.
 
 ```csharp
 [JsonSerializable(typeof(Customer))]
@@ -26,11 +35,20 @@ The important policy is where final JSON property names come from:
 - imported System.Text.Json property-name annotation;
 - semantic property name.
 
-The integration preserves application-owned resolver/context/converter boundaries. Semantic metadata cannot
-safely replace behavior hidden inside arbitrary converters. For the bounded JSON representation-fidelity
-contract, STM-configured `JsonSerializerOptions.AddSemanticTypeModelJson(...)` also establishes supported
-Strong Scalar converters; resolver-only customization satisfies that wire guarantee only when equivalent
-converters are already present.
+The integration preserves application-owned resolver/context/converter boundaries. If the base resolver already
+defines `JsonTypeInfo.PolymorphismOptions`, that explicit application contract is preserved unchanged. Register
+all semantic models before first serialization; System.Text.Json freezes options after use.
+
+Multiple independent models can be registered on one options instance. The same API is used by Minimal APIs:
+
+```csharp
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.AddSemanticTypeModelJson(semanticModel);
+});
+```
+
+This configures Minimal API request deserialization and response serialization.
 
 During semantic-model extraction, System.Text.Json attributes can be imported as target-specific annotations;
 `JsonPropertyName` is not promoted to a semantic name unless explicitly configured. See the
@@ -46,6 +64,7 @@ or Options registration.
 | Customization has no effect | Converter/metadata kind owns behavior | Keep existing contract behavior or customize the converter manually. |
 | Required marker not applied | Member is ignored/converter-owned/unavailable | Fix the active JSON contract rather than forcing semantic metadata. |
 | Expected semantic names but existing names remain | `PropertyNameSource` kept existing contract | Select the intended source explicitly. |
+| `STJ009` or polymorphism failure | Invalid/ambiguous semantic Entity hierarchy | Fix CLR inheritance/model ownership or preserve an explicit application contract. |
 
 ## Reference
 
@@ -54,4 +73,5 @@ names replace serialization names by default. Supported STM-configured output is
 with the derived schema; schema-to-serializer equivalence and representation-changing custom contracts are not
 guaranteed.
 
-See [Troubleshooting](../troubleshooting.md) and `samples/system-text-json-resolver/`.
+Automatic polymorphism/discriminator output is outside the JSON Schema/STJ fidelity baseline. See
+[Troubleshooting](../troubleshooting.md) and `samples/system-text-json-resolver/`.

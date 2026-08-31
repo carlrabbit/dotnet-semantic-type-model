@@ -105,6 +105,11 @@ ui
 
 JSON Schema import and JSON Editor compatibility modes are not supported current APIs.
 
+For System.Text.Json runtime integration, use `JsonSerializerOptions.AddSemanticTypeModelJson(model)`. This
+configures Strong Scalars and modeled semantic Entity polymorphism without requiring a generated serializer
+context. Register all models before first serializer use; explicit application polymorphism contracts remain
+unchanged.
+
 ## EF Core application
 
 `SemanticTypeModel.EFCore.Generators` emits composable `IEntityTypeConfiguration<TEntity>` implementations for

@@ -35,6 +35,12 @@ Diagnostic message text is not an API contract. Prefer IDs/categories and docume
 | `STM5050` | Access Path name/order/membership is invalid or ambiguous | Use a valid name and unique non-negative orders for each path. |
 | `STM5051` | Strong Scalar declaration is invalid | Use a non-generic readonly struct/record struct with one supported scalar `Value` and a matching constructor. |
 
+## System.Text.Json diagnostics
+
+| Diagnostic | What happened | Typical fix |
+|---|---|---|
+| `STJ009` | Automatic semantic Entity polymorphism found an invalid or ambiguous CLR/model hierarchy. | Fix the modeled inheritance/ownership or provide a valid explicit application contract. |
+
 ## Generated EF diagnostics
 
 | Diagnostic | What happened | Fix |
