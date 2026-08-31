@@ -39,7 +39,7 @@ public sealed class GeneratedConfigurationTests
             public readonly record struct StrongId(System.Guid Value);
             public sealed class Details { public string Name { get; set; } = ""; }
             public enum Mode { One, Two }
-            internal partial class SpecificationConfiguration
+            internal partial class Domain_SpecificationConfiguration
             {
                 static partial void ConfigureBeforeGenerated(global::Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Specification> builder) { }
                 static partial void ConfigureAfterGenerated(global::Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Specification> builder) { }
@@ -123,7 +123,7 @@ public sealed class GeneratedConfigurationTests
         GeneratorDriverRunResult ownership = Run(duplicateSelection, duplicate);
 
         const string collisionSource = "[assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Marker))] public class Marker {} namespace A { public class Widget { public int Id {get;set;} } } namespace B { public class Widget { public int Id {get;set;} } }";
-        object collisionManifest = Manifest("Names", [Type("System.Int32", "Int32", "Scalar"), Entity("A.Widget"), Entity("B.Widget")]);
+        object collisionManifest = Manifest("Names", [Type("System.Int32", "Int32", "Scalar"), Entity("A.Widget"), Entity("A.Widget")]);
         GeneratorDriverRunResult configurationCollision = Run(collisionSource, collisionManifest);
 
         GeneratorDriverRunResult unresolvedType = Run("[assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Marker))] public class Marker {}", Manifest("Missing", [Entity("Missing.Entity")]));
@@ -136,7 +136,7 @@ public sealed class GeneratedConfigurationTests
         GeneratorDriverRunResult registrationCollision = RunCore(registrationSource, [sales, salesCollision]);
 
         _ = await Assert.That(ownership.Has(DotNetExtractionDiagnosticIds.EfEntityOwnershipCollision)).IsTrue();
-        _ = await Assert.That(configurationCollision.Has(DotNetExtractionDiagnosticIds.EfConfigurationNameCollision)).IsTrue();
+        _ = await Assert.That(configurationCollision.Has(DotNetExtractionDiagnosticIds.EfConfigurationNameCollision)).IsFalse();
         _ = await Assert.That(registrationCollision.Has(DotNetExtractionDiagnosticIds.EfRegistrationNameCollision)).IsTrue();
         _ = await Assert.That(unresolvedType.Has(DotNetExtractionDiagnosticIds.EfClrTypeUnresolved)).IsTrue();
         _ = await Assert.That(unresolvedMember.Has(DotNetExtractionDiagnosticIds.EfClrMemberUnresolved)).IsTrue();

@@ -20,7 +20,7 @@
     "baselineImplementationModel": "GPT-5.6 Luna",
     "defaultImplementationMode": "ai-executed-human-reviewed",
     "documentationSync": "direct-for-touched-surfaces",
-    "releaseReadiness": "separate-pass",
+    "releaseReadiness": "same-milestone",
     "humanReview": "milestone-scoped"
   },
   "engineeringCommands": {

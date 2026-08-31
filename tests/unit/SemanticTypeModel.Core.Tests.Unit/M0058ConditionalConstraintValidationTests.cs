@@ -1,8 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Validation;
-using SemanticTypeModel.RealWorldFixtures;
-using Intake = SemanticTypeModel.RealWorldFixtures.OrderIntakeSpecificationModel;
+using Intake = SemanticTypeModel.TestModels.ModelA.Intake;
+using ModelAGenerated = SemanticTypeModel.TestModels.ModelA.Generated;
 
 namespace SemanticTypeModel.Core.Tests.Unit;
 
@@ -13,7 +13,7 @@ public sealed class M0058ConditionalConstraintValidationTests
     [Test]
     public async Task M0058_shared_import_fixture_is_valid_and_preserves_typed_enum_constraints()
     {
-        TypeSchemaModel model = FixtureModels.CreateIntake();
+        TypeSchemaModel model = ModelAGenerated.ModelASemanticTypeModel.Create();
         ObjectTypeDefinition import = Import(model);
         ConditionalConstraint[] constraints = [.. import.Properties.SelectMany(static property => property.Constraints.Conditional)];
 
@@ -25,7 +25,7 @@ public sealed class M0058ConditionalConstraintValidationTests
     [Test]
     public async Task ConditionalConstraint_invalid_target_and_source_are_diagnostic()
     {
-        TypeSchemaModel source = FixtureModels.CreateIntake();
+        TypeSchemaModel source = ModelAGenerated.ModelASemanticTypeModel.Create();
         TypeSchemaModel invalidTarget = ChangeCsvConstraint(source, constraint => constraint with { TargetPropertyId = new("ImportSpecification.Unknown") });
         TypeSchemaModel invalidSource = ChangeCsvConstraint(source, constraint => constraint with { SourcePropertyName = "WrongName", SourcePropertyId = new("Unknown") });
 
@@ -36,7 +36,7 @@ public sealed class M0058ConditionalConstraintValidationTests
     [Test]
     public async Task ConditionalConstraint_type_enum_and_operator_mismatches_are_diagnostic()
     {
-        TypeSchemaModel source = FixtureModels.CreateIntake();
+        TypeSchemaModel source = ModelAGenerated.ModelASemanticTypeModel.Create();
         TypeSchemaModel wrongKind = ChangeCsvConstraint(source, constraint => constraint with { Literal = constraint.Literal with { Kind = SemanticLiteralKind.Boolean } });
         TypeSchemaModel wrongEnum = ChangeCsvConstraint(source, constraint => constraint with { Literal = constraint.Literal with { EnumTypeId = new("WrongEnum") } });
         TypeSchemaModel wrongOperator = ChangeCsvConstraint(source, constraint => constraint with { Operator = ConditionalConstraintOperator.IsNull });
@@ -48,7 +48,7 @@ public sealed class M0058ConditionalConstraintValidationTests
 
     private static ObjectTypeDefinition Import(TypeSchemaModel model)
     {
-        return model.Types.OfType<ObjectTypeDefinition>().Single(type => type.Id.Value == typeof(Intake.ImportSpecification).FullName);
+        return model.Types.OfType<ObjectTypeDefinition>().Single(type => type.Name == nameof(Intake.ImportSpecification));
     }
 
     private static TypeSchemaModel ChangeCsvConstraint(TypeSchemaModel source, Func<ConditionalConstraint, ConditionalConstraint> change)

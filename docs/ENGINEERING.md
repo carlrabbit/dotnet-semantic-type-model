@@ -99,6 +99,7 @@ A new feature, bug fix, diagnostic, mapping rule, release, or implementation det
 - Long-running tests, benchmarks, stress tests, and release-only integration scenarios must be explicit and isolated from the default short-running test path.
 - Prefer focused Tier 1 validation during implementation, then Tier 2 before completion.
 - Boundary-crossing generator/provider/package defects require tests that exercise the actual boundary; do not substitute hand-built internal models for the integration being validated.
+- Shared positive cross-package fixture architecture follows `docs/engineering/shared-generated-test-models.md`.
 - EF Core compatibility tests follow `docs/engineering/ef-core-testing.md`.
 - A distributable NuGet surface affected by a milestone requires representative acceptance against the packages produced by the current build, consumed through the intended local NuGet mechanism.
 - Packed-artifact acceptance must not accidentally pass through project references, stale/global packages, or unrelated repository build outputs.
@@ -137,6 +138,7 @@ See `docs/specs/diagnostics.md` for the full diagnostic specification.
 |---|---|
 | engineering/dotnet.md | .NET engineering profile |
 | engineering/command-contract.md | Canonical repository command contract and platform launchers |
+| engineering/shared-generated-test-models.md | Shared code-first Model A/Model B fixture architecture and multi-model testing rule |
 | engineering/ef-core-testing.md | EF Core compatibility matrix, test layers, fixture architecture, and package-smoke requirements |
 | engineering/packaging.md | NuGet packaging and publishing policy |
 | engineering/package-documentation.md | Package README and usage-guide documentation expectations |

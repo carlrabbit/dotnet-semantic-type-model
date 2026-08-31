@@ -150,6 +150,16 @@ use application-owned Microsoft.Extensions.Configuration/Options registration as
 `SemanticTypeRole.Configuration` and `SemanticRequiredWhen` when their projection-neutral meanings remain
 relevant. Use the aligned ten-package 5.0.0 suite; do not mix 4.0.x and 5.0.0 packages.
 
+## 5.0.1 release candidate
+
+5.0.1 is a patch-line release candidate for the aligned ten-package suite. It carries the corrective
+System.Text.Json runtime behavior described in the release notes: ordinary `JsonSerializerOptions` is the
+primary path, semantic Entity inheritance can receive automatic `$type` polymorphism when no explicit
+application contract is supplied, explicit application contracts win, and Strong Scalars plus multiple
+semantic models compose through runtime options. Automatic polymorphism remains outside the JSON
+Schema/System.Text.Json fidelity baseline. Publication truth must be verified from the package channel;
+repository source does not establish publication.
+
 ## 4.0 release boundary
 
 4.0.0 established the major compatibility boundary for the accumulated breaking changes described above.

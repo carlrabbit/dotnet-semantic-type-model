@@ -6,12 +6,13 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-- None. The completed M0071 authority is preserved in Git history.
+- `M0072 — Cross-Package Test Models and 5.0.1 Release Readiness`
+  - `docs/milestones/m0072-cross-package-test-models-and-5-0-1-readiness.md`
 
 ## Next Number
 
 ```text
-M0072
+M0073
 ```
 
 Never restart or reuse milestone numbers across maintenance or mainline work.

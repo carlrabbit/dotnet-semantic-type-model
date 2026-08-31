@@ -42,6 +42,10 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 Generated code emits one internal partial `IEntityTypeConfiguration<TEntity>` per semantic Entity. Customize an
 entity through the generated partial hooks instead of editing generated source:
 
+When independently generated models contain the same simple CLR type name, generated configuration type names
+include the CLR metadata identity so both models can be selected in one application. Applications continue to
+use the generated model registration extensions; configuration type names are implementation details.
+
 ```csharp
 internal partial class AccountConfiguration
 {

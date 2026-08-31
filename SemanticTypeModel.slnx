@@ -19,10 +19,8 @@
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/fixtures/">
-    <Project Path="tests/fixtures/SemanticTypeModel.EFCoreModelShapes/SemanticTypeModel.EFCoreModelShapes.csproj" />
-    <Project Path="tests/fixtures/SemanticTypeModel.EFCore.CompatibilityModel/SemanticTypeModel.EFCore.CompatibilityModel.csproj" />
-    <Project Path="tests/fixtures/SemanticTypeModel.EFCore.CompositionModel/SemanticTypeModel.EFCore.CompositionModel.csproj" />
-    <Project Path="tests/fixtures/SemanticTypeModel.RealWorldFixtures/SemanticTypeModel.RealWorldFixtures.csproj" />
+    <Project Path="tests/fixtures/SemanticTypeModel.TestModels.ModelA/SemanticTypeModel.TestModels.ModelA.csproj" />
+    <Project Path="tests/fixtures/SemanticTypeModel.TestModels.ModelB/SemanticTypeModel.TestModels.ModelB.csproj" />
   </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/SemanticTypeModel.EFCore.Tests.Integration/SemanticTypeModel.EFCore.Tests.Integration.csproj" />
