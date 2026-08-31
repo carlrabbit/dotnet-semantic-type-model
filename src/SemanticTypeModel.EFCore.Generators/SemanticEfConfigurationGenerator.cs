@@ -167,7 +167,7 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
             ? "SemanticTypeModel.Generated.EFCore"
             : symbol.ContainingNamespace.ToDisplayString();
         string entityType = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        string configurationName = ConfigurationName(symbol.MetadataName);
+        string configurationName = ConfigurationName(MetadataName(entity.ClrName));
         var body = new StringBuilder();
         bool valid = true;
 
@@ -365,11 +365,11 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
     private static string GenerateRegistration(string modelName, IReadOnlyList<(SemanticType Manifest, INamedTypeSymbol Symbol)> entities)
     {
         var calls = new StringBuilder();
-        foreach ((SemanticType _, INamedTypeSymbol symbol) in entities)
+        foreach ((SemanticType entity, INamedTypeSymbol symbol) in entities)
         {
             calls.Append("        modelBuilder.ApplyConfiguration(new global::")
                 .Append(symbol.ContainingNamespace.ToDisplayString()).Append('.')
-                .Append(ConfigurationName(symbol.MetadataName)).AppendLine("());");
+                .Append(ConfigurationName(MetadataName(entity.ClrName))).AppendLine("());");
         }
 
         return $$"""
@@ -415,7 +415,7 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
     private static void ReportNameCollisions(SourceProductionContext context, IReadOnlyList<SelectedModel> models)
     {
         foreach (IGrouping<string, (SelectedModel Model, SemanticType Type)> collision in OwnedEntities(models)
-            .GroupBy(static item => ConfigurationName(MetadataName(item.Type.ClrName).Split('.').Last()), StringComparer.Ordinal)
+            .GroupBy(static item => item.Model.Manifest.ModelName + "|" + ConfigurationName(MetadataName(item.Type.ClrName).Split('.').Last()), StringComparer.Ordinal)
             .Where(static group => group.Count() > 1))
         {
             context.ReportDiagnostic(Diagnostic.Create(EfGeneratorDiagnosticDescriptors.ConfigurationNameCollision, collision.First().Model.Location, collision.Key));
@@ -429,7 +429,7 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
 
     private static bool HasNameCollisions(IReadOnlyList<SelectedModel> models)
     {
-        return OwnedEntities(models).GroupBy(static item => ConfigurationName(MetadataName(item.Type.ClrName).Split('.').Last()), StringComparer.Ordinal).Any(static group => group.Count() > 1)
+        return OwnedEntities(models).GroupBy(static item => item.Model.Manifest.ModelName + "|" + ConfigurationName(MetadataName(item.Type.ClrName).Split('.').Last()), StringComparer.Ordinal).Any(static group => group.Count() > 1)
             || models.GroupBy(static model => ApplyName(model.Manifest.ModelName), StringComparer.Ordinal).Any(static group => group.Count() > 1);
     }
 
@@ -497,7 +497,7 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
 
     private static string ConfigurationName(string metadataName)
     {
-        return Safe(metadataName.Split('+').Last()) + "Configuration";
+        return Safe(metadataName) + "Configuration";
     }
 
     private static string ApplyName(string modelName)

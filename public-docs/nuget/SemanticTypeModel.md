@@ -151,7 +151,7 @@ If generation or projection fails:
 | `SemanticTypeModel.PowerBI` | Deterministic local analytical metadata projection |
 | `SemanticTypeModel.DependencyInjection` | Runtime provider/projection service registration |
 
-The 5.0.0 release suite contains exactly these ten packages. All ten must be kept at the same exact version:
+The 5.0.x release suite contains exactly these ten packages. All ten must be kept at the same exact version:
 `SemanticTypeModel.Abstractions`, `SemanticTypeModel.Core`, `SemanticTypeModel.JsonSchema`,
 `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, `SemanticTypeModel.DependencyInjection`,
 `SemanticTypeModel.PowerBI`, `SemanticTypeModel.EFCore`, `SemanticTypeModel.EFCore.Generators`, and

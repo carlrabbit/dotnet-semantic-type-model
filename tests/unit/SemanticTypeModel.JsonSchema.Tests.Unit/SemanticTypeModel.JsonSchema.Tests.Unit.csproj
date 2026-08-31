@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj" />
-    <ProjectReference Include="../../fixtures/SemanticTypeModel.RealWorldFixtures/SemanticTypeModel.RealWorldFixtures.csproj" />
+    <ProjectReference Include="../../fixtures/SemanticTypeModel.TestModels.ModelA/SemanticTypeModel.TestModels.ModelA.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.SystemTextJson/SemanticTypeModel.SystemTextJson.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

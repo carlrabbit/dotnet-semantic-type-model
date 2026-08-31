@@ -9,6 +9,7 @@ namespace SemanticTypeModel.TestModels.ModelA;
 [SemanticType(SemanticTypeRole.Entity)]
 public abstract class BaseEntity
 {
+    [SemanticKey]
     public Guid Id { get; set; }
 }
 
@@ -31,7 +32,7 @@ public sealed class Details
 [SemanticType]
 public enum State { Active, Archived }
 
-[SemanticType(SemanticTypeRole.Entity)]
+[SemanticType(SemanticTypeRole.ValueObject)]
 public sealed class RuntimeContainer
 {
     public SpecialId? OptionalId { get; set; }

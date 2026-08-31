@@ -6,12 +6,12 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-- None. The completed M0071 authority is preserved in Git history.
+- None. M0072 is complete; durable implementation, documentation, and release-readiness evidence are preserved in Git history.
 
 ## Next Number
 
 ```text
-M0072
+M0073
 ```
 
 Never restart or reuse milestone numbers across maintenance or mainline work.

@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><RootNamespace>SemanticTypeModel.TestModels.ModelA</RootNamespace><NoWarn>$(NoWarn);CS1591</NoWarn></PropertyGroup>
+  <PropertyGroup><RootNamespace>SemanticTypeModel.TestModels.ModelA</RootNamespace><NoWarn>$(NoWarn);CS1591;IDE0130</NoWarn></PropertyGroup>
+  <ItemGroup><Compile Remove="artifacts/generated-m0072/**/*.cs" /></ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../../src/SemanticTypeModel.DotNet/SemanticTypeModel.DotNet.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.Generators/SemanticTypeModel.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

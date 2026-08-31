@@ -1,6 +1,7 @@
 using SemanticTypeModel.EFCore;
-using SemanticTypeModel.EFCoreModelShapes;
-using SemanticTypeModel.RealWorldFixtures;
+using Intake = SemanticTypeModel.TestModels.ModelA.Intake;
+using ModelA = SemanticTypeModel.TestModels.ModelA;
+using ModelAGenerated = SemanticTypeModel.TestModels.ModelA.Generated;
 
 namespace SemanticTypeModel.EFCore.Tests.Unit;
 
@@ -9,19 +10,19 @@ public sealed class RelationalDerivationTests
     [Test]
     public async Task Relational_derivation_preserves_TPT_and_inherited_member_placement()
     {
-        EfRelationalModel model = ModelShapeModels.Tpt().DeriveEfRelationalModel().Model;
-        EfEntity root = model.Entities.Single(entity => entity.ClrType == typeof(Specification));
-        EfEntity derived = model.Entities.Single(entity => entity.ClrType == typeof(ImportSpecification));
+        EfRelationalModel model = ModelAGenerated.ModelASemanticTypeModel.Create().DeriveEfRelationalModel().Model;
+        EfEntity root = model.Entities.Single(entity => entity.ClrType == typeof(Intake.Specification));
+        EfEntity derived = model.Entities.Single(entity => entity.ClrType == typeof(Intake.ImportSpecification));
         _ = await Assert.That(root.BaseEntityId).IsNull();
         _ = await Assert.That(derived.BaseEntityId).IsEqualTo(root.SemanticTypeId);
-        _ = await Assert.That(derived.ScalarColumns.All(column => column.DeclaringClrType == typeof(ImportSpecification))).IsTrue();
+        _ = await Assert.That(derived.ScalarColumns.All(column => column.DeclaringClrType == typeof(Intake.ImportSpecification))).IsTrue();
     }
 
     [Test]
     public async Task Relational_derivation_preserves_JSON_and_binary_storage_rules()
     {
-        EfRelationalModel json = ModelShapeModels.OwnedObject().DeriveEfRelationalModel().Model;
-        EfRelationalModel binary = FixtureModels.CreateRunState().DeriveEfRelationalModel().Model;
+        EfRelationalModel json = ModelAGenerated.ModelASemanticTypeModel.Create().DeriveEfRelationalModel().Model;
+        EfRelationalModel binary = ModelAGenerated.ModelASemanticTypeModel.Create().DeriveEfRelationalModel().Model;
         _ = await Assert.That(json.Entities.SelectMany(entity => entity.JsonColumns)).IsNotEmpty();
         _ = await Assert.That(binary.Entities.SelectMany(entity => entity.BinaryColumns)).IsNotEmpty();
     }
@@ -29,29 +30,29 @@ public sealed class RelationalDerivationTests
     [Test]
     public async Task Relational_projection_preserves_owned_JSON_property_use_nullability()
     {
-        EfJsonColumn[] objects = [.. ModelShapeModels.JsonInheritance().DeriveEfRelationalModel().Model.Entities.SelectMany(entity => entity.JsonColumns)];
-        EfJsonColumn[] collections = [.. ModelShapeModels.OwnedCollection().DeriveEfRelationalModel().Model.Entities.SelectMany(entity => entity.JsonColumns)];
+        EfJsonColumn[] objects = [.. ModelAGenerated.ModelASemanticTypeModel.Create().DeriveEfRelationalModel().Model.Entities.Where(entity => entity.ClrType == typeof(ModelA.InventoryItem)).SelectMany(entity => entity.JsonColumns)];
+        EfJsonColumn[] collections = objects;
 
-        _ = await Assert.That(objects.Single(column => column.MemberName == nameof(JsonBase.OptionalSource)).IsNullable).IsTrue();
-        _ = await Assert.That(objects.Single(column => column.MemberName == nameof(JsonDerived.RequiredSource)).IsNullable).IsFalse();
-        _ = await Assert.That(collections.Single(column => column.MemberName == nameof(FieldConfiguredObject.DerivedFields)).IsNullable).IsFalse();
-        _ = await Assert.That(collections.Single(column => column.MemberName == nameof(FieldConfiguredObject.OptionalDerivedFields)).IsNullable).IsTrue();
+        _ = await Assert.That(objects.Single(column => column.MemberName == nameof(ModelA.InventoryItem.OptionalDetails)).IsNullable).IsTrue();
+        _ = await Assert.That(objects.Single(column => column.MemberName == nameof(ModelA.InventoryItem.Details)).IsNullable).IsFalse();
+        _ = await Assert.That(collections.Single(column => column.MemberName == nameof(ModelA.InventoryItem.DetailHistory)).IsNullable).IsFalse();
+        _ = await Assert.That(collections.Single(column => column.MemberName == nameof(ModelA.InventoryItem.OptionalDetailHistory)).IsNullable).IsTrue();
     }
 
     [Test]
     public async Task Relational_projection_covers_supported_storage_nullability_matrix()
     {
-        EfEntity entity = ModelShapeModels.StorageNullabilityMatrix().DeriveEfRelationalModel().Model.Entities.Single();
+        EfEntity entity = ModelAGenerated.ModelASemanticTypeModel.Create().DeriveEfRelationalModel().Model.Entities.Single(value => value.ClrType == typeof(ModelA.StorageMatrixEntity));
 
-        await AssertColumnNullability(entity.ScalarColumns, nameof(StorageMatrixEntity.RequiredText), nameof(StorageMatrixEntity.OptionalText), typeof(string));
-        await AssertColumnNullability(entity.ScalarColumns, nameof(StorageMatrixEntity.RequiredState), nameof(StorageMatrixEntity.OptionalState), typeof(string));
-        await AssertColumnNullability(entity.ScalarColumns, nameof(StorageMatrixEntity.RequiredStrongId), nameof(StorageMatrixEntity.OptionalStrongId), typeof(Guid));
-        await AssertColumnNullability(entity.ScalarColumns, nameof(StorageMatrixEntity.RequiredUri), nameof(StorageMatrixEntity.OptionalUri), typeof(string));
-        await AssertColumnNullability(entity.BinaryColumns, nameof(StorageMatrixEntity.RequiredBinary), nameof(StorageMatrixEntity.OptionalBinary), typeof(byte[]));
-        await AssertColumnNullability(entity.BinaryColumns, nameof(StorageMatrixEntity.RequiredReadOnlyMemory), nameof(StorageMatrixEntity.OptionalReadOnlyMemory), typeof(byte[]));
-        await AssertJsonNullability(entity.JsonColumns, nameof(StorageMatrixEntity.RequiredDetails), nameof(StorageMatrixEntity.OptionalDetails), EfJsonShape.Object);
-        await AssertJsonNullability(entity.JsonColumns, nameof(StorageMatrixEntity.RequiredDetailsCollection), nameof(StorageMatrixEntity.OptionalDetailsCollection), EfJsonShape.Array);
-        EfJsonColumn extensionData = entity.JsonColumns.Single(column => column.MemberName == nameof(StorageMatrixEntity.ExtensionData));
+        await AssertColumnNullability(entity.ScalarColumns, nameof(ModelA.StorageMatrixEntity.RequiredText), nameof(ModelA.StorageMatrixEntity.OptionalText), typeof(string));
+        await AssertColumnNullability(entity.ScalarColumns, nameof(ModelA.StorageMatrixEntity.RequiredState), nameof(ModelA.StorageMatrixEntity.OptionalState), typeof(string));
+        await AssertColumnNullability(entity.ScalarColumns, nameof(ModelA.StorageMatrixEntity.RequiredStrongId), nameof(ModelA.StorageMatrixEntity.OptionalStrongId), typeof(Guid));
+        await AssertColumnNullability(entity.ScalarColumns, nameof(ModelA.StorageMatrixEntity.RequiredUri), nameof(ModelA.StorageMatrixEntity.OptionalUri), typeof(string));
+        await AssertColumnNullability(entity.BinaryColumns, nameof(ModelA.StorageMatrixEntity.RequiredBinary), nameof(ModelA.StorageMatrixEntity.OptionalBinary), typeof(byte[]));
+        await AssertColumnNullability(entity.BinaryColumns, nameof(ModelA.StorageMatrixEntity.RequiredReadOnlyMemory), nameof(ModelA.StorageMatrixEntity.OptionalReadOnlyMemory), typeof(byte[]));
+        await AssertJsonNullability(entity.JsonColumns, nameof(ModelA.StorageMatrixEntity.RequiredDetails), nameof(ModelA.StorageMatrixEntity.OptionalDetails), EfJsonShape.Object);
+        await AssertJsonNullability(entity.JsonColumns, nameof(ModelA.StorageMatrixEntity.RequiredDetailsCollection), nameof(ModelA.StorageMatrixEntity.OptionalDetailsCollection), EfJsonShape.Array);
+        EfJsonColumn extensionData = entity.JsonColumns.Single(column => column.MemberName == nameof(ModelA.StorageMatrixEntity.MatrixExtensionData));
         _ = await Assert.That(extensionData.IsNullable).IsTrue();
         _ = await Assert.That(extensionData.JsonShape).IsEqualTo(EfJsonShape.ExtensionData);
     }
@@ -59,7 +60,7 @@ public sealed class RelationalDerivationTests
     [Test]
     public async Task Relational_derivation_preserves_enum_string_provider_rule()
     {
-        EfRelationalModel model = FixtureModels.CreateM0059EnumRegression().DeriveEfRelationalModel().Model;
+        EfRelationalModel model = ModelAGenerated.ModelASemanticTypeModel.Create().DeriveEfRelationalModel().Model;
         EfScalarColumn[] enumColumns = [.. model.Entities.SelectMany(entity => entity.ScalarColumns).Where(column => (Nullable.GetUnderlyingType(column.ClrType) ?? column.ClrType).IsEnum)];
         _ = await Assert.That(enumColumns).IsNotEmpty();
         _ = await Assert.That(enumColumns.All(column => column.ProviderType == typeof(string))).IsTrue();

@@ -5,8 +5,8 @@ using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema.Derivation;
 using SemanticTypeModel.JsonSchema.Domain;
 using SemanticTypeModel.JsonSchema.Export;
-using SemanticTypeModel.RealWorldFixtures;
-using Intake = SemanticTypeModel.RealWorldFixtures.OrderIntakeSpecificationModel;
+using Intake = SemanticTypeModel.TestModels.ModelA.Intake;
+using ModelAGenerated = SemanticTypeModel.TestModels.ModelA.Generated;
 
 namespace SemanticTypeModel.JsonSchema.Tests.Unit;
 
@@ -17,8 +17,8 @@ public sealed class M0058ConditionalConstraintTests
     [Test]
     public async Task M0058_import_conditions_emit_deterministic_enum_constants()
     {
-        TypeSchemaModel model = FixtureModels.CreateIntake();
-        ObjectTypeDefinition import = model.Types.OfType<ObjectTypeDefinition>().Single(type => type.Id.Value == typeof(Intake.ImportSpecification).FullName);
+        TypeSchemaModel model = ModelAGenerated.ModelASemanticTypeModel.Create();
+        ObjectTypeDefinition import = model.Types.OfType<ObjectTypeDefinition>().Single(type => type.Name == nameof(Intake.ImportSpecification));
 
         ConditionalConstraint[] constraints = [.. import.Properties.SelectMany(property => property.Constraints.Conditional)];
         _ = await Assert.That(constraints.All(constraint => constraint.Literal.Kind == SemanticLiteralKind.EnumMember)).IsTrue();
@@ -26,7 +26,7 @@ public sealed class M0058ConditionalConstraintTests
         _ = await Assert.That(model.GetType(constraints[0].SourceTypeId)).IsTypeOf<EnumTypeDefinition>();
 
         JsonSchemaExportResult export = JsonSchemaExporter.Export(model.DeriveJsonSchemaModel().Model);
-        JsonElement allOf = export.Document.RootElement.GetProperty("$defs").GetProperty(typeof(Intake.ImportSpecification).FullName!).GetProperty("allOf");
+        JsonElement allOf = export.Document.RootElement.GetProperty("$defs").GetProperty(import.Id.Value).GetProperty("allOf");
         _ = await Assert.That(allOf.GetArrayLength()).IsEqualTo(4);
         _ = await Assert.That(allOf.EnumerateArray().Select(item => item.GetProperty("if").GetProperty("properties").GetProperty("ImportType").GetProperty("const").GetString()!)).IsEquivalentTo(["CsvFile", "XmlFile", "WebService1", "WebService2"]);
     }
@@ -34,8 +34,8 @@ public sealed class M0058ConditionalConstraintTests
     [Test]
     public async Task ConditionalConstraint_unsupported_operator_emits_diagnostic_instead_of_being_dropped()
     {
-        TypeSchemaModel source = FixtureModels.CreateIntake();
-        ObjectTypeDefinition original = source.Types.OfType<ObjectTypeDefinition>().Single(type => type.Id.Value == typeof(Intake.ImportSpecification).FullName);
+        TypeSchemaModel source = ModelAGenerated.ModelASemanticTypeModel.Create();
+        ObjectTypeDefinition original = source.Types.OfType<ObjectTypeDefinition>().Single(type => type.Name == nameof(Intake.ImportSpecification));
         PropertyDefinition csv = original.Properties.Single(property => property.Name == nameof(Intake.ImportSpecification.CsvSource));
         PropertyDefinition changedCsv = csv with { Constraints = csv.Constraints with { Conditional = [csv.Constraints.Conditional.Single() with { Operator = ConditionalConstraintOperator.NotEquals }] } };
         ObjectTypeDefinition changed = original with { Properties = [.. original.Properties.Select(property => property.Id == csv.Id ? changedCsv : property)] };

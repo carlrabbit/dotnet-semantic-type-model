@@ -101,6 +101,9 @@ Requirements:
 ## Generated Configuration Shape
 
 For each semantic `Entity`, the generator emits one internal partial configuration implementing `IEntityTypeConfiguration<TEntity>`.
+The generated configuration type name is derived from the CLR metadata identity so independently selected
+models with overlapping simple type names do not collide; the public model registration extension remains the
+application boundary.
 
 Conceptually:
 

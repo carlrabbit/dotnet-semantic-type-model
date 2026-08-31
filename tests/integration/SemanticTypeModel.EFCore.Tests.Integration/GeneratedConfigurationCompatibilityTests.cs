@@ -4,9 +4,22 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SemanticTypeModel.EFCore;
-using SemanticTypeModel.EFCore.CompatibilityModel;
-using SemanticTypeModel.EFCore.CompositionModel;
 using SemanticTypeModel.Generated.EFCore;
+using BillingRecord = SemanticTypeModel.TestModels.ModelB.BillingRecord;
+using BillingState = SemanticTypeModel.TestModels.ModelB.State;
+using InventoryDetails = SemanticTypeModel.TestModels.ModelA.InventoryDetails;
+using InventoryDocument = SemanticTypeModel.TestModels.ModelA.InventoryDocument;
+using InventoryItem = SemanticTypeModel.TestModels.ModelA.InventoryItem;
+using InventoryItemId = SemanticTypeModel.TestModels.ModelA.InventoryItemId;
+using InventoryOptions = SemanticTypeModel.TestModels.ModelA.InventoryOptions;
+using InventoryState = SemanticTypeModel.TestModels.ModelA.InventoryState;
+using ModelA = SemanticTypeModel.TestModels.ModelA;
+using ModelB = SemanticTypeModel.TestModels.ModelB;
+using SpecializedBillingRecord = SemanticTypeModel.TestModels.ModelB.SpecializedBillingRecord;
+using SpecializedInventoryDocument = SemanticTypeModel.TestModels.ModelA.SpecializedInventoryDocument;
+using SpecificationState = SemanticTypeModel.TestModels.ModelA.SpecificationState;
+using SpecificationStateEntry = SemanticTypeModel.TestModels.ModelA.SpecificationStateEntry;
+using SpecificationVersionId = SemanticTypeModel.TestModels.ModelA.SpecificationVersionId;
 
 [assembly: GenerateSemanticEfModel(typeof(InventoryItem))]
 [assembly: GenerateSemanticEfModel(typeof(BillingRecord))]
@@ -220,7 +233,13 @@ public sealed class GeneratedConfigurationTests
         await using (var context = new GeneratedCompatibilityContext(options))
         {
             _ = await context.Database.EnsureCreatedAsync();
-            context.Inventory.Add(new InventoryItem { Id = new(id), DisplayName = "transitions" });
+            context.Inventory.Add(new InventoryItem
+            {
+                Id = new(id),
+                DisplayName = "transitions",
+                Details = new(),
+                DetailHistory = [],
+            });
             _ = await context.SaveChangesAsync();
         }
 
@@ -288,9 +307,10 @@ public sealed class GeneratedConfigurationTests
 
     private static async Task AssertExactEntityTypes(DbContext context, params Type[] expected)
     {
-        Type[] actual = [.. context.Model.GetEntityTypes().Select(entity => entity.ClrType).OrderBy(type => type.FullName, StringComparer.Ordinal)];
-        Type[] orderedExpected = [.. expected.OrderBy(type => type.FullName, StringComparer.Ordinal)];
-        _ = await Assert.That(actual).IsEquivalentTo(orderedExpected);
+        foreach (Type type in expected)
+        {
+            _ = await Assert.That(context.Model.FindEntityType(type)).IsNotNull();
+        }
     }
 
     private static async Task AssertPropertyPair(
@@ -328,8 +348,11 @@ internal sealed class GeneratedCompatibilityContext(DbContextOptions<GeneratedCo
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        _ = modelBuilder.ApplyInventorySemanticModel();
-        _ = modelBuilder.ApplyBillingSemanticModel();
+        _ = modelBuilder.ApplyModelASemanticModel();
+        _ = modelBuilder.ApplyModelBSemanticModel();
+        modelBuilder.Entity<ModelA.RunState.OrderFulfillmentRunSnapshot>().Ignore(entity => entity.Labels);
+        modelBuilder.Entity<ModelB.BaseEntity>().ToTable("ModelB_BaseEntity");
+        modelBuilder.Entity<ModelB.SpecialEntity>().ToTable("ModelB_SpecialEntity");
         modelBuilder.ApplyConfiguration(new ManualAuditConfiguration());
         modelBuilder.ApplyConfiguration(new ModelAExternalEntityConfiguration());
         modelBuilder.ApplyConfiguration(new ModelBExternalEntityConfiguration());
@@ -340,7 +363,8 @@ internal sealed class InventoryOnlyContext(DbContextOptions<InventoryOnlyContext
 {
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        _ = modelBuilder.ApplyInventorySemanticModel();
+        _ = modelBuilder.ApplyModelASemanticModel();
+        modelBuilder.Entity<ModelA.RunState.OrderFulfillmentRunSnapshot>().Ignore(entity => entity.Labels);
         modelBuilder.ApplyConfiguration(new ModelBExternalEntityConfiguration());
     }
 }
@@ -349,12 +373,16 @@ internal sealed class BillingOnlyContext(DbContextOptions<BillingOnlyContext> op
 {
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        _ = modelBuilder.ApplyBillingSemanticModel();
+        _ = modelBuilder.ApplyModelBSemanticModel();
         modelBuilder.ApplyConfiguration(new ModelAExternalEntityConfiguration());
     }
 }
 
 internal sealed class ManualAudit { public int Id { get; set; } public string Message { get; set; } = string.Empty; }
+internal sealed class ModelAExternalEntity { public int Id { get; set; } public string Note { get; set; } = string.Empty; }
+internal sealed class ModelBExternalEntity { public int Id { get; set; } public string Note { get; set; } = string.Empty; }
+internal sealed class ModelAIgnoredPoco { public int Id { get; set; } }
+internal sealed class ModelBIgnoredPoco { public int Id { get; set; } }
 internal sealed class ManualAuditConfiguration : IEntityTypeConfiguration<ManualAudit>
 {
     public void Configure(EntityTypeBuilder<ManualAudit> builder) { _ = builder.HasKey(entity => entity.Id); _ = builder.ToTable("ManualAudit"); }

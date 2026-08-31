@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-namespace SemanticTypeModel.EFCore.CompatibilityModel;
+using InventoryItem = SemanticTypeModel.TestModels.ModelA.InventoryItem;
+namespace SemanticTypeModel.TestModels.ModelA;
 
-internal sealed partial class InventoryItemConfiguration
+internal sealed partial class SemanticTypeModel_TestModels_ModelA_InventoryItemConfiguration
 {
     static partial void ConfigureBeforeGenerated(EntityTypeBuilder<InventoryItem> builder)
     {
