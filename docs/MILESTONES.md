@@ -6,8 +6,7 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-- `M0072 — Cross-Package Test Models and 5.0.1 Release Readiness`
-  - `docs/milestones/m0072-cross-package-test-models-and-5-0-1-readiness.md`
+- None. M0072 is complete; durable implementation, documentation, and release-readiness evidence are preserved in Git history.
 
 ## Next Number
 
