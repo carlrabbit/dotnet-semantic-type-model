@@ -18,7 +18,7 @@ This spec is authoritative for:
 
 ## Supported Model Surface
 
-The current canonical vocabulary includes `StrongScalarTypeDefinition`; its `ValueType` references one supported non-null scalar and its CLR `Value` member is not a canonical property. The cross-projection contract is defined by `docs/specs/strong-scalar-semantics.md`.
+The current canonical vocabulary contains ordinary scalars, structured types, collections, dictionaries, references, composition, constraints, and projection-neutral semantic annotations. CLR wrapper transparency is not canonical meaning; target-specific integrations may support compatible wrapper shapes independently.
 
 The supported runtime model surface is the current canonical semantic type model produced from code-first extraction, compile-time generation, or a persisted snapshot of a code-generated model.
 

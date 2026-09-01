@@ -16,12 +16,9 @@ public abstract class BaseEntity
 [SemanticType(SemanticTypeRole.Entity)]
 public sealed class SpecialEntity : BaseEntity
 {
-    public SpecialId SpecialId { get; set; }
+    public Guid SpecialId { get; set; }
     [SemanticOwned] public Details Details { get; set; } = new();
 }
-
-[SemanticStrongScalar]
-public readonly record struct SpecialId(Guid Value);
 
 [SemanticType(SemanticTypeRole.ValueObject)]
 public sealed class Details
@@ -35,7 +32,7 @@ public enum State { Active, Archived }
 [SemanticType(SemanticTypeRole.ValueObject)]
 public sealed class RuntimeContainer
 {
-    public SpecialId? OptionalId { get; set; }
+    public Guid? OptionalId { get; set; }
     public State? State { get; set; }
     [JsonExtensionData] public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 }
@@ -45,5 +42,5 @@ public sealed class TestDataScenario
 {
     public List<string> Items { get; set; } = [];
     public State Status { get; set; }
-    public SpecialId StrongId { get; set; }
+    public Guid Id { get; set; }
 }

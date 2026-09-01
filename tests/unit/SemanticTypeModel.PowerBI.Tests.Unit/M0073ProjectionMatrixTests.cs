@@ -12,7 +12,7 @@ namespace SemanticTypeModel.PowerBI.Tests.Unit;
 public sealed class M0073ProjectionMatrixTests
 {
     [Test]
-    public async Task Generated_model_should_project_complete_scalar_and_strong_scalar_matrix()
+    public async Task Generated_model_should_project_complete_scalar_matrix()
     {
         SemanticDerivationResult<PowerBiSemanticModel> result = ModelAGenerated.ModelASemanticTypeModel.Create().DerivePowerBiModel();
         PowerBiTableDefinition table = result.Model.Tables.Single(value => value.Name == nameof(ProjectionMatrixEntity));
@@ -21,11 +21,8 @@ public sealed class M0073ProjectionMatrixTests
         {
             PowerBiDataType expected = ExpectedDataType(matrixCase.ScalarKind);
             PowerBiColumnDefinition scalar = table.Columns.Single(column => column.Name == matrixCase.PropertyName);
-            PowerBiColumnDefinition strong = table.Columns.Single(column => column.Name == matrixCase.StrongScalarPropertyName);
             _ = await Assert.That(scalar.DataType).IsEqualTo(expected);
-            _ = await Assert.That(strong.DataType).IsEqualTo(expected);
             _ = await Assert.That(scalar.IsKey).IsFalse();
-            _ = await Assert.That(strong.IsKey).IsFalse();
         }
     }
 

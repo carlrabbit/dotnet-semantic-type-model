@@ -30,21 +30,7 @@ public sealed class TypeSchemaModelValidator
         CheckAnnotationKeys(model, diagnostics);
         CheckEnumDuplicates(model, diagnostics);
         CheckConditionalConstraints(model, diagnostics);
-        CheckStrongScalars(model, diagnostics);
-
         return diagnostics;
-    }
-
-    private static void CheckStrongScalars(TypeSchemaModel model, List<SchemaDiagnostic> diagnostics)
-    {
-        foreach (StrongScalarTypeDefinition strongScalar in model.Types.OfType<StrongScalarTypeDefinition>())
-        {
-            if (model.TryGetType(strongScalar.ValueType.Id) is not ScalarTypeDefinition scalar
-                || scalar.ScalarKind is ScalarKind.Json or ScalarKind.Unknown)
-            {
-                diagnostics.Add(Error("STM0014", $"Strong Scalar '{strongScalar.Id.Value}' must reference an allowed non-null scalar value type.", ModelPath.ForType(strongScalar.Id)));
-            }
-        }
     }
 
     private static void CheckConditionalConstraints(TypeSchemaModel model, List<SchemaDiagnostic> diagnostics)
@@ -213,9 +199,6 @@ public sealed class TypeSchemaModelValidator
                 break;
             case ReferenceTypeDefinition referenceType:
                 yield return (referenceType.Target, $"{typePath}/target");
-                break;
-            case StrongScalarTypeDefinition strongScalarType:
-                yield return (strongScalarType.ValueType, $"{typePath}/valueType");
                 break;
             default:
                 break;

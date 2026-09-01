@@ -6,12 +6,12 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-None. M0075 is complete; constraint-aware test-data generation behavior and validation evidence are synchronized in the repository.
+No active milestone. M0076 — Remove Strong Scalar Semantics — is complete and its durable decision rationale is recorded in `docs/decisions/remove-canonical-strong-scalar-semantics.md`.
 
 ## Next Number
 
 ```text
-M0076
+M0077
 ```
 
 Never restart or reuse milestone numbers.

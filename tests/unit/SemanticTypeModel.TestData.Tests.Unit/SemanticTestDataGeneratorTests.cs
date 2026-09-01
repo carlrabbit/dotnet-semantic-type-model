@@ -17,7 +17,7 @@ public sealed class SemanticTestDataGeneratorTests
         var repeatedRoot = (ObjectTestValue)second.Value!;
         _ = await Assert.That(((ScalarTestValue)root.Properties[new PropertyId("Text")]).Value).IsEqualTo(((ScalarTestValue)repeatedRoot.Properties[new PropertyId("Text")]).Value);
         _ = await Assert.That(((ArrayTestValue)root.Properties[new PropertyId("Items")]).Items.Select(item => ((EnumTestValue)item).Value)).IsEquivalentTo(((ArrayTestValue)repeatedRoot.Properties[new PropertyId("Items")]).Items.Select(item => ((EnumTestValue)item).Value));
-        _ = await Assert.That(root.Properties.Count).IsEqualTo(4);
+        _ = await Assert.That(root.Properties.Count).IsEqualTo(3);
         var text = (ScalarTestValue)root.Properties[new PropertyId("Text")];
         _ = await Assert.That(((string)text.Value!).Length).IsBetween(4, 12);
         var items = (ArrayTestValue)root.Properties[new PropertyId("Items")];
@@ -26,15 +26,12 @@ public sealed class SemanticTestDataGeneratorTests
     }
 
     [Test]
-    public async Task Generates_enum_and_strong_scalar_identity()
+    public async Task Generates_enum_identity()
     {
         TypeSchemaModel model = CreateModel();
         TestDataGenerationResult result = SemanticTestDataGenerator.Generate(model, new TypeId("Root"));
         var root = (ObjectTestValue)result.Value!;
         _ = await Assert.That(root.Properties[new PropertyId("Status")]).IsTypeOf<EnumTestValue>();
-        var strong = (StrongScalarTestValue)root.Properties[new PropertyId("Code")];
-        _ = await Assert.That(strong.StrongTypeId).IsEqualTo(new TypeId("Code"));
-        _ = await Assert.That(strong.Value).IsTypeOf<ScalarTestValue>();
     }
 
     [Test]
@@ -81,7 +78,6 @@ public sealed class SemanticTestDataGeneratorTests
         _ = await Assert.That(generated.Properties.Count).IsEqualTo(3);
         _ = await Assert.That(generated.Properties.Values.OfType<ArrayTestValue>().Count()).IsGreaterThan(0);
         _ = await Assert.That(generated.Properties.Values.OfType<EnumTestValue>().Count()).IsGreaterThan(0);
-        _ = await Assert.That(generated.Properties.Values.OfType<StrongScalarTestValue>().Count()).IsGreaterThan(0);
     }
 
     private static TypeSchemaModel CreateModel()
@@ -89,7 +85,6 @@ public sealed class SemanticTestDataGeneratorTests
         ScalarTypeDefinition text = Scalar("Text", ScalarKind.String);
         ScalarTypeDefinition integer = Scalar("Integer", ScalarKind.Integer);
         var status = new EnumTypeDefinition { Id = new("Status"), Name = "Status", Kind = TypeKind.Enum, Nullability = Nullability.NonNullable, Annotations = Empty, StorageKind = EnumStorageKind.String, Values = [new EnumValueDefinition { Name = "Ready", Value = "ready", Annotations = Empty }, new EnumValueDefinition { Name = "Queued", Value = "queued", Annotations = Empty }, new EnumValueDefinition { Name = "Done", Value = "done", Annotations = Empty }] };
-        var code = new StrongScalarTypeDefinition { Id = new("Code"), Name = "Code", Kind = TypeKind.StrongScalar, Nullability = Nullability.NonNullable, Annotations = Empty, ValueType = new TypeRef(text.Id) };
         var items = new ArrayTypeDefinition { Id = new("Items"), Name = "Items", Kind = TypeKind.Array, Nullability = Nullability.NonNullable, Annotations = Empty, ItemType = new TypeRef(status.Id), MinItems = 3, MaxItems = 3, UniqueItems = true };
         var root = new ObjectTypeDefinition
         {
@@ -104,10 +99,9 @@ public sealed class SemanticTestDataGeneratorTests
             Property("Text", text.Id, false, new ConstraintSet { String = new StringConstraints { MinLength = 4, MaxLength = 12 } }),
             Property("Items", items.Id, false),
             Property("Status", status.Id, false),
-            Property("Code", code.Id, false)
         ]
         };
-        return Model(root, text, integer, status, code, items);
+        return Model(root, text, integer, status, items);
     }
 
     private static PropertyDefinition Property(string name, TypeId type, bool nullable, ConstraintSet? constraints = null)

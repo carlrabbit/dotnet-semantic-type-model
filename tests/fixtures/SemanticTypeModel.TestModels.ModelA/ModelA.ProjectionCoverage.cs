@@ -3,23 +3,10 @@ using SemanticTypeModel.DotNet;
 
 namespace SemanticTypeModel.TestModels.ModelA;
 
-[SemanticStrongScalar] public readonly record struct BooleanId(bool Value);
-[SemanticStrongScalar] public readonly record struct StringId(string Value);
-[SemanticStrongScalar] public readonly record struct IntegerId(long Value);
-[SemanticStrongScalar] public readonly record struct NumberId(double Value);
-[SemanticStrongScalar] public readonly record struct DecimalId(decimal Value);
-[SemanticStrongScalar] public readonly record struct DateId(DateOnly Value);
-[SemanticStrongScalar] public readonly record struct TimeId(TimeOnly Value);
-[SemanticStrongScalar] public readonly record struct DateTimeId(DateTime Value);
-[SemanticStrongScalar] public readonly record struct DateTimeOffsetId(DateTimeOffset Value);
-[SemanticStrongScalar] public readonly record struct DurationId(TimeSpan Value);
-[SemanticStrongScalar] public readonly record struct GuidId(Guid Value);
-[SemanticStrongScalar] public readonly record struct BinaryId(byte[] Value);
-
 [SemanticType(SemanticTypeRole.Entity)]
 public sealed class InventoryItem
 {
-    [SemanticKey] public InventoryItemId Id { get; set; }
+    [SemanticKey] public Guid Id { get; set; }
     [SemanticDisplayIdentity] public string DisplayName { get; set; } = string.Empty;
     public InventoryState State { get; set; }
     public byte[] Payload { get; set; } = [];
@@ -33,7 +20,7 @@ public sealed class InventoryItem
     [SemanticOwned(Kind = SemanticOwnershipKind.Collection)] public IReadOnlyList<InventoryDetails>? OptionalDetailHistory { get; set; }
     public string? OptionalDisplayName { get; set; }
     public InventoryState? OptionalState { get; set; }
-    public InventoryItemId? OptionalExternalId { get; set; }
+    public Guid? OptionalExternalId { get; set; }
     public byte[]? OptionalPayload { get; set; }
     [SemanticExtensionData] public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 }
@@ -48,7 +35,7 @@ public sealed class InventoryDetails
 [SemanticType(SemanticTypeRole.ValueObject)]
 public sealed class SpecificationStateEntry
 {
-    public SpecificationVersionId SpecificationVersionId { get; set; }
+    public Guid SpecificationVersionId { get; set; }
 }
 
 [SemanticType(SemanticTypeRole.Entity)]
@@ -58,8 +45,6 @@ public sealed class SpecificationState
     [SemanticOwned(Kind = SemanticOwnershipKind.Collection)] public IReadOnlyList<SpecificationStateEntry> Entries { get; set; } = [];
 }
 
-[SemanticStrongScalar] public readonly record struct InventoryItemId(Guid Value);
-[SemanticStrongScalar] public readonly record struct SpecificationVersionId(Guid Value);
 [SemanticType] public enum InventoryState { Active, Archived }
 
 [SemanticType(SemanticTypeRole.Entity)]
@@ -89,8 +74,6 @@ public sealed class StorageMatrixEntity
     public string? OptionalText { get; set; }
     public required MatrixState RequiredState { get; set; }
     public MatrixState? OptionalState { get; set; }
-    public required MatrixStrongId RequiredStrongId { get; set; }
-    public MatrixStrongId? OptionalStrongId { get; set; }
     public required Uri RequiredUri { get; set; }
     public Uri? OptionalUri { get; set; }
     public required byte[] RequiredBinary { get; set; }
@@ -104,7 +87,6 @@ public sealed class StorageMatrixEntity
     [SemanticExtensionData] public Dictionary<string, JsonElement>? MatrixExtensionData { get; set; }
 }
 
-[SemanticStrongScalar] public readonly record struct MatrixStrongId(Guid Value);
 [SemanticType] public enum MatrixState { Active, Archived }
 [SemanticType(SemanticTypeRole.ValueObject)] public sealed record MatrixDetails(string Name);
 
@@ -139,40 +121,6 @@ public sealed class ProjectionMatrixEntity
     public Guid? OptionalGuidValue { get; set; }
     public byte[]? OptionalBinaryValue { get; set; }
 
-    public BooleanId BooleanId { get; set; }
-    public StringId StringId { get; set; } = new("strong");
-    public IntegerId IntegerId { get; set; }
-    public NumberId NumberId { get; set; }
-    public DecimalId DecimalId { get; set; }
-    public DateId DateId { get; set; }
-    public TimeId TimeId { get; set; }
-    public DateTimeId DateTimeId { get; set; }
-    public DateTimeOffsetId DateTimeOffsetId { get; set; }
-    public DurationId DurationId { get; set; }
-    public GuidId GuidId { get; set; }
-    public BinaryId BinaryId { get; set; }
-
-    public BooleanId? OptionalBooleanId { get; set; }
-    public StringId? OptionalStringId { get; set; }
-    public IntegerId? OptionalIntegerId { get; set; }
-    public NumberId? OptionalNumberId { get; set; }
-    public DecimalId? OptionalDecimalId { get; set; }
-    public DateId? OptionalDateId { get; set; }
-    public TimeId? OptionalTimeId { get; set; }
-    public DateTimeId? OptionalDateTimeId { get; set; }
-    public DateTimeOffsetId? OptionalDateTimeOffsetId { get; set; }
-    public DurationId? OptionalDurationId { get; set; }
-    public GuidId? OptionalGuidId { get; set; }
-    public BinaryId? OptionalBinaryId { get; set; }
-
-    [SemanticOwned] public StrongScalarMatrixDetails OwnedStrongScalars { get; set; } = new();
-}
-
-[SemanticType(SemanticTypeRole.ValueObject)]
-public sealed class StrongScalarMatrixDetails
-{
-    public GuidId NestedGuidId { get; set; }
-    public GuidId? OptionalNestedGuidId { get; set; }
 }
 
 [SemanticType]

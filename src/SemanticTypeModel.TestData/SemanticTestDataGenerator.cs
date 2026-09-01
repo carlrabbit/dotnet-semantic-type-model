@@ -18,7 +18,6 @@ public abstract record SemanticTestValue
 
 public sealed record ScalarTestValue(TypeId ScalarTypeId, ScalarKind ScalarKind, object? Value) : SemanticTestValue(ScalarTypeId);
 public sealed record EnumTestValue(TypeId EnumTypeId, object Value) : SemanticTestValue(EnumTypeId);
-public sealed record StrongScalarTestValue(TypeId StrongTypeId, TypeId ValueTypeId, SemanticTestValue Value) : SemanticTestValue(StrongTypeId);
 public sealed record ObjectTestValue(TypeId ObjectTypeId, IReadOnlyDictionary<PropertyId, SemanticTestValue> Properties) : SemanticTestValue(ObjectTypeId);
 public sealed record ArrayTestValue(TypeId ArrayTypeId, IReadOnlyList<SemanticTestValue> Items) : SemanticTestValue(ArrayTypeId);
 public sealed record DictionaryTestValue(TypeId DictionaryTypeId, IReadOnlyList<KeyValuePair<SemanticTestValue, SemanticTestValue>> Entries) : SemanticTestValue(DictionaryTypeId);
@@ -87,7 +86,6 @@ public static class SemanticTestDataGenerator
             return type switch
             {
                 ScalarTypeDefinition scalar => GenerateScalar(scalar, useConstraints, path),
-                StrongScalarTypeDefinition strong => GenerateStrong(strong, useConstraints, path, next, depth),
                 EnumTypeDefinition @enum => GenerateEnum(@enum, path),
                 ObjectTypeDefinition obj => GenerateObject(obj, useConstraints, path, next, depth),
                 ArrayTypeDefinition array => GenerateArray(array, useConstraints, path, next, depth),
@@ -104,12 +102,6 @@ public static class SemanticTestDataGenerator
         private SemanticTestValue? GenerateReference(ReferenceTypeDefinition reference, ConstraintSet constraints, string path, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors)
         {
             return Generate(reference.Target.Id, constraints, path, allowsNull, optional, depth + 1, ancestors);
-        }
-
-        private StrongScalarTestValue? GenerateStrong(StrongScalarTypeDefinition strong, ConstraintSet constraints, string path, HashSet<TypeId> ancestors, int depth)
-        {
-            SemanticTestValue? value = Generate(strong.ValueType.Id, constraints, path, false, false, depth + 1, ancestors);
-            return value is null ? null : new StrongScalarTestValue(strong.Id, strong.ValueType.Id, value);
         }
 
         private SemanticTestValue? GenerateEnum(EnumTypeDefinition @enum, string path)

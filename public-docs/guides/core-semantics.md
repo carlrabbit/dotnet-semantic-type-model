@@ -42,7 +42,6 @@ Common semantic concepts include:
 | Key | Identity member/group |
 | DisplayIdentity | Ordered human-recognition property group; does not define keys, formatting, or UI behavior |
 | AccessPath | Named ordered lookup/narrowing property group; does not define keys, indexes, operators, or priorities |
-| Strong Scalar | Explicit nominal wrapper with one underlying scalar representation |
 | SemanticMutability | Optional lifecycle mutability intent: `Mutable` or `Immutable` |
 | Required / Nullable | Presence and nullability semantics |
 | Constraint | Validation/shape constraint |
@@ -74,19 +73,6 @@ remains an independently supported conditional semantic constraint.
 semantics. Neither one generates an EF index, API query parameter, UI/list/form behavior, Power BI behavior,
 relationship behavior, or other target-specific runtime feature. JSON Schema may preserve them under `x-stm`,
 but does not turn them into query or UI contracts.
-
-### Strong Scalar
-
-Opt in explicitly with `[SemanticStrongScalar]` on a readonly struct or readonly record struct exposing one
-supported scalar `Value` and a matching public constructor:
-
-```csharp
-[SemanticStrongScalar]
-public readonly record struct SpecificationVersionId(Guid Value);
-```
-
-The canonical model and supported projections treat it as the underlying scalar, not as an object with a
-`Value` property. It does not imply Identifier, Key, Entity, ownership, or automatic one-property inference.
 
 ## Lifecycle mutability
 
@@ -135,7 +121,6 @@ JSON Schema preserves these values beneath `x-stm.ui` when semantic annotations 
 | `RequiredWhen` typed-literal diagnostic | Source member/value cannot be normalized safely | Use a supported scalar/enum source and a valid typed value. |
 | `STM5049` | Display Identity order is negative or ambiguous | Use non-negative, unique orders; the invalid group is omitted. |
 | `STM5050` | Access Path name/order/membership is invalid or ambiguous | Use a valid name and unique non-negative orders for each path. |
-| `STM5051` | Strong Scalar declaration is invalid | Use a non-generic readonly struct/record struct with exactly one supported scalar `Value` and a matching constructor. |
 | Target ignores a semantic concept | Target cannot represent/enforce it directly | Review target guide/capability matrix and diagnostics. |
 
 ## Reference

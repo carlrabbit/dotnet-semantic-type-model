@@ -19,7 +19,6 @@ public static class SemanticTypeModelJsonSerializerOptionsExtensions
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(model);
 
-        AddStrongScalarConverters(options, model);
         IJsonTypeInfoResolver baseResolver = options.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
         options.TypeInfoResolver = baseResolver.WithSemanticTypeModelJson(model);
         return options;
@@ -37,29 +36,9 @@ public static class SemanticTypeModelJsonSerializerOptionsExtensions
         ArgumentNullException.ThrowIfNull(model);
 
         SystemTextJsonSemanticModel stjModel = model.DeriveSystemTextJsonModel(configure).Model;
-        AddStrongScalarConverters(options, stjModel);
         IJsonTypeInfoResolver baseResolver = options.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
         options.TypeInfoResolver = baseResolver.WithSemanticTypeModelJson(stjModel);
         return options;
-    }
-
-    private static void AddStrongScalarConverters(JsonSerializerOptions options, SystemTextJsonSemanticModel model)
-    {
-        var mappings = new List<(Type Wrapper, Type Value)>();
-        foreach (SystemTextJsonStrongScalarDefinition strongScalar in model.StrongScalars)
-        {
-            Type? wrapper = StrongScalarJsonConverterFactory.Resolve(strongScalar.Id.Value);
-            Type? value = StrongScalarJsonConverterFactory.Resolve(strongScalar.ValueType.Id.Value);
-            if (wrapper is not null && value is not null)
-            {
-                mappings.Add((wrapper, value));
-            }
-        }
-
-        if (mappings.Count > 0)
-        {
-            options.Converters.Insert(0, new StrongScalarJsonConverterFactory(mappings));
-        }
     }
 
 }

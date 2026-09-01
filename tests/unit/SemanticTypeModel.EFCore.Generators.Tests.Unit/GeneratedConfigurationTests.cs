@@ -22,7 +22,7 @@ public sealed class GeneratedConfigurationTests
             public class LegacyBase { public string LegacyCode { get; set; } = ""; }
             public class Specification : LegacyBase
             {
-                public StrongId Id { get; set; }
+                public System.Guid Id { get; set; }
                 public Mode Mode { get; set; }
                 public Details Details { get; set; } = new();
                 public Details? OptionalDetails { get; set; }
@@ -36,7 +36,6 @@ public sealed class GeneratedConfigurationTests
                 public System.ReadOnlyMemory<byte> Memory { get; set; }
                 public System.ReadOnlyMemory<byte>? OptionalMemory { get; set; }
             }
-            public readonly record struct StrongId(System.Guid Value);
             public sealed class Details { public string Name { get; set; } = ""; }
             public enum Mode { One, Two }
             internal partial class Domain_SpecificationConfiguration
@@ -48,13 +47,13 @@ public sealed class GeneratedConfigurationTests
         object manifest = Manifest("FinanceSemanticTypeModel",
         [
             Type("System.String", "String", "Scalar"), Type("System.Guid", "Guid", "Scalar"), Type("System.Uri", "Uri", "Scalar"),
-            Type("Domain.StrongId", "StrongId", "Object"), Type("Domain.Mode", "Mode", "Enum"),
+            Type("System.Guid", "Guid", "Scalar"), Type("Domain.Mode", "Mode", "Enum"),
             Type("Domain.Details", "Details", "Object", "ValueObject"), Type("System.Byte[]", "Bytes", "Array"),
             Type("System.Collections.Generic.IReadOnlyList`1[Domain.Details]", "DetailsArray", "Array", itemType: "Domain.Details"),
             Type("System.ReadOnlyMemory`1[System.Byte]", "Memory", "Object"),
             Type("Domain.Specification", "Specification", "Object", "Entity", properties:
             [
-                Property("Id", "Domain.StrongId", key: true), Property("Mode", "Domain.Mode"),
+                Property("Id", "System.Guid", key: true), Property("Mode", "Domain.Mode"),
                 Property("Details", "Domain.Details", ownership: "Object"),
                 Property("OptionalDetails", "Domain.Details", ownership: "Object", nullable: true),
                 Property("OptionalDetailHistory", "System.Collections.Generic.IReadOnlyList`1[Domain.Details]", ownership: "Collection", nullable: true),
@@ -63,7 +62,7 @@ public sealed class GeneratedConfigurationTests
             ]),
             Type("Domain.ImportSpecification", "ImportSpecification", "Object", "Entity", "Domain.Specification",
             [
-                Property("Id", "Domain.StrongId", key: true, declaring: "Domain.Specification"),
+                Property("Id", "System.Guid", key: true, declaring: "Domain.Specification"),
                 Property("Payload", "System.Byte[]"), Property("Memory", "System.ReadOnlyMemory`1[System.Byte]"),
                 Property("OptionalMemory", "System.ReadOnlyMemory`1[System.Byte]", nullable: true),
             ]),
@@ -86,7 +85,6 @@ public sealed class GeneratedConfigurationTests
         _ = await Assert.That(combined).Contains("Json<global::System.Collections.Generic.IReadOnlyList<global::Domain.Details>?>()");
         _ = await Assert.That(combined).Contains("SemanticEfValueConverters.Uri()");
         _ = await Assert.That(combined).Contains("SemanticEfValueConverters.NullableUri()");
-        _ = await Assert.That(combined).Contains("new global::Domain.StrongId(value)");
         _ = await Assert.That(combined).Contains("value.ToArray()");
         _ = await Assert.That(combined).Contains("value.HasValue ? value.Value.ToArray() : null");
         _ = await Assert.That(combined).Contains("IsRequired(true)");
@@ -199,7 +197,7 @@ public sealed class GeneratedConfigurationTests
         return [.. result.Results.SelectMany(run => run.GeneratedSources).OrderBy(source => source.HintName, StringComparer.Ordinal).Select(source => source.SourceText.ToString())];
     }
 
-    private static object Manifest(string name, object[] types, int version = 2, string? semanticTypeModelVersion = null)
+    private static object Manifest(string name, object[] types, int version = 3, string? semanticTypeModelVersion = null)
     {
         return new { Version = version, SemanticTypeModelVersion = semanticTypeModelVersion ?? SuiteVersion(), ModelName = name, Types = types };
     }
@@ -218,7 +216,7 @@ public sealed class GeneratedConfigurationTests
 
     private static object Type(string id, string name, string kind, string? role = null, string? baseClr = null, object[]? properties = null, string? itemType = null)
     {
-        return new { Id = id, Name = name, ClrName = id, BaseClrName = baseClr, Kind = kind, Role = role, ItemTypeId = itemType, ValueTypeId = (string?)null, Properties = properties ?? [] };
+        return new { Id = id, Name = name, ClrName = id, BaseClrName = baseClr, Kind = kind, Role = role, ItemTypeId = itemType, Properties = properties ?? [] };
     }
 
     private static object Property(string name, string type, bool key = false, string? declaring = null, string? ownership = null, bool nullable = false)

@@ -25,7 +25,7 @@ The default seed is `0`. `Simple`, `Moderate`, and `Extreme` target string/binar
 collection/dictionary sizes of 1/8/100, clamped by modeled constraints and fixed safety ceilings. Profiles do
 not change numeric magnitude, optional-property probability, enum frequency, or business realism.
 
-Supported generation includes canonical scalars, predefined formats, enums, Strong Scalars, objects and
+Supported generation includes canonical scalars, predefined formats, enums, objects and
 composition, arrays, dictionaries, references, `Any`, nullability, and supported constraints. Generated
 values are deterministic for the same model, root, profile, and seed.
 

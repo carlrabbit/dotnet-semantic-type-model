@@ -6,8 +6,8 @@ outside this readiness milestone.
 - Ordinary `JsonSerializerOptions` remains the primary complete System.Text.Json runtime path. Modeled
   semantic Entity inheritance receives automatic `$type` polymorphism when the application has not supplied
   an explicit System.Text.Json contract; an explicit application contract wins.
-- Strong Scalars and multiple independently generated SemanticTypeModel models compose through runtime
-  options. Minimal API applications configure the global JSON path with `ConfigureHttpJsonOptions`.
+- Multiple independently generated SemanticTypeModel models compose through runtime options. Minimal API
+  applications configure the global JSON path with `ConfigureHttpJsonOptions`.
 - Automatic polymorphic/discriminator output remains outside the JSON Schema/System.Text.Json fidelity
   baseline.
 - Consolidated positive cross-package tests now use independent generated Model A and Model B fixtures,

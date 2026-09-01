@@ -21,7 +21,7 @@ Model A is dimension-complete, not combinatorially exhaustive.
 
 It owns representative valid semantic authoring plus explicit matrix carriers for dimensions that must be tested systematically across targets.
 
-At minimum, actual modeled property uses must cover every currently supported Strong Scalar backing kind:
+At minimum, actual modeled property uses must cover the supported ordinary scalar kinds:
 
 ```text
 Boolean
@@ -38,7 +38,7 @@ Guid
 Binary
 ```
 
-The ordinary scalar matrix additionally covers canonical scalar kinds that cannot back Strong Scalars, including `Json`; `Unknown` is exercised through targeted synthetic projection tests because it is not a normal code-first CLR authoring result.
+The ordinary scalar matrix additionally covers `Json`; `Unknown` is exercised through targeted synthetic projection tests because it is not a normal code-first CLR authoring result.
 
 A type declaration with no modeled property use does not count as matrix coverage.
 
@@ -102,7 +102,7 @@ Model B is smaller and independently generated.
 
 Its purpose is model independence/composition, not additional semantic breadth.
 
-It should deliberately overlap simple CLR names with Model A where useful and retain its own Entity hierarchy, Guid Strong Scalar, owned value shape, enum/nullable member, and independent generated provider/manifest.
+It should deliberately overlap simple CLR names with Model A where useful and retain its own Entity hierarchy, owned value shape, enum/nullable member, and independent generated provider/manifest.
 
 Do not duplicate the full Model A matrix in Model B.
 
@@ -129,22 +129,6 @@ Matrix cases must be deterministic.
 Acceptable mechanisms include explicit projection-neutral fixture inventory metadata/helpers, reflection over dedicated matrix carrier properties, or deterministic generated-model inspection scoped to dedicated matrix carrier types.
 
 Do not infer matrix cases from arbitrary naming conventions such as `*Id`.
-
-## Strong Scalar Parity Rule
-
-A Strong Scalar has nominal identity but uses the target representation of its underlying scalar.
-
-For every target that supports Strong Scalars:
-
-```text
-representation(StrongScalar<T>)
-==
-representation(T)
-+
-nominal Strong Scalar identity where the target can preserve it
-```
-
-A Strong Scalar must not silently make an otherwise unsupported underlying CLR scalar representation supported, nor may it change the target classification simply because the wrapper is nominal.
 
 ## Positive vs Synthetic Tests
 

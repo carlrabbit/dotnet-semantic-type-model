@@ -34,7 +34,6 @@ Diagnostic message text is not an API contract. Prefer IDs/categories and docume
 | `STM5026`-`STM5036` | Conditional/typed literal metadata is invalid | Fix the source property, literal value/type, nullability, or enum member. |
 | `STM5049` | Display Identity order is negative or ambiguous | Use non-negative, unique orders; the invalid group is omitted. |
 | `STM5050` | Access Path name/order/membership is invalid or ambiguous | Use a valid name and unique non-negative orders for each path. |
-| `STM5051` | Strong Scalar declaration is invalid | Use a non-generic readonly struct/record struct with one supported scalar `Value` and a matching constructor. |
 
 ## System.Text.Json diagnostics
 

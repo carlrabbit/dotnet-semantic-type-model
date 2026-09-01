@@ -9,7 +9,7 @@ var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 options.AddSemanticTypeModelJson(AppSemanticTypeModel.Create());
 ```
 
-Supported Strong Scalars use their underlying JSON scalar representation. Semantic Entity inheritance receives
+Semantic Entity inheritance receives
 automatic `$type` polymorphism using the canonical derived type name.
 
 Native System.Text.Json lexical behavior is the baseline for scalar fidelity: temporal values, GUIDs, URIs,

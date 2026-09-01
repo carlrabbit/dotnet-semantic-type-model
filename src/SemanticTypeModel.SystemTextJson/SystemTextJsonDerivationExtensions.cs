@@ -27,15 +27,9 @@ public static class SystemTextJsonDerivationExtensions
         SemanticModelTransformationResult transformed = pipeline.Run(model, options.PipelineOptions, cancellationToken);
         List<SchemaDiagnostic> diagnostics = [.. transformed.Diagnostics];
         Dictionary<TypeId, SystemTextJsonTypeDefinition> types = [];
-        List<SystemTextJsonStrongScalarDefinition> strongScalars = [];
 
         foreach (TypeDefinition type in transformed.Model.Types.OrderBy(static type => type.Id.Value, StringComparer.Ordinal))
         {
-            if (type is StrongScalarTypeDefinition strongScalar)
-            {
-                strongScalars.Add(new SystemTextJsonStrongScalarDefinition { Id = strongScalar.Id, ValueType = strongScalar.ValueType });
-            }
-
             if (type is not ObjectTypeDefinition obj)
             {
                 continue;
@@ -108,7 +102,6 @@ public static class SystemTextJsonDerivationExtensions
             TypesById = types,
             Diagnostics = diagnostics,
             PropertyNameSource = options.PropertyNameSource,
-            StrongScalars = strongScalars,
             Trace = transformed.Trace,
         };
 

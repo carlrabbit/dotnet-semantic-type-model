@@ -60,7 +60,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         // it from a referenced assembly's metadata without loading or executing that assembly.
         var manifest = new SemanticManifest
         {
-            Version = 2,
+            Version = 3,
             SemanticTypeModelVersion = SuiteVersion.Current,
             ModelName = SanitizeIdentifier(extraction.Options.ProviderName),
             Types = [.. extraction.TypesById.Values.OrderBy(static type => type.Id, StringComparer.Ordinal).Select(ToManifestType)],
@@ -84,12 +84,10 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
                 DotNetArrayTypeDescriptor => "Array",
                 DotNetDictionaryTypeDescriptor => "Dictionary",
                 DotNetScalarTypeDescriptor => "Scalar",
-                DotNetStrongScalarTypeDescriptor => "StrongScalar",
                 _ => "Unknown",
             },
             Role = Annotation(descriptor.Annotations, "schema.role"),
             ItemTypeId = (descriptor as DotNetArrayTypeDescriptor)?.ItemTypeId,
-            ValueTypeId = (descriptor as DotNetStrongScalarTypeDescriptor)?.ValueTypeId,
             Properties = descriptor is DotNetObjectTypeDescriptor objectType
                 ? [.. objectType.Properties.OrderBy(static property => property.Name, StringComparer.Ordinal).Select(static property => new ManifestProperty
                 {
@@ -142,7 +140,6 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         public string Kind { get; set; } = string.Empty;
         public string? Role { get; set; }
         public string? ItemTypeId { get; set; }
-        public string? ValueTypeId { get; set; }
         public IReadOnlyList<ManifestProperty> Properties { get; set; } = [];
     }
 
@@ -399,9 +396,6 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             case DotNetScalarTypeDescriptor scalar:
                 AppendScalarType(source, scalar, indentationLevel);
                 break;
-            case DotNetStrongScalarTypeDescriptor strongScalar:
-                AppendStrongScalarType(source, strongScalar, indentationLevel);
-                break;
             case DotNetEnumTypeDescriptor @enum:
                 AppendEnumType(source, @enum, indentationLevel);
                 break;
@@ -566,16 +560,6 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         AppendCommonTypeMembers(source, descriptor.Id, descriptor.Name, "Scalar", false, descriptor.Annotations, indentationLevel + 1);
         source.AppendLine($"{indent}    ScalarKind = global::SemanticTypeModel.Abstractions.Model.ScalarKind.{kind},");
         source.AppendLine($"{indent}    Format = {Literal(descriptor.Format)},");
-        source.AppendLine($"{indent}}}");
-    }
-
-    private static void AppendStrongScalarType(StringBuilder source, DotNetStrongScalarTypeDescriptor descriptor, int indentationLevel)
-    {
-        string indent = new(' ', indentationLevel * 4);
-        source.AppendLine($"{indent}new global::SemanticTypeModel.Abstractions.Model.StrongScalarTypeDefinition");
-        source.AppendLine($"{indent}{{");
-        AppendCommonTypeMembers(source, descriptor.Id, descriptor.Name, "StrongScalar", false, descriptor.Annotations, indentationLevel + 1);
-        source.AppendLine($"{indent}    ValueType = new global::SemanticTypeModel.Abstractions.Model.TypeRef(new global::SemanticTypeModel.Abstractions.Model.TypeId(\"{EscapeString(descriptor.ValueTypeId)}\")),");
         source.AppendLine($"{indent}}}");
     }
 

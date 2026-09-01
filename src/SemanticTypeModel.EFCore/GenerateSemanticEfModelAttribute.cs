@@ -30,38 +30,38 @@ public static class SemanticEfValueConverters
     }
 
     /// <summary>Creates the deterministic JSON converter used for an owned ValueKind column.</summary>
-    public static ValueConverter<T, string> Json<T>(params Type[] strongScalarTypes)
+    public static ValueConverter<T, string> Json<T>(params Type[] wrapperTypes)
     {
-        JsonSerializerOptions options = CreateJsonOptions(strongScalarTypes);
+        JsonSerializerOptions options = CreateJsonOptions(wrapperTypes);
         return new(
         value => JsonSerializer.Serialize(value, options),
         json => JsonSerializer.Deserialize<T>(json, options)!);
     }
 
     /// <summary>Creates the structural JSON comparer used for an owned ValueKind column.</summary>
-    public static ValueComparer<T> JsonComparer<T>(params Type[] strongScalarTypes)
+    public static ValueComparer<T> JsonComparer<T>(params Type[] wrapperTypes)
     {
-        JsonSerializerOptions options = CreateJsonOptions(strongScalarTypes);
+        JsonSerializerOptions options = CreateJsonOptions(wrapperTypes);
         return new(
         (left, right) => JsonSerializer.Serialize(left, options) == JsonSerializer.Serialize(right, options),
         value => JsonSerializer.Serialize(value, options).GetHashCode(StringComparison.Ordinal),
         value => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value, options), options)!);
     }
 
-    private static JsonSerializerOptions CreateJsonOptions(IEnumerable<Type> strongScalarTypes)
+    private static JsonSerializerOptions CreateJsonOptions(IEnumerable<Type> wrapperTypes)
     {
         var options = new JsonSerializerOptions(JsonSerializerDefaults.General);
-        Type[] wrappers = [.. strongScalarTypes.Distinct()];
+        Type[] wrappers = [.. wrapperTypes.Distinct()];
         if (wrappers.Length > 0)
         {
-            options.Converters.Insert(0, new StrongScalarJsonConverterFactory(wrappers));
+            options.Converters.Insert(0, new SingleValueWrapperJsonConverterFactory(wrappers));
         }
 
         return options;
     }
 }
 
-internal sealed class StrongScalarJsonConverterFactory(IEnumerable<Type> wrapperTypes) : JsonConverterFactory
+internal sealed class SingleValueWrapperJsonConverterFactory(IEnumerable<Type> wrapperTypes) : JsonConverterFactory
 {
     private readonly HashSet<Type> _wrapperTypes = [.. wrapperTypes];
 
@@ -73,16 +73,16 @@ internal sealed class StrongScalarJsonConverterFactory(IEnumerable<Type> wrapper
     public override JsonConverter CreateConverter(Type type, JsonSerializerOptions options)
     {
         PropertyInfo value = type.GetProperty("Value", BindingFlags.Instance | BindingFlags.Public)
-            ?? throw new InvalidOperationException($"Strong Scalar '{type}' does not expose a public Value property.");
-        return (JsonConverter)Activator.CreateInstance(typeof(StrongScalarJsonConverter<,>).MakeGenericType(type, value.PropertyType))!;
+            ?? throw new InvalidOperationException($"Wrapper '{type}' does not expose a public Value property.");
+        return (JsonConverter)Activator.CreateInstance(typeof(SingleValueWrapperJsonConverter<,>).MakeGenericType(type, value.PropertyType))!;
     }
 }
 
-internal sealed class StrongScalarJsonConverter<TWrapper, TValue> : JsonConverter<TWrapper>
+internal sealed class SingleValueWrapperJsonConverter<TWrapper, TValue> : JsonConverter<TWrapper>
     where TWrapper : struct
 {
     private static readonly ConstructorInfo Constructor = typeof(TWrapper).GetConstructor([typeof(TValue)])
-        ?? throw new InvalidOperationException($"Strong Scalar '{typeof(TWrapper)}' has no matching constructor.");
+        ?? throw new InvalidOperationException($"Wrapper '{typeof(TWrapper)}' has no matching constructor.");
 
     public override TWrapper Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
