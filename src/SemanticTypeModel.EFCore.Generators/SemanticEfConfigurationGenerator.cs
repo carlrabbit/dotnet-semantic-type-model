@@ -332,11 +332,17 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
                 {
                     string valueType = valueProperty!.Type.ToDisplayString(DeclaredTypeDisplayFormat);
                     string strongType = actual.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                    source.Append("        ").Append(configuredProperty)
-                        .Append(".HasConversion(value => value.HasValue ? value.Value.Value : (")
-                        .Append(valueType).Append("?)null, value => value.HasValue ? new ")
-                        .Append(strongType).Append("(value.Value) : (")
-                        .Append(strongType).AppendLine("?)null);");
+                    bool referenceValue = valueProperty.Type.IsReferenceType;
+                    source.Append("        ").Append(configuredProperty).Append(".HasConversion(value => value.HasValue ? value.Value.Value : (")
+                        .Append(valueType).Append("?)null, ");
+                    if (referenceValue)
+                    {
+                        source.Append("value => value != null ? new ").Append(strongType).Append("(value) : (").Append(strongType).AppendLine("?)null);");
+                    }
+                    else
+                    {
+                        source.Append("value => value.HasValue ? new ").Append(strongType).Append("(value.Value) : (").Append(strongType).AppendLine("?)null);");
+                    }
                     error = null;
                     return true;
                 }

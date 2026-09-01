@@ -2,133 +2,104 @@
 
 ## Purpose
 
-Define the repository-wide positive integration fixture architecture for SemanticTypeModel.
+Define the repository-wide positive integration fixture and projection-matrix architecture.
 
-The repository validates a code-first semantic-model system. Positive cross-package integration tests should therefore exercise real annotated CLR types, the real source generator, generated providers/manifests, and the target package boundary rather than reconstructing equivalent canonical models by hand.
+Positive boundary tests should exercise real annotated CLR types, the real source generator, generated providers/manifests, and the target package boundary rather than manually reconstructing equivalent canonical models.
 
 ## Canonical Fixture Assemblies
-
-The repository maintains two independent projection-neutral model assemblies:
 
 ```text
 tests/fixtures/SemanticTypeModel.TestModels.ModelA
 tests/fixtures/SemanticTypeModel.TestModels.ModelB
 ```
 
-Both:
+Both are projection-neutral generated model assemblies and do not depend on target projection packages.
 
-- contain directly annotated CLR source types;
-- run the real `SemanticTypeModel.Generators` source generator;
-- expose independently generated semantic providers and manifests;
-- do not depend on EF Core, JSON Schema, Power BI, System.Text.Json, ASP.NET Core, or another target projection package;
-- do not reference each other;
-- are ordinary buildable .NET projects rather than source strings embedded in target tests.
-
-## Model A — Coverage Model
+## Model A — Coverage and Matrix Model
 
 Model A is dimension-complete, not combinatorially exhaustive.
 
-It should provide representative valid CLR authoring for the supported semantic dimensions used across the package suite, including:
+It owns representative valid semantic authoring plus explicit matrix carriers for dimensions that must be tested systematically across targets.
 
-- Entity and ValueObject roles;
-- semantic inheritance;
-- required/optional and nullable/non-nullable members;
-- supported scalar kinds;
-- supported Strong Scalar backing kinds, including Guid;
-- enum and nullable enum;
-- arrays/collections and dictionaries;
-- owned object and owned collection shapes, including nullable/nested variants where supported;
-- extension data;
-- representative string, numeric, collection, format, and conditional-requiredness constraints;
-- keys, Display Identity, and Access Paths;
-- lifecycle mutability;
-- user and technical descriptions;
-- representative `ui.*` metadata;
-- current envelope/evolution/lifecycle semantics;
-- target-neutral CLR shapes needed by multiple projections.
+At minimum, actual modeled property uses must cover every currently supported scalar and Strong Scalar backing kind:
 
-When a new public semantic primitive or supported scalar/Strong Scalar backing kind is added, Model A should normally gain one representative valid authoring case.
+```text
+Boolean
+String
+Integer
+Number
+Decimal
+Date
+Time
+DateTime
+DateTimeOffset
+Duration
+Guid
+Binary
+```
 
-Do not create a Cartesian product of every semantic combination.
+A type declaration with no modeled property use does not count as matrix coverage.
 
-## Model B — Independent Composition Model
+Where nullability changes target behavior, include deliberate required/optional cases without creating a Cartesian product.
+
+Model A also continues to cover representative inheritance, enums, ownership, extension data, constraints, keys, Display Identity, Access Paths, mutability, descriptions, `ui.*`, envelope/evolution/lifecycle semantics, and other projection-neutral dimensions.
+
+## Model B — Composition and Isolation Model
 
 Model B is smaller and independently generated.
 
-It must contain enough overlapping concepts to prove that packages do not accidentally assume one model, one manifest, one namespace, or globally unique simple CLR names.
+Its purpose is model independence/composition, not additional semantic breadth.
 
-Where practical, use simple type names that also exist in Model A but place them in Model B's independent CLR namespace/model identity.
+It should deliberately overlap simple CLR names with Model A where useful and retain its own Entity hierarchy, Guid Strong Scalar, owned value shape, enum/nullable member, and independent generated provider/manifest.
 
-Model B should contain at least:
+Do not duplicate the full Model A matrix in Model B.
 
-- its own Entity hierarchy;
-- its own Guid-backed Strong Scalar;
-- an owned value shape;
-- enum and nullable member;
-- enough independently generated metadata to participate in multi-model package tests.
+## Matrix Rule
 
-## Positive Boundary Rule
+A shared fixture is not a test matrix merely because it contains many types.
 
-For a positive test whose purpose crosses an authoring/generator/provider/manifest/target boundary, prefer Model A or Model B rather than a hand-built `TypeSchemaModel`.
+For each target:
 
-Examples include:
+1. identify applicable Model A matrix dimensions;
+2. define target-specific expected behavior for all applicable cases;
+3. exercise those cases through the real generated provider/model boundary;
+4. keep target expectations local to that target test project;
+5. do not force irrelevant dimensions onto a target.
 
-```text
-annotated CLR
--> source generator
--> generated provider/manifest
--> JSON Schema / EF Core / Power BI / System.Text.Json / DI / package consumer
-```
+The fixture owns inputs. The target owns expected outputs/behavior.
 
-The test should use the real boundary it claims to validate.
+Do not create one universal cross-package expected-output table.
 
-## Synthetic Unit-Test Rule
+## Matrix Discoverability
 
-Hand-built canonical models remain appropriate when the purpose is specifically:
+Matrix cases must be deterministic.
 
-- canonical validation of an invalid state;
-- transformation behavior isolated from .NET authoring;
-- a pathological graph that valid CLR authoring cannot produce;
-- a target-domain unit test whose inputs intentionally bypass generator/provider boundaries;
-- very small unit input where authoring/generation is not part of the claim.
+Acceptable mechanisms include explicit projection-neutral fixture inventory metadata/helpers, reflection over dedicated matrix carrier properties, or deterministic generated-model inspection scoped to dedicated matrix carrier types.
 
-Do not force every unit test through shared fixtures.
+Do not infer matrix cases from arbitrary naming conventions such as `*Id`.
 
-The rule is to remove duplicate positive integration fixture systems, not to abolish synthetic unit tests.
+## Positive vs Synthetic Tests
+
+Use Model A/B for positive boundary claims that include code-first authoring/generation/provider transport.
+
+Hand-built canonical models remain valid for invalid states, isolated transformations, pathological graphs, small direct unit behavior, and target-domain tests intentionally bypassing authoring/generation.
+
+Inline Roslyn source remains valid for extraction/generator diagnostics.
 
 ## Multi-Model Rule
 
 Multiple independently generated models are a first-class compatibility requirement.
 
-Where a target naturally composes models into shared runtime/application state, tests must include both Model A and Model B together.
+Where targets compose shared state, test Model A and Model B together. Where targets project one model at a time, project both in one process and prove no global-state leakage.
 
-Examples:
-
-```text
-System.Text.Json
-  -> one JsonSerializerOptions
-  -> Model A + Model B
-
-EF Core
-  -> one application DbContext/model composition
-  -> generated configuration from Model A + Model B
-  -> unrelated manual application entity/configuration remains intact
-```
-
-Where the target naturally projects one model at a time, derive/project both models in the same test process and verify model-local identity and absence of global-state leakage.
+Composition/isolation tests should assert complete relevant state when practical, not merely containment of selected expected items.
 
 Cross-model inheritance is not implied.
 
 ## Fixture Ownership
 
-Target tests may add target-specific local test infrastructure, expected output, database contexts, assertion helpers, or invalid/synthetic models.
+Target-specific contexts, expected output, serializer options, DI containers, assertion helpers, and database setup stay in target test projects.
 
-They should not create another durable positive CLR semantic-model fixture assembly when Model A or Model B can represent the scenario.
+Do not create another durable positive CLR fixture assembly when Model A/B can represent the scenario.
 
-A dedicated fixture project remains justified only when its separate assembly boundary is itself the behavior under test and cannot be represented by the two canonical model assemblies. Such an exception must be explicit in the affected test documentation.
-
-## Cleanup
-
-After a positive scenario is represented by Model A/Model B and the affected target tests pass, remove redundant fixture types, hand-built positive canonical builders, and obsolete dedicated fixture projects.
-
-Git is the history; do not keep parallel fixture systems solely for historical reference.
+Git retains history; do not keep parallel obsolete fixture systems.

@@ -22,7 +22,28 @@ internal sealed class StrongScalarJsonConverterFactory(IEnumerable<(Type Wrapper
     internal static Type? Resolve(string id)
     {
         var name = id.StartsWith("global::", StringComparison.Ordinal) ? id[8..] : id;
-        return Type.GetType(name) ?? AppDomain.CurrentDomain.GetAssemblies().Select(assembly => assembly.GetType(name, false)).FirstOrDefault(static type => type is not null);
+        return name switch
+        {
+            "bool" => typeof(bool),
+            "byte" => typeof(byte),
+            "sbyte" => typeof(sbyte),
+            "short" => typeof(short),
+            "ushort" => typeof(ushort),
+            "int" => typeof(int),
+            "uint" => typeof(uint),
+            "long" => typeof(long),
+            "ulong" => typeof(ulong),
+            "nint" => typeof(nint),
+            "nuint" => typeof(nuint),
+            "float" => typeof(float),
+            "double" => typeof(double),
+            "decimal" => typeof(decimal),
+            "char" => typeof(char),
+            "string" => typeof(string),
+            "object" => typeof(object),
+            "byte[]" => typeof(byte[]),
+            _ => Type.GetType(name) ?? AppDomain.CurrentDomain.GetAssemblies().Select(assembly => assembly.GetType(name, false)).FirstOrDefault(static type => type is not null),
+        };
     }
 }
 

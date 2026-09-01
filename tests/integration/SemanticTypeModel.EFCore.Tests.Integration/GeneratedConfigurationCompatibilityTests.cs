@@ -100,8 +100,11 @@ public sealed class GeneratedConfigurationTests
             _ = await Assert.That(await context.ModelAExternal.CountAsync()).IsEqualTo(1);
             _ = await Assert.That(await context.ModelBExternal.CountAsync()).IsEqualTo(1);
             await AssertExactEntityTypes(context,
-                typeof(InventoryItem), typeof(InventoryDocument), typeof(SpecializedInventoryDocument), typeof(BillingRecord), typeof(SpecializedBillingRecord),
-                typeof(SpecificationState), typeof(ManualAudit), typeof(ModelAExternalEntity), typeof(ModelBExternalEntity));
+                typeof(ModelA.BaseEntity), typeof(ModelA.Intake.Specification), typeof(ModelA.Intake.ImportSpecification), typeof(ModelA.Intake.WorkflowSpecification),
+                typeof(InventoryItem), typeof(InventoryDocument), typeof(SpecializedInventoryDocument), typeof(ModelA.M0059.ImportJob),
+                typeof(ModelA.ProjectionMatrixEntity), typeof(ModelA.RunState.OrderFulfillmentRunSnapshot), typeof(ModelA.SpecialEntity), typeof(SpecificationState), typeof(ModelA.StorageMatrixEntity),
+                typeof(ModelB.BaseEntity), typeof(BillingRecord), typeof(ModelB.SpecialEntity), typeof(SpecializedBillingRecord),
+                typeof(ManualAudit), typeof(ModelAExternalEntity), typeof(ModelBExternalEntity));
             _ = await Assert.That(context.Model.FindEntityType(typeof(SpecializedBillingRecord))!.BaseType!.ClrType).IsEqualTo(typeof(BillingRecord));
             _ = await Assert.That(context.Model.FindEntityType(typeof(InventoryDetails))).IsNull();
             _ = await Assert.That(context.Model.FindEntityType(typeof(InventoryItemId))).IsNull();
@@ -286,12 +289,17 @@ public sealed class GeneratedConfigurationTests
         DbContextOptions<InventoryOnlyContext> inventoryOptions = new DbContextOptionsBuilder<InventoryOnlyContext>().UseSqlite("Data Source=:memory:").Options;
         await using (var inventory = new InventoryOnlyContext(inventoryOptions))
         {
-            await AssertExactEntityTypes(inventory, typeof(InventoryItem), typeof(InventoryDocument), typeof(SpecializedInventoryDocument), typeof(SpecificationState), typeof(ModelBExternalEntity));
+            await AssertExactEntityTypes(inventory,
+                typeof(ModelA.BaseEntity), typeof(ModelA.Intake.Specification), typeof(ModelA.Intake.ImportSpecification), typeof(ModelA.Intake.WorkflowSpecification),
+                typeof(InventoryItem), typeof(InventoryDocument), typeof(SpecializedInventoryDocument), typeof(ModelA.M0059.ImportJob),
+                typeof(ModelA.ProjectionMatrixEntity), typeof(ModelA.RunState.OrderFulfillmentRunSnapshot), typeof(ModelA.SpecialEntity), typeof(SpecificationState), typeof(ModelA.StorageMatrixEntity),
+                typeof(ModelBExternalEntity));
         }
 
         DbContextOptions<BillingOnlyContext> billingOptions = new DbContextOptionsBuilder<BillingOnlyContext>().UseSqlite("Data Source=:memory:").Options;
         await using var billing = new BillingOnlyContext(billingOptions);
-        await AssertExactEntityTypes(billing, typeof(BillingRecord), typeof(SpecializedBillingRecord), typeof(ModelAExternalEntity));
+        await AssertExactEntityTypes(billing,
+            typeof(ModelB.BaseEntity), typeof(BillingRecord), typeof(ModelB.SpecialEntity), typeof(SpecializedBillingRecord), typeof(ModelAExternalEntity));
     }
 
     [Test]
@@ -307,7 +315,15 @@ public sealed class GeneratedConfigurationTests
 
     private static async Task AssertExactEntityTypes(DbContext context, params Type[] expected)
     {
-        foreach (Type type in expected)
+        Type[] expectedTypes = [.. expected.Distinct().OrderBy(static type => type.FullName, StringComparer.Ordinal)];
+        Type[] actualTypes = [.. context.Model.GetEntityTypes()
+            .Where(static entity => !entity.IsOwned())
+            .Select(static entity => entity.ClrType)
+            .Distinct()
+            .OrderBy(static type => type.FullName, StringComparer.Ordinal)];
+
+        _ = await Assert.That(actualTypes.Length).IsEqualTo(expectedTypes.Length);
+        foreach (Type type in expectedTypes)
         {
             _ = await Assert.That(context.Model.FindEntityType(type)).IsNotNull();
         }

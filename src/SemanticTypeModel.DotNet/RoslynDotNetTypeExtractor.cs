@@ -588,7 +588,7 @@ public sealed class RoslynDotNetTypeExtractor
         if (value is not null)
         {
             (ITypeSymbol normalizedValue, bool allowsNull) = NormalizeNullability(value.Type, value.NullableAnnotation);
-            if (allowsNull || !TryExtractScalar((INamedTypeSymbol)normalizedValue, GetTypeId(normalizedValue), out DotNetTypeDescriptor? scalar) || scalar is not DotNetScalarTypeDescriptor candidate || candidate.ScalarKind == DotNetScalarKind.Json)
+            if (allowsNull || !TryExtractScalar(normalizedValue, GetTypeId(normalizedValue), out DotNetTypeDescriptor? scalar) || scalar is not DotNetScalarTypeDescriptor candidate || candidate.ScalarKind == DotNetScalarKind.Json)
             {
                 valid = false;
             }
@@ -1332,11 +1332,27 @@ public sealed class RoslynDotNetTypeExtractor
         };
     }
 
-    private bool TryExtractScalar(INamedTypeSymbol type, string id, out DotNetTypeDescriptor? descriptor)
+    private bool TryExtractScalar(ITypeSymbol type, string id, out DotNetTypeDescriptor? descriptor)
     {
         descriptor = null;
 
-        DotNetScalarKind? scalarKind = type.SpecialType switch
+        if (type is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Byte })
+        {
+            descriptor = new DotNetScalarTypeDescriptor
+            {
+                Id = id,
+                Name = "ByteArray",
+                ScalarKind = DotNetScalarKind.Binary,
+            };
+            return true;
+        }
+
+        if (type is not INamedTypeSymbol namedType)
+        {
+            return false;
+        }
+
+        DotNetScalarKind? scalarKind = namedType.SpecialType switch
         {
             SpecialType.System_Boolean => DotNetScalarKind.Boolean,
             SpecialType.System_String => DotNetScalarKind.String,
@@ -1356,9 +1372,9 @@ public sealed class RoslynDotNetTypeExtractor
 
         if (scalarKind is null)
         {
-            scalarKind = IsSystemUri(type)
+            scalarKind = IsSystemUri(namedType)
                 ? DotNetScalarKind.String
-                : type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) switch
+                : namedType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) switch
                 {
                     "DateOnly" => DotNetScalarKind.Date,
                     "TimeOnly" => DotNetScalarKind.Time,
@@ -1379,9 +1395,9 @@ public sealed class RoslynDotNetTypeExtractor
         descriptor = new DotNetScalarTypeDescriptor
         {
             Id = id,
-            Name = type.Name,
+            Name = namedType.Name,
             ScalarKind = scalarKind.Value,
-            Format = IsSystemUri(type) ? "uri" : null,
+            Format = IsSystemUri(namedType) ? "uri" : null,
         };
         return true;
     }
