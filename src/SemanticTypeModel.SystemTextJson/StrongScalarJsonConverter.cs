@@ -33,8 +33,6 @@ internal sealed class StrongScalarJsonConverterFactory(IEnumerable<(Type Wrapper
             "uint" => typeof(uint),
             "long" => typeof(long),
             "ulong" => typeof(ulong),
-            "nint" => typeof(nint),
-            "nuint" => typeof(nuint),
             "float" => typeof(float),
             "double" => typeof(double),
             "decimal" => typeof(decimal),

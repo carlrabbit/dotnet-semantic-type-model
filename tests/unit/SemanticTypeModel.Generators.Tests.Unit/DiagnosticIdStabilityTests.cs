@@ -189,7 +189,7 @@ public sealed class DiagnosticIdStabilityTests
     }
 
     [Test]
-    public async Task Extractor_should_support_Uri_as_a_default_formatted_scalar_and_preserve_STM5025()
+    public async Task Extractor_should_support_Uri_as_a_default_reference_formatted_scalar_and_preserve_STM5025()
     {
         const string source = """
             using System;
@@ -213,8 +213,8 @@ public sealed class DiagnosticIdStabilityTests
         DotNetExtractionResult extraction = Extract(source);
         DotNetObjectTypeDescriptor record = extraction.TypesById.Values.OfType<DotNetObjectTypeDescriptor>().Single(static type => type.Name == "WebsiteRecord");
 
-        _ = await Assert.That(extraction.TypesById.Values.OfType<DotNetScalarTypeDescriptor>().Any(static type => type.Name == "Uri" && type.ScalarKind == DotNetScalarKind.String && type.Format == "uri")).IsTrue();
-        _ = await Assert.That(record.Properties.Single(static property => property.Name == "Website").Annotations["schema.format"]).IsEqualTo("uri");
+        _ = await Assert.That(extraction.TypesById.Values.OfType<DotNetScalarTypeDescriptor>().Any(static type => type.Name == "Uri" && type.ScalarKind == DotNetScalarKind.String && type.Format == "uri-reference")).IsTrue();
+        _ = await Assert.That(record.Properties.Single(static property => property.Name == "Website").Annotations["schema.format"]).IsEqualTo("uri-reference");
         _ = await Assert.That(record.Properties.Single(static property => property.Name == "OptionalWebsite").IsNullable).IsTrue();
         _ = await Assert.That(record.Properties.Single(static property => property.Name == "OptionalWebsite").TypeId).IsEqualTo("global::System.Uri");
         _ = await Assert.That(record.Properties.Single(static property => property.Name == "OptionalWebsite").Annotations["schema.format"]).IsEqualTo("uri");

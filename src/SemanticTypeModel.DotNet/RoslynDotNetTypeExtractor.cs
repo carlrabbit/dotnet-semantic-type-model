@@ -672,10 +672,9 @@ public sealed class RoslynDotNetTypeExtractor
             };
             if (IsSystemUri(memberType))
             {
-                // Uri is a string-compatible scalar whose semantic meaning is stable
-                // across the supported projections. An explicit compatible format
-                // attribute below is still allowed to override this convention.
-                memberAnnotations["schema.format"] = "uri";
+                // Uri can represent both absolute URIs and relative references.
+                // An explicit format attribute below may request the stronger URI constraint.
+                memberAnnotations["schema.format"] = "uri-reference";
             }
             ImmutableArray<AttributeData> memberAttributes = property.GetAttributes();
             string propertyName = GetPropertyName(property);
@@ -1356,6 +1355,7 @@ public sealed class RoslynDotNetTypeExtractor
         {
             SpecialType.System_Boolean => DotNetScalarKind.Boolean,
             SpecialType.System_String => DotNetScalarKind.String,
+            SpecialType.System_Char => DotNetScalarKind.String,
             SpecialType.System_Byte => DotNetScalarKind.Integer,
             SpecialType.System_SByte => DotNetScalarKind.Integer,
             SpecialType.System_Int16 => DotNetScalarKind.Integer,
@@ -1374,6 +1374,11 @@ public sealed class RoslynDotNetTypeExtractor
         {
             scalarKind = IsSystemUri(namedType)
                 ? DotNetScalarKind.String
+                : namedType.Name == "ReadOnlyMemory"
+                    && namedType.ContainingNamespace?.ToDisplayString() == "System"
+                    && namedType.TypeArguments.Length == 1
+                    && namedType.TypeArguments[0].SpecialType == SpecialType.System_Byte
+                    ? DotNetScalarKind.Binary
                 : namedType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) switch
                 {
                     "DateOnly" => DotNetScalarKind.Date,
@@ -1397,7 +1402,7 @@ public sealed class RoslynDotNetTypeExtractor
             Id = id,
             Name = namedType.Name,
             ScalarKind = scalarKind.Value,
-            Format = IsSystemUri(namedType) ? "uri" : null,
+            Format = IsSystemUri(namedType) ? "uri-reference" : null,
         };
         return true;
     }

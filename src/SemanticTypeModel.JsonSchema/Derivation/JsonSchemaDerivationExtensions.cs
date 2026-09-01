@@ -195,6 +195,7 @@ public static class JsonSchemaDerivationExtensions
                 IsNullable = property.Cardinality.AllowsNull,
                 Title = property.DisplayName ?? GetStringAnnotation(property.Annotations, "schema.title") ?? GetStringAnnotation(property.Annotations, "title"),
                 Description = property.UserDescription,
+                Format = GetStringAnnotation(property.Annotations, "schema.format"),
                 Constraints = MapConstraints(property.Constraints),
                 Annotations = annotations,
             };
@@ -231,14 +232,18 @@ public static class JsonSchemaDerivationExtensions
 
         private JsonSchemaScalarNode MapScalar(Model.ScalarTypeDefinition type)
         {
+            if (type.ScalarKind == Model.ScalarKind.Unknown)
+            {
+                AddDiagnostic("JSONSCHEMA_UNKNOWN_SCALAR_FALLBACK", "Unknown scalar kind is represented by an unconstrained schema and requires explicit semantic handling.", $"/types/{type.Id.Value}");
+            }
             var jsonType = type.ScalarKind switch
             {
                 Model.ScalarKind.Boolean => "boolean",
                 Model.ScalarKind.Integer => "integer",
                 Model.ScalarKind.Number => "number",
                 Model.ScalarKind.Decimal => "number",
-                Model.ScalarKind.Json => "object",
-                Model.ScalarKind.Unknown => "object",
+                Model.ScalarKind.Json => null,
+                Model.ScalarKind.Unknown => null,
                 Model.ScalarKind.String => "string",
                 Model.ScalarKind.Date => "string",
                 Model.ScalarKind.Time => "string",
@@ -253,11 +258,12 @@ public static class JsonSchemaDerivationExtensions
             var format = type.Format ?? type.ScalarKind switch
             {
                 Model.ScalarKind.Date => "date",
-                Model.ScalarKind.Time => "time",
-                Model.ScalarKind.DateTime or Model.ScalarKind.DateTimeOffset => "date-time",
-                Model.ScalarKind.Duration => "duration",
+                Model.ScalarKind.Time => null,
+                Model.ScalarKind.DateTime => null,
+                Model.ScalarKind.DateTimeOffset => "date-time",
+                Model.ScalarKind.Duration => null,
                 Model.ScalarKind.Guid => "uuid",
-                Model.ScalarKind.Binary => "binary",
+                Model.ScalarKind.Binary => null,
                 Model.ScalarKind.Boolean or Model.ScalarKind.String or Model.ScalarKind.Integer or Model.ScalarKind.Number or Model.ScalarKind.Decimal or Model.ScalarKind.Json or Model.ScalarKind.Unknown => null,
                 _ => null,
             };
@@ -269,6 +275,7 @@ public static class JsonSchemaDerivationExtensions
                 Description = type.UserDescription,
                 Type = jsonType,
                 Format = format,
+                ContentEncoding = type.ScalarKind == Model.ScalarKind.Binary ? "base64" : null,
                 IsNullable = type.Nullability.AllowsNull,
                 Constraints = new JsonSchemaConstraintSet(),
                 Annotations = BuildTypeAnnotations(type),
@@ -284,7 +291,15 @@ public static class JsonSchemaDerivationExtensions
             }
 
             JsonSchemaScalarNode mapped = MapScalar(scalar);
-            return mapped with { Name = type.Name, Title = type.DisplayName, Description = type.UserDescription, Annotations = BuildTypeAnnotations(type) };
+            Dictionary<string, JsonElement> annotations = BuildTypeAnnotations(type);
+            annotations["x-stm"] = MergeXStm(annotations, new Dictionary<string, object?> { ["scalarKind"] = scalar.ScalarKind.ToString() });
+            return mapped with
+            {
+                Name = type.Name,
+                Title = type.DisplayName,
+                Description = type.UserDescription,
+                Annotations = annotations,
+            };
         }
 
         private JsonSchemaEnumNode MapEnum(Model.EnumTypeDefinition type)
@@ -521,6 +536,10 @@ public static class JsonSchemaDerivationExtensions
             if (type is Model.StrongScalarTypeDefinition)
             {
                 stm["strongScalar"] = true;
+            }
+            if (type is Model.ScalarTypeDefinition scalar && scalar.ScalarKind is Model.ScalarKind.Time or Model.ScalarKind.DateTime or Model.ScalarKind.Duration or Model.ScalarKind.Json or Model.ScalarKind.Unknown)
+            {
+                stm["scalarKind"] = scalar.ScalarKind.ToString();
             }
 
             AddSharedSemantics(stm, type.TechnicalDescription, type.Annotations, $"/types/{type.Id.Value}");

@@ -13,7 +13,7 @@ automatic behavior. Always inspect target diagnostics for the actual model.
 | Constraint | JSON Schema keyword when representable | Not general check-constraint generation | Metadata where supported | Usually not runtime validation |
 | `RequiredWhen` | Conditional schema when safely representable | No navigation/relationship behavior; unsupported target behavior is not inferred | Target-specific/diagnostic | Not general serializer validation |
 | Enum | Schema enum | String provider representation | Analytical categorical representation | Existing serializer contract |
-| `Uri` | string + `uri` format | String provider representation | Text-like analytical representation | Existing `Uri` contract |
+| `Uri` | string + `uri-reference` format by default; explicit `uri` remains available | String provider representation | Text-like analytical representation | Existing `Uri` contract |
 | Unit | Optional `x-stm.unit` | No automatic conversion | Target-specific/metadata where supported | No automatic behavior |
 | Extension data | Additional-properties style behavior | JSON storage | Limited/diagnostic | Existing extension-data behavior |
 | Envelope | Target root/payload policy | Only retained supported storage semantics; no automatic navigation graph | Analytical target policy | Contract shape |
