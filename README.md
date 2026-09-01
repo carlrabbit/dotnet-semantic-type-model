@@ -21,6 +21,7 @@ Install the packages for the scenario you need:
 | System.Text.Json | + `SemanticTypeModel.SystemTextJson` |
 | Power BI metadata | + `SemanticTypeModel.PowerBI` |
 | Runtime DI composition | + `SemanticTypeModel.DependencyInjection` |
+| Constraint-aware test data | + `SemanticTypeModel.TestData` |
 
 The complete package-role map is in the [shared NuGet README](public-docs/nuget/SemanticTypeModel.md).
 
@@ -100,6 +101,7 @@ allowed values, and examples.
 - [System.Text.Json](public-docs/guides/system-text-json.md)
 - [Power BI](public-docs/guides/power-bi.md)
 - [Projection capability matrix](public-docs/guides/projection-capabilities.md)
+- [Constraint-aware test data](public-docs/guides/test-data.md)
 
 JSON Schema can preserve selected STM-only meaning under the optional `x-stm` object. The initial vocabulary
 covers role, aggregate-root semantics, lifecycle mutability, technical descriptions, keys, units, and open

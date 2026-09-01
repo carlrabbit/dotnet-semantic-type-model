@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><RootNamespace>SemanticTypeModel.TestData.Tests.Unit</RootNamespace></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Assertions" />
+    <ProjectReference Include="../../../src/SemanticTypeModel.TestData/SemanticTypeModel.TestData.csproj" />
+    <ProjectReference Include="../../fixtures/SemanticTypeModel.TestModels.ModelA/SemanticTypeModel.TestModels.ModelA.csproj" />
+  </ItemGroup>
+</Project>

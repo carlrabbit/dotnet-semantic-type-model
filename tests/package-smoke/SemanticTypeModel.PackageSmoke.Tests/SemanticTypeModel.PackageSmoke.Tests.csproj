@@ -19,6 +19,7 @@
     <PackageReference Include="SemanticTypeModel.EFCore" Version="$(PackageSmokeVersion)" />
     <PackageReference Include="SemanticTypeModel.Generators" Version="$(PackageSmokeVersion)" />
     <PackageReference Include="SemanticTypeModel.SystemTextJson" Version="$(PackageSmokeVersion)" />
+    <PackageReference Include="SemanticTypeModel.TestData" Version="$(PackageSmokeVersion)" />
     <PackageReference Include="JsonSchema.Net" Version="9.4.0" />
   </ItemGroup>
 </Project>
