@@ -150,13 +150,6 @@ public static class SemanticTextExtensions
             builder.Append(" [TemporalValidity]");
         }
 
-        if (type is StrongScalarTypeDefinition strongScalarType)
-        {
-            builder.Append(" [ValueType=");
-            builder.Append(strongScalarType.ValueType.Id.Value);
-            builder.Append(']');
-        }
-
         builder.AppendLine();
 
         if (options.Detail == SemanticTextDetail.Detailed)

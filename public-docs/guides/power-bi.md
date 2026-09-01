@@ -32,9 +32,8 @@ fallback for user-facing Power BI descriptions.
 
 Lifecycle mutability is canonical semantic information but does not automatically change Power BI output.
 
-Supported `[SemanticStrongScalar]` values are classified using their underlying scalar kind where the
-projection can represent it. Strong Scalar does not infer analytical identity, keys, relationships, or display
-behavior.
+Scalar values are classified using their scalar kind where the projection can represent it. Scalar
+representation does not infer analytical identity, keys, relationships, or display behavior.
 
 `ulong` values use an exact-value-preserving String fallback with a diagnostic because the full CLR range does
 not fit Power BI `Int64`. Decimal remains the fixed-decimal target, with a potential-loss diagnostic when the

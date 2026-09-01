@@ -62,10 +62,6 @@ internal static class TypeSchemaModelCloner
                 Annotations = CloneAnnotationBag(scalarType.Annotations),
                 Precision = scalarType.Precision is null ? null : scalarType.Precision with { },
             },
-            StrongScalarTypeDefinition strongScalarType => strongScalarType with
-            {
-                Annotations = CloneAnnotationBag(strongScalarType.Annotations),
-            },
             EnumTypeDefinition enumType => enumType with
             {
                 Annotations = CloneAnnotationBag(enumType.Annotations),

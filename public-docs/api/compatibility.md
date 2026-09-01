@@ -10,7 +10,7 @@ unsupported, including generator/analyzer packages.
 
 The compile-time semantic manifest is ephemeral internal build transport. A consuming generator must use the
 same exact SemanticTypeModel suite version as the manifest producer; cross-version manifest consumption is not
-supported. The current manifest schema is v2; it carries explicit Strong Scalar kind/value identity and is not
+supported. The current manifest schema is v3; it carries only the current canonical type/property contract and is not
 a persisted interchange format. There is no cross-version negotiation.
 
 ## Canonical model authoring
@@ -99,7 +99,7 @@ content from older APIs requires intentional classification when migrating.
 ## System.Text.Json
 
 Plain `JsonSerializerOptions.AddSemanticTypeModelJson(...)` is the complete runtime integration path and does
-not require `JsonSerializerContext`. It supports Strong Scalars and automatic semantic Entity polymorphism;
+not require `JsonSerializerContext`. It supports automatic semantic Entity polymorphism;
 explicit application-owned polymorphism contracts remain authoritative. Register models before first serializer
 use because normal System.Text.Json options freeze after metadata materialization.
 
@@ -113,12 +113,11 @@ named options, or startup validation.
 boundary. There is no compatibility or tombstone package. Applications that need configuration use
 Microsoft.Extensions.Configuration and Microsoft.Extensions.Options directly.
 
-## Display Identity, Access Path, and Strong Scalar
+## Display Identity and Access Path
 
 `SemanticDisplayIdentity` and `SemanticAccessPath` are projection-neutral annotation semantics. They do not
-imply EF indexes, API query parameters, UI behavior, Power BI behavior, or relationships. An explicit
-`[SemanticStrongScalar]` gives a supported readonly wrapper its underlying scalar representation across the
-supported projections; it does not imply Identifier, Key, Entity, ownership, or one-property inference.
+imply EF indexes, API query parameters, UI behavior, Power BI behavior, or relationships. CLR wrapper
+transparency is not canonical meaning; EF may support compatible wrappers as a target-specific convenience.
 
 The supported JSON fidelity claim is bounded and one-way: STM-configured System.Text.Json output validates
 against the derived JSON Schema. Bidirectional serializer/schema equivalence and representation-changing
@@ -157,11 +156,11 @@ relevant. Use the aligned ten-package 5.0.0 suite; do not mix 4.0.x and 5.0.0 pa
 
 ## 5.0.1 release candidate
 
-5.0.1 is a patch-line release candidate for the aligned ten-package suite. It carries the corrective
+5.0.1 is a patch-line release candidate for the aligned eleven-package suite. It carries the corrective
 System.Text.Json runtime behavior described in the release notes: ordinary `JsonSerializerOptions` is the
 primary path, semantic Entity inheritance can receive automatic `$type` polymorphism when no explicit
-application contract is supplied, explicit application contracts win, and Strong Scalars plus multiple
-semantic models compose through runtime options. Automatic polymorphism remains outside the JSON
+application contract is supplied, explicit application contracts win, and multiple semantic models compose
+through runtime options. Automatic polymorphism remains outside the JSON
 Schema/System.Text.Json fidelity baseline. Publication truth must be verified from the package channel;
 repository source does not establish publication.
 

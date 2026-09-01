@@ -13,7 +13,6 @@ This spec complements `docs/specs/system-text-json-contract-integration.md` and 
 - System.Text.Json domain semantic model shape;
 - derivation from the current canonical semantic model;
 - runtime `JsonSerializerOptions` / resolver customization driven by the domain model;
-- Strong Scalar runtime representation descriptors;
 - automatic semantic-Entity polymorphism descriptors;
 - multi-model runtime composition;
 - diagnostics and inspection behavior;
@@ -52,7 +51,6 @@ At minimum it represents:
 - unsupported metadata diagnostics;
 - duplicate final-name detection inputs;
 - extension-data metadata when present;
-- Strong Scalar wrapper CLR identity and underlying scalar CLR representation;
 - semantic Entity hierarchy descriptors required for automatic polymorphism;
 - inspection-friendly summaries.
 
@@ -92,11 +90,9 @@ provide the same supported runtime behavior.
 This includes:
 
 - property-name projection;
-- Strong Scalar conversion;
 - automatic semantic-Entity polymorphism;
 - runtime diagnostics/failures required by this contract.
 
-Strong Scalar converter discovery must therefore be represented by or derivable from the System.Text.Json domain model rather than being a canonical-overload-only side path.
 
 ## Runtime Composition and Materialization
 
@@ -131,12 +127,11 @@ For non-conflicting models registered before first serializer use:
 
 - behavior is independent of registration order;
 - property customization applies only to the owning model's CLR types;
-- Strong Scalar mappings from both models coexist;
 - automatic Entity hierarchies remain model-local;
 - a derived type from one model is never added to another model's hierarchy merely because names match;
 - registration must not create ordering-dependent converter precedence between the models.
 
-When the same CLR contract type or Strong Scalar wrapper is claimed incompatibly by multiple registered STM models, runtime registration must fail deterministically rather than select a winner by registration order.
+When the same CLR contract type is claimed incompatibly by multiple registered STM models, runtime registration must fail deterministically rather than select a winner by registration order.
 
 When possible, additional STM registrations should extend an existing package-owned STM composition layer rather than blindly nesting independent package-owned wrappers/factories. Exact internal mechanics remain implementation-owned.
 
@@ -164,16 +159,6 @@ Use, in order when available:
 - conservative current-name fallback only when known safe.
 
 Unsafe matching must leave unrelated properties unchanged and produce/surface an explicit failure/diagnostic where the public API can do so.
-
-## Strong Scalars
-
-The domain model carries enough information to install the supported Strong Scalar runtime representation without returning to the canonical model at options-application time.
-
-Supported Strong Scalars serialize as their underlying scalar representation and deserialize through the supported wrapper constructor.
-
-A Guid-backed Strong Scalar therefore writes a JSON Guid string rather than an object containing `Value`.
-
-Strong Scalar conversion composes with automatic Entity polymorphism and multi-model registration.
 
 ## Automatic Semantic-Entity Polymorphism
 
@@ -233,7 +218,7 @@ Imported `JsonExtensionDataAttribute` metadata may normalize into extension-data
 
 Resolver-only APIs remain valid for resolver metadata customization that can be expressed by `JsonTypeInfo`.
 
-Normal complete runtime usage should prefer `JsonSerializerOptions.AddSemanticTypeModelJson(...)`, because supported Strong Scalar converter installation requires options-level composition.
+Normal complete runtime usage should prefer `JsonSerializerOptions.AddSemanticTypeModelJson(...)` for options-level composition.
 
 M0071 does not add source-generated-context-specific behavioral guarantees.
 
@@ -260,7 +245,6 @@ Deterministic inspection includes, as applicable:
 - projected type/CLR identity;
 - matched properties and selected name source;
 - final JSON names when determinable;
-- Strong Scalar runtime descriptors;
 - automatic hierarchy base/descendant/discriminator metadata;
 - existing explicit-polymorphism preservation marker;
 - ignored/unsupported properties;
@@ -275,10 +259,8 @@ Required STJ-focused categories:
 
 - plain `JsonSerializerOptions` + default resolver behavior;
 - canonical/domain options-overload equivalence;
-- Strong Scalar backing-kind matrix, including Guid;
 - abstract Entity base -> concrete Entity round-trip;
 - concrete Entity base with descendants where applicable;
-- derived type containing Guid Strong Scalar;
 - explicit application STJ polymorphism preserved unchanged;
 - Model A + Model B registered on one options instance;
 - registration order independence;

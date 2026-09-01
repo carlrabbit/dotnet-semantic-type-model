@@ -28,6 +28,7 @@ Git history retains the detailed superseded record.
 - [Envelope projection policies are target-specific](decisions/envelope-projection-policies-are-target-specific.md)
 - [Evolution semantics remain projection-neutral](decisions/evolution-semantics-remain-projection-neutral.md)
 - [General relationships are not canonical semantics](decisions/general-relationships-are-not-canonical-semantics.md)
+- [Remove canonical Strong Scalar semantics](decisions/remove-canonical-strong-scalar-semantics.md)
 - [Remove old model compatibility and transition terminology](decisions/remove-legacy-model-compatibility-and-hardened-terminology.md)
 - [Replace the general description with audience-specific descriptions](decisions/replace-general-description-with-audience-specific-descriptions.md)
 - [Unify the public model surface under the Model namespace](decisions/unify-public-model-surface-under-model-namespace.md)

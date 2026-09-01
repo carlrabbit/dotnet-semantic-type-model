@@ -22,12 +22,9 @@ internal sealed partial class SmokeCustomer
     [SemanticDisplayIdentity, SemanticAccessPath("ById")]
     public string Id { get; set; } = string.Empty;
 
-    public SmokeCustomerId StrongId { get; set; }
+    public Guid ScalarId { get; set; }
 
 }
-
-[SemanticStrongScalar]
-internal readonly record struct SmokeCustomerId(Guid Value);
 
 [SemanticType(SemanticTypeRole.Entity)]
 internal abstract class SmokeEntity
@@ -38,7 +35,7 @@ internal abstract class SmokeEntity
 [SemanticType(SemanticTypeRole.Entity)]
 internal sealed class SmokeSpecialEntity : SmokeEntity
 {
-    public SmokeCustomerId SpecialId { get; set; }
+    public Guid SpecialId { get; set; }
 }
 
 internal sealed class PackageSmokeTests
@@ -80,7 +77,7 @@ internal sealed class PackageSmokeTests
             generatedSmokeModel,
             projectionOptions => projectionOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName);
         string smokeJson = JsonSerializer.Serialize(
-            new SmokeCustomer { Id = "C-001", StrongId = new SmokeCustomerId(Guid.Parse("00000000-0000-0000-0000-000000000001")) },
+            new SmokeCustomer { Id = "C-001", ScalarId = Guid.Parse("00000000-0000-0000-0000-000000000001") },
             jsonOptions);
         SmokeCustomer? smokeCustomer = JsonSerializer.Deserialize<SmokeCustomer>("""
             { "Id": "C-002" }
@@ -95,15 +92,7 @@ internal sealed class PackageSmokeTests
         _ = await Assert.That(smokeJson).Contains("Id");
         _ = await Assert.That(smokeCustomer?.Id).IsEqualTo("C-002");
         _ = await Assert.That(nameof(SmokeCustomer)).IsEqualTo("SmokeCustomer");
-        _ = await Assert.That(generatedSmokeModel.Types.Any(static type => type.Kind == Model.TypeKind.StrongScalar)).IsTrue();
-
-        string strongScalarJson = JsonSerializer.Serialize(
-            new SmokeCustomerId(Guid.Parse("11111111-1111-1111-1111-111111111111")),
-            jsonOptions);
-        _ = await Assert.That(strongScalarJson).Contains("11111111-1111-1111-1111-111111111111");
-        _ = await Assert.That(strongScalarJson).DoesNotContain("\"Value\"");
-
-        SmokeSpecialEntity entity = new() { Id = Guid.Empty, SpecialId = new SmokeCustomerId(Guid.Parse("22222222-2222-2222-2222-222222222222")) };
+        SmokeSpecialEntity entity = new() { Id = Guid.Empty, SpecialId = Guid.Parse("22222222-2222-2222-2222-222222222222") };
         string entityJson = JsonSerializer.Serialize<SmokeEntity>(entity, jsonOptions);
         SmokeEntity? entityRoundTrip = JsonSerializer.Deserialize<SmokeEntity>(entityJson, jsonOptions);
         _ = await Assert.That(entityJson).Contains("\"$type\":\"SmokeSpecialEntity\"");

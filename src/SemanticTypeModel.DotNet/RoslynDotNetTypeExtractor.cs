@@ -20,7 +20,6 @@ namespace SemanticTypeModel.DotNet;
 public sealed class RoslynDotNetTypeExtractor
 {
     private const string SemanticTypeAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticTypeAttribute";
-    private const string SemanticStrongScalarAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticStrongScalarAttribute";
     private const string SemanticIgnoreAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticIgnoreAttribute";
     private const string SemanticNameAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticNameAttribute";
     private const string SemanticUserDescriptionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticUserDescriptionAttribute";
@@ -497,15 +496,6 @@ public sealed class RoslynDotNetTypeExtractor
                     _types[id] = new DotNetArrayTypeDescriptor { Id = id, Name = id, ItemTypeId = itemTypeId };
                     break;
                 case INamedTypeSymbol namedType:
-                    if (TryExtractStrongScalar(namedType, id, cancellationToken, out DotNetStrongScalarTypeDescriptor? strongScalar))
-                    {
-                        if (strongScalar is not null)
-                        {
-                            _types[id] = strongScalar;
-                        }
-
-                        break;
-                    }
                     if (TryExtractScalar(namedType, id, out DotNetTypeDescriptor? scalar))
                     {
                         _types[id] = scalar!;
@@ -553,75 +543,6 @@ public sealed class RoslynDotNetTypeExtractor
         {
             _ = _inProgress.Remove(id);
         }
-    }
-
-    private bool TryExtractStrongScalar(INamedTypeSymbol type, string id, CancellationToken cancellationToken, out DotNetStrongScalarTypeDescriptor? descriptor)
-    {
-        descriptor = null;
-        AttributeData? marker = type.GetAttributes().FirstOrDefault(attribute => string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticStrongScalarAttributeMetadataName, StringComparison.Ordinal));
-        if (marker is null)
-        {
-            return false;
-        }
-
-        bool valid = type.TypeKind == TypeKind.Struct && !type.IsGenericType && type.IsReadOnly;
-        IPropertySymbol? value = type.GetMembers("Value").OfType<IPropertySymbol>().SingleOrDefault(property => property.DeclaredAccessibility == Accessibility.Public && !HasSemanticIgnore(property));
-        IFieldSymbol[] publicFields = [.. type.GetMembers().OfType<IFieldSymbol>().Where(field => field.DeclaredAccessibility == Accessibility.Public && !field.IsStatic && !field.IsImplicitlyDeclared && !HasSemanticIgnore(field))];
-        if (value is null || value.GetMethod is null || value.SetMethod is { DeclaredAccessibility: Accessibility.Public, IsInitOnly: false })
-        {
-            valid = false;
-        }
-
-        if (type.GetMembers("Value").OfType<IPropertySymbol>().Count(property => property.DeclaredAccessibility == Accessibility.Public && !HasSemanticIgnore(property)) != 1
-            || publicFields.Length != 0)
-        {
-            valid = false;
-        }
-
-        IMethodSymbol? constructor = value is null ? null : type.InstanceConstructors.FirstOrDefault(candidate => candidate.DeclaredAccessibility == Accessibility.Public && candidate.Parameters.Length == 1 && SymbolEqualityComparer.Default.Equals(candidate.Parameters[0].Type, value.Type));
-        if (constructor is null)
-        {
-            valid = false;
-        }
-
-        DotNetScalarTypeDescriptor? underlying = null;
-        if (value is not null)
-        {
-            (ITypeSymbol normalizedValue, bool allowsNull) = NormalizeNullability(value.Type, value.NullableAnnotation);
-            if (allowsNull || !TryExtractScalar(normalizedValue, GetTypeId(normalizedValue), out DotNetTypeDescriptor? scalar) || scalar is not DotNetScalarTypeDescriptor candidate || candidate.ScalarKind == DotNetScalarKind.Json)
-            {
-                valid = false;
-            }
-            else
-            {
-                underlying = candidate;
-                ExtractType(normalizedValue, cancellationToken);
-            }
-        }
-
-        ImmutableArray<AttributeData> attributes = type.GetAttributes();
-        if (attributes.Any(attribute => string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticRoleAttributeMetadataName, StringComparison.Ordinal)
-            || (string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticTypeAttributeMetadataName, StringComparison.Ordinal)
-                && ((attribute.ConstructorArguments.Length == 1 && ((attribute.ConstructorArguments[0].Value is string constructorRole && !string.Equals(constructorRole, nameof(SemanticTypeRole.Unspecified), StringComparison.Ordinal))
-                        || (attribute.ConstructorArguments[0].Value is int constructorRoleValue && constructorRoleValue != (int)SemanticTypeRole.Unspecified)))
-                    || attribute.NamedArguments.Any(argument => string.Equals(argument.Key, nameof(SemanticTypeAttribute.Role), StringComparison.Ordinal) && argument.Value.Value is string role && !string.IsNullOrWhiteSpace(role) && !string.Equals(role, nameof(SemanticTypeRole.Unspecified), StringComparison.Ordinal))))))
-        {
-            valid = false;
-        }
-
-        if (!valid || underlying is null)
-        {
-            _diagnostics.Add(new DotNetExtractionDiagnostic("STM5051", $"Type '{type.ToDisplayString()}' is not a valid Strong Scalar declaration.", marker.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? type.Locations.FirstOrDefault()));
-            return true;
-        }
-
-        descriptor = new DotNetStrongScalarTypeDescriptor { Id = id, Name = type.Name, ValueTypeId = underlying.Id, Annotations = new Dictionary<string, string> { ["schema.strongScalar"] = "true" } };
-        return true;
-    }
-
-    private static bool HasSemanticIgnore(ISymbol symbol)
-    {
-        return symbol.GetAttributes().Any(attribute => string.Equals(attribute.AttributeClass?.ToDisplayString(), SemanticIgnoreAttributeMetadataName, StringComparison.Ordinal));
     }
 
     private DotNetObjectTypeDescriptor ExtractObject(INamedTypeSymbol type, string id, CancellationToken cancellationToken)
@@ -1915,11 +1836,6 @@ public sealed class RoslynDotNetTypeExtractor
             string? metadataName = attribute.AttributeClass?.ToDisplayString();
             if (string.Equals(metadataName, SemanticOwnedAttributeMetadataName, StringComparison.Ordinal))
             {
-                if (_types.TryGetValue(GetTypeId(memberType), out DotNetTypeDescriptor? ownedType) && ownedType is DotNetStrongScalarTypeDescriptor)
-                {
-                    _diagnostics.Add(new DotNetExtractionDiagnostic("STM5051", $"SemanticOwned cannot be applied to Strong Scalar member '{memberType.ToDisplayString()}'.", attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation()));
-                    continue;
-                }
                 var kind = GetOwnedKind(attribute, memberType);
                 var inferredKind = InferOwnedKind(memberType);
                 if (HasExplicitOwnedKind(attribute) && !string.Equals(kind, inferredKind, StringComparison.Ordinal))

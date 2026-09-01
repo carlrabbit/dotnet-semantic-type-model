@@ -47,7 +47,6 @@ public sealed class RelationalDerivationTests
 
         await AssertColumnNullability(entity.ScalarColumns, nameof(ModelA.StorageMatrixEntity.RequiredText), nameof(ModelA.StorageMatrixEntity.OptionalText), typeof(string));
         await AssertColumnNullability(entity.ScalarColumns, nameof(ModelA.StorageMatrixEntity.RequiredState), nameof(ModelA.StorageMatrixEntity.OptionalState), typeof(string));
-        await AssertColumnNullability(entity.ScalarColumns, nameof(ModelA.StorageMatrixEntity.RequiredStrongId), nameof(ModelA.StorageMatrixEntity.OptionalStrongId), typeof(Guid));
         await AssertColumnNullability(entity.ScalarColumns, nameof(ModelA.StorageMatrixEntity.RequiredUri), nameof(ModelA.StorageMatrixEntity.OptionalUri), typeof(string));
         await AssertColumnNullability(entity.BinaryColumns, nameof(ModelA.StorageMatrixEntity.RequiredBinary), nameof(ModelA.StorageMatrixEntity.OptionalBinary), typeof(byte[]));
         await AssertColumnNullability(entity.BinaryColumns, nameof(ModelA.StorageMatrixEntity.RequiredReadOnlyMemory), nameof(ModelA.StorageMatrixEntity.OptionalReadOnlyMemory), typeof(byte[]));
@@ -68,7 +67,7 @@ public sealed class RelationalDerivationTests
     }
 
     [Test]
-    public async Task Relational_projection_covers_complete_scalar_and_strong_scalar_matrix()
+    public async Task Relational_projection_covers_complete_scalar_matrix()
     {
         EfEntity entity = ModelAGenerated.ModelASemanticTypeModel.Create().DeriveEfRelationalModel().Model.Entities.Single(value => value.ClrType == typeof(ModelA.ProjectionMatrixEntity));
         EfScalarColumn[] columns = [.. entity.ScalarColumns.Concat(entity.BinaryColumns)];
@@ -77,21 +76,12 @@ public sealed class RelationalDerivationTests
         {
             EfScalarColumn scalar = columns.Single(column => column.MemberName == matrixCase.PropertyName);
             EfScalarColumn optionalScalar = columns.Single(column => column.MemberName == matrixCase.OptionalPropertyName);
-            EfScalarColumn strong = columns.Single(column => column.MemberName == matrixCase.StrongScalarPropertyName);
-            EfScalarColumn optionalStrong = columns.Single(column => column.MemberName == matrixCase.OptionalStrongScalarPropertyName);
-
             _ = await Assert.That(scalar.ProviderType).IsEqualTo(ExpectedProviderType(matrixCase.ScalarKind));
-            _ = await Assert.That(strong.ProviderType).IsEqualTo(ExpectedProviderType(matrixCase.ScalarKind));
             if (scalar.IsNullable)
             {
                 throw new InvalidOperationException($"Required scalar column is nullable: {matrixCase.PropertyName}.");
             }
             _ = await Assert.That(optionalScalar.IsNullable).IsTrue();
-            if (strong.IsNullable)
-            {
-                throw new InvalidOperationException($"Required strong scalar column is nullable: {matrixCase.StrongScalarPropertyName}.");
-            }
-            _ = await Assert.That(optionalStrong.IsNullable).IsTrue();
         }
     }
 

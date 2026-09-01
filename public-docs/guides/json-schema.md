@@ -17,7 +17,7 @@ Declared mutability is emitted only at the node where it was declared. Object ke
 The JSON representation fidelity contract is one-way: supported STM-configured System.Text.Json output
 validates against the derived schema. SemanticTypeModel does not promise bidirectional serializer/schema
 equivalence. `x-stm` preserves the implemented semantic vocabulary, including roles, keys, Display Identity,
-Access Paths, lifecycle/evolution, ownership, envelope, extension-data, enum-value, and Strong Scalar metadata.
+Access Paths, lifecycle/evolution, ownership, envelope, extension-data, and enum-value metadata.
 
 ## Configure
 

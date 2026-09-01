@@ -345,9 +345,3 @@ STM5027 in 2.6.0 rather than being interpreted as strings.
 |---|---|---|---|
 | STM5049 | Warning | A Display Identity order is negative or duplicated in an effective object property set. | Use non-negative, unique orders; the whole invalid Display Identity group is omitted. |
 | STM5050 | Warning | An Access Path name/order or effective membership is invalid or ambiguous. | Use a valid path name and non-negative, unique orders per path; only the invalid named path is omitted. |
-
-## Strong Scalar extraction (STM5051)
-
-| Code | Severity | Cause | Fix |
-|---|---|---|---|
-| STM5051 | Error | A `[SemanticStrongScalar]` type is not a supported non-generic readonly struct/record struct with exactly one readable scalar `Value` and a matching public constructor, or Strong Scalar is used with an invalid semantic shape. | Make the declaration conform to the Strong Scalar contract, or remove the marker. Do not add `[SemanticOwned]` to a Strong Scalar property. |

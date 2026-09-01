@@ -14,7 +14,6 @@ This spec is authoritative for:
 - semantic-name and serialization-name separation;
 - System.Text.Json attribute import behavior;
 - runtime `JsonSerializerOptions` / resolver customization behavior;
-- Strong Scalar runtime representation;
 - automatic semantic-Entity polymorphism;
 - runtime multi-model composition;
 - unsupported generated-context generation behavior;
@@ -26,7 +25,7 @@ The package-owned domain model is specified in `docs/specs/system-text-json-doma
 
 - `SemanticTypeModel.Abstractions` remains projection-neutral and has no System.Text.Json dependency.
 - `SemanticTypeModel.DotNet` may import System.Text.Json attribute metadata into canonical annotations when configured.
-- `SemanticTypeModel.SystemTextJson` owns annotation constants, projection options, domain-model derivation, runtime resolver/options helpers, Strong Scalar runtime representation, and automatic Entity-polymorphism projection.
+- `SemanticTypeModel.SystemTextJson` owns annotation constants, projection options, domain-model derivation, runtime resolver/options helpers, and automatic Entity-polymorphism projection.
 - `SemanticTypeModel.Generators` does not generate `JsonSerializerContext` declarations.
 - M0071 adds no ASP.NET Core dependency to the package; Minimal API usage configures the application's existing `JsonSerializerOptions`.
 
@@ -75,7 +74,7 @@ If no resolver exists, use `DefaultJsonTypeInfoResolver` as the base resolver.
 
 If an existing resolver exists, preserve and compose over it.
 
-The options helper configures all supported runtime representation behavior, including Strong Scalar conversion and automatic semantic-Entity polymorphism.
+The options helper configures supported runtime metadata behavior, including automatic semantic-Entity polymorphism.
 
 The domain-model and canonical-model options overloads are behaviorally equivalent for an equivalent derived model.
 
@@ -106,21 +105,6 @@ Default behavior preserves the existing JSON contract.
 Do not rely only on `JsonPropertyInfo.Name` when naming policy, attributes, or previous resolver behavior may have changed it.
 
 Use stable CLR/member identity where possible. Unsafe matching must not silently mutate unrelated properties.
-
-## Strong Scalars
-
-Supported canonical Strong Scalars serialize/deserialze as their underlying scalar representation under options-level STM configuration.
-
-For example:
-
-```csharp
-[SemanticStrongScalar]
-public readonly record struct SpecificationVersionId(Guid Value);
-```
-
-serializes as a JSON Guid string, not `{ "Value": ... }`.
-
-Strong Scalar behavior is represented through the System.Text.Json domain model so the canonical/domain options overloads remain equivalent.
 
 ## Automatic Semantic-Entity Polymorphism
 

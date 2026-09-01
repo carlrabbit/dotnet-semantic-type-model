@@ -277,10 +277,10 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
 
             source.Append("        ").Append(configuredProperty)
                 .Append(".HasConversion(global::SemanticTypeModel.EFCore.SemanticEfValueConverters.Json<")
-                .Append(memberType).Append(">(").Append(StrongScalarConverterArguments(manifest)).AppendLine("));");
+                .Append(memberType).AppendLine(">());");
             source.Append("        ").Append(expression)
                 .Append(".Metadata.SetValueComparer(global::SemanticTypeModel.EFCore.SemanticEfValueConverters.JsonComparer<")
-                .Append(memberType).Append(">(").Append(StrongScalarConverterArguments(manifest)).AppendLine("));");
+                .Append(memberType).AppendLine(">());");
             error = null;
             return true;
         }
@@ -289,21 +289,21 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
         bool nullableMember = member.Type.NullableAnnotation == NullableAnnotation.Annotated
             || !SymbolEqualityComparer.Default.Equals(actual, member.Type);
         IPropertySymbol? valueProperty = (actual as INamedTypeSymbol)?.GetMembers("Value").OfType<IPropertySymbol>().SingleOrDefault();
-        bool hasStrongShape = actual is INamedTypeSymbol strongCandidate
+        bool hasSingleValueShape = actual is INamedTypeSymbol wrapperCandidate
             && valueProperty is not null
-            && strongCandidate.InstanceConstructors.Any(constructor => constructor.Parameters.Length == 1
+            && wrapperCandidate.InstanceConstructors.Any(constructor => constructor.Parameters.Length == 1
                 && SymbolEqualityComparer.Default.Equals(constructor.Parameters[0].Type, valueProperty.Type));
         EfScalarStorageKind scalarStorage = EfStoragePolicy.ClassifyScalar(
             actual.ToDisplayString(),
             target?.Kind == "Enum" || actual.TypeKind == TypeKind.Enum,
-            hasStrongShape);
+            hasSingleValueShape);
         if (valueProperty is not null && IsUnsupportedUnsignedInteger(valueProperty.Type))
         {
             scalarStorage = EfScalarStorageKind.Unsupported;
         }
 
         if (EfStoragePolicy.IsUnsupportedUnownedShape(target?.Kind)
-            && scalarStorage is not (EfScalarStorageKind.StrongScalar or EfScalarStorageKind.DirectBinary or EfScalarStorageKind.ReadOnlyMemoryBinary))
+            && scalarStorage is not (EfScalarStorageKind.SingleValueWrapper or EfScalarStorageKind.DirectBinary or EfScalarStorageKind.ReadOnlyMemoryBinary))
         {
             error = $"member '{property.Name}' has unsupported target shape '{target!.Kind}' without semantic JSON ownership";
             return false;
@@ -334,22 +334,22 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
                         : ".HasConversion(value => value.ToArray(), value => new global::System.ReadOnlyMemory<byte>(value));");
                 error = null;
                 return true;
-            case EfScalarStorageKind.StrongScalar:
+            case EfScalarStorageKind.SingleValueWrapper:
                 bool nullableValueType = !SymbolEqualityComparer.Default.Equals(actual, member.Type);
                 if (nullableValueType)
                 {
                     string valueType = valueProperty!.Type.ToDisplayString(DeclaredTypeDisplayFormat);
-                    string strongType = actual.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                    string wrapperType = actual.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                     bool referenceValue = valueProperty.Type.IsReferenceType;
                     source.Append("        ").Append(configuredProperty).Append(".HasConversion(value => value.HasValue ? value.Value.Value : (")
                         .Append(valueType).Append("?)null, ");
                     if (referenceValue)
                     {
-                        source.Append("value => value != null ? new ").Append(strongType).Append("(value) : (").Append(strongType).AppendLine("?)null);");
+                        source.Append("value => value != null ? new ").Append(wrapperType).Append("(value) : (").Append(wrapperType).AppendLine("?)null);");
                     }
                     else
                     {
-                        source.Append("value => value.HasValue ? new ").Append(strongType).Append("(value.Value) : (").Append(strongType).AppendLine("?)null);");
+                        source.Append("value => value.HasValue ? new ").Append(wrapperType).Append("(value.Value) : (").Append(wrapperType).AppendLine("?)null);");
                     }
                     error = null;
                     return true;
@@ -531,14 +531,6 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
         return identifier.Length == 0 ? "Model" : char.IsDigit(identifier[0]) ? "_" + identifier : identifier;
     }
 
-    private static string StrongScalarConverterArguments(SemanticManifest manifest)
-    {
-        return string.Join(", ", manifest.Types
-            .Where(static type => type.Kind == "StrongScalar")
-            .OrderBy(static type => type.ClrName, StringComparer.Ordinal)
-            .Select(static type => "typeof(" + type.ClrName + ")"));
-    }
-
     private static string Escape(string value)
     {
         return value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
@@ -549,7 +541,7 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
 
 internal sealed class SemanticManifest
 {
-    internal const int CurrentVersion = 2;
+    internal const int CurrentVersion = 3;
     public int Version { get; set; }
     public string SemanticTypeModelVersion { get; set; } = string.Empty;
     public string ModelName { get; set; } = string.Empty;
@@ -576,7 +568,6 @@ internal sealed class SemanticType
     public string Kind { get; set; } = string.Empty;
     public string? Role { get; set; }
     public string? ItemTypeId { get; set; }
-    public string? ValueTypeId { get; set; }
     public IReadOnlyList<SemanticProperty> Properties { get; set; } = [];
 }
 

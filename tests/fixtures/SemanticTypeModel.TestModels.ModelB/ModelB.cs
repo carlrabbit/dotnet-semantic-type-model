@@ -14,13 +14,10 @@ public abstract class BaseEntity
 [SemanticType(SemanticTypeRole.Entity)]
 public sealed class SpecialEntity : BaseEntity
 {
-    public OtherId OtherId { get; set; }
+    public Guid OtherId { get; set; }
     public State? State { get; set; }
     [SemanticOwned] public Details? Details { get; set; }
 }
-
-[SemanticStrongScalar]
-public readonly record struct OtherId(Guid Value);
 
 [SemanticType(SemanticTypeRole.ValueObject)]
 public sealed class Details
@@ -44,6 +41,3 @@ public sealed class SpecializedBillingRecord : BillingRecord
 
 [SemanticType]
 public enum State { Active, Archived }
-
-[SemanticStrongScalar]
-public readonly record struct BillingId(Guid Value);

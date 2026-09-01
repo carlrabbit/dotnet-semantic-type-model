@@ -49,7 +49,6 @@ The package owns a semantic test-data value representation sufficient to preserv
 - the canonical type identity of each generated value;
 - object property identity;
 - scalar value/kind;
-- Strong Scalar nominal identity plus its generated underlying scalar value;
 - array/collection element values;
 - dictionary key/value entries;
 - explicit null where null is used as a legal recursion terminator.
@@ -261,14 +260,6 @@ An enum with no usable declared value is a generation error.
 
 Size profiles do not affect enum selection.
 
-## Strong Scalars
-
-A `StrongScalarTypeDefinition` is generated through its underlying scalar semantics while retaining the Strong Scalar's nominal type identity in the generated value representation.
-
-The Strong Scalar CLR `Value` member must not be treated as an object property.
-
-Unsupported underlying scalar semantics remain unsupported when wrapped in a Strong Scalar. Strong Scalar wrapping never bypasses format, pattern, constraint, or scalar-kind restrictions.
-
 ## Objects and Composition
 
 Object generation produces the effective modeled property set, including supported inherited/composed object properties represented by the canonical model.
@@ -379,6 +370,6 @@ annotated CLR model
 -> generated semantic value graph
 ```
 
-That evidence must include representative constraints, a collection, an enum, and a Strong Scalar. Hand-built canonical models remain appropriate for focused invalid/pathological generation tests.
+That evidence must include representative constraints, a collection, an enum, and ordinary scalar values. Hand-built canonical models remain appropriate for focused invalid/pathological generation tests.
 
 The packed-package consumer smoke path must consume `SemanticTypeModel.TestData` from the current locally packed aligned suite rather than through a project reference.

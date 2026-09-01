@@ -9,7 +9,7 @@ and tested as one tightly coupled suite.
 package versions is unsupported.**
 
 Generator/analyzer packages are part of that rule too. The compile-time semantic manifest requires exact
-producer/consumer suite-version alignment. The current ephemeral manifest schema is v2 and is not a persisted
+producer/consumer suite-version alignment. The current ephemeral manifest schema is v3 and is not a persisted
 interchange format.
 
 ## Choose packages by scenario
@@ -83,9 +83,8 @@ Use `[SemanticDisplayIdentity(Order = 0)]` and `[SemanticAccessPath("ByCustomerN
 projection-neutral recognition and locate/filter semantics. These annotations do not generate indexes, API
 queries, UI behavior, Power BI behavior, or relationships.
 
-Use `[SemanticStrongScalar]` for an explicit readonly nominal scalar wrapper. Supported projections use its
-underlying scalar representation; it is not itself an Identifier, Key, Entity, ownership declaration, or
-one-property inference convention. The STM-configured System.Text.Json and derived JSON Schema contract is
+CLR wrapper types may be used by target-specific projections when their target contract explicitly supports a
+single-value wrapper shape. Such wrappers are not canonical semantic scalar kinds. The STM-configured JSON Schema contract is
 bounded and one-way: supported output validates against the schema, without a promise of bidirectional
 serializer/schema equivalence.
 
@@ -111,7 +110,7 @@ ui
 JSON Schema import and JSON Editor compatibility modes are not supported current APIs.
 
 For System.Text.Json runtime integration, use `JsonSerializerOptions.AddSemanticTypeModelJson(model)`. This
-configures Strong Scalars and modeled semantic Entity polymorphism without requiring a generated serializer
+configures modeled semantic Entity polymorphism without requiring a generated serializer
 context. Register all models before first serializer use; explicit application polymorphism contracts remain
 unchanged.
 

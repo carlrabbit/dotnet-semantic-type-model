@@ -10,7 +10,6 @@ using BillingState = SemanticTypeModel.TestModels.ModelB.State;
 using InventoryDetails = SemanticTypeModel.TestModels.ModelA.InventoryDetails;
 using InventoryDocument = SemanticTypeModel.TestModels.ModelA.InventoryDocument;
 using InventoryItem = SemanticTypeModel.TestModels.ModelA.InventoryItem;
-using InventoryItemId = SemanticTypeModel.TestModels.ModelA.InventoryItemId;
 using InventoryOptions = SemanticTypeModel.TestModels.ModelA.InventoryOptions;
 using InventoryState = SemanticTypeModel.TestModels.ModelA.InventoryState;
 using ModelA = SemanticTypeModel.TestModels.ModelA;
@@ -19,7 +18,6 @@ using SpecializedBillingRecord = SemanticTypeModel.TestModels.ModelB.Specialized
 using SpecializedInventoryDocument = SemanticTypeModel.TestModels.ModelA.SpecializedInventoryDocument;
 using SpecificationState = SemanticTypeModel.TestModels.ModelA.SpecificationState;
 using SpecificationStateEntry = SemanticTypeModel.TestModels.ModelA.SpecificationStateEntry;
-using SpecificationVersionId = SemanticTypeModel.TestModels.ModelA.SpecificationVersionId;
 
 [assembly: GenerateSemanticEfModel(typeof(InventoryItem))]
 [assembly: GenerateSemanticEfModel(typeof(BillingRecord))]
@@ -29,7 +27,7 @@ namespace SemanticTypeModel.EFCore.Tests.Integration;
 public sealed class GeneratedConfigurationTests
 {
     [Test]
-    public async Task Strong_scalar_round_trips_as_a_scalar_inside_owned_JSON_collection()
+    public async Task Guid_round_trips_as_a_scalar_inside_owned_JSON_collection()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -42,7 +40,7 @@ public sealed class GeneratedConfigurationTests
             context.SpecificationStates.Add(new SpecificationState
             {
                 Id = Guid.NewGuid(),
-                Entries = [new SpecificationStateEntry { SpecificationVersionId = new SpecificationVersionId(expected) }],
+                Entries = [new SpecificationStateEntry { SpecificationVersionId = expected }],
             });
             _ = await context.SaveChangesAsync();
         }
@@ -50,7 +48,7 @@ public sealed class GeneratedConfigurationTests
         await using (var context = new GeneratedCompatibilityContext(options))
         {
             SpecificationState state = await context.SpecificationStates.SingleAsync();
-            _ = await Assert.That(state.Entries.Single().SpecificationVersionId.Value).IsEqualTo(expected);
+            _ = await Assert.That(state.Entries.Single().SpecificationVersionId).IsEqualTo(expected);
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText = "SELECT \"Entries\" FROM \"SpecificationState\"";
             var json = (string)(await command.ExecuteScalarAsync())!;
@@ -69,7 +67,7 @@ public sealed class GeneratedConfigurationTests
             _ = await context.Database.EnsureCreatedAsync();
             context.Inventory.Add(new InventoryItem
             {
-                Id = new InventoryItemId(Guid.NewGuid()),
+                Id = Guid.NewGuid(),
                 DisplayName = "Widget",
                 State = InventoryState.Active,
                 Payload = [1, 2],
@@ -107,7 +105,7 @@ public sealed class GeneratedConfigurationTests
                 typeof(ManualAudit), typeof(ModelAExternalEntity), typeof(ModelBExternalEntity));
             _ = await Assert.That(context.Model.FindEntityType(typeof(SpecializedBillingRecord))!.BaseType!.ClrType).IsEqualTo(typeof(BillingRecord));
             _ = await Assert.That(context.Model.FindEntityType(typeof(InventoryDetails))).IsNull();
-            _ = await Assert.That(context.Model.FindEntityType(typeof(InventoryItemId))).IsNull();
+            _ = await Assert.That(context.Model.FindEntityType(typeof(Guid))).IsNull();
             _ = await Assert.That(context.Model.FindEntityType(typeof(InventoryState))).IsNull();
             _ = await Assert.That(context.Model.FindEntityType(typeof(InventoryOptions))).IsNull();
             _ = await Assert.That(context.Model.FindEntityType(typeof(ModelAIgnoredPoco))).IsNull();
@@ -148,7 +146,7 @@ public sealed class GeneratedConfigurationTests
 
         await AssertPropertyPair(inventory, nameof(InventoryItem.DisplayName), nameof(InventoryItem.OptionalDisplayName), converterExpected: false);
         await AssertPropertyPair(inventory, nameof(InventoryItem.State), nameof(InventoryItem.OptionalState), converterExpected: true);
-        await AssertPropertyPair(inventory, nameof(InventoryItem.Id), nameof(InventoryItem.OptionalExternalId), converterExpected: true);
+        await AssertPropertyPair(inventory, nameof(InventoryItem.Id), nameof(InventoryItem.OptionalExternalId), converterExpected: false);
         await AssertPropertyPair(inventory, nameof(InventoryItem.Endpoint), nameof(InventoryItem.OptionalEndpoint), converterExpected: true);
         await AssertPropertyPair(inventory, nameof(InventoryItem.Payload), nameof(InventoryItem.OptionalPayload), converterExpected: false);
         await AssertPropertyPair(inventory, nameof(InventoryItem.ReadOnlyPayload), nameof(InventoryItem.OptionalReadOnlyPayload), converterExpected: true);
@@ -174,7 +172,7 @@ public sealed class GeneratedConfigurationTests
         await connection.OpenAsync();
         DbContextOptions<GeneratedCompatibilityContext> options = new DbContextOptionsBuilder<GeneratedCompatibilityContext>().UseSqlite(connection).Options;
         var id = Guid.NewGuid();
-        var optionalStrongId = new InventoryItemId(Guid.NewGuid());
+        var optionalExternalId = Guid.NewGuid();
         JsonElement extensionValue = JsonDocument.Parse("{\"source\":\"matrix\"}").RootElement.Clone();
 
         await using (var context = new GeneratedCompatibilityContext(options))
@@ -182,12 +180,12 @@ public sealed class GeneratedConfigurationTests
             _ = await context.Database.EnsureCreatedAsync();
             context.Inventory.Add(new InventoryItem
             {
-                Id = new(id),
+                Id = id,
                 DisplayName = "required",
                 OptionalDisplayName = "optional",
                 State = InventoryState.Active,
                 OptionalState = InventoryState.Archived,
-                OptionalExternalId = optionalStrongId,
+                OptionalExternalId = optionalExternalId,
                 Endpoint = new("required", UriKind.Relative),
                 OptionalEndpoint = new("optional", UriKind.Relative),
                 Payload = [1],
@@ -211,10 +209,10 @@ public sealed class GeneratedConfigurationTests
 
         await using (var context = new GeneratedCompatibilityContext(options))
         {
-            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == new InventoryItemId(id));
+            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == id);
             _ = await Assert.That(item.OptionalDisplayName).IsEqualTo("optional");
             _ = await Assert.That(item.OptionalState).IsEqualTo(InventoryState.Archived);
-            _ = await Assert.That(item.OptionalExternalId).IsEqualTo(optionalStrongId);
+            _ = await Assert.That(item.OptionalExternalId).IsEqualTo(optionalExternalId);
             _ = await Assert.That(item.OptionalEndpoint?.ToString()).IsEqualTo("optional");
             _ = await Assert.That(item.OptionalPayload).IsEquivalentTo(new byte[] { 2 });
             _ = await Assert.That(item.OptionalReadOnlyPayload?.ToArray()).IsEquivalentTo(new byte[] { 4 });
@@ -238,7 +236,7 @@ public sealed class GeneratedConfigurationTests
             _ = await context.Database.EnsureCreatedAsync();
             context.Inventory.Add(new InventoryItem
             {
-                Id = new(id),
+                Id = id,
                 DisplayName = "transitions",
                 Details = new(),
                 DetailHistory = [],
@@ -248,7 +246,7 @@ public sealed class GeneratedConfigurationTests
 
         await using (var context = new GeneratedCompatibilityContext(options))
         {
-            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == new InventoryItemId(id));
+            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == id);
             _ = await Assert.That(item.OptionalDetails).IsNull();
             _ = await Assert.That(item.OptionalDetailHistory).IsNull();
             item.OptionalDetails = new InventoryDetails { Warehouse = "A", Quantity = 1 };
@@ -258,7 +256,7 @@ public sealed class GeneratedConfigurationTests
 
         await using (var context = new GeneratedCompatibilityContext(options))
         {
-            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == new InventoryItemId(id));
+            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == id);
             _ = await Assert.That(item.OptionalDetails?.Quantity).IsEqualTo(1);
             item.OptionalDetails!.Quantity = 2;
             item.OptionalDetailHistory = [new InventoryDetails { Warehouse = "B", Quantity = 2 }];
@@ -267,7 +265,7 @@ public sealed class GeneratedConfigurationTests
 
         await using (var context = new GeneratedCompatibilityContext(options))
         {
-            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == new InventoryItemId(id));
+            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == id);
             _ = await Assert.That(item.OptionalDetails?.Quantity).IsEqualTo(2);
             _ = await Assert.That(item.OptionalDetailHistory?.Single().Warehouse).IsEqualTo("B");
             item.OptionalDetails = null;
@@ -277,7 +275,7 @@ public sealed class GeneratedConfigurationTests
 
         await using (var context = new GeneratedCompatibilityContext(options))
         {
-            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == new InventoryItemId(id));
+            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == id);
             _ = await Assert.That(item.OptionalDetails).IsNull();
             _ = await Assert.That(item.OptionalDetailHistory).IsNull();
         }

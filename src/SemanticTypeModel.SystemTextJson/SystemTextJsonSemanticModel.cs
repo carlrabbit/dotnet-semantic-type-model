@@ -17,8 +17,6 @@ public sealed record SystemTextJsonSemanticModel
     /// <summary>Gets the selected property-name source used by the resolver projection.</summary>
     public required SemanticJsonPropertyNameSource PropertyNameSource { get; init; }
 
-    /// <summary>Gets the projected Strong Scalar runtime mappings.</summary>
-    public IReadOnlyList<SystemTextJsonStrongScalarDefinition> StrongScalars { get; init; } = [];
 
     /// <summary>Gets the transformation trace produced before domain model creation.</summary>
     public SemanticTransformationTrace Trace { get; init; } = new();
@@ -55,15 +53,6 @@ public sealed record SystemTextJsonTypeDefinition
 
     /// <summary>Gets a value indicating whether this type is a semantic Entity.</summary>
     public bool IsEntity { get; init; }
-}
-
-/// <summary>Describes a Strong Scalar mapping needed by the runtime projection.</summary>
-public sealed record SystemTextJsonStrongScalarDefinition
-{
-    /// <summary>Gets the Strong Scalar CLR type identifier.</summary>
-    public required TypeId Id { get; init; }
-    /// <summary>Gets the underlying scalar CLR type identifier.</summary>
-    public required TypeRef ValueType { get; init; }
 }
 
 /// <summary>

@@ -14,7 +14,6 @@ Read only the subsystem contracts relevant to the task.
 
 - [Core semantic vocabulary](specs/core-semantic-vocabulary.md)
 - [Current canonical model surface](specs/current-canonical-model-surface.md)
-- [Strong Scalar semantics](specs/strong-scalar-semantics.md)
 - [Conditional constraint semantics](specs/core-conditional-constraint-semantics.md)
 - [Audience-specific description semantics](specs/audience-specific-description-semantics.md)
 - [Diagnostics](specs/diagnostics.md)

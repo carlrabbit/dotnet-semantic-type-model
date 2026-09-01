@@ -66,7 +66,7 @@ One persistence project may select multiple semantic-model assemblies.
 
 `SemanticTypeModel.Generators` emits deterministic semantic manifest metadata for generator-to-generator consumption.
 
-The current manifest schema version is 2. Version 2 carries explicit Strong Scalar kind and underlying value-type identity; aligned 4.1 generators consume it under the existing exact suite-version rule.
+The current compile-time manifest schema version is 3. It contains only the canonical type and property contract needed by the EF generator; aligned generators consume it under the existing exact suite-version rule.
 
 The manifest contains enough canonical semantics and CLR lineage for EF generation, including the identities/shapes required to locate semantic types and members, determine entity/value roles, apply keys/requiredness, classify scalar/value storage, and preserve inheritance/member placement.
 
@@ -200,7 +200,7 @@ The default mapping is intentionally narrow and opinionated.
 | enum | string provider value |
 | `System.Uri` | string provider value |
 | `char` | string provider value |
-| strong scalar/identifier with supported underlying shape | underlying provider scalar with conversion/comparison as required |
+| compatible single-value CLR wrapper | underlying provider scalar with conversion/comparison as required; this is an EF-only CLR convenience |
 | `byte[]` | direct binary property |
 | `ReadOnlyMemory<byte>` | supported binary conversion |
 | owned structural value object | JSON-converted property column |
@@ -233,14 +233,13 @@ Owned structural value shapes are represented according to the current JSON stor
 
 Unsupported or ambiguous unowned object/array/dictionary shapes require diagnostics or explicit application configuration; STM must not guess a relationship/storage model.
 
-## Scalars and Strong Shapes
+## Scalars and Compatible Wrapper Shapes
 
-Provider-neutral scalar classification supports the CLR shapes defined by the current shared EF storage policy, including common primitives, GUID/date/time values, enums, URI, binary shapes, and supported strong scalar/identifier wrappers.
+Provider-neutral scalar classification supports the CLR shapes defined by the current shared EF storage policy, including common primitives, GUID/date/time values, enums, URI, binary shapes, and compatible single-value CLR wrappers.
 
-Unsupported scalar/strong shapes must produce deterministic diagnostics rather than silently converting through an arbitrary string representation.
+Unsupported scalar or wrapper shapes must produce deterministic diagnostics rather than silently converting through an arbitrary string representation.
 
-The provider-independent policy intentionally rejects `sbyte`, `ushort`, `uint`, and `ulong` direct or Strong
-Scalar-backed properties; Strong Scalar wrapping does not bypass that support boundary.
+The provider-independent policy intentionally rejects `sbyte`, `ushort`, `uint`, and `ulong` direct properties; wrapper shape does not bypass that support boundary.
 
 ## Relationship Policy
 
