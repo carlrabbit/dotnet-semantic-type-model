@@ -18,6 +18,12 @@ canonical TypeSchemaModel
 
 The goal is for the two projections to walk in tandem without merging their responsibilities.
 
+The native baseline uses the following representation-fidelity rules: `Time`, `DateTime` without a guaranteed
+offset, and `Duration` remain string-shaped without an inferred standard format; `Date`, offset-bearing
+`DateTimeOffset`, and `Guid` retain faithful standard formats; Binary is a Base64 string with
+`contentEncoding: base64`; and Json is unconstrained JSON rather than object-only. Explicit member formats are
+validation semantics and override inferred/default formats at the property use site.
+
 This specification is authoritative for:
 
 - the System.Text.Json / JSON Schema responsibility boundary;

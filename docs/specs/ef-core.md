@@ -199,6 +199,7 @@ The default mapping is intentionally narrow and opinionated.
 | direct scalar | scalar column |
 | enum | string provider value |
 | `System.Uri` | string provider value |
+| `char` | string provider value |
 | strong scalar/identifier with supported underlying shape | underlying provider scalar with conversion/comparison as required |
 | `byte[]` | direct binary property |
 | `ReadOnlyMemory<byte>` | supported binary conversion |
@@ -237,6 +238,9 @@ Unsupported or ambiguous unowned object/array/dictionary shapes require diagnost
 Provider-neutral scalar classification supports the CLR shapes defined by the current shared EF storage policy, including common primitives, GUID/date/time values, enums, URI, binary shapes, and supported strong scalar/identifier wrappers.
 
 Unsupported scalar/strong shapes must produce deterministic diagnostics rather than silently converting through an arbitrary string representation.
+
+The provider-independent policy intentionally rejects `sbyte`, `ushort`, `uint`, and `ulong` direct or Strong
+Scalar-backed properties; Strong Scalar wrapping does not bypass that support boundary.
 
 ## Relationship Policy
 

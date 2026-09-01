@@ -50,6 +50,48 @@ public sealed class M0073ProjectionMatrixTests
             _ = await Assert.That(schema.GetProperty("type").GetString()).IsEqualTo(expectedType);
         }
     }
+
+    [Test]
+    public async Task Exported_schema_should_preserve_native_representation_fidelity_metadata()
+    {
+        JsonElement definitions = JsonSchemaExporter.Export(ModelAGenerated.ModelASemanticTypeModel.Create()).Document.RootElement.GetProperty("$defs");
+        JsonElement binary = definitions.EnumerateObject().First(item => item.Value.TryGetProperty("contentEncoding", out _)).Value;
+        _ = await Assert.That(binary.GetProperty("type").GetString()).IsEqualTo("string");
+        _ = await Assert.That(binary.GetProperty("contentEncoding").GetString()).IsEqualTo("base64");
+
+        JsonProperty uriEntry = definitions.EnumerateObject().FirstOrDefault(item => item.Value.TryGetProperty("format", out JsonElement format) && format.GetString() == "uri-reference");
+        if (uriEntry.Name is null)
+        {
+            throw new InvalidOperationException(string.Join(", ", definitions.EnumerateObject().Select(item => $"{item.Name}:{(item.Value.TryGetProperty("format", out JsonElement format) ? format.GetString() : "<none>")}")));
+        }
+        JsonElement uri = uriEntry.Value;
+        _ = await Assert.That(uri.GetProperty("type").GetString()).IsEqualTo("string");
+    }
+
+    [Test]
+    public async Task Json_scalar_should_export_as_unconstrained_json_with_semantic_kind_metadata()
+    {
+        var json = new ScalarTypeDefinition
+        {
+            Id = new TypeId("JsonValue"),
+            Name = "JsonValue",
+            Kind = TypeKind.Scalar,
+            Nullability = Nullability.NonNullable,
+            ScalarKind = ScalarKind.Json,
+            Annotations = new AnnotationBag(),
+        };
+        var model = new TypeSchemaModel
+        {
+            Id = new SchemaModelId("JsonValue"),
+            Types = [json],
+            TypesById = new Dictionary<TypeId, TypeDefinition> { [json.Id] = json },
+            Annotations = new AnnotationBag(),
+        };
+
+        JsonElement document = JsonSchemaExporter.Export(model).Document.RootElement;
+        _ = await Assert.That(document.TryGetProperty("type", out _)).IsFalse();
+        _ = await Assert.That(document.GetProperty("x-stm").GetProperty("scalarKind").GetString()).IsEqualTo("Json");
+    }
 }
 #pragma warning restore CA1707
 #pragma warning restore CS1591

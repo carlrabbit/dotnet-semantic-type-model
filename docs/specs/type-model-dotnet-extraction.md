@@ -93,7 +93,9 @@ Defaults:
 - string -> string;
 - integer primitives -> integer;
 - floating primitives -> number;
-- decimal/date/time/datetime/datetimeoffset/duration/guid/binary/json -> deterministic scalar+annotation baseline.
+- decimal/date/time/datetime/datetimeoffset/duration/guid/binary/json -> deterministic scalar+annotation baseline;
+- `char` is String, `ReadOnlyMemory<byte>` is Binary, and `JsonDocument`/`JsonElement`/`JsonNode` are Json;
+- `System.Uri` is String with inferred `schema.format=uri-reference`; explicit format metadata may request `uri`.
 
 ### Enum baseline
 
@@ -148,7 +150,7 @@ Dictionary extraction MUST normalize and extract both key and value type argumen
 
 ## M0050 URI Scalar Compatibility
 
-`System.Uri` and nullable `System.Uri` members MUST extract as string-compatible scalar definitions. A `Uri` member implies `schema.format=uri` unless an explicit supported format annotation overrides the convention. `STM5025` remains required for formats on unsupported member shapes.
+`System.Uri` and nullable `System.Uri` members MUST extract as string-compatible scalar definitions. A `Uri` member implies `schema.format=uri-reference` because relative references are valid. An explicit supported format annotation may request the stronger `uri` constraint. `STM5025` remains required for formats on unsupported member shapes.
 
 ## M0051 inherited semantic members
 

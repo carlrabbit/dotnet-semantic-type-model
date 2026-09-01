@@ -91,6 +91,9 @@ public sealed record JsonSchemaProperty
     /// <summary>Gets the JSON Schema description annotation.</summary>
     public string? Description { get; init; }
 
+    /// <summary>Gets an explicit member-level format override.</summary>
+    public string? Format { get; init; }
+
     /// <summary>Gets scalar, string, array, or object constraints attached to the property.</summary>
     public JsonSchemaConstraintSet Constraints { get; init; } = new();
 
@@ -102,13 +105,16 @@ public sealed record JsonSchemaProperty
 public sealed record JsonSchemaScalarNode : JsonSchemaNode
 {
     /// <summary>Gets the JSON Schema scalar type name.</summary>
-    public required string Type { get; init; }
+    public string? Type { get; init; }
 
     /// <summary>Gets a value indicating whether null is allowed.</summary>
     public bool IsNullable { get; init; }
 
     /// <summary>Gets the JSON Schema format.</summary>
     public string? Format { get; init; }
+
+    /// <summary>Gets the JSON content encoding annotation.</summary>
+    public string? ContentEncoding { get; init; }
 
     /// <summary>Gets constraints attached to the scalar node.</summary>
     public JsonSchemaConstraintSet Constraints { get; init; } = new();

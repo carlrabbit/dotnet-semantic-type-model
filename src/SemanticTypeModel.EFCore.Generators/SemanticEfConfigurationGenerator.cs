@@ -297,6 +297,10 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
             actual.ToDisplayString(),
             target?.Kind == "Enum" || actual.TypeKind == TypeKind.Enum,
             hasStrongShape);
+        if (valueProperty is not null && IsUnsupportedUnsignedInteger(valueProperty.Type))
+        {
+            scalarStorage = EfScalarStorageKind.Unsupported;
+        }
 
         if (EfStoragePolicy.IsUnsupportedUnownedShape(target?.Kind)
             && scalarStorage is not (EfScalarStorageKind.StrongScalar or EfScalarStorageKind.DirectBinary or EfScalarStorageKind.ReadOnlyMemoryBinary))
@@ -317,6 +321,10 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
                         ? ".HasConversion(global::SemanticTypeModel.EFCore.SemanticEfValueConverters.NullableUri());"
                         : ".HasConversion(global::SemanticTypeModel.EFCore.SemanticEfValueConverters.Uri());")
                     .AppendLine();
+                error = null;
+                return true;
+            case EfScalarStorageKind.CharString:
+                source.Append("        ").Append(configuredProperty).AppendLine(".HasConversion<string>();");
                 error = null;
                 return true;
             case EfScalarStorageKind.ReadOnlyMemoryBinary:
@@ -366,6 +374,11 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
             default:
                 throw new InvalidOperationException($"Unknown scalar storage kind '{scalarStorage}'.");
         }
+    }
+
+    private static bool IsUnsupportedUnsignedInteger(ITypeSymbol type)
+    {
+        return type.SpecialType is SpecialType.System_SByte or SpecialType.System_UInt16 or SpecialType.System_UInt32 or SpecialType.System_UInt64;
     }
 
     private static string GenerateRegistration(string modelName, IReadOnlyList<(SemanticType Manifest, INamedTypeSymbol Symbol)> entities)

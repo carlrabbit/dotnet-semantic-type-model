@@ -67,6 +67,7 @@ internal partial class AccountConfiguration
 | Scalar | Property/column |
 | Enum | String provider representation |
 | `Uri` | String provider representation |
+| `char` | String provider representation |
 | Strong Scalar | Underlying provider scalar when supported; in owned JSON it is serialized as the scalar, not `{ "Value": ... }` |
 | `byte[]` / `ReadOnlyMemory<byte>` | Binary mapping/conversion |
 | Owned ValueKind/object/collection | JSON-converted property according to retained ownership/storage policy |
@@ -91,6 +92,7 @@ the underlying GUID representation.
 | `STM5044`/`STM5045` | CLR type/member no longer matches manifest | Clean/rebuild model and persistence projects; fix renamed/removed members. |
 | `STM5046` | Member/entity shape violates supported EF contract | Use a supported scalar/identifier/binary/owned-JSON shape or handle mapping manually after generated configuration. |
 | No generated config for a ValueKind/DTO | Only semantic Entities receive standalone configurations | Keep the type as a value shape or make its semantic role intentionally Entity. |
+| `sbyte`, `ushort`, `uint`, or `ulong` member is diagnosed | Provider-independent EF mappings do not silently widen these integer forms | Choose a provider-specific/manual mapping or use a supported CLR representation; Strong Scalar wrapping does not bypass this boundary. |
 | Manual entity disappears/changes | Application composition is wrong, not expected generated behavior | Generated config must touch only selected semantic Entities; inspect generated source and manual `OnModelCreating`. |
 
 To inspect emitted source, enable `EmitCompilerGeneratedFiles`; see [Configuration](../configuration.md).

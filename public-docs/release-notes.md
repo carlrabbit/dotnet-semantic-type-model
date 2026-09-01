@@ -12,6 +12,11 @@ outside this readiness milestone.
   baseline.
 - Consolidated positive cross-package tests now use independent generated Model A and Model B fixtures,
   including multi-model EF Core composition and isolated packed-consumer coverage.
+- Scalar representation fidelity is aligned across extraction and projections: `char` and
+  `ReadOnlyMemory<byte>` are covered, `Uri` defaults to `uri-reference`, Binary schemas use Base64
+  `contentEncoding`, and raw Json is not restricted to object shape.
+- EF Core rejects unsupported unsigned integer representations deterministically, while Power BI preserves
+  `ulong` values as text and diagnoses unconstrained Decimal precision risk.
 
 # 5.0.0
 

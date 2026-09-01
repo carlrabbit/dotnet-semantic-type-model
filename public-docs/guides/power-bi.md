@@ -36,6 +36,10 @@ Supported `[SemanticStrongScalar]` values are classified using their underlying 
 projection can represent it. Strong Scalar does not infer analytical identity, keys, relationships, or display
 behavior.
 
+`ulong` values use an exact-value-preserving String fallback with a diagnostic because the full CLR range does
+not fit Power BI `Int64`. Decimal remains the fixed-decimal target, with a potential-loss diagnostic when the
+canonical precision/scale does not prove the value domain fits.
+
 ## Diagnose
 
 | Symptom | Likely cause | Fix |
@@ -44,6 +48,7 @@ behavior.
 | Unresolved sort column | Referenced projected member does not exist after projection/naming | Correct sort metadata or the projected member selection. |
 | Expected relationship missing | General STM relationship projection is not supported | Define target-specific analytical relationship behavior outside the canonical STM contract. |
 | Lossy scalar mapping | Source semantic has no exact analytical representation | Accept the diagnostic intentionally or change source/target metadata. |
+| `ulong` or unconstrained Decimal diagnostic | CLR range/precision exceeds the guaranteed Power BI numeric contract | Use the exact String fallback or add bounded canonical precision/scale metadata. |
 | Unsupported nested shape | Owned/nested shape lacks a supported policy | Choose supported flatten/serialize/diagnose behavior where available. |
 
 ## Reference

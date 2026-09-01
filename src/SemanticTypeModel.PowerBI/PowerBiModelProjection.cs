@@ -307,7 +307,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         {
             return
             [
-                CreateColumn(columnName, property.DisplayName, MapScalarDataType(underlyingScalar, propertyPath, diagnostics), isNullable, isKey, isHidden, property.UserDescription, summarization, property.Id, dataCategory, formatString, sortByColumn, property.Annotations),
+                CreateColumn(columnName, property.DisplayName, MapScalarDataType(underlyingScalar, strongScalar.ValueType.Id.Value, propertyPath, diagnostics), isNullable, isKey, isHidden, property.UserDescription, summarization, property.Id, dataCategory, formatString, sortByColumn, property.Annotations),
             ];
         }
 
@@ -315,7 +315,7 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         {
             return
             [
-                CreateColumn(columnName, property.DisplayName, MapScalarDataType(scalar, propertyPath, diagnostics), isNullable, isKey, isHidden, property.UserDescription, summarization, property.Id, dataCategory, formatString, sortByColumn, property.Annotations),
+                CreateColumn(columnName, property.DisplayName, MapScalarDataType(scalar, scalar.Id.Value, propertyPath, diagnostics), isNullable, isKey, isHidden, property.UserDescription, summarization, property.Id, dataCategory, formatString, sortByColumn, property.Annotations),
             ];
         }
 
@@ -631,8 +631,19 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
         return PowerBiDataType.String;
     }
 
-    private PowerBiDataType MapScalarDataType(ScalarTypeDefinition scalar, string modelPath, IList<SchemaDiagnostic> diagnostics)
+    private PowerBiDataType MapScalarDataType(ScalarTypeDefinition scalar, string clrTypeId, string modelPath, IList<SchemaDiagnostic> diagnostics)
     {
+        if (scalar.ScalarKind == ScalarKind.Integer && IsClrType(clrTypeId, "UInt64", "ulong"))
+        {
+            Report(diagnostics, SchemaDiagnosticSeverity.Warning, "POWERBI_LOSSY_UINT64_MAPPING", "UInt64 was projected as String to preserve its full CLR range.", modelPath);
+            return PowerBiDataType.String;
+        }
+
+        if (scalar.ScalarKind == ScalarKind.Decimal && scalar.Precision is null)
+        {
+            Report(diagnostics, SchemaDiagnosticSeverity.Warning, "POWERBI_LOSSY_DECIMAL_PRECISION", "Decimal precision and scale were not constrained to the Power BI fixed-decimal range.", modelPath);
+        }
+
         return scalar.ScalarKind switch
         {
             ScalarKind.Boolean => PowerBiDataType.Boolean,
@@ -652,6 +663,11 @@ public sealed class PowerBiModelProjection(PowerBiProjectionOptions? options = n
             ScalarKind.Json => ReportLossyType(scalar, "POWERBI_LOSSY_JSON_MAPPING", "Json was projected as String.", PowerBiDataType.String, modelPath, diagnostics),
             _ => ReportLossyType(scalar, "POWERBI_UNKNOWN_SCALAR_MAPPING", $"Scalar kind '{scalar.ScalarKind}' was projected as String.", PowerBiDataType.String, modelPath, diagnostics),
         };
+    }
+
+    private static bool IsClrType(string typeId, params string[] names)
+    {
+        return names.Any(name => typeId.Equals(name, StringComparison.Ordinal) || typeId.EndsWith("." + name, StringComparison.Ordinal) || typeId.EndsWith("::" + name, StringComparison.Ordinal));
     }
 
     private static PowerBiDataType ReportLossyType(

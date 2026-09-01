@@ -124,6 +124,11 @@ The supported JSON fidelity claim is bounded and one-way: STM-configured System.
 against the derived JSON Schema. Bidirectional serializer/schema equivalence and representation-changing
 custom contracts are outside the guarantee.
 
+The fidelity baseline follows native System.Text.Json scalar representation. JSON Schema leaves `Time`,
+offset-ambiguous `DateTime`, and `Duration` without inferred standard formats, describes Binary as a Base64
+string with `contentEncoding: base64`, and treats Json as unconstrained JSON. `System.Uri` defaults to
+`uri-reference`; explicit member format metadata can request the stronger `uri` validation constraint.
+
 ## EF Core
 
 The supported static application path is generated configuration through

@@ -126,10 +126,16 @@ public static class EfRelationalExtensions
             : actual == typeof(byte[])
                 ? "System.Byte[]"
                 : actual.FullName ?? actual.Name;
+        if (value is not null && IsUnsupportedUnsignedInteger(value.PropertyType))
+        {
+            provider = typeof(void);
+            return false;
+        }
         EfScalarStorageKind storage = EfStoragePolicy.ClassifyScalar(scalarName, actual.IsEnum, hasStrongShape);
         provider = storage switch
         {
             EfScalarStorageKind.EnumString or EfScalarStorageKind.UriString => typeof(string),
+            EfScalarStorageKind.CharString => typeof(string),
             EfScalarStorageKind.ReadOnlyMemoryBinary or EfScalarStorageKind.DirectBinary => typeof(byte[]),
             EfScalarStorageKind.StrongScalar => value!.PropertyType,
             EfScalarStorageKind.Direct => actual,
@@ -137,6 +143,12 @@ public static class EfRelationalExtensions
             _ => typeof(void),
         };
         return storage != EfScalarStorageKind.Unsupported;
+    }
+
+    private static bool IsUnsupportedUnsignedInteger(Type type)
+    {
+        Type actual = Nullable.GetUnderlyingType(type) ?? type;
+        return actual == typeof(sbyte) || actual == typeof(ushort) || actual == typeof(uint) || actual == typeof(ulong);
     }
     private static bool ValidateJsonValueKind(TypeSchemaModel model, ObjectTypeDefinition valueKind, Type declaredClrType, List<SchemaDiagnostic> diagnostics, HashSet<TypeId> visited)
     {

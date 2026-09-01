@@ -88,6 +88,10 @@ one-property inference convention. The STM-configured System.Text.Json and deriv
 bounded and one-way: supported output validates against the schema, without a promise of bidirectional
 serializer/schema equivalence.
 
+Native scalar fidelity is preserved across the projection suite: Binary uses Base64 JSON with schema
+`contentEncoding: base64`, `System.Uri` uses `uri-reference` by default, and raw Json is not restricted to
+object values.
+
 ## JSON Schema semantic annotations
 
 `SemanticTypeModel.JsonSchema` exports Draft 2020-12 and can preserve selected STM-only semantics under one

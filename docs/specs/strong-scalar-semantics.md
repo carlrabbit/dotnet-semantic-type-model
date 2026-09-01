@@ -156,6 +156,10 @@ Existing manifest policy remains deliberately simple:
 
 The canonical JSON representation of a Strong Scalar is the JSON representation of its underlying scalar value.
 
+Across projections, Strong Scalar representation is inherited from its underlier: nominal identity is retained
+where a target supports it, while JSON, schema, storage, and analytical representation/support status remain the
+same as the underlying CLR scalar. Wrapping an unsupported CLR representation does not make it supported.
+
 For:
 
 ```csharp

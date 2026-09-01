@@ -28,6 +28,7 @@ internal static class EfStoragePolicy
         return isEnum ? EfScalarStorageKind.EnumString : clrTypeName switch
         {
             "System.Uri" => EfScalarStorageKind.UriString,
+            "System.Char" or "char" => EfScalarStorageKind.CharString,
             "System.ReadOnlyMemory<System.Byte>" or "System.ReadOnlyMemory<byte>" => EfScalarStorageKind.ReadOnlyMemoryBinary,
             "System.Byte[]" or "byte[]" => EfScalarStorageKind.DirectBinary,
             _ when hasStrongShape => EfScalarStorageKind.StrongScalar,
@@ -40,6 +41,7 @@ internal static class EfStoragePolicy
     {
         return clrTypeName is
             "System.String" or "string" or
+            "System.Char" or "char" or
             "System.Boolean" or "bool" or
             "System.Byte" or "byte" or
             "System.Int16" or "short" or
@@ -64,6 +66,7 @@ internal enum EfScalarStorageKind
     DirectBinary,
     EnumString,
     UriString,
+    CharString,
     ReadOnlyMemoryBinary,
     StrongScalar,
 }

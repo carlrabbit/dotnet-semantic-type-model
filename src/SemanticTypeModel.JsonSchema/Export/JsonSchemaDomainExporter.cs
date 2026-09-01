@@ -133,7 +133,6 @@ public static class JsonSchemaDomainExporter
                 {
                     writer.WriteString("description", property.Description);
                 }
-
                 foreach ((var key, JsonElement value) in property.Annotations.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
                 {
                     if (!includeSemanticAnnotations && string.Equals(key, "x-stm", StringComparison.Ordinal))
@@ -151,6 +150,10 @@ public static class JsonSchemaDomainExporter
                     writer.WritePropertyName("oneOf");
                     writer.WriteStartArray();
                     writer.WriteStartObject();
+                    if (property.Format is not null)
+                    {
+                        writer.WriteString("format", property.Format);
+                    }
                     WriteRef(writer, property.Schema, diagnostics, pointer + "/properties/" + property.Name, includeSemanticAnnotations);
                     writer.WriteEndObject();
                     writer.WriteStartObject();
@@ -160,6 +163,10 @@ public static class JsonSchemaDomainExporter
                 }
                 else
                 {
+                    if (property.Format is not null)
+                    {
+                        writer.WriteString("format", property.Format);
+                    }
                     WriteRef(writer, property.Schema, diagnostics, pointer + "/properties/" + property.Name, includeSemanticAnnotations);
                 }
 
@@ -236,10 +243,17 @@ public static class JsonSchemaDomainExporter
             writer.WritePropertyName("oneOf");
             writer.WriteStartArray();
             writer.WriteStartObject();
-            writer.WriteString("type", scalar.Type);
+            if (scalar.Type is not null)
+            {
+                writer.WriteString("type", scalar.Type);
+            }
             if (scalar.Format is not null)
             {
                 writer.WriteString("format", scalar.Format);
+            }
+            if (scalar.ContentEncoding is not null)
+            {
+                writer.WriteString("contentEncoding", scalar.ContentEncoding);
             }
             writer.WriteEndObject();
             writer.WriteStartObject();
@@ -249,10 +263,17 @@ public static class JsonSchemaDomainExporter
         }
         else
         {
-            writer.WriteString("type", scalar.Type);
+            if (scalar.Type is not null)
+            {
+                writer.WriteString("type", scalar.Type);
+            }
             if (scalar.Format is not null)
             {
                 writer.WriteString("format", scalar.Format);
+            }
+            if (scalar.ContentEncoding is not null)
+            {
+                writer.WriteString("contentEncoding", scalar.ContentEncoding);
             }
         }
 

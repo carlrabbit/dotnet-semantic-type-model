@@ -21,7 +21,7 @@ Model A is dimension-complete, not combinatorially exhaustive.
 
 It owns representative valid semantic authoring plus explicit matrix carriers for dimensions that must be tested systematically across targets.
 
-At minimum, actual modeled property uses must cover every currently supported scalar and Strong Scalar backing kind:
+At minimum, actual modeled property uses must cover every currently supported Strong Scalar backing kind:
 
 ```text
 Boolean
@@ -38,11 +38,63 @@ Guid
 Binary
 ```
 
+The ordinary scalar matrix additionally covers canonical scalar kinds that cannot back Strong Scalars, including `Json`; `Unknown` is exercised through targeted synthetic projection tests because it is not a normal code-first CLR authoring result.
+
 A type declaration with no modeled property use does not count as matrix coverage.
 
 Where nullability changes target behavior, include deliberate required/optional cases without creating a Cartesian product.
 
 Model A also continues to cover representative inheritance, enums, ownership, extension data, constraints, keys, Display Identity, Access Paths, mutability, descriptions, `ui.*`, envelope/evolution/lifecycle semantics, and other projection-neutral dimensions.
+
+## CLR Representation Submatrix
+
+Canonical-kind coverage and CLR-representation coverage are different dimensions.
+
+When multiple supported CLR representations map to one canonical scalar kind and a target can observe that CLR representation, the shared fixtures or focused .NET extraction tests must include enough cases to prevent a representative type from masking target incompatibility.
+
+The CLR representation submatrix includes current supported forms such as:
+
+```text
+String
+  string
+  char
+  System.Uri
+
+Integer
+  byte
+  sbyte
+  short
+  ushort
+  int
+  uint
+  long
+  ulong
+
+Number
+  float
+  double
+
+Binary
+  byte[]
+  ReadOnlyMemory<byte>
+
+Json
+  JsonDocument
+  JsonElement
+  JsonNode
+```
+
+`nint` / `nuint` are not part of the supported code-first scalar matrix.
+
+Do not multiply every CLR representation across every semantic test shape. Use a compact carrier or focused extraction/target matrix where the representation matters.
+
+## JSON Lexical Matrix
+
+For JSON-producing/JSON-describing targets, token kind alone is insufficient coverage.
+
+Where a scalar has a serializer-owned textual encoding, matrix tests must verify the lexical contract relevant to the projection. Examples include temporal values, GUIDs, URIs, binary/base64 content, and raw JSON values.
+
+System.Text.Json owns the baseline runtime JSON representation. JSON Schema must accurately describe that representation while separately expressing explicit semantic validation constraints.
 
 ## Model B — Composition and Isolation Model
 
@@ -78,11 +130,27 @@ Acceptable mechanisms include explicit projection-neutral fixture inventory meta
 
 Do not infer matrix cases from arbitrary naming conventions such as `*Id`.
 
+## Strong Scalar Parity Rule
+
+A Strong Scalar has nominal identity but uses the target representation of its underlying scalar.
+
+For every target that supports Strong Scalars:
+
+```text
+representation(StrongScalar<T>)
+==
+representation(T)
++
+nominal Strong Scalar identity where the target can preserve it
+```
+
+A Strong Scalar must not silently make an otherwise unsupported underlying CLR scalar representation supported, nor may it change the target classification simply because the wrapper is nominal.
+
 ## Positive vs Synthetic Tests
 
 Use Model A/B for positive boundary claims that include code-first authoring/generation/provider transport.
 
-Hand-built canonical models remain valid for invalid states, isolated transformations, pathological graphs, small direct unit behavior, and target-domain tests intentionally bypassing authoring/generation.
+Hand-built canonical models remain valid for invalid states, isolated transformations, pathological graphs, `Unknown`, small direct unit behavior, and target-domain tests intentionally bypassing authoring/generation.
 
 Inline Roslyn source remains valid for extraction/generator diagnostics.
 

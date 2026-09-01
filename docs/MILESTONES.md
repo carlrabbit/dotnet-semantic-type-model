@@ -6,12 +6,12 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-- None. M0073 is complete; its durable test-matrix and defect-fix outcomes are synchronized in the repository.
+None. M0074 is complete; scalar-representation outcomes and readiness evidence are synchronized in the repository.
 
 ## Next Number
 
 ```text
-M0074
+M0075
 ```
 
 Never restart or reuse milestone numbers.
