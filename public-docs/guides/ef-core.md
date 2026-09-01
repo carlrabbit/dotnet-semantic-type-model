@@ -68,7 +68,6 @@ internal partial class AccountConfiguration
 | Enum | String provider representation |
 | `Uri` | String provider representation |
 | `char` | String provider representation |
-| Compatible single-value CLR wrapper | EF-only provider-scalar convenience when the wrapper shape is supported |
 | `byte[]` / `ReadOnlyMemory<byte>` | Binary mapping/conversion |
 | Owned ValueKind/object/collection | JSON-converted property according to retained ownership/storage policy |
 | Extension data | JSON storage |
@@ -78,8 +77,8 @@ The integration deliberately does **not** infer arbitrary navigations, call `Own
 many-to-many mappings, offer TPH/TPC alternatives, generate a `DbContext`, choose a provider, create migrations,
 or own database lifecycle.
 
-Compatible single-value CLR wrappers are an EF-only storage convenience. They do not create canonical nominal
-scalar meaning, infer keys, identifiers, ownership, or projection-neutral behavior.
+CLR single-value wrappers are not automatically inferred or converted. Map such members explicitly in application
+EF configuration when needed; a wrapper does not acquire scalar meaning from a public `Value` member or constructor.
 
 ## Diagnose
 

@@ -345,3 +345,9 @@ STM5027 in 2.6.0 rather than being interpreted as strings.
 |---|---|---|---|
 | STM5049 | Warning | A Display Identity order is negative or duplicated in an effective object property set. | Use non-negative, unique orders; the whole invalid Display Identity group is omitted. |
 | STM5050 | Warning | An Access Path name/order or effective membership is invalid or ambiguous. | Use a valid path name and non-negative, unique orders per path; only the invalid named path is omitted. |
+
+## Logical Type extraction (STM5052)
+
+| Code | Severity | Cause | Fix |
+|---|---|---|---|
+| STM5052 | Warning | A Logical Type name is invalid, targets a non-scalar member, or conflicts with another scalar mapping in the object. | Use a valid explicit name on an ordinary scalar property or field and keep same-name mappings on one scalar type. |
