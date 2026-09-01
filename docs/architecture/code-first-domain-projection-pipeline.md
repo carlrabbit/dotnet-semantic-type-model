@@ -93,6 +93,10 @@ Transformations operate on canonical meaning and may normalize, derive, or valid
 
 Target packages derive package-owned domain models before target functionality is applied. Domain packages must not redefine canonical meaning merely to fit the target representation.
 
+`SemanticTypeModel.TestData` is an inward-dependent runtime capability. It consumes `TypeSchemaModel` and
+produces a package-owned finite semantic value graph; it is neither a canonical authoring source nor a target
+package dependency, and it does not materialize CLR objects.
+
 ## Target Pipelines
 
 ### JSON Representation Fidelity

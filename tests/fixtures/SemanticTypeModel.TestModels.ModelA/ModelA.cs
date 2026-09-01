@@ -39,3 +39,11 @@ public sealed class RuntimeContainer
     public State? State { get; set; }
     [JsonExtensionData] public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 }
+
+[SemanticType(SemanticTypeRole.ValueObject)]
+public sealed class TestDataScenario
+{
+    public List<string> Items { get; set; } = [];
+    public State Status { get; set; }
+    public SpecialId StrongId { get; set; }
+}

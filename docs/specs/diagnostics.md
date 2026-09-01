@@ -35,6 +35,7 @@ Projection packages that have not reached a stable diagnostic surface use a desc
 | `EFCORE_*`      | SemanticTypeModel.EFCore     |
 | `POWERBI_*`     | SemanticTypeModel.PowerBI    |
 | `JSONSCHEMA_*`  | SemanticTypeModel.JsonSchema projection and export |
+| `TESTDATA_*`  | SemanticTypeModel.TestData deterministic semantic value generation |
 
 Descriptive projection diagnostic prefixes are not part of the stable STM numeric diagnostic scheme.
 

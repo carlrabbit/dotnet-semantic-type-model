@@ -49,7 +49,7 @@ internal sealed class RepositoryPolicyTests
         {
             File.WriteAllText(Path.Combine(directory, "Unexpected.1.2.3.nupkg"), "");
             IReadOnlyList<string> errors = PackageSmokeRunner.ValidateArtifacts(directory, "1.2.3");
-            _ = await Assert.That(errors.Any(error => error.Contains("Expected 10 publishable packages", StringComparison.Ordinal))).IsTrue();
+            _ = await Assert.That(errors.Any(error => error.Contains("Expected 11 publishable packages", StringComparison.Ordinal))).IsTrue();
             _ = await Assert.That(errors.Any(error => error.Contains("SemanticTypeModel.Abstractions", StringComparison.Ordinal))).IsTrue();
         }
         finally

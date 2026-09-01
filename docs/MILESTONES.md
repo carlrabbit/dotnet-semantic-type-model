@@ -6,12 +6,12 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-None. M0074 is complete; scalar-representation outcomes and readiness evidence are synchronized in the repository.
+None. M0075 is complete; constraint-aware test-data generation behavior and validation evidence are synchronized in the repository.
 
 ## Next Number
 
 ```text
-M0075
+M0076
 ```
 
 Never restart or reuse milestone numbers.

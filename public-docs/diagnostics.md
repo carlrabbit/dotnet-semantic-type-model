@@ -18,6 +18,7 @@ silently guessing.
 | `STM1xxx` | Core transformations/semantic normalization | [STM1xxx](diagnostics/stm1xxx.md) |
 | `STM3xxx` | JSON Schema runtime projection | [STM3xxx](diagnostics/stm3xxx.md) |
 | `STM5xxx` | .NET extraction and source generators, including generated EF application | [STM5xxx](diagnostics/stm5xxx.md) |
+| `TESTDATA_*` | Deterministic semantic test-data generation | [TestData](guides/test-data.md) |
 
 Diagnostic message text is not an API contract. Prefer IDs/categories and documented behavior.
 

@@ -171,6 +171,7 @@ internal static class PackageSmokeRunner
         using Microsoft.EntityFrameworkCore;
         using SemanticTypeModel.EFCore;
         using SemanticTypeModel.Generated.EFCore;
+        using SemanticTypeModel.TestData;
         using PackageSmoke.Model;
         [assembly: GenerateSemanticEfModel(typeof(SmokeOrder))]
         internal static class Program
@@ -182,6 +183,9 @@ internal static class PackageSmokeRunner
                 if (builder.Model.FindEntityType(typeof(SmokeOrder)) is null)
                     throw new InvalidOperationException("Packed EF generator did not execute.");
                 var model = SemanticTypeModel.Generated.AppSemanticTypeModel.Create();
+                var generated = SemanticTestDataGenerator.Generate(model, new SemanticTypeModel.Abstractions.Model.TypeId("global::PackageSmoke.Model.SmokeOrder"));
+                if (generated.HasErrors || generated.Value is null)
+                    throw new InvalidOperationException("Packed TestData package did not generate a valid semantic value graph.");
                 var order = model.Types.OfType<SemanticTypeModel.Abstractions.Model.ObjectTypeDefinition>()
                     .Single(type => type.Name == "SmokeOrder");
                 var id = order.Properties.Single(property => property.Name == "Id");

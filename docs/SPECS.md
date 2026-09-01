@@ -31,6 +31,10 @@ Read only the subsystem contracts relevant to the task.
 - [Runtime API](specs/type-model-runtime-api.md)
 - [Dependency injection](specs/type-model-di-integration.md)
 
+### Runtime capabilities derived from the canonical model
+
+- [Constraint-aware test-data generation](specs/test-data-generation.md)
+
 ### Projection and integration contracts
 
 - [JSON representation fidelity](specs/json-representation-fidelity.md) — cross-target contract between supported System.Text.Json wire output and JSON Schema representation/validation.

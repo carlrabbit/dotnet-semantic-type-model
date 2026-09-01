@@ -23,6 +23,7 @@ interchange format.
 | System.Text.Json | `SemanticTypeModel.SystemTextJson` |
 | Power BI local metadata | `SemanticTypeModel.PowerBI` |
 | Runtime DI composition | `SemanticTypeModel.DependencyInjection` |
+| Deterministic semantic test data | `SemanticTypeModel.TestData` |
 
 `SemanticTypeModel.Abstractions` and `SemanticTypeModel.Core` provide shared model/runtime contracts used by the
 suite. Applications normally start from the scenario packages rather than selecting internal package layers
