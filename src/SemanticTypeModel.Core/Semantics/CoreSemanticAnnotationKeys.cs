@@ -5,6 +5,9 @@ namespace SemanticTypeModel.Core.Semantics;
 /// </summary>
 public static class CoreSemanticAnnotationKeys
 {
+    /// <summary>Stores the explicit property-level logical type name.</summary>
+    public const string LogicalType = "schema.logicalType";
+
     /// <summary>Stores the order of a property in the containing object's display identity.</summary>
     public const string DisplayIdentity = "schema.displayIdentity";
 

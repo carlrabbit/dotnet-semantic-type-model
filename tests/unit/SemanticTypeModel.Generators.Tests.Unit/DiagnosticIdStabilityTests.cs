@@ -394,7 +394,7 @@ public sealed class DiagnosticIdStabilityTests
     }
 
     [Test]
-    public async Task StrongIdentifier_literal_has_deterministic_unsupported_policy()
+    public async Task Wrapper_literal_has_deterministic_unsupported_policy()
     {
         const string source = """
             using SemanticTypeModel.DotNet;

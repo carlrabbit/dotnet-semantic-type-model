@@ -50,7 +50,6 @@ DateTime
 DateTimeOffset
 Duration
 Null
-StrongIdentifier
 Unsupported
 ```
 
@@ -93,9 +92,8 @@ unsupported source -> diagnostic
 ```
 
 Date, time, date-time, date-time-offset, duration, and GUID CLR sources use invariant
-normalization. Strong-identifier CLR structs are intentionally unsupported in 2.6.0 unless
-an extractor can resolve an unambiguous provider-scalar contract; the .NET extractor emits
-`STM_TYPED_LITERAL_SOURCE_TYPE_UNSUPPORTED` rather than comparing their text as strings.
+normalization. Unsupported CLR wrapper sources produce the existing unsupported-source diagnostic;
+they are not compared as strings.
 
 The STM5034-STM5036 identifiers are the .NET extraction/import diagnostic equivalents for
 malformed conditional metadata. Canonical-model validation continues to use the established

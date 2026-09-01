@@ -343,6 +343,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             DotNetExtractionDiagnosticIds.ConditionalConstraintLiteralTypeMismatch => GeneratorDiagnosticDescriptors.ConditionalConstraintLiteralTypeMismatch,
             DotNetExtractionDiagnosticIds.DisplayIdentityDefinitionInvalid => GeneratorDiagnosticDescriptors.DisplayIdentityDefinitionInvalid,
             DotNetExtractionDiagnosticIds.AccessPathDefinitionInvalid => GeneratorDiagnosticDescriptors.AccessPathDefinitionInvalid,
+            DotNetExtractionDiagnosticIds.LogicalTypeDefinitionInvalid => GeneratorDiagnosticDescriptors.LogicalTypeDefinitionInvalid,
             _ => GeneratorDiagnosticDescriptors.ExtractionFallback(diagnostic.Code),
         };
 

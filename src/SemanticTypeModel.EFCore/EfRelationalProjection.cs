@@ -100,7 +100,7 @@ public static class EfRelationalExtensions
                     var column = new EfScalarColumn { PropertyId = property.Id.Value, MemberName = member.Name, ColumnName = member.Name, ClrType = member.PropertyType, ProviderType = provider, IsNullable = !property.Cardinality.IsRequired && (!member.PropertyType.IsValueType || Nullable.GetUnderlyingType(member.PropertyType) is not null), DeclaringClrType = member.DeclaringType!, StorageClrType = clrType, SemanticDeclaringTypeId = source.Id.Value, StorageSemanticTypeId = source.Id.Value };
                     (provider == typeof(byte[]) ? binary : scalars).Add(column);
                 }
-                else if (target is ScalarTypeDefinition) Report(diagnostics, "EF_WRAPPER_SHAPE_NOT_SUPPORTED", $"Wrapper member '{source.Name}.{property.Name}' must expose one supported scalar Value property and matching constructor.", property.Id.Value);
+                else if (target is ScalarTypeDefinition) Report(diagnostics, "EF_UNSUPPORTED_SCALAR_TYPE", $"Member '{source.Name}.{property.Name}' has unsupported scalar type '{member.PropertyType}'.", property.Id.Value);
                 else Report(diagnostics, "EF_UNSUPPORTED_SCALAR_TYPE", $"Member '{source.Name}.{property.Name}' has unsupported scalar type '{member.PropertyType}'.", property.Id.Value);
             }
             string[] keys = [.. source.Keys.FirstOrDefault(k => k.Kind == KeyKind.Primary)?.Properties.Select(reference => source.Properties.FirstOrDefault(property => property.Id == reference.Id)).Where(property => property is not null).Select(property => MemberName(property!)) ?? []];
@@ -119,25 +119,22 @@ public static class EfRelationalExtensions
     private static bool TryProviderType(Type type, out Type provider)
     {
         Type actual = Nullable.GetUnderlyingType(type) ?? type;
-        PropertyInfo? value = actual.GetProperty("Value", BindingFlags.Instance | BindingFlags.Public);
-        var hasSingleValueShape = value is not null && actual.GetConstructor([value.PropertyType]) is not null;
         var scalarName = actual == typeof(ReadOnlyMemory<byte>)
             ? "System.ReadOnlyMemory<System.Byte>"
             : actual == typeof(byte[])
                 ? "System.Byte[]"
                 : actual.FullName ?? actual.Name;
-        if (value is not null && IsUnsupportedUnsignedInteger(value.PropertyType))
+        if (IsUnsupportedUnsignedInteger(actual))
         {
             provider = typeof(void);
             return false;
         }
-        EfScalarStorageKind storage = EfStoragePolicy.ClassifyScalar(scalarName, actual.IsEnum, hasSingleValueShape);
+        EfScalarStorageKind storage = EfStoragePolicy.ClassifyScalar(scalarName, actual.IsEnum);
         provider = storage switch
         {
             EfScalarStorageKind.EnumString or EfScalarStorageKind.UriString => typeof(string),
             EfScalarStorageKind.CharString => typeof(string),
             EfScalarStorageKind.ReadOnlyMemoryBinary or EfScalarStorageKind.DirectBinary => typeof(byte[]),
-            EfScalarStorageKind.SingleValueWrapper => value!.PropertyType,
             EfScalarStorageKind.Direct => actual,
             EfScalarStorageKind.Unsupported => typeof(void),
             _ => typeof(void),

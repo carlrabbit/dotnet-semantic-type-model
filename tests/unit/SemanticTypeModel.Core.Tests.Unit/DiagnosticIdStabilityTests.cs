@@ -48,7 +48,7 @@ public sealed class DiagnosticIdStabilityTests
         IReadOnlyList<string> ids = CollectStringConstants(typeof(StmDiagnosticIds));
         var stm0xxx = ids.Where(static id => id.StartsWith("STM0", StringComparison.Ordinal)).ToList();
 
-        // STM0001-STM0013 are the documented model validation codes.
+        // STM0001-STM0014 are the documented model validation codes.
         _ = await Assert.That(stm0xxx.Count).IsGreaterThanOrEqualTo(11);
         _ = await Assert.That(stm0xxx).Contains(StmDiagnosticIds.DuplicateTypeId);
         _ = await Assert.That(stm0xxx).Contains(StmDiagnosticIds.UnresolvedTypeRef);
@@ -61,6 +61,7 @@ public sealed class DiagnosticIdStabilityTests
         _ = await Assert.That(stm0xxx).Contains(StmDiagnosticIds.MalformedAnnotationKey);
         _ = await Assert.That(stm0xxx).Contains(StmDiagnosticIds.DuplicateEnumValueName);
         _ = await Assert.That(stm0xxx).Contains(StmDiagnosticIds.DuplicateEnumValuePayload);
+        _ = await Assert.That(stm0xxx).Contains(StmDiagnosticIds.LogicalTypeInvalid);
     }
 
     [Test]

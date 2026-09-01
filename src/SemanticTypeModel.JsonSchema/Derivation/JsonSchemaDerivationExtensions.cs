@@ -547,6 +547,11 @@ public static class JsonSchemaDerivationExtensions
             {
                 stm["ownership"] = ownership.ToLowerInvariant();
             }
+            var logicalType = GetStringAnnotation(property.Annotations, CoreSemanticAnnotationKeys.LogicalType);
+            if (logicalType is not null)
+            {
+                stm["logicalType"] = logicalType;
+            }
 
             AddSharedSemantics(stm, property.TechnicalDescription, property.Annotations, $"/properties/{property.Name}");
             if (stm.Count > 0)

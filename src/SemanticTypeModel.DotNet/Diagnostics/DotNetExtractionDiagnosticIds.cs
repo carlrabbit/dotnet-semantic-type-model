@@ -137,4 +137,7 @@ public static class DotNetExtractionDiagnosticIds
 
     /// <summary>STM5050 — An Access Path definition was invalid or ambiguous.</summary>
     public const string AccessPathDefinitionInvalid = "STM5050";
+
+    /// <summary>STM5052 — A Logical Type declaration was invalid.</summary>
+    public const string LogicalTypeDefinitionInvalid = "STM5052";
 }

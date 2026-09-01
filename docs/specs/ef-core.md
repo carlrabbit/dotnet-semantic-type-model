@@ -200,7 +200,6 @@ The default mapping is intentionally narrow and opinionated.
 | enum | string provider value |
 | `System.Uri` | string provider value |
 | `char` | string provider value |
-| compatible single-value CLR wrapper | underlying provider scalar with conversion/comparison as required; this is an EF-only CLR convenience |
 | `byte[]` | direct binary property |
 | `ReadOnlyMemory<byte>` | supported binary conversion |
 | owned structural value object | JSON-converted property column |
@@ -235,9 +234,9 @@ Unsupported or ambiguous unowned object/array/dictionary shapes require diagnost
 
 ## Scalars and Compatible Wrapper Shapes
 
-Provider-neutral scalar classification supports the CLR shapes defined by the current shared EF storage policy, including common primitives, GUID/date/time values, enums, URI, binary shapes, and compatible single-value CLR wrappers.
+Provider-neutral scalar classification supports common primitives, GUID/date/time values, enums, URI, and binary shapes. CLR single-value wrappers are not automatically inferred or converted.
 
-Unsupported scalar or wrapper shapes must produce deterministic diagnostics rather than silently converting through an arbitrary string representation.
+Unsupported scalar shapes must produce deterministic diagnostics rather than silently converting through an arbitrary string representation.
 
 The provider-independent policy intentionally rejects `sbyte`, `ushort`, `uint`, and `ulong` direct properties; wrapper shape does not bypass that support boundary.
 
