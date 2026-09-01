@@ -1,3 +1,4 @@
+using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.EFCore;
 using Intake = SemanticTypeModel.TestModels.ModelA.Intake;
 using ModelA = SemanticTypeModel.TestModels.ModelA;
@@ -66,6 +67,34 @@ public sealed class RelationalDerivationTests
         _ = await Assert.That(enumColumns.All(column => column.ProviderType == typeof(string))).IsTrue();
     }
 
+    [Test]
+    public async Task Relational_projection_covers_complete_scalar_and_strong_scalar_matrix()
+    {
+        EfEntity entity = ModelAGenerated.ModelASemanticTypeModel.Create().DeriveEfRelationalModel().Model.Entities.Single(value => value.ClrType == typeof(ModelA.ProjectionMatrixEntity));
+        EfScalarColumn[] columns = [.. entity.ScalarColumns.Concat(entity.BinaryColumns)];
+
+        foreach (ModelA.ProjectionMatrixCase matrixCase in ModelA.ProjectionMatrix.Cases)
+        {
+            EfScalarColumn scalar = columns.Single(column => column.MemberName == matrixCase.PropertyName);
+            EfScalarColumn optionalScalar = columns.Single(column => column.MemberName == matrixCase.OptionalPropertyName);
+            EfScalarColumn strong = columns.Single(column => column.MemberName == matrixCase.StrongScalarPropertyName);
+            EfScalarColumn optionalStrong = columns.Single(column => column.MemberName == matrixCase.OptionalStrongScalarPropertyName);
+
+            _ = await Assert.That(scalar.ProviderType).IsEqualTo(ExpectedProviderType(matrixCase.ScalarKind));
+            _ = await Assert.That(strong.ProviderType).IsEqualTo(ExpectedProviderType(matrixCase.ScalarKind));
+            if (scalar.IsNullable)
+            {
+                throw new InvalidOperationException($"Required scalar column is nullable: {matrixCase.PropertyName}.");
+            }
+            _ = await Assert.That(optionalScalar.IsNullable).IsTrue();
+            if (strong.IsNullable)
+            {
+                throw new InvalidOperationException($"Required strong scalar column is nullable: {matrixCase.StrongScalarPropertyName}.");
+            }
+            _ = await Assert.That(optionalStrong.IsNullable).IsTrue();
+        }
+    }
+
 
     private static async Task AssertColumnNullability(
         IReadOnlyList<EfScalarColumn> columns,
@@ -93,5 +122,26 @@ public sealed class RelationalDerivationTests
         _ = await Assert.That(optional.IsNullable).IsTrue();
         _ = await Assert.That(required.JsonShape).IsEqualTo(shape);
         _ = await Assert.That(optional.JsonShape).IsEqualTo(shape);
+    }
+
+    private static readonly Dictionary<ScalarKind, Type> ExpectedProviderTypes = new()
+    {
+        [ScalarKind.Boolean] = typeof(bool),
+        [ScalarKind.String] = typeof(string),
+        [ScalarKind.Integer] = typeof(long),
+        [ScalarKind.Number] = typeof(double),
+        [ScalarKind.Decimal] = typeof(decimal),
+        [ScalarKind.Date] = typeof(DateOnly),
+        [ScalarKind.Time] = typeof(TimeOnly),
+        [ScalarKind.DateTime] = typeof(DateTime),
+        [ScalarKind.DateTimeOffset] = typeof(DateTimeOffset),
+        [ScalarKind.Duration] = typeof(TimeSpan),
+        [ScalarKind.Guid] = typeof(Guid),
+        [ScalarKind.Binary] = typeof(byte[]),
+    };
+
+    private static Type ExpectedProviderType(ScalarKind kind)
+    {
+        return ExpectedProviderTypes[kind];
     }
 }

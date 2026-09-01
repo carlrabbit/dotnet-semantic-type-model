@@ -12,5 +12,7 @@
     <ProjectReference Include="../../../src/SemanticTypeModel.DependencyInjection/SemanticTypeModel.DependencyInjection.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.JsonSchema/SemanticTypeModel.JsonSchema.csproj" />
     <ProjectReference Include="../../../src/SemanticTypeModel.Core/SemanticTypeModel.Core.csproj" />
+    <ProjectReference Include="../../fixtures/SemanticTypeModel.TestModels.ModelA/SemanticTypeModel.TestModels.ModelA.csproj" />
+    <ProjectReference Include="../../fixtures/SemanticTypeModel.TestModels.ModelB/SemanticTypeModel.TestModels.ModelB.csproj" />
   </ItemGroup>
 </Project>

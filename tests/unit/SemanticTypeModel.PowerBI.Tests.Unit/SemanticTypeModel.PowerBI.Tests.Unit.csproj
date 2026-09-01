@@ -10,5 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../src/SemanticTypeModel.PowerBI/SemanticTypeModel.PowerBI.csproj" />
+    <ProjectReference Include="../../fixtures/SemanticTypeModel.TestModels.ModelA/SemanticTypeModel.TestModels.ModelA.csproj" />
+    <ProjectReference Include="../../fixtures/SemanticTypeModel.TestModels.ModelB/SemanticTypeModel.TestModels.ModelB.csproj" />
   </ItemGroup>
 </Project>

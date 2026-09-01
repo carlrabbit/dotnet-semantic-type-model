@@ -14,7 +14,7 @@ namespace SemanticTypeModel.TestModels.ModelA;
 [SemanticStrongScalar] public readonly record struct DateTimeOffsetId(DateTimeOffset Value);
 [SemanticStrongScalar] public readonly record struct DurationId(TimeSpan Value);
 [SemanticStrongScalar] public readonly record struct GuidId(Guid Value);
-[SemanticStrongScalar] public readonly record struct BinaryId(ReadOnlyMemory<byte> Value);
+[SemanticStrongScalar] public readonly record struct BinaryId(byte[] Value);
 
 [SemanticType(SemanticTypeRole.Entity)]
 public sealed class InventoryItem
@@ -107,6 +107,73 @@ public sealed class StorageMatrixEntity
 [SemanticStrongScalar] public readonly record struct MatrixStrongId(Guid Value);
 [SemanticType] public enum MatrixState { Active, Archived }
 [SemanticType(SemanticTypeRole.ValueObject)] public sealed record MatrixDetails(string Name);
+
+[SemanticType(SemanticTypeRole.Entity)]
+public sealed class ProjectionMatrixEntity
+{
+    [SemanticKey] public Guid Id { get; set; }
+
+    public bool BooleanValue { get; set; }
+    public required string StringValue { get; set; }
+    public long IntegerValue { get; set; }
+    public double NumberValue { get; set; }
+    public decimal DecimalValue { get; set; }
+    public DateOnly DateValue { get; set; }
+    public TimeOnly TimeValue { get; set; }
+    public DateTime DateTimeValue { get; set; }
+    public DateTimeOffset DateTimeOffsetValue { get; set; }
+    public TimeSpan DurationValue { get; set; }
+    public Guid GuidValue { get; set; }
+    public required byte[] BinaryValue { get; set; }
+
+    public bool? OptionalBooleanValue { get; set; }
+    public string? OptionalStringValue { get; set; }
+    public long? OptionalIntegerValue { get; set; }
+    public double? OptionalNumberValue { get; set; }
+    public decimal? OptionalDecimalValue { get; set; }
+    public DateOnly? OptionalDateValue { get; set; }
+    public TimeOnly? OptionalTimeValue { get; set; }
+    public DateTime? OptionalDateTimeValue { get; set; }
+    public DateTimeOffset? OptionalDateTimeOffsetValue { get; set; }
+    public TimeSpan? OptionalDurationValue { get; set; }
+    public Guid? OptionalGuidValue { get; set; }
+    public byte[]? OptionalBinaryValue { get; set; }
+
+    public BooleanId BooleanId { get; set; }
+    public StringId StringId { get; set; } = new("strong");
+    public IntegerId IntegerId { get; set; }
+    public NumberId NumberId { get; set; }
+    public DecimalId DecimalId { get; set; }
+    public DateId DateId { get; set; }
+    public TimeId TimeId { get; set; }
+    public DateTimeId DateTimeId { get; set; }
+    public DateTimeOffsetId DateTimeOffsetId { get; set; }
+    public DurationId DurationId { get; set; }
+    public GuidId GuidId { get; set; }
+    public BinaryId BinaryId { get; set; }
+
+    public BooleanId? OptionalBooleanId { get; set; }
+    public StringId? OptionalStringId { get; set; }
+    public IntegerId? OptionalIntegerId { get; set; }
+    public NumberId? OptionalNumberId { get; set; }
+    public DecimalId? OptionalDecimalId { get; set; }
+    public DateId? OptionalDateId { get; set; }
+    public TimeId? OptionalTimeId { get; set; }
+    public DateTimeId? OptionalDateTimeId { get; set; }
+    public DateTimeOffsetId? OptionalDateTimeOffsetId { get; set; }
+    public DurationId? OptionalDurationId { get; set; }
+    public GuidId? OptionalGuidId { get; set; }
+    public BinaryId? OptionalBinaryId { get; set; }
+
+    [SemanticOwned] public StrongScalarMatrixDetails OwnedStrongScalars { get; set; } = new();
+}
+
+[SemanticType(SemanticTypeRole.ValueObject)]
+public sealed class StrongScalarMatrixDetails
+{
+    public GuidId NestedGuidId { get; set; }
+    public GuidId? OptionalNestedGuidId { get; set; }
+}
 
 [SemanticType]
 public enum CoverageState { Draft, Active, Retired }
