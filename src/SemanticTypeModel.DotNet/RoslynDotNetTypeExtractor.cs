@@ -44,6 +44,7 @@ public sealed class RoslynDotNetTypeExtractor
     private const string SemanticEnvelopeMetadataAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticEnvelopeMetadataAttribute";
     private const string SemanticVersionedAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticVersionedAttribute";
     private const string SemanticOwnedAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticOwnedAttribute";
+    private const string SemanticLogicalTypeAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticLogicalTypeAttribute";
     private const string SemanticVersionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticVersionAttribute";
     private const string SemanticRevisionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticRevisionAttribute";
     private const string SemanticCurrentVersionAttributeMetadataName = "SemanticTypeModel.DotNet.SemanticCurrentVersionAttribute";
@@ -598,6 +599,7 @@ public sealed class RoslynDotNetTypeExtractor
                 memberAnnotations["schema.format"] = "uri-reference";
             }
             ImmutableArray<AttributeData> memberAttributes = property.GetAttributes();
+            TryAddLogicalTypeAnnotation(memberAttributes, property, typeId, memberAnnotations);
             string propertyName = GetPropertyName(property);
             TryAddSystemTextJsonAnnotations(memberAttributes, memberAnnotations, property, ref propertyName);
             TryAddNameAndAudienceDescriptionAnnotations(memberAttributes, memberAnnotations, property);
@@ -661,6 +663,7 @@ public sealed class RoslynDotNetTypeExtractor
                 ["dotnet.memberName"] = field.Name,
                 ["dotnet.declaringType"] = GetTypeId(field.ContainingType),
             };
+            TryAddLogicalTypeAnnotation(fieldAttributes, field, fieldTypeId, fieldAnnotations);
             TryAddNameAndAudienceDescriptionAnnotations(fieldAttributes, fieldAnnotations, field);
             TryAddDisplayCategoryOrderAnnotations(fieldAttributes, fieldAnnotations, field);
             TryAddCustomAnnotations(fieldAttributes, fieldAnnotations, field);
@@ -709,6 +712,25 @@ public sealed class RoslynDotNetTypeExtractor
 
         ValidateCompositeKeyGroups(type, compositeKeyGroups);
         ValidateIdentityAnnotations(type, displayIdentityMembers, accessPathMembers, invalidAccessPathNames, ref invalidDisplayIdentity);
+
+        var logicalTypes = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (DotNetPropertyDescriptor property in properties)
+        {
+            if (property.Annotations.TryGetValue("schema.logicalType", out string? logicalName)
+                && !string.IsNullOrEmpty(logicalName)
+                && logicalTypes.TryGetValue(logicalName, out string? existingTypeId)
+                && !string.Equals(existingTypeId, property.TypeId, StringComparison.Ordinal))
+            {
+                _diagnostics.Add(new DotNetExtractionDiagnostic(
+                    DotNetExtractionDiagnosticIds.LogicalTypeDefinitionInvalid,
+                    $"Logical Type '{logicalName}' maps to both '{existingTypeId}' and '{property.TypeId}' on '{type.ToDisplayString()}'.",
+                    type.Locations.FirstOrDefault()));
+            }
+            else if (!string.IsNullOrEmpty(logicalName))
+            {
+                logicalTypes[logicalName] = property.TypeId;
+            }
+        }
 
         properties.Sort(static (left, right) => string.CompareOrdinal(left.Name, right.Name));
 
@@ -1827,6 +1849,38 @@ public sealed class RoslynDotNetTypeExtractor
         {
             annotations["schema.temporalValidity"] = "true";
         }
+    }
+
+    private void TryAddLogicalTypeAnnotation(ImmutableArray<AttributeData> attributes, ISymbol member, string typeId, Dictionary<string, string> annotations)
+    {
+        AttributeData? attribute = attributes.FirstOrDefault(a => string.Equals(a.AttributeClass?.ToDisplayString(), SemanticLogicalTypeAttributeMetadataName, StringComparison.Ordinal));
+        if (attribute is null)
+        {
+            return;
+        }
+        string? name = attribute.ConstructorArguments.Length == 1 ? attribute.ConstructorArguments[0].Value as string : null;
+        bool validName = IsValidLogicalTypeName(name);
+        bool scalar = _types.TryGetValue(typeId, out DotNetTypeDescriptor? descriptor) && descriptor is DotNetScalarTypeDescriptor;
+        if (!validName || !scalar)
+        {
+            _diagnostics.Add(new DotNetExtractionDiagnostic(
+                DotNetExtractionDiagnosticIds.LogicalTypeDefinitionInvalid,
+                !validName
+                    ? $"Logical Type name '{name}' on member '{member.Name}' is invalid."
+                    : $"Logical Type '{name}' on member '{member.Name}' must target a scalar property or field.",
+                attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation()));
+            return;
+        }
+        annotations["schema.logicalType"] = name!;
+    }
+
+    private static bool IsValidLogicalTypeName(string? name)
+    {
+        if (name is null or { Length: 0 } || !char.IsAsciiLetter(name[0]))
+        {
+            return false;
+        }
+        return name.Skip(1).All(ch => char.IsAsciiLetter(ch) || char.IsAsciiDigit(ch) || ch is '.' or '-' or '_');
     }
 
     private void TryAddEvolutionMemberAnnotations(ImmutableArray<AttributeData> attributes, ITypeSymbol memberType, Dictionary<string, string> annotations)

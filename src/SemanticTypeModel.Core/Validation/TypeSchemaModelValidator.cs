@@ -1,6 +1,8 @@
 using System.Text.Json;
 using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Annotations;
+using SemanticTypeModel.Core.Diagnostics;
+using SemanticTypeModel.Core.Semantics;
 
 namespace SemanticTypeModel.Core.Validation;
 
@@ -28,6 +30,7 @@ public sealed class TypeSchemaModelValidator
         CheckInvalidCardinality(model, diagnostics);
         CheckInvalidConstraintRanges(model, diagnostics);
         CheckAnnotationKeys(model, diagnostics);
+        CheckLogicalTypes(model, diagnostics);
         CheckEnumDuplicates(model, diagnostics);
         CheckConditionalConstraints(model, diagnostics);
         return diagnostics;
@@ -98,7 +101,7 @@ public sealed class TypeSchemaModelValidator
             ? kind == SemanticLiteralKind.EnumMember
             : type is ScalarTypeDefinition scalar && (scalar.ScalarKind, kind) switch
             {
-                (ScalarKind.String, SemanticLiteralKind.String or SemanticLiteralKind.StrongIdentifier) => true,
+                (ScalarKind.String, SemanticLiteralKind.String) => true,
                 (ScalarKind.Boolean, SemanticLiteralKind.Boolean) => true,
                 (ScalarKind.Integer, SemanticLiteralKind.Integer) => true,
                 (ScalarKind.Number or ScalarKind.Decimal, SemanticLiteralKind.Decimal) => true,
@@ -364,6 +367,47 @@ public sealed class TypeSchemaModelValidator
                 }
             }
         }
+    }
+
+    private static void CheckLogicalTypes(TypeSchemaModel model, List<SchemaDiagnostic> diagnostics)
+    {
+        foreach (ObjectTypeDefinition owner in model.Types.OfType<ObjectTypeDefinition>())
+        {
+            var names = new Dictionary<string, TypeId>(StringComparer.Ordinal);
+            foreach (PropertyDefinition property in owner.Properties)
+            {
+                Annotation? annotation = property.Annotations.Items.FirstOrDefault(a => string.Equals(a.Key.Value, CoreSemanticAnnotationKeys.LogicalType, StringComparison.Ordinal));
+                if (annotation is null)
+                {
+                    continue;
+                }
+                var name = annotation.Value as string;
+                var path = ModelPath.ForProperty(owner.Id, property.Name);
+                if (!IsValidLogicalName(name))
+                {
+                    diagnostics.Add(Error(StmDiagnosticIds.LogicalTypeInvalid, $"Logical Type name '{name}' is invalid.", path));
+                }
+                TypeDefinition? target = model.TryGetType(property.Type.Id);
+                if (target is not ScalarTypeDefinition)
+                {
+                    diagnostics.Add(Error(StmDiagnosticIds.LogicalTypeInvalid, $"Logical Type '{name}' must annotate a scalar property.", path));
+                }
+                if (name is not null && target is ScalarTypeDefinition && names.TryGetValue(name, out TypeId existing) && existing != property.Type.Id)
+                {
+                    diagnostics.Add(Error(StmDiagnosticIds.LogicalTypeInvalid, $"Logical Type '{name}' maps to both '{existing.Value}' and '{property.Type.Id.Value}'.", path));
+                }
+                else if (name is not null && target is ScalarTypeDefinition)
+                {
+                    names[name] = property.Type.Id;
+                }
+            }
+        }
+    }
+
+    private static bool IsValidLogicalName(string? name)
+    {
+        return name is { Length: > 0 } && char.IsAsciiLetter(name[0])
+            && name.Skip(1).All(ch => char.IsAsciiLetter(ch) || char.IsAsciiDigit(ch) || ch is '.' or '-' or '_');
     }
 
     private static void CheckAnnotationBag(AnnotationBag bag, string parentPath, List<SchemaDiagnostic> diagnostics)

@@ -83,14 +83,17 @@ Use `[SemanticDisplayIdentity(Order = 0)]` and `[SemanticAccessPath("ByCustomerN
 projection-neutral recognition and locate/filter semantics. These annotations do not generate indexes, API
 queries, UI behavior, Power BI behavior, or relationships.
 
-CLR wrapper types may be used by target-specific projections when their target contract explicitly supports a
-single-value wrapper shape. Such wrappers are not canonical semantic scalar kinds. The STM-configured JSON Schema contract is
+CLR single-value wrappers are not automatically inferred as scalars by the projections. The STM-configured JSON Schema contract is
 bounded and one-way: supported output validates against the schema, without a promise of bidirectional
 serializer/schema equivalence.
 
 Native scalar fidelity is preserved across the projection suite: Binary uses Base64 JSON with schema
 `contentEncoding: base64`, `System.Uri` uses `uri-reference` by default, and raw Json is not restricted to
 object values.
+
+An ordinary scalar property may opt into a projection-neutral Logical Type name with
+`[SemanticLogicalType("CustomerId")]`. The name is metadata only: it does not change CLR, JSON, EF, LINQ,
+TestData, or Power BI representation. Names must be valid and same-name properties in one model must use the same scalar type.
 
 ## JSON Schema semantic annotations
 

@@ -99,7 +99,6 @@ Minimum matrix:
 |---|---:|---:|
 | direct scalar | required | required |
 | enum/string conversion | required | required |
-| supported identifier or target-specific wrapper | required | required |
 | `System.Uri` | required | required |
 | binary | required | required where the CLR/storage contract supports null |
 | owned JSON object/value kind | required | required |
@@ -118,7 +117,6 @@ Not every case requires a provider round trip, but every important storage famil
 |---|---:|---:|---:|---:|
 | direct scalar required/nullable | yes | yes | representative | representative |
 | enum required/nullable | yes | yes | yes | representative |
-| target-specific wrapper required/nullable | yes | yes | yes | representative |
 | URI required/nullable | yes | yes | yes | representative |
 | binary required/nullable where supported | yes | yes | yes | representative |
 | owned JSON object required/nullable | yes | yes | yes | yes |

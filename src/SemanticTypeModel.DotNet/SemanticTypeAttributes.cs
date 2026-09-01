@@ -590,6 +590,14 @@ public sealed class SemanticOwnedAttribute : Attribute
     public SemanticOwnershipKind Kind { get; init; } = SemanticOwnershipKind.Inferred;
 }
 
+/// <summary>Declares a property-level projection-neutral Logical Type name.</summary>
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
+public sealed class SemanticLogicalTypeAttribute(string name) : Attribute
+{
+    /// <summary>Gets the declared Logical Type name.</summary>
+    public string Name { get; } = name;
+}
+
 /// <summary>
 /// Ownership kind declared for a semantic owned member.
 /// </summary>

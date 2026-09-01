@@ -118,6 +118,10 @@ A property on an envelope that describes the envelope lifecycle, context, transp
 ### Projection-Specific Metadata
 Metadata that describes representation for one projection target, such as JSON Schema, EF Core, Power BI, or System.Text.Json, rather than projection-neutral domain meaning.
 
+### Logical Type
+
+An explicit property-level name attached to an ordinary scalar for semantic labeling without changing its scalar representation or introducing a canonical type node.
+
 ### Envelope Projection Root
 The type selected by target policy as the root projection for an envelope scenario; it may be the envelope wrapper or the envelope payload.
 

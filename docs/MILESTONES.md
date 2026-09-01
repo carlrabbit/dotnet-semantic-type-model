@@ -6,12 +6,12 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-No active milestone. M0076 — Remove Strong Scalar Semantics — is complete and its durable decision rationale is recorded in `docs/decisions/remove-canonical-strong-scalar-semantics.md`.
+M0077 is complete. The next milestone number is reserved for M0078.
 
 ## Next Number
 
 ```text
-M0077
+M0078
 ```
 
 Never restart or reuse milestone numbers.

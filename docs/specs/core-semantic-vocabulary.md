@@ -781,3 +781,7 @@ These semantics preserve model meaning independently of JSON Schema, EF Core, Po
 ## M0050 URI and Ownership Clarification
 
 `System.Uri` is a string-compatible scalar and implies the projection-neutral URI format by default. Ownership continues to mean lifecycle containment; it does not choose flattening, JSON serialization, or EF owned-navigation storage.
+
+## M0077 Logical Type
+
+`schema.logicalType` is optional property metadata for an explicit logical name on an ordinary scalar property. It does not create a canonical type node, alter the scalar `TypeRef`, or affect JSON, EF Core, LINQ, TestData, or Power BI scalar representation. Names use `[A-Za-z][A-Za-z0-9_.-]*`; within one object, a name must resolve to one scalar `TypeRef`.

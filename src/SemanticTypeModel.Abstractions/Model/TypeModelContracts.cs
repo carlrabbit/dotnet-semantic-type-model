@@ -294,7 +294,7 @@ public sealed record ConstraintSet
 public enum SemanticLiteralKind
 {
     String, Boolean, Integer, Decimal, EnumMember, Guid, Date, Time, DateTime,
-    DateTimeOffset, Duration, Null, StrongIdentifier, Unsupported,
+    DateTimeOffset, Duration, Null, Unsupported,
 }
 
 public sealed record SemanticLiteral

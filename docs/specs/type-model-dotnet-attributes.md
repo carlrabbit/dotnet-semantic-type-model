@@ -290,6 +290,10 @@ For M0065:
 
 ## Evolution, Ownership, Lifecycle, Temporal Validity, and Extension Data Attributes
 
+## Logical Type
+
+`SemanticLogicalTypeAttribute` targets properties and fields and emits the validated `schema.logicalType` annotation. The target must be an ordinary scalar, and the name must match `[A-Za-z][A-Za-z0-9_.-]*`. The annotation is projection-neutral; invalid names, non-scalar targets, and conflicting same-name scalar mappings report `STM5052`.
+
 M0034 semantics can be authored with projection-neutral attributes in `SemanticTypeModel.DotNet`.
 
 | Attribute | Target | Canonical annotation emitted |

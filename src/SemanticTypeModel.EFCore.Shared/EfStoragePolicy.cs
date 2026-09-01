@@ -23,7 +23,7 @@ internal static class EfStoragePolicy
         return string.Equals(role, "Entity", StringComparison.OrdinalIgnoreCase);
     }
 
-    internal static EfScalarStorageKind ClassifyScalar(string clrTypeName, bool isEnum, bool hasSingleValueShape)
+    internal static EfScalarStorageKind ClassifyScalar(string clrTypeName, bool isEnum)
     {
         return isEnum ? EfScalarStorageKind.EnumString : clrTypeName switch
         {
@@ -31,7 +31,6 @@ internal static class EfStoragePolicy
             "System.Char" or "char" => EfScalarStorageKind.CharString,
             "System.ReadOnlyMemory<System.Byte>" or "System.ReadOnlyMemory<byte>" => EfScalarStorageKind.ReadOnlyMemoryBinary,
             "System.Byte[]" or "byte[]" => EfScalarStorageKind.DirectBinary,
-            _ when hasSingleValueShape => EfScalarStorageKind.SingleValueWrapper,
             _ when IsDirectScalar(clrTypeName) => EfScalarStorageKind.Direct,
             _ => EfScalarStorageKind.Unsupported,
         };
@@ -68,5 +67,4 @@ internal enum EfScalarStorageKind
     UriString,
     CharString,
     ReadOnlyMemoryBinary,
-    SingleValueWrapper,
 }

@@ -19,12 +19,14 @@ The numeric sub-ranges are allocated as follows:
 
 | Range     | Package                        | Emitter                              |
 |-----------|--------------------------------|--------------------------------------|
-| STM0001–STM0013 | SemanticTypeModel.Core   | TypeSchemaModelValidator             |
+| STM0001–STM0014 | SemanticTypeModel.Core   | TypeSchemaModelValidator             |
 | STM1004–STM1036 | SemanticTypeModel.Core | Core semantic transformations |
 | STM3201–STM3207 | SemanticTypeModel.JsonSchema | JsonSchemaRuntimeProjection      |
 | STM5001–STM5048 | SemanticTypeModel.DotNet / SemanticTypeModel.Generators / SemanticTypeModel.EFCore.Generators | RoslynDotNetTypeExtractor / SemanticTypeModelSourceGenerator / SemanticEfConfigurationGenerator |
 
 Gaps within a range are intentional reservations for future use.
+
+`STM0014` reports an invalid Logical Type annotation (invalid name, non-scalar target, or conflicting scalar `TypeRef`).
 
 ## Preview Codes
 

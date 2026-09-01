@@ -55,6 +55,9 @@ public static class StmDiagnosticIds
     /// <summary>STM0013 — Enum type contains duplicate value payloads.</summary>
     public const string DuplicateEnumValuePayload = "STM0013";
 
+    /// <summary>STM0014 — Logical Type annotation is invalid or inconsistent.</summary>
+    public const string LogicalTypeInvalid = "STM0014";
+
 
     // -------------------------------------------------------------------------
     // STM1xxx — Core transformation diagnostics

@@ -68,6 +68,7 @@ internal static class GeneratorDiagnosticDescriptors
     internal static readonly DiagnosticDescriptor ConditionalConstraintLiteralTypeMismatch = Extraction(DotNetExtractionDiagnosticIds.ConditionalConstraintLiteralTypeMismatch, "Conditional constraint literal type mismatch");
     internal static readonly DiagnosticDescriptor DisplayIdentityDefinitionInvalid = Extraction(DotNetExtractionDiagnosticIds.DisplayIdentityDefinitionInvalid, "Display Identity definition invalid");
     internal static readonly DiagnosticDescriptor AccessPathDefinitionInvalid = Extraction(DotNetExtractionDiagnosticIds.AccessPathDefinitionInvalid, "Access Path definition invalid");
+    internal static readonly DiagnosticDescriptor LogicalTypeDefinitionInvalid = Extraction(DotNetExtractionDiagnosticIds.LogicalTypeDefinitionInvalid, "Logical Type definition invalid");
 
     private static DiagnosticDescriptor Extraction(string code, string title)
     {
