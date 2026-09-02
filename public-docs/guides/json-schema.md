@@ -10,7 +10,10 @@ derived.Diagnostics.ThrowIfErrors();
 JsonSchemaExportResult export = JsonSchemaExporter.Export(derived.Model);
 ```
 
-Semantic annotations are enabled by default. STM-only semantics appear in one `x-stm` object whose initial vocabulary is exactly `role`, `aggregateRoot`, `mutability`, `technicalDescription`, `keys`, `unit`, and `ui`. `UserDescription` remains the standard JSON Schema `description`; technical text is independently emitted as `x-stm.technicalDescription`.
+Semantic annotations are enabled by default. STM-only semantics appear in one `x-stm` object; property-level
+Logical Type metadata is preserved as `x-stm.logicalType` without changing the standard scalar schema.
+`UserDescription` remains the standard JSON Schema `description`; technical text is independently emitted as
+`x-stm.technicalDescription`.
 
 Declared mutability is emitted only at the node where it was declared. Object keys retain composite member order and refer to emitted property names. Arbitrary JSON-compatible `ui.*` values pass through beneath `x-stm.ui` after stripping the `ui.` prefix.
 

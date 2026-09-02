@@ -142,7 +142,7 @@ Model paths in these diagnostics follow the form `/types/{TypeId}/...` as define
 
 **Severity:** Error
 
-**Cause:** A `schema.logicalType` annotation has an invalid name, targets a non-scalar property, or conflicts with another scalar `TypeRef` using the same name in the object.
+**Cause:** A `schema.logicalType` annotation has an invalid name, targets a non-scalar property, or conflicts with another scalar `TypeRef` using the same name in the model.
 
 **Fix:** Use an explicit name matching `[A-Za-z][A-Za-z0-9_.-]*` on an ordinary scalar property and keep each name mapped to one scalar type.
 

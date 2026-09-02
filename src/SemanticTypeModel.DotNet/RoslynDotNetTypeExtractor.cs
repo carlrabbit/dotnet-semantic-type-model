@@ -127,6 +127,8 @@ public sealed class RoslynDotNetTypeExtractor
             ExtractType(root, cancellationToken);
         }
 
+        ValidateLogicalTypeIdentity();
+
         string? rootTypeId = null;
         foreach (INamedTypeSymbol root in roots)
         {
@@ -713,25 +715,6 @@ public sealed class RoslynDotNetTypeExtractor
         ValidateCompositeKeyGroups(type, compositeKeyGroups);
         ValidateIdentityAnnotations(type, displayIdentityMembers, accessPathMembers, invalidAccessPathNames, ref invalidDisplayIdentity);
 
-        var logicalTypes = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (DotNetPropertyDescriptor property in properties)
-        {
-            if (property.Annotations.TryGetValue("schema.logicalType", out string? logicalName)
-                && !string.IsNullOrEmpty(logicalName)
-                && logicalTypes.TryGetValue(logicalName, out string? existingTypeId)
-                && !string.Equals(existingTypeId, property.TypeId, StringComparison.Ordinal))
-            {
-                _diagnostics.Add(new DotNetExtractionDiagnostic(
-                    DotNetExtractionDiagnosticIds.LogicalTypeDefinitionInvalid,
-                    $"Logical Type '{logicalName}' maps to both '{existingTypeId}' and '{property.TypeId}' on '{type.ToDisplayString()}'.",
-                    type.Locations.FirstOrDefault()));
-            }
-            else if (!string.IsNullOrEmpty(logicalName))
-            {
-                logicalTypes[logicalName] = property.TypeId;
-            }
-        }
-
         properties.Sort(static (left, right) => string.CompareOrdinal(left.Name, right.Name));
 
         return new DotNetObjectTypeDescriptor
@@ -742,6 +725,31 @@ public sealed class RoslynDotNetTypeExtractor
             Mutability = mutability,
             Annotations = annotations,
         };
+    }
+
+    private void ValidateLogicalTypeIdentity()
+    {
+        var logicalTypes = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (DotNetObjectTypeDescriptor owner in _types.Values.OfType<DotNetObjectTypeDescriptor>())
+        {
+            foreach (DotNetPropertyDescriptor property in owner.Properties)
+            {
+                if (property.Annotations.TryGetValue("schema.logicalType", out string? name)
+                    && !string.IsNullOrEmpty(name)
+                    && logicalTypes.TryGetValue(name, out string? existingTypeId)
+                    && !string.Equals(existingTypeId, property.TypeId, StringComparison.Ordinal))
+                {
+                    _diagnostics.Add(new DotNetExtractionDiagnostic(
+                        DotNetExtractionDiagnosticIds.LogicalTypeDefinitionInvalid,
+                        $"Logical Type '{name}' maps to both '{existingTypeId}' and '{property.TypeId}'.",
+                        null));
+                }
+                else if (!string.IsNullOrEmpty(name))
+                {
+                    logicalTypes[name] = property.TypeId;
+                }
+            }
+        }
     }
 
     private static Dictionary<string, IPropertySymbol>.ValueCollection GetMembersIncludingInheritedProperties(INamedTypeSymbol type)

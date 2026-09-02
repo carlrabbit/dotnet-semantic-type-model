@@ -108,6 +108,7 @@ technicalDescription
 keys
 unit
 ui
+logicalType (property metadata)
 ```
 
 JSON Schema import and JSON Editor compatibility modes are not supported current APIs.

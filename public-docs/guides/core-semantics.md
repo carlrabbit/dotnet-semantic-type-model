@@ -47,6 +47,7 @@ Common semantic concepts include:
 | Constraint | Validation/shape constraint |
 | RequiredWhen | Conditional presence rule against a typed source value |
 | Format | Semantic scalar format hint |
+| Logical Type | Explicit property-level scalar label; does not change representation or create a type node |
 | DisplayName | User-facing label, not stable identity |
 | UserDescription | User-facing explanatory text |
 | TechnicalDescription | Technical explanatory text; XML summaries can contribute technical fallback |
@@ -65,6 +66,10 @@ binding: STM does not provide Options registration or binding APIs.
 
 `SemanticTypeRole.Configuration` remains projection-neutral domain meaning, and `SemanticRequiredWhen`
 remains an independently supported conditional semantic constraint.
+
+An ordinary scalar property may declare `[SemanticLogicalType("CustomerId")]`. The name must match
+`[A-Za-z][A-Za-z0-9_.-]*`; the same name must use the same scalar type throughout one model. Logical Type
+metadata does not change JSON, EF Core, System.Text.Json, TestData, LINQ, or Power BI behavior.
 
 ### Display Identity and Access Path boundaries
 

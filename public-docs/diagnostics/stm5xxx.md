@@ -2,7 +2,7 @@
 
 Emitted by `RoslynDotNetTypeExtractor` in `SemanticTypeModel.DotNet` and `SemanticTypeModelSourceGenerator` in `SemanticTypeModel.Generators` during compile-time extraction and source generation.
 
-STM5001–STM5017, STM5020–STM5025 are emitted by `RoslynDotNetTypeExtractor` at extraction time. STM5008, STM5018, and STM5019 are also emitted directly by `SemanticTypeModelSourceGenerator` when build-property configuration is invalid.
+STM5001–STM5017, STM5020–STM5025, and STM5052 are emitted by `RoslynDotNetTypeExtractor` at extraction time. STM5008, STM5018, and STM5019 are also emitted directly by `SemanticTypeModelSourceGenerator` when build-property configuration is invalid.
 
 All STM5xxx diagnostics have `Warning` severity unless stated otherwise.
 
@@ -350,4 +350,4 @@ STM5027 in 2.6.0 rather than being interpreted as strings.
 
 | Code | Severity | Cause | Fix |
 |---|---|---|---|
-| STM5052 | Warning | A Logical Type name is invalid, targets a non-scalar member, or conflicts with another scalar mapping in the object. | Use a valid explicit name on an ordinary scalar property or field and keep same-name mappings on one scalar type. |
+| STM5052 | Warning | A Logical Type name is invalid, targets a non-scalar member, or conflicts with another scalar mapping in the model. | Use a valid explicit name on an ordinary scalar property or field and keep same-name mappings on one scalar type throughout the model. |
