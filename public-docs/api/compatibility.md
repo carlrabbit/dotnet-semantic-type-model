@@ -10,8 +10,8 @@ unsupported, including generator/analyzer packages.
 
 The compile-time semantic manifest is ephemeral internal build transport. A consuming generator must use the
 same exact SemanticTypeModel suite version as the manifest producer; cross-version manifest consumption is not
-supported. The current manifest schema is v3; it carries only the current canonical type/property contract and is not
-a persisted interchange format. There is no cross-version negotiation.
+supported. The current manifest schema is v3; it carries only the current canonical type/property contract and is
+not a persisted interchange format. There is no cross-version negotiation.
 
 ## Canonical model authoring
 
@@ -68,6 +68,7 @@ technicalDescription
 keys
 unit
 ui
+logicalType
 ```
 
 Standard JSON Schema remains authoritative for semantics it represents natively. `x-stm` is not a serialized
@@ -116,8 +117,20 @@ Microsoft.Extensions.Configuration and Microsoft.Extensions.Options directly.
 ## Display Identity and Access Path
 
 `SemanticDisplayIdentity` and `SemanticAccessPath` are projection-neutral annotation semantics. They do not
-imply EF indexes, API query parameters, UI behavior, Power BI behavior, or relationships. CLR wrapper
-transparency is not canonical meaning; EF does not infer or automatically convert single-value wrappers.
+imply EF indexes, API query parameters, UI behavior, Power BI behavior, or relationships.
+
+## CLR wrapper and Logical Type boundary
+
+SemanticTypeModel assigns no special semantic or target-specific meaning to CLR single-value wrapper shape.
+A `Value` property plus matching constructor does not make a CLR type an STM scalar, identifier, automatically
+EF-convertible value, or primitive serialization contract. Strong Scalar canonical semantics,
+`[SemanticStrongScalar]`, `SemanticLiteralKind.StrongIdentifier`, and EF Core's automatic wrapper conversion are
+removed in the 6.0 boundary.
+
+Projection-neutral scalar identity is expressed explicitly on an ordinary scalar property with
+`[SemanticLogicalType("Name")]`. Logical Type is model-local, case-sensitive metadata; same-name uses in one
+model must point to the same scalar type. It does not create a canonical type node or change CLR, JSON Schema,
+System.Text.Json, EF Core, LINQ, Power BI, or built-in TestData representation.
 
 The supported JSON fidelity claim is bounded and one-way: STM-configured System.Text.Json output validates
 against the derived JSON Schema. Bidirectional serializer/schema equivalence and representation-changing
@@ -143,16 +156,42 @@ The supported static application path is generated configuration through
 - application relationship configuration remains application/EF-owned.
 
 The retired runtime global `ModelBuilder` cleanup/application path is not the current application contract.
-There is no compatibility bridge that reintroduces broad relationship inference, `OwnsOne`/`OwnsMany`, or
-alternative inheritance modes into the current generated contract.
+There is no compatibility bridge that reintroduces broad relationship inference, `OwnsOne`/`OwnsMany`,
+alternative inheritance modes, or automatic single-value-wrapper conversion into the current generated contract.
+
+## TestData
+
+`SemanticTypeModel.TestData` is the eleventh aligned suite package. It consumes the canonical model as a runtime
+capability and does not mutate canonical semantics or introduce a target projection dependency.
+
+Random generation is deterministic and constraint-aware. Optional Semantic Terminology Profiles are model-bound
+versioned sidecars whose synthetic candidates are validated against current supported semantics before use.
+Profile-guided precedence is property terminology, then Logical Type terminology, then built-in Random fallback.
+Programmatic property and Logical-Type scalar generators take precedence over terminology and fail closed when an
+explicit supplied value is invalid. Built-in regex synthesis and arbitrary custom-constraint interpretation are
+not compatibility promises.
+
+Typed materialization supports the documented public CLR scalar/object/collection/dictionary shapes without
+private-member mutation, uninitialized-object construction, or wrapper inference. Expected generation and
+materialization failures use TestData diagnostics/exception boundaries rather than leaking target-package
+behavior.
 
 ## 6.0 release boundary
 
-6.0.0 is the current development/release-candidate line after the breaking semantic changes in M0076 and
-M0077. Strong Scalar and CLR single-value-wrapper inference are removed current behavior; Logical Type is
-property metadata only. The aligned suite contains eleven packages, including `SemanticTypeModel.TestData`.
-Typed TestData generation supports validated terminology profiles, public CLR materialization, bulk generation,
-budgets, and fail-closed custom scalar generators. Use one exact 6.0 prerelease version for every package.
+`6.0.0` is the intended next stable version and current release candidate after the breaking semantic changes
+above. The aligned suite contains exactly eleven packages, including `SemanticTypeModel.TestData`.
+
+Consumers upgrading from 5.x must:
+
+1. use exactly `6.0.0` for every `SemanticTypeModel.*` package, generator, and analyzer used together;
+2. remove Strong Scalar/StrongIdentifier usage and any assumptions of automatic CLR wrapper scalar conversion;
+3. use explicit property-level Logical Type metadata where representation-neutral scalar identity is needed;
+4. rebuild model producers and consuming generators together because manifests require exact suite-version
+   alignment;
+5. keep strongly typed-ID conversions and other target-specific wrapper behavior in application/target-native
+   configuration.
+
+The release is not publication truth until the package channel confirms `6.0.0` publication.
 
 ## 5.0 release boundary
 
