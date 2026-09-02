@@ -195,7 +195,7 @@ The release is not publication truth until the package channel confirms `6.0.0` 
 
 ## 5.0 release boundary
 
-5.0.0 is the next major boundary after 4.0.1. Consumers moving from 4.0.x must remove the
+5.0.0 was the major compatibility boundary after 4.0.1. Consumers moving from 4.0.x must remove the
 `SemanticTypeModel.Configuration` package and former STM Configuration/Options authoring/runtime APIs, then
 use application-owned Microsoft.Extensions.Configuration/Options registration as needed. Keep
 `SemanticTypeRole.Configuration` and `SemanticRequiredWhen` when their projection-neutral meanings remain
@@ -208,7 +208,7 @@ System.Text.Json runtime behavior described in the release notes: ordinary `Json
 primary path, semantic Entity inheritance can receive automatic `$type` polymorphism when no explicit
 application contract is supplied, explicit application contracts win, and multiple semantic models compose
 through runtime options. Automatic polymorphism remains outside the JSON
-Schema/System.TextJson fidelity baseline. Publication truth must be verified from the package channel;
+Schema/System.Text.Json fidelity baseline. Publication truth must be verified from the package channel;
 repository source does not establish publication.
 
 ## 4.0 release boundary
