@@ -34,7 +34,9 @@ The package joins the aligned `SemanticTypeModel.*` suite and therefore uses the
 
 This capability is part of the `6.0.0` development line after the completed `5.0.1` maintenance work.
 
-M0075 uses prerelease validation version:
+Current TestData development line: `6.0.0`.
+
+Current prerelease validation version:
 
 ```text
 6.0.0-m0079

@@ -36,12 +36,13 @@ public static class SemanticTestDataGenerator
 {
     public static TestDataGenerationResult Generate(TypeSchemaModel model, TypeId rootType, TestDataSizeProfile profile = TestDataSizeProfile.Simple, int seed = 0)
     {
-        return Generate(model, rootType, profile, seed, null);
+        return Generate(model, rootType, profile, seed, null, null);
     }
 
     public static TestDataGenerationResult Generate(TypeSchemaModel model, TypeId rootType, TestDataSizeProfile profile, int seed, SemanticTerminologyProfile? terminology)
     {
-        return Generate(model, rootType, profile, seed, terminology, null);
+        ArgumentNullException.ThrowIfNull(terminology);
+        return Generate(model, rootType, profile, seed, SemanticTerminologyProfileJson.ValidateForConsumption(model, terminology), null);
     }
 
     internal static TestDataGenerationResult Generate(TypeSchemaModel model, TypeId rootType, TestDataSizeProfile profile, int seed, SemanticTerminologyProfile? terminology, SemanticTestDataOptions? options)
@@ -62,7 +63,7 @@ public static class SemanticTestDataGenerator
     public static TestDataGenerationResult Generate(TypeSchemaModel model, TypeId rootType, SemanticTerminologyProfile terminology, TestDataSizeProfile profile = TestDataSizeProfile.Simple, int seed = 0)
     {
         ArgumentNullException.ThrowIfNull(terminology);
-        return Generate(model, rootType, profile, seed, SemanticTerminologyProfileJson.ValidateForConsumption(model, terminology));
+        return Generate(model, rootType, profile, seed, SemanticTerminologyProfileJson.ValidateForConsumption(model, terminology), null);
     }
 
     public static TestDataGenerationResult Generate(TypeSchemaModel model, string rootTypeId, TestDataSizeProfile profile = TestDataSizeProfile.Simple, int seed = 0)
@@ -339,11 +340,30 @@ public static class SemanticTestDataGenerator
                 return Error("TESTDATA_CUSTOM_CANDIDATE_INVALID", "A custom generator supplied a candidate that violates the canonical scalar or constraint contract.", path);
             }
 
+            if (scalar.ScalarKind is ScalarKind.String or ScalarKind.Binary
+                && constraints.String?.MinLength is int semanticMinimum
+                && semanticMinimum > (scalar.ScalarKind == ScalarKind.Binary ? _budgets.MaxBinaryLength : _budgets.MaxStringLength))
+            {
+                return Error("TESTDATA_SIZE_BUDGET_EXHAUSTED", "The semantic minimum exceeds the applicable TestData safety budget.", path);
+            }
+
             var length = Clamp(ProfileTarget(), constraints.String?.MinLength ?? 0, constraints.String?.MaxLength, _budgets.MaxStringLength);
+            var formattedValue = scalar.ScalarKind == ScalarKind.String && format is not null ? StringValue(format) : null;
+            if (formattedValue is not null)
+            {
+                if (formattedValue.Length < (constraints.String?.MinLength ?? 0) || formattedValue.Length > (constraints.String?.MaxLength ?? int.MaxValue))
+                {
+                    return Error("TESTDATA_UNSATISFIABLE_CONSTRAINTS", "The predefined format cannot satisfy the string length constraints.", path);
+                }
+                if (formattedValue.Length > _budgets.MaxStringLength)
+                {
+                    return Error("TESTDATA_SIZE_BUDGET_EXHAUSTED", "The predefined format exceeds the fixed string safety budget.", path);
+                }
+            }
             object value = scalar.ScalarKind switch
             {
                 ScalarKind.Boolean => _random.Next(2) == 0,
-                ScalarKind.String => StringValue(format, length),
+                ScalarKind.String => formattedValue ?? StringValue(null, length),
                 ScalarKind.Integer => NumericValue(scalar, constraints.Numeric, false),
                 ScalarKind.Number or ScalarKind.Decimal => NumericValue(scalar, constraints.Numeric, true),
                 ScalarKind.Date => new DateOnly(2020, 1, 1),
@@ -352,19 +372,11 @@ public static class SemanticTestDataGenerator
                 ScalarKind.DateTimeOffset => new DateTimeOffset(2020, 1, 1, 12, 0, 0, TimeSpan.Zero),
                 ScalarKind.Duration => TimeSpan.FromMinutes(1),
                 ScalarKind.Guid => Guid.Parse("00000000-0000-4000-8000-000000000001"),
-                ScalarKind.Binary => Enumerable.Repeat((byte)0x42, Clamp(ProfileTarget(), 0, null, _budgets.MaxBinaryLength)).ToArray(),
+                ScalarKind.Binary => Enumerable.Repeat((byte)0x42, Clamp(ProfileTarget(), constraints.String?.MinLength ?? 0, constraints.String?.MaxLength, _budgets.MaxBinaryLength)).ToArray(),
                 ScalarKind.Json => "{}",
                 ScalarKind.Unknown => throw new InvalidOperationException(),
                 _ => throw new InvalidOperationException()
             };
-            if (scalar.Format is not null && value is string formatted)
-            {
-                if (formatted.Length < (constraints.String?.MinLength ?? 0) || formatted.Length > (constraints.String?.MaxLength ?? int.MaxValue))
-                {
-                    return Error("TESTDATA_UNSATISFIABLE_CONSTRAINTS", "The predefined format cannot satisfy the string length constraints.", path);
-                }
-            }
-
             return new ScalarTestValue(scalar.Id, scalar.ScalarKind, value);
         }
 
@@ -380,6 +392,14 @@ public static class SemanticTestDataGenerator
             {
                 if (TerminologyCandidate.TryRead(candidate, scalar, constraints, out var value, out _))
                 {
+                    if (value is string text && text.Length > _budgets.MaxStringLength)
+                    {
+                        continue;
+                    }
+                    if (value is byte[] bytes && bytes.Length > _budgets.MaxBinaryLength)
+                    {
+                        continue;
+                    }
                     eligible.Add((candidate, value!));
                 }
             }
@@ -437,7 +457,7 @@ public static class SemanticTestDataGenerator
             return scalar.ScalarKind == ScalarKind.Integer ? decimal.Truncate(value) : value;
         }
 
-        private static string StringValue(string? format, int length)
+        private static string StringValue(string? format, int? length = null)
         {
             var value = format?.ToLowerInvariant() switch
             {
@@ -453,14 +473,20 @@ public static class SemanticTestDataGenerator
                 "uuid" => "00000000-0000-4000-8000-000000000001",
                 _ => "test"
             };
-            if (length < value.Length)
+            if (length is null)
             {
-                value = value[..length];
+                return value;
             }
 
-            if (value.Length < length)
+            var targetLength = length.Value;
+            if (targetLength < value.Length)
             {
-                value += new string('x', length - value.Length);
+                value = value[..targetLength];
+            }
+
+            if (value.Length < targetLength)
+            {
+                value += new string('x', targetLength - value.Length);
             }
 
             return value;

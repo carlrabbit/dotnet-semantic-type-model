@@ -28,6 +28,89 @@ public sealed class TestDataCorrectiveTests
     }
 
     [Test]
+    public async Task Random_predefined_formats_remain_valid_under_the_simple_profile()
+    {
+        string[] formats = ["email", "uri", "uri-reference", "hostname", "ipv4", "ipv6", "date", "time", "date-time", "duration", "uuid"];
+        foreach (var format in formats)
+        {
+            TypeSchemaModel model = ScalarModel("formatted", format);
+            var root = (ObjectTestValue)SemanticTestDataGenerator.Generate(model, new TypeId("formatted"), TestDataSizeProfile.Simple, 17).Value!;
+            var value = (string)((ScalarTestValue)root.Properties[new PropertyId("Value")]).Value!;
+            SemanticTerminologyProfile profile = SemanticTerminologyProfileJson.Create(model) with
+            {
+                Properties = [SemanticTerminologyProfileJson.Create(model).Properties[0] with { Values = [JsonSerializer.SerializeToElement(value)] }],
+            };
+            TerminologyProfileResult<SemanticTerminologyProfile> validation = SemanticTerminologyProfileJson.Import(model, JsonSerializer.Serialize(profile));
+            _ = await Assert.That(validation.Succeeded).IsTrue();
+        }
+    }
+
+    [Test]
+    public async Task Invalid_predefined_format_candidates_are_rejected()
+    {
+        var invalid = new Dictionary<string, string>
+        {
+            ["email"] = "@",
+            ["uri"] = "relative/path",
+            ["uri-reference"] = "http://[invalid",
+            ["hostname"] = "-invalid.example",
+            ["ipv4"] = "999.1.1.1",
+            ["ipv6"] = "not-an-ipv6-address",
+            ["date"] = "2024-1-2",
+            ["time"] = "12:00",
+            ["date-time"] = "2024-01-02 12:00:00",
+            ["duration"] = "1 minute",
+            ["uuid"] = "not-a-uuid",
+        };
+        foreach ((var format, var value) in invalid)
+        {
+            TypeSchemaModel model = ScalarModel("invalid-" + format, format);
+            SemanticTerminologyProfile template = SemanticTerminologyProfileJson.Create(model);
+            SemanticTerminologyProfile profile = template with { Properties = [template.Properties[0] with { Values = [JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(value))] }] };
+            TerminologyProfileResult<SemanticTerminologyProfile> result = SemanticTerminologyProfileJson.Import(model, JsonSerializer.Serialize(profile));
+            _ = await Assert.That(result.Succeeded).IsFalse();
+            _ = await Assert.That(result.Diagnostics.Any(d => d.Code == "TESTDATA_PROFILE_CANDIDATE_INVALID")).IsTrue();
+        }
+    }
+
+    [Test]
+    public async Task Low_level_terminology_overload_revalidates_raw_profiles()
+    {
+        TypeSchemaModel model = ScalarModel("low-level", "email");
+        SemanticTerminologyProfile invalid = SemanticTerminologyProfileJson.Create(model) with { FormatVersion = 99 };
+        TestDataGenerationException exception = Assert.Throws<TestDataGenerationException>(() => SemanticTestDataGenerator.Generate(model, new TypeId("low-level"), TestDataSizeProfile.Simple, 0, invalid));
+        _ = await Assert.That(exception.Diagnostics.Any(d => d.Code == "TESTDATA_PROFILE_VERSION_UNSUPPORTED")).IsTrue();
+    }
+
+    [Test]
+    public async Task Semantic_minimums_and_supplied_candidates_respect_safety_budgets()
+    {
+        TypeSchemaModel minimumModel = BudgetModel(100, null);
+        TestDataGenerationException minimum = Assert.Throws<TestDataGenerationException>(() => minimumModel.TestData().WithBudgets(new TestDataBudgets { MaxStringLength = 50 }).Generate<BudgetRoot>());
+        _ = await Assert.That(minimum.Diagnostics.Any(d => d.Code == "TESTDATA_SIZE_BUDGET_EXHAUSTED")).IsTrue();
+
+        TypeSchemaModel candidateModel = BudgetModel(null, null);
+        SemanticTerminologyProfile template = SemanticTerminologyProfileJson.Create(candidateModel);
+        SemanticTerminologyProfile terminology = template with { Properties = [template.Properties[0] with { Values = [JsonSerializer.SerializeToElement(new string('x', 100))] }] };
+        BudgetRoot generated = candidateModel.TestData().WithBudgets(new TestDataBudgets { MaxStringLength = 10 }).WithTerminology(terminology).Generate<BudgetRoot>();
+        _ = await Assert.That(generated.Value.Length).IsLessThanOrEqualTo(10);
+
+        TestDataGenerationException custom = Assert.Throws<TestDataGenerationException>(() => candidateModel.TestData().WithBudgets(new TestDataBudgets { MaxStringLength = 10 }).WithPropertyGenerator<BudgetRoot>(root => root.Value, _ => new string('x', 100)).Generate<BudgetRoot>());
+        _ = await Assert.That(custom.Diagnostics.Any(d => d.Code == "TESTDATA_CUSTOM_CANDIDATE_INVALID")).IsTrue();
+
+        TypeSchemaModel binaryModel = BinaryBudgetModel();
+        var binaryCandidate = new byte[100];
+        SemanticTerminologyProfile binaryTemplate = SemanticTerminologyProfileJson.Create(binaryModel);
+        SemanticTerminologyProfile binaryTerminology = binaryTemplate with { Properties = [binaryTemplate.Properties[0] with { Values = [JsonSerializer.SerializeToElement(Convert.ToBase64String(binaryCandidate))] }] };
+        BinaryBudgetRoot binaryGenerated = binaryModel.TestData().WithBudgets(new TestDataBudgets { MaxBinaryLength = 10 }).WithTerminology(binaryTerminology).Generate<BinaryBudgetRoot>();
+        _ = await Assert.That(binaryGenerated.Value.Length).IsLessThanOrEqualTo(10);
+
+        TypeSchemaModel logicalModel = LogicalBudgetModel();
+        TestDataGenerationException logicalCustom = Assert.Throws<TestDataGenerationException>(() => logicalModel.TestData().WithBudgets(new TestDataBudgets { MaxStringLength = 10 }).WithLogicalTypeGenerator("BudgetCode", _ => new string('x', 100)).Generate<LogicalBudgetRoot>());
+        _ = await Assert.That(logicalCustom.Diagnostics.Any(d => d.Code == "TESTDATA_CUSTOM_CANDIDATE_INVALID")).IsTrue();
+    }
+
+    [Test]
     public async Task Materialization_supports_date_time_guid_uri_character_binary_and_json_forms()
     {
         TypeSchemaModel model = ScalarModel("scalar", null);
@@ -80,15 +163,51 @@ public sealed class TestDataCorrectiveTests
         _ = await Assert.That(exception.Diagnostics.Any(d => d.Code == "TESTDATA_MATERIALIZATION_FAILED")).IsTrue();
     }
 
-    private static TypeSchemaModel ScalarModel(string id, string? format)
+    private static TypeSchemaModel ScalarModel(string id, string? format, ConstraintSet? constraints = null)
     {
         ScalarTypeDefinition scalar = new() { Id = new("Scalar"), Name = "Scalar", Kind = TypeKind.Scalar, Nullability = Nullability.NonNullable, Annotations = new(), ScalarKind = ScalarKind.String, Format = format };
-        PropertyDefinition property = new() { Id = new("Value"), Name = "Value", Type = new(scalar.Id), Cardinality = new Cardinality { IsRequired = true }, Constraints = new(), Annotations = new() };
+        PropertyDefinition property = new() { Id = new("Value"), Name = "Value", Type = new(scalar.Id), Cardinality = new Cardinality { IsRequired = true }, Constraints = constraints ?? new(), Annotations = new() };
         ObjectTypeDefinition owner = new() { Id = new(id), Name = id, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = new(), Properties = [property], Keys = [] };
         return new TypeSchemaModel { Id = new(id), Types = [owner, scalar], TypesById = new Dictionary<TypeId, TypeDefinition> { [owner.Id] = owner, [scalar.Id] = scalar }, Annotations = new() };
+    }
+
+    private static TypeSchemaModel BudgetModel(int? minimum, int? maximum)
+    {
+        return ScalarModel("global::SemanticTypeModel.TestData.Tests.Unit.BudgetRoot", null, new ConstraintSet { String = new StringConstraints { MinLength = minimum, MaxLength = maximum } });
+    }
+
+    private static TypeSchemaModel BinaryBudgetModel()
+    {
+        ScalarTypeDefinition scalar = new() { Id = new("Binary"), Name = "Binary", Kind = TypeKind.Scalar, Nullability = Nullability.NonNullable, Annotations = new(), ScalarKind = ScalarKind.Binary };
+        PropertyDefinition property = new() { Id = new("Value"), Name = "Value", Type = new(scalar.Id), Cardinality = new Cardinality { IsRequired = true }, Constraints = new(), Annotations = new() };
+        ObjectTypeDefinition owner = new() { Id = new("global::SemanticTypeModel.TestData.Tests.Unit.BinaryBudgetRoot"), Name = "BinaryBudgetRoot", Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = new(), Properties = [property], Keys = [] };
+        return new TypeSchemaModel { Id = new("binary-budget"), Types = [owner, scalar], TypesById = new Dictionary<TypeId, TypeDefinition> { [owner.Id] = owner, [scalar.Id] = scalar }, Annotations = new() };
+    }
+
+    private static TypeSchemaModel LogicalBudgetModel()
+    {
+        ScalarTypeDefinition scalar = new() { Id = new("LogicalScalar"), Name = "LogicalScalar", Kind = TypeKind.Scalar, Nullability = Nullability.NonNullable, Annotations = new(), ScalarKind = ScalarKind.String };
+        PropertyDefinition property = new() { Id = new("Value"), Name = "Value", Type = new(scalar.Id), Cardinality = new Cardinality { IsRequired = true }, Constraints = new(), Annotations = new() { Items = [new Annotation { Key = new("schema.logicalType"), Value = "BudgetCode", Scope = AnnotationScope.Member, Source = AnnotationSource.Declared }] } };
+        ObjectTypeDefinition owner = new() { Id = new("global::SemanticTypeModel.TestData.Tests.Unit.LogicalBudgetRoot"), Name = "LogicalBudgetRoot", Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Annotations = new(), Properties = [property], Keys = [] };
+        return new TypeSchemaModel { Id = new("logical-budget"), Types = [owner, scalar], TypesById = new Dictionary<TypeId, TypeDefinition> { [owner.Id] = owner, [scalar.Id] = scalar }, Annotations = new() };
     }
 }
 
 public sealed class MaterializationFailureRoot
 {
+}
+
+public sealed class BudgetRoot
+{
+    public string Value { get; set; } = string.Empty;
+}
+
+public sealed class BinaryBudgetRoot
+{
+    public byte[] Value { get; set; } = [];
+}
+
+public sealed class LogicalBudgetRoot
+{
+    public string Value { get; set; } = string.Empty;
 }

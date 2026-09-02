@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Net.Mail;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -352,24 +353,61 @@ internal static class TerminologyCandidate
     {
         return format.ToLowerInvariant() switch
         {
-            "email" => value.Contains('@', StringComparison.Ordinal),
+            "email" => IsEmail(value),
             "uri-reference" => Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out _),
             "uri" => Uri.TryCreate(value, UriKind.Absolute, out _),
-            "hostname" => Uri.CheckHostName(value) != UriHostNameType.Unknown,
+            "hostname" => IsHostname(value),
             "ipv4" => IsIp(value, System.Net.Sockets.AddressFamily.InterNetwork),
             "ipv6" => IsIp(value, System.Net.Sockets.AddressFamily.InterNetworkV6),
-            "date" => DateOnly.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
-            "time" => TimeOnly.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
-            "date-time" => DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+            "date" => DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+            "time" => DateTimeOffset.TryParseExact(value, ["HH:mm:ss'Z'", "HH:mm:ss.FFFFFFF'Z'", "HH:mm:sszzz", "HH:mm:ss.FFFFFFFzzz"], CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+            "date-time" => DateTimeOffset.TryParseExact(value, ["yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'", "yyyy-MM-dd'T'HH:mm:sszzz", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz"], CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
             "duration" => IsDuration(value),
-            "uuid" => Guid.TryParse(value, out _),
+            "uuid" => !string.IsNullOrWhiteSpace(value) && !value.Any(char.IsWhiteSpace) && Guid.TryParse(value, out _),
             _ => false,
         };
+    }
+
+    private static bool IsEmail(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Any(char.IsWhiteSpace) || value.Count(c => c == '@') != 1)
+        {
+            return false;
+        }
+
+        var at = value.IndexOf('@');
+        if (at <= 0 || at == value.Length - 1)
+        {
+            return false;
+        }
+
+        try
+        {
+            var address = new MailAddress(value);
+            return string.Equals(address.Address, value, StringComparison.Ordinal);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 
     private static bool IsIp(string value, System.Net.Sockets.AddressFamily family)
     {
         return IPAddress.TryParse(value, out IPAddress? address) && address.AddressFamily == family;
+    }
+
+    private static bool IsHostname(string value)
+    {
+        if (value.Length is 0 or > 253 || value.Any(char.IsWhiteSpace))
+        {
+            return false;
+        }
+
+        return value.Split('.').All(label => label.Length is > 0 and <= 63
+            && label[0] != '-'
+            && label[^1] != '-'
+            && label.All(c => char.IsAsciiLetterOrDigit(c) || c == '-'));
     }
 
     private static bool IsDuration(string value)
