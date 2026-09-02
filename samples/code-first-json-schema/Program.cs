@@ -3,9 +3,19 @@ using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.JsonSchema;
 using SemanticTypeModel.JsonSchema.Derivation;
 using SemanticTypeModel.JsonSchema.Export;
+using SemanticTypeModel.TestData;
 using SemanticTypeModel.Samples.OrderFulfillment.Domain;
 
 TypeSchemaModel model = OrderFulfillmentSemanticModel.Create();
+Customer randomCustomer = model.TestData().WithSeed(41).Generate<Customer>();
+Customer customer = model.TestData()
+    .WithTerminology(SemanticTerminologyProfileJson.Create(model))
+    .WithSeed(42)
+    .Generate<Customer>();
+Require(!string.IsNullOrWhiteSpace(customer.CustomerId), "Typed TestData generation produced a customer identity.");
+Require(!string.IsNullOrWhiteSpace(randomCustomer.CustomerId), "Random typed TestData generation produced a customer identity.");
+string customerJson = JsonSerializer.Serialize(customer);
+Require(customerJson.Contains("CustomerId", StringComparison.Ordinal), "Typed TestData materialization survived System.Text.Json serialization.");
 var jsonSchemaModel = model.DeriveJsonSchemaModel(options => _ = options.UseDefaultTransformations());
 JsonSchemaExportResult exported = JsonSchemaExporter.Export(jsonSchemaModel.Model);
 string json = exported.Document.RootElement.GetRawText();

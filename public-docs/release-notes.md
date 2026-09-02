@@ -1,7 +1,25 @@
+# 6.0.0
+
+6.0.0 is the current development/release-candidate line. Publication, tagging, and GitHub Release creation
+remain outside this corrective implementation task.
+
+- Strong Scalar canonical semantics and CLR single-value-wrapper inference are removed; Logical Type remains
+  property metadata and does not change scalar representation or target behavior.
+- The aligned suite contains exactly eleven packages, including `SemanticTypeModel.TestData`.
+- TestData adds validated terminology profiles, typed public CLR materialization, deterministic bulk generation,
+  configurable safety budgets, and fail-closed programmatic scalar generators.
+- Supported TestData scalar materialization includes the documented date/time, GUID, URI, character, binary,
+  numeric, nullable, and JSON DOM forms. Unsupported construction or invalid candidates produce diagnostics.
+
+## Upgrade guidance
+
+Use one exact 6.0.x version for every `SemanticTypeModel.*` package used together. Do not infer scalar meaning
+from CLR wrapper shapes; configure target-specific behavior explicitly where needed.
+
 # 5.0.1
 
-5.0.1 is the current patch-line release candidate. Publication, tagging, and GitHub Release creation are
-outside this readiness milestone.
+5.0.1 was the patch-line release candidate before the current 6.0.0 development line. Its publication,
+tagging, and GitHub Release history remains separate from the current development work.
 
 - Ordinary `JsonSerializerOptions` remains the primary complete System.Text.Json runtime path. Modeled
   semantic Entity inheritance receives automatic `$type` polymorphism when the application has not supplied

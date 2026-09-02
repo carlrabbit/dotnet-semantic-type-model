@@ -6,12 +6,12 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-M0077 is complete. The next milestone number is reserved for M0078.
+M0078 and M0079 are complete on this implementation baseline. There is no active milestone in the working tree.
 
 ## Next Number
 
 ```text
-M0078
+M0080
 ```
 
 Never restart or reuse milestone numbers.

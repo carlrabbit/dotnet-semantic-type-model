@@ -117,7 +117,7 @@ Microsoft.Extensions.Configuration and Microsoft.Extensions.Options directly.
 
 `SemanticDisplayIdentity` and `SemanticAccessPath` are projection-neutral annotation semantics. They do not
 imply EF indexes, API query parameters, UI behavior, Power BI behavior, or relationships. CLR wrapper
-transparency is not canonical meaning; EF may support compatible wrappers as a target-specific convenience.
+transparency is not canonical meaning; EF does not infer or automatically convert single-value wrappers.
 
 The supported JSON fidelity claim is bounded and one-way: STM-configured System.Text.Json output validates
 against the derived JSON Schema. Bidirectional serializer/schema equivalence and representation-changing
@@ -146,6 +146,14 @@ The retired runtime global `ModelBuilder` cleanup/application path is not the cu
 There is no compatibility bridge that reintroduces broad relationship inference, `OwnsOne`/`OwnsMany`, or
 alternative inheritance modes into the current generated contract.
 
+## 6.0 release boundary
+
+6.0.0 is the current development/release-candidate line after the breaking semantic changes in M0076 and
+M0077. Strong Scalar and CLR single-value-wrapper inference are removed current behavior; Logical Type is
+property metadata only. The aligned suite contains eleven packages, including `SemanticTypeModel.TestData`.
+Typed TestData generation supports validated terminology profiles, public CLR materialization, bulk generation,
+budgets, and fail-closed custom scalar generators. Use one exact 6.0 prerelease version for every package.
+
 ## 5.0 release boundary
 
 5.0.0 is the next major boundary after 4.0.1. Consumers moving from 4.0.x must remove the
@@ -154,7 +162,7 @@ use application-owned Microsoft.Extensions.Configuration/Options registration as
 `SemanticTypeRole.Configuration` and `SemanticRequiredWhen` when their projection-neutral meanings remain
 relevant. Use the aligned ten-package 5.0.0 suite; do not mix 4.0.x and 5.0.0 packages.
 
-## 5.0.1 release candidate
+## 5.0.1 release history
 
 5.0.1 is a patch-line release candidate for the aligned eleven-package suite. It carries the corrective
 System.Text.Json runtime behavior described in the release notes: ordinary `JsonSerializerOptions` is the

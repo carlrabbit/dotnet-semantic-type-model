@@ -119,8 +119,19 @@ A property on an envelope that describes the envelope lifecycle, context, transp
 Metadata that describes representation for one projection target, such as JSON Schema, EF Core, Power BI, or System.Text.Json, rather than projection-neutral domain meaning.
 
 ### Logical Type
-
 An explicit property-level name attached to an ordinary scalar for semantic labeling without changing its scalar representation or introducing a canonical type node.
+
+### Semantic Terminology Profile
+A versioned external TestData sidecar containing synthetic scalar candidate values bound to model-local Logical Types or canonical properties without authoring or mutating the canonical semantic model.
+
+### Random Test-Data Generation
+Deterministic constraint-aware TestData generation that derives values from the canonical semantic model, size profile, and seed without terminology guidance.
+
+### Profile-Guided Test-Data Generation
+TestData generation that prefers applicable Semantic Terminology Profile candidates and otherwise falls back to Random Test-Data Generation.
+
+### CLR Test-Data Materialization
+Conversion of a successful semantic TestData value graph into a supported CLR object graph without changing the semantic generation result or treating CLR wrapper shape as semantic meaning.
 
 ### Envelope Projection Root
 The type selected by target policy as the root projection for an envelope scenario; it may be the envelope wrapper or the envelope payload.

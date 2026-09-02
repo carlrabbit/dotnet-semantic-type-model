@@ -8,6 +8,7 @@
     <PackageReference Include="SemanticTypeModel.DotNet" />
     <PackageReference Include="SemanticTypeModel.Generators" PrivateAssets="all" />
     <PackageReference Include="SemanticTypeModel.JsonSchema" />
+    <PackageReference Include="SemanticTypeModel.TestData" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../OrderFulfillment.Domain/OrderFulfillment.Domain.csproj" />

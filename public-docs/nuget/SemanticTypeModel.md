@@ -72,9 +72,9 @@ General relationship inference is not a current generator capability.
 
 See the complete [configuration reference](../configuration.md).
 
-## Current 5.0 boundaries and capabilities
+## Current 6.0 boundaries and capabilities
 
-The 5.0 suite retains `SemanticTypeRole.Configuration` as projection-neutral meaning and retains
+The 6.0 suite retains `SemanticTypeRole.Configuration` as projection-neutral meaning and retains
 `SemanticRequiredWhen`; it does not include STM-owned Configuration/Options binding or registration. The
 removed `SemanticTypeModel.Configuration` package and `AddSemanticOptions<TOptions>` API have no tombstone or
 forwarding replacement.
@@ -94,6 +94,11 @@ object values.
 An ordinary scalar property may opt into a projection-neutral Logical Type name with
 `[SemanticLogicalType("CustomerId")]`. The name is metadata only: it does not change CLR, JSON, EF, LINQ,
 TestData, or Power BI representation. Names must be valid and same-name properties in one model must use the same scalar type.
+
+`SemanticTypeModel.TestData` provides semantic graph generation and the typed
+`model.TestData().Generate<T>()` / `GenerateMany<T>()` facade. Profiles are consumed only after model-bound
+validation; public CLR materialization uses supported constructors and members and never infers scalar meaning
+from wrapper shapes. Invalid custom candidates and materialization failures are reported with TestData diagnostics.
 
 ## JSON Schema semantic annotations
 
@@ -158,12 +163,14 @@ If generation or projection fails:
 | `SemanticTypeModel.SystemTextJson` | Resolver metadata derivation/customization |
 | `SemanticTypeModel.PowerBI` | Deterministic local analytical metadata projection |
 | `SemanticTypeModel.DependencyInjection` | Runtime provider/projection service registration |
+| `SemanticTypeModel.TestData` | Deterministic constraint-aware semantic test-data generation and terminology profiles |
 
-The 5.0.x release suite contains exactly these ten packages. All ten must be kept at the same exact version:
+The aligned release suite contains exactly these eleven packages. All eleven must be kept at the same exact version:
 `SemanticTypeModel.Abstractions`, `SemanticTypeModel.Core`, `SemanticTypeModel.JsonSchema`,
 `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, `SemanticTypeModel.DependencyInjection`,
 `SemanticTypeModel.PowerBI`, `SemanticTypeModel.EFCore`, `SemanticTypeModel.EFCore.Generators`, and
-`SemanticTypeModel.SystemTextJson`. `SemanticTypeModel.Configuration` is not part of the suite.
+`SemanticTypeModel.SystemTextJson`, and `SemanticTypeModel.TestData`. `SemanticTypeModel.Configuration` is not part
+of the suite.
 
 ## Important boundaries
 
