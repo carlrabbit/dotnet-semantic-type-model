@@ -1,20 +1,53 @@
 # 6.0.0
 
-6.0.0 is the current development/release-candidate line. Publication, tagging, and GitHub Release creation
-remain outside this corrective implementation task.
+6.0.0 is the intended next stable release and current release-candidate line. It is a breaking semantic release:
+CLR single-value wrapper shape no longer carries STM scalar meaning, and Logical Type is the explicit
+projection-neutral way to label semantically distinct scalar properties without changing representation.
+Publication, tagging, and GitHub Release creation remain separate from release-readiness validation.
 
-- Strong Scalar canonical semantics and CLR single-value-wrapper inference are removed; Logical Type remains
-  property metadata and does not change scalar representation or target behavior.
-- The aligned suite contains exactly eleven packages, including `SemanticTypeModel.TestData`.
-- TestData adds validated terminology profiles, typed public CLR materialization, deterministic bulk generation,
-  configurable safety budgets, and fail-closed programmatic scalar generators.
-- Supported TestData scalar materialization includes the documented date/time, GUID, URI, character, binary,
-  numeric, nullable, and JSON DOM forms. Unsupported construction or invalid candidates produce diagnostics.
+## Highlights
 
-## Upgrade guidance
+- Strong Scalar canonical semantics and CLR single-value-wrapper inference are removed across the suite.
+  `SemanticLiteralKind.StrongIdentifier` and EF Core's automatic single-value-wrapper conversion are removed as
+  part of the same boundary. Strongly typed CLR IDs remain application/library concerns unless an explicit
+  integration is configured outside STM's canonical semantics.
+- `[SemanticLogicalType("Name")]` adds an explicit model-local, case-sensitive Logical Type name to an ordinary
+  scalar property. The same Logical Type name must map to the same scalar type within one model. Logical Type is
+  metadata only: it does not create a canonical type node or change CLR, JSON, EF Core, LINQ, Power BI, or
+  built-in TestData representation.
+- The aligned suite now contains exactly eleven packages with `SemanticTypeModel.TestData` added to the existing
+  ten-package suite. Every `SemanticTypeModel.*` package used together must use exactly the same version.
+- `SemanticTypeModel.TestData` adds deterministic, constraint-aware Random generation for canonical value graphs
+  with `Simple`, `Moderate`, and `Extreme` size profiles, fixed/configurable safety budgets, deterministic seeds,
+  and fail-closed `TESTDATA_*` diagnostics. Built-in regex synthesis remains intentionally unsupported.
+- Optional Semantic Terminology Profiles provide a versioned, model-bound JSON sidecar for synthetic scalar
+  candidates. Profile-guided generation prefers property terminology, then reusable Logical Type terminology,
+  and falls back to deterministic Random generation when no eligible terminology value is available.
+- The typed TestData facade adds `model.TestData()`, `Generate<T>()`, `GenerateMany<T>()`, materialization of an
+  existing semantic value graph, property/Logical-Type custom scalar generators, and supported public CLR
+  construction for the documented scalar, enum, collection, dictionary, nullable, record/class/struct, and
+  constructor/member shapes. Invalid custom candidates fail closed.
+- The TestData acceptance boundary is exercised through the real code-first generator, CLR materialization,
+  STM-configured System.Text.Json, and JSON Schema derived from the same canonical model.
+- The compile-time semantic manifest remains ephemeral build transport with exact producer/consumer suite-version
+  alignment. The current manifest schema is v3 and is not a persisted interchange format.
 
-Use one exact 6.0.x version for every `SemanticTypeModel.*` package used together. Do not infer scalar meaning
-from CLR wrapper shapes; configure target-specific behavior explicitly where needed.
+## Upgrade guidance from 5.x
+
+1. Upgrade every `SemanticTypeModel.*` package, generator, and analyzer used together to exactly `6.0.0`.
+2. Remove `[SemanticStrongScalar]`, `SemanticLiteralKind.StrongIdentifier`, and assumptions that a CLR
+   `Value`-property wrapper receives automatic STM scalar or EF conversion behavior.
+3. Where representation-neutral scalar identity is useful, put `[SemanticLogicalType("...")]` on the ordinary
+   scalar property instead of relying on CLR wrapper shape.
+4. Rebuild producer and consuming projects together so generated semantic manifests and consuming generators use
+   the same exact suite version.
+5. Add `SemanticTypeModel.TestData` only where deterministic semantic test-data generation is needed. Random mode
+   requires no terminology profile; terminology profiles and programmatic generators are optional enrichment.
+6. Keep target-specific wrapper conversions, strongly typed-ID integration, relationships, serializer contracts,
+   and database behavior in application/target-native configuration rather than inferring them from CLR shape.
+
+See [Compatibility](api/compatibility.md), [Core semantics](guides/core-semantics.md), and
+[Test data](guides/test-data.md) for the current contracts and boundaries.
 
 # 5.0.1
 
@@ -99,9 +132,9 @@ the unpublished 3.0.0 candidate. The latest package version verified on NuGet be
 - `SemanticTypeModel.Configuration.Generators` and JSON Schema import were removed without compatibility
   packages or authoring-path shims. Configuration registration uses the runtime
   `AddSemanticOptions<TOptions>` adapter.
-- Lifecycle mutability is optional and projection-neutral. `[SemanticMutable]` and `[SemanticImmutable]` are
-  the only declarations; a property declaration overrides its containing type, and CLR setter/init shape does
-  not infer mutability.
+- Lifecycle mutability is optional and projection-neutral. `[SemanticMutable]` and `[SemanticImmutable]` are the
+  only declarations; a property declaration overrides its containing type, and CLR setter/init shape does not
+  infer mutability.
 - The general relationship model, relationship attribute, and relationship inference were removed. Structural
   references, keys, ownership, aggregate roots, and envelopes remain distinct; applications configure
   target-specific relationships.
