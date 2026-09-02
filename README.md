@@ -1,10 +1,11 @@
 # SemanticTypeModel
 
 SemanticTypeModel is a .NET 10 package suite for defining semantic meaning on .NET types once and using
-that model across targets such as JSON Schema, EF Core, Power BI, and System.Text.Json.
+that model across targets such as JSON Schema, EF Core, Power BI, System.Text.Json, and deterministic test-data
+generation.
 
 Annotated .NET code is the supported authoring source. The source generator builds a canonical
-`TypeSchemaModel`; target packages derive or generate target-specific behavior from it.
+`TypeSchemaModel`; target/runtime packages derive or consume target-specific behavior from it.
 
 ## Install
 
@@ -35,8 +36,9 @@ using SemanticTypeModel.DotNet;
 public sealed class Customer
 {
     [SemanticKey]
+    [SemanticLogicalType("CustomerId")]
     [SemanticImmutable]
-    public required string Id { get; init; }
+    public required Guid Id { get; init; }
 
     [SemanticDisplayName("Customer name")]
     public required string Name { get; init; }
@@ -47,6 +49,10 @@ Lifecycle mutability is optional semantic information. If neither the type nor a
 `SemanticMutable` or `SemanticImmutable`, the semantic model makes no mutability claim. Property declarations
 override a type declaration in either direction; CLR setter, `init`, record, and `readonly` shape do not infer
 semantic mutability.
+
+Logical Type is optional property-level metadata over an ordinary scalar. It can distinguish concepts such as
+`CustomerId` and `OrderId` while keeping their underlying scalar representation unchanged. SemanticTypeModel does
+not infer scalar or identifier meaning from CLR single-value wrapper shape.
 
 Build the project with `SemanticTypeModel.Generators` referenced as an analyzer/package. The generated
 provider defaults to:
@@ -103,17 +109,21 @@ allowed values, and examples.
 - [Projection capability matrix](public-docs/guides/projection-capabilities.md)
 - [Constraint-aware test data](public-docs/guides/test-data.md)
 
-JSON Schema can preserve selected STM-only meaning under the optional `x-stm` object. The initial vocabulary
-covers role, aggregate-root semantics, lifecycle mutability, technical descriptions, keys, units, and open
-`ui.*` annotations. Standard JSON Schema keywords remain authoritative for semantics they already represent.
+JSON Schema can preserve selected STM-only meaning under the optional `x-stm` object. The vocabulary covers
+role, aggregate-root semantics, lifecycle mutability, technical descriptions, keys, units, Logical Type, and
+open `ui.*` annotations. Standard JSON Schema keywords remain authoritative for semantics they already represent.
 
 SemanticTypeModel no longer defines a general canonical relationship abstraction. Applications and target
 projections own relationship behavior through target-native APIs and policies.
 
-Display Identity and Access Path are projection-neutral ordered
-annotations only: they do not generate indexes, API queries, UI behavior, Power BI behavior, or relationships.
-`SemanticTypeRole.Configuration` and `SemanticRequiredWhen` remain projection-neutral semantics, while STM-owned
-Configuration/Options binding and registration are not part of the current suite.
+Display Identity and Access Path are projection-neutral ordered annotations only: they do not generate indexes,
+API queries, UI behavior, Power BI behavior, or relationships. `SemanticTypeRole.Configuration` and
+`SemanticRequiredWhen` remain projection-neutral semantics, while STM-owned Configuration/Options binding and
+registration are not part of the current suite.
+
+For test data, Random generation is deterministic and constraint-aware without any terminology profile. Optional
+Semantic Terminology Profiles and programmatic scalar generators can enrich values while preserving canonical
+validation and safety budgets. Built-in regex synthesis remains intentionally unsupported.
 
 Runnable examples live directly under [`samples/`](samples/). The compact sample index is
 [public-docs/samples.md](public-docs/samples.md).
@@ -121,13 +131,13 @@ Runnable examples live directly under [`samples/`](samples/). The compact sample
 ## Diagnose problems
 
 SemanticTypeModel reports model/projection diagnostics at runtime and `STMxxxx` diagnostics from source
-generators at compile time.
+generators at compile time. TestData uses descriptive `TESTDATA_*` runtime diagnostics.
 
 Start with:
 
 - [Troubleshooting](public-docs/troubleshooting.md) for symptom-oriented fixes;
 - [Diagnostics](public-docs/diagnostics.md) for diagnostic ranges and common fixes;
-- the target guide for projection-specific limitations and failure modes.
+- the target/capability guide for limitations and failure modes.
 
 Do not ignore diagnostics merely because a projection produced output; warnings can indicate lossy target
 representation.
