@@ -78,7 +78,7 @@ public static class SemanticTestDataGenerator
         private int _nodes;
         internal List<SchemaDiagnostic> Diagnostics { get; } = [];
 
-        internal SemanticTestValue? Generate(TypeId id, ConstraintSet useConstraints, string path, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false)
+        internal SemanticTestValue? Generate(TypeId id, ConstraintSet useConstraints, string path, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false, IReadOnlyList<JsonElement>? fallbackCandidates = null)
         {
             if (!model.TypesById.TryGetValue(id, out TypeDefinition? type))
             {
@@ -105,12 +105,12 @@ public static class SemanticTestDataGenerator
             var next = new HashSet<TypeId>(ancestors) { id };
             return type switch
             {
-                ScalarTypeDefinition scalar => GenerateScalar(scalar, useConstraints, path, candidates, customCandidate),
+                ScalarTypeDefinition scalar => GenerateScalar(scalar, useConstraints, path, candidates, customCandidate, fallbackCandidates),
                 EnumTypeDefinition @enum => GenerateEnum(@enum, path),
                 ObjectTypeDefinition obj => GenerateObject(obj, useConstraints, path, next, depth),
                 ArrayTypeDefinition array => GenerateArray(array, useConstraints, path, next, depth),
                 DictionaryTypeDefinition dictionary => GenerateDictionary(dictionary, useConstraints, path, next, depth),
-                ReferenceTypeDefinition reference => GenerateReference(reference, useConstraints, path, allowsNull, optional, depth, next, candidates, customCandidate),
+                ReferenceTypeDefinition reference => GenerateReference(reference, useConstraints, path, allowsNull, optional, depth, next, candidates, customCandidate, fallbackCandidates),
                 UnionTypeDefinition => Error("TESTDATA_UNSUPPORTED_TYPE", "Union generation is unsupported.", path),
                 IntersectionTypeDefinition => Error("TESTDATA_UNSUPPORTED_TYPE", "Intersection generation is unsupported.", path),
                 _ when type.Kind == TypeKind.Any => new ScalarTestValue(id, ScalarKind.Json, "{}"),
@@ -119,9 +119,9 @@ public static class SemanticTestDataGenerator
             };
         }
 
-        private SemanticTestValue? GenerateReference(ReferenceTypeDefinition reference, ConstraintSet constraints, string path, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors, IReadOnlyList<JsonElement>? candidates, bool customCandidate)
+        private SemanticTestValue? GenerateReference(ReferenceTypeDefinition reference, ConstraintSet constraints, string path, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors, IReadOnlyList<JsonElement>? candidates, bool customCandidate, IReadOnlyList<JsonElement>? fallbackCandidates)
         {
-            return Generate(reference.Target.Id, constraints, path, allowsNull, optional, depth + 1, ancestors, candidates, customCandidate);
+            return Generate(reference.Target.Id, constraints, path, allowsNull, optional, depth + 1, ancestors, candidates, customCandidate, fallbackCandidates);
         }
 
         private SemanticTestValue? GenerateEnum(EnumTypeDefinition @enum, string path)
@@ -182,10 +182,10 @@ public static class SemanticTestDataGenerator
                 var customValue = options?.PropertyGenerator?.Invoke(owner, property, callbackContext);
                 customValue ??= logicalType is null ? null : options?.LogicalTypeGenerator?.Invoke(logicalType, callbackContext);
                 var customCandidate = customValue is not null;
-                IReadOnlyList<JsonElement>? candidates = customValue is null
-                    ? terminology?.FindCandidates(owner, property)
-                    : [JsonSerializer.SerializeToElement(customValue)];
-                SemanticTestValue? value = Generate(property.Type.Id, propertyConstraints, propertyPath, property.Cardinality.AllowsNull, !property.Cardinality.IsRequired, depth + 1, ancestors, candidates, customCandidate);
+                (IReadOnlyList<JsonElement>? propertyCandidates, IReadOnlyList<JsonElement>? logicalCandidates) = terminology?.FindCandidateSources(owner, property) ?? ([], []);
+                IReadOnlyList<JsonElement>? candidates = customValue is null ? propertyCandidates : [JsonSerializer.SerializeToElement(customValue)];
+                IReadOnlyList<JsonElement>? fallbackCandidates = customValue is null ? logicalCandidates : null;
+                SemanticTestValue? value = Generate(property.Type.Id, propertyConstraints, propertyPath, property.Cardinality.AllowsNull, !property.Cardinality.IsRequired, depth + 1, ancestors, candidates, customCandidate, fallbackCandidates);
                 if (value is null)
                 {
                     if (property.Cardinality.IsRequired)
@@ -290,7 +290,7 @@ public static class SemanticTestDataGenerator
             return new DictionaryTestValue(dictionary.Id, entries);
         }
 
-        private SemanticTestValue? GenerateScalar(ScalarTypeDefinition scalar, ConstraintSet constraints, string path, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false)
+        private SemanticTestValue? GenerateScalar(ScalarTypeDefinition scalar, ConstraintSet constraints, string path, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false, IReadOnlyList<JsonElement>? fallbackCandidates = null)
         {
             if (constraints.Custom.Count > 0)
             {
@@ -299,7 +299,8 @@ public static class SemanticTestDataGenerator
 
             if (constraints.String?.Pattern is { Length: > 0 })
             {
-                if (TryCandidate(scalar, constraints, candidates, out SemanticTestValue? candidate))
+                if (TryCandidate(scalar, constraints, candidates, out SemanticTestValue? candidate)
+                    || TryCandidate(scalar, constraints, fallbackCandidates, out candidate))
                 {
                     return candidate;
                 }
@@ -331,7 +332,8 @@ public static class SemanticTestDataGenerator
                 return Error("TESTDATA_UNSATISFIABLE_CONSTRAINTS", "String length bounds are contradictory.", path);
             }
 
-            if (TryCandidate(scalar, constraints, candidates, out SemanticTestValue? supplied))
+            if (TryCandidate(scalar, constraints, candidates, out SemanticTestValue? supplied)
+                || TryCandidate(scalar, constraints, fallbackCandidates, out supplied))
             {
                 return supplied;
             }

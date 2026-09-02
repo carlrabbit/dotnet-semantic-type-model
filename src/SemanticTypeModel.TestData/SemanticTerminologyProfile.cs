@@ -64,16 +64,11 @@ public sealed record SemanticTerminologyProfile
     public IReadOnlyList<TerminologyLogicalTypeEntry> LogicalTypes { get; init; } = [];
     public IReadOnlyList<TerminologyPropertyEntry> Properties { get; init; } = [];
 
-    internal IReadOnlyList<JsonElement> FindCandidates(ObjectTypeDefinition owner, PropertyDefinition property)
+    internal (IReadOnlyList<JsonElement> Property, IReadOnlyList<JsonElement> Logical) FindCandidateSources(ObjectTypeDefinition owner, PropertyDefinition property)
     {
         TerminologyPropertyEntry? specific = Properties.FirstOrDefault(p => p.OwnerTypeId == owner.Id.Value && p.PropertyId == property.Id.Value);
-        if (specific is { Values.Count: > 0 })
-        {
-            return specific.Values;
-        }
-
         var logical = property.Annotations.Items.FirstOrDefault(a => a.Key.Value == CoreSemanticAnnotationKeys.LogicalType)?.Value as string;
-        return logical is null ? [] : LogicalTypes.FirstOrDefault(p => p.Name == logical)?.Values ?? [];
+        return (specific?.Values ?? [], logical is null ? [] : LogicalTypes.FirstOrDefault(p => p.Name == logical)?.Values ?? []);
     }
 }
 

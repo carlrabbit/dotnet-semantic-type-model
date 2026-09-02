@@ -111,6 +111,38 @@ public sealed class TestDataCorrectiveTests
     }
 
     [Test]
+    public async Task Terminology_falls_through_from_ineligible_property_to_logical_type_in_order()
+    {
+        TypeSchemaModel model = LogicalBudgetModel();
+        SemanticTerminologyProfile template = SemanticTerminologyProfileJson.Create(model);
+        TerminologyPropertyEntry property = template.Properties[0];
+        TerminologyLogicalTypeEntry logical = template.LogicalTypes[0];
+
+        SemanticTerminologyProfile bothSources = template with
+        {
+            Properties = [property with { Values = [JsonSerializer.SerializeToElement("property")] }],
+            LogicalTypes = [logical with { Values = [JsonSerializer.SerializeToElement("logical")] }],
+        };
+        LogicalBudgetRoot propertyWins = model.TestData().WithBudgets(new TestDataBudgets { MaxStringLength = 20 }).WithTerminology(bothSources).Generate<LogicalBudgetRoot>();
+        _ = await Assert.That(propertyWins.Value).IsEqualTo("property");
+
+        SemanticTerminologyProfile propertyTooLong = bothSources with
+        {
+            Properties = [property with { Values = [JsonSerializer.SerializeToElement(new string('x', 30))] }],
+        };
+        LogicalBudgetRoot logicalWins = model.TestData().WithBudgets(new TestDataBudgets { MaxStringLength = 10 }).WithTerminology(propertyTooLong).Generate<LogicalBudgetRoot>();
+        _ = await Assert.That(logicalWins.Value).IsEqualTo("logical");
+
+        SemanticTerminologyProfile bothTooLong = bothSources with
+        {
+            Properties = [property with { Values = [JsonSerializer.SerializeToElement(new string('x', 30))] }],
+            LogicalTypes = [logical with { Values = [JsonSerializer.SerializeToElement(new string('y', 30))] }],
+        };
+        LogicalBudgetRoot randomFallback = model.TestData().WithBudgets(new TestDataBudgets { MaxStringLength = 10 }).WithTerminology(bothTooLong).Generate<LogicalBudgetRoot>();
+        _ = await Assert.That(randomFallback.Value).IsEqualTo("t");
+    }
+
+    [Test]
     public async Task Materialization_supports_date_time_guid_uri_character_binary_and_json_forms()
     {
         TypeSchemaModel model = ScalarModel("scalar", null);
