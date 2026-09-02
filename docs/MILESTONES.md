@@ -6,11 +6,7 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-M0078 and M0079 are complete on this implementation baseline:
-
-1. `M0079` — Test Data DX, Materialization & Integration.
-
-M0079 entered `implementing` only after M0078 completion and durable authority synchronization.
+M0078 and M0079 are complete on this implementation baseline. There is no active milestone in the working tree.
 
 ## Next Number
 

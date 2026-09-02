@@ -134,6 +134,17 @@ public static class SemanticTerminologyProfileJson
         return new SemanticTerminologyProfile { ModelId = model.Id.Value, Instructions = instructions, LogicalTypes = logical, Properties = properties };
     }
 
+    internal static SemanticTerminologyProfile ValidateForConsumption(TypeSchemaModel model, SemanticTerminologyProfile profile)
+    {
+        TerminologyProfileResult<SemanticTerminologyProfile> result = Import(model, JsonSerializer.Serialize(profile, JsonOptions));
+        if (!result.Succeeded)
+        {
+            throw new TestDataGenerationException("Terminology profile validation failed.", result.Diagnostics);
+        }
+
+        return result.Profile!;
+    }
+
     public static TerminologyProfileResult<SemanticTerminologyProfile> Import(TypeSchemaModel model, string json)
     {
         ArgumentNullException.ThrowIfNull(model);
@@ -342,7 +353,8 @@ internal static class TerminologyCandidate
         return format.ToLowerInvariant() switch
         {
             "email" => value.Contains('@', StringComparison.Ordinal),
-            "uri" or "uri-reference" => Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out _),
+            "uri-reference" => Uri.TryCreate(value, UriKind.RelativeOrAbsolute, out _),
+            "uri" => Uri.TryCreate(value, UriKind.Absolute, out _),
             "hostname" => Uri.CheckHostName(value) != UriHostNameType.Unknown,
             "ipv4" => IsIp(value, System.Net.Sockets.AddressFamily.InterNetwork),
             "ipv6" => IsIp(value, System.Net.Sockets.AddressFamily.InterNetworkV6),

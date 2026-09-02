@@ -2,11 +2,11 @@
 
 ## Status
 
-Authoritative behavioral specification for the initial SemanticTypeModel test-data synthesis capability.
+Authoritative behavioral specification for the SemanticTypeModel test-data synthesis and typed materialization capability.
 
 ## Purpose
 
-Define how SemanticTypeModel derives deterministic, valid synthetic values from a canonical `TypeSchemaModel` without introducing a second authoring source, domain-specific faker semantics, invalid-data generation, or CLR materialization policy.
+Define how SemanticTypeModel derives deterministic, valid synthetic values from a canonical `TypeSchemaModel` without introducing a second authoring source, domain-specific faker semantics, or invalid-data generation. Typed CLR materialization and terminology enrichment are documented below as current extensions to the baseline generator.
 
 The initial capability answers one question:
 
@@ -32,15 +32,15 @@ The package joins the aligned `SemanticTypeModel.*` suite and therefore uses the
 
 ## Development-Line Compatibility
 
-This capability begins on the `5.1.0` development line after the completed `5.0.1` maintenance work.
+This capability is part of the `6.0.0` development line after the completed `5.0.1` maintenance work.
 
 M0075 uses prerelease validation version:
 
 ```text
-5.1.0-m0075
+6.0.0-m0079
 ```
 
-M0075 does not authorize publication or claim a stable 5.1.0 API freeze. The semantic contract in this specification is authoritative; final convenience API and CLR materialization ergonomics remain reserved for the later developer-experience milestone.
+This prerelease validation version does not authorize publication or claim a stable 6.0.0 API freeze. The semantic contract in this specification is authoritative.
 
 ## Generation Result Boundary
 
@@ -53,9 +53,9 @@ The package owns a semantic test-data value representation sufficient to preserv
 - dictionary key/value entries;
 - explicit null where null is used as a legal recursion terminator.
 
-The initial generated representation is a finite, acyclic value graph. CLR object construction is not part of this specification.
+The generated representation is a finite, acyclic value graph. Current typed materialization is defined in the M0079 section below.
 
-Concrete public type names and builder/extension-method ergonomics are implementation mechanics for M0075 and may be refined before stable 5.1.0; the package must nevertheless expose a small usable runtime entry point that accepts a canonical model, a root type, a size profile, and an optional seed and returns a generation result with diagnostics.
+The package exposes both the low-level runtime entry point and the typed convenience facade described below.
 
 A generation result with any error diagnostic is not successful generated test data. The implementation must not silently return a partially invalid value as success.
 
@@ -142,7 +142,7 @@ The three profiles do not control:
 
 Built-in generation is intentionally bounded even when the semantic model has no upper bound or declares a very large upper bound.
 
-M0075 defaults are:
+Baseline built-in-generation defaults are:
 
 | Budget | Ceiling |
 |---|---:|
@@ -157,7 +157,7 @@ Profile targets remain below these ceilings. A declared maximum above a ceiling 
 
 If a semantic minimum itself exceeds the relevant ceiling, or a finite valid graph cannot be produced inside the depth/node budgets, generation fails with an explicit diagnostic. The generator must not truncate below a semantic minimum.
 
-Configurable budget overrides and higher-level stress-generation policy are reserved for later developer-experience work.
+Configurable budget overrides are defined by the current typed TestData facade below.
 
 ## Property Presence and Nullability
 
@@ -266,7 +266,7 @@ Object generation produces the effective modeled property set, including support
 
 The generator must preserve canonical property identity and must not infer relationships, ownership storage, UI semantics, or target-specific behavior from object metadata.
 
-Current `RequiredWhen` semantics are satisfied by the baseline complete-object policy because the target property is generated whenever possible. M0075 does not attempt to manufacture separate scenario families in which a condition is deliberately triggered or not triggered.
+Current `RequiredWhen` semantics are satisfied by the baseline complete-object policy because the target property is generated whenever possible. TestData does not manufacture separate scenario families in which a condition is deliberately triggered or not triggered.
 
 Object property-count constraints are supported only when a valid object can be formed from modeled properties under the no-additional-properties generation policy. If satisfying `MinProperties` would require inventing unmodeled properties, or `MaxProperties` conflicts with required/effectively emitted properties, generation fails.
 
@@ -296,7 +296,7 @@ An unresolved reference is a generation error.
 
 `Never` cannot have a valid instance and therefore always produces a generation error.
 
-`Union` and `Intersection` synthesis are out of scope for M0075. They produce explicit unsupported-generation errors rather than choosing an option/merge strategy whose validity could be ambiguous, especially for `oneOf` semantics.
+`Union` and `Intersection` synthesis remain out of scope. They produce explicit unsupported-generation errors rather than choosing an option/merge strategy whose validity could be ambiguous, especially for `oneOf` semantics.
 
 A later milestone may add them only with a separate accepted semantic contract.
 
@@ -314,7 +314,7 @@ Unknown annotations that do not define canonical validation semantics do not bec
 TESTDATA_*
 ```
 
-M0075 does not allocate a new stable `STMxxxx` numeric range.
+TestData does not allocate a new stable `STMxxxx` numeric range.
 
 Diagnostics must be deterministic, identify the canonical model path when available, and distinguish at least:
 
@@ -333,7 +333,7 @@ Expected unsupported/unsatisfiable model conditions are reported through generat
 
 ## Dependency Policy
 
-M0075 must not add a third-party faker library or regex-generation library.
+TestData must not add a third-party faker library or regex-generation library.
 
 The built-in generator uses canonical STM contracts and BCL/runtime functionality. Domain realism is deliberately reserved for external terminology enrichment rather than embedded faker datasets.
 
@@ -356,7 +356,7 @@ The baseline specification does not add:
 - target-specific JSON Schema/System.Text.Json generation;
 - union/intersection synthesis;
 - arbitrary custom-constraint interpretation;
-- publication or stable 5.1 release readiness.
+- publication or stable 6.0 release readiness.
 
 ## Required Cross-Boundary Evidence
 

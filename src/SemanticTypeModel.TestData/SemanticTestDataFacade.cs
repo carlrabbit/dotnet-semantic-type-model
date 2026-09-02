@@ -66,7 +66,12 @@ public sealed class SemanticTestDataFacade
         return new SemanticTestDataFacade(_model, _profile, seed, _terminology, _budgets).Copy(this);
     }
 
-    public SemanticTestDataFacade WithTerminology(SemanticTerminologyProfile profile) { ArgumentNullException.ThrowIfNull(profile); return new SemanticTestDataFacade(_model, _profile, _seed, profile, _budgets).Copy(this); }
+    public SemanticTestDataFacade WithTerminology(SemanticTerminologyProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        SemanticTerminologyProfile validated = SemanticTerminologyProfileJson.ValidateForConsumption(_model, profile);
+        return new SemanticTestDataFacade(_model, _profile, _seed, validated, _budgets).Copy(this);
+    }
     public SemanticTestDataFacade WithBudgets(TestDataBudgets budgets) { ArgumentNullException.ThrowIfNull(budgets); budgets.Validate(); return new SemanticTestDataFacade(_model, _profile, _seed, _terminology, budgets).Copy(this); }
 
     public SemanticTestDataFacade WithLogicalTypeGenerator(string logicalType, Func<TestDataGeneratorContext, object?> generator)
@@ -100,7 +105,18 @@ public sealed class SemanticTestDataFacade
         {
             TestDataGenerationResult result = GenerateSemantic(ResolveRoot(typeof(T)), i);
             if (!result.Succeeded) throw new TestDataGenerationException("TestData generation failed.", result.Diagnostics);
-            values.Add((T)SemanticTestDataMaterializer.Materialize(_model, result.Value!, typeof(T)));
+            try
+            {
+                values.Add((T)SemanticTestDataMaterializer.Materialize(_model, result.Value!, typeof(T)));
+            }
+            catch (TestDataGenerationException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw new TestDataGenerationException(exception.Message, [MaterializationDiagnostic(exception.Message, ModelPath.ForType(result.Value!.TypeId))]);
+            }
         }
         return values;
     }
@@ -182,7 +198,7 @@ internal static class SemanticTestDataMaterializer
         var definition = (ObjectTypeDefinition)model.GetType(value.ObjectTypeId);
         foreach (KeyValuePair<PropertyId, SemanticTestValue> pair in value.Properties)
         {
-            PropertyDefinition property = definition.Properties.First(p => p.Id == pair.Key);
+            PropertyDefinition property = FindProperty(model, definition, pair.Key) ?? throw new InvalidOperationException($"Property '{pair.Key}' was not found in object '{definition.Id}'.");
             var name = property.Annotations.Items.FirstOrDefault(a => a.Key.Value == "dotnet.memberName")?.Value as string ?? property.Name;
             MemberInfo? member = targetType.GetMember(name, BindingFlags.Public | BindingFlags.Instance).SingleOrDefault();
             Type memberType = member switch { PropertyInfo info => info.PropertyType, FieldInfo info => info.FieldType, _ => throw new InvalidOperationException($"Public member '{name}' was not found on '{targetType}'.") };
@@ -204,6 +220,21 @@ internal static class SemanticTestDataMaterializer
         return result;
     }
 
+    private static PropertyDefinition? FindProperty(TypeSchemaModel model, ObjectTypeDefinition definition, PropertyId id)
+    {
+        PropertyDefinition? direct = definition.Properties.FirstOrDefault(property => property.Id == id);
+        if (direct is not null) return direct;
+        foreach (TypeRef baseRef in definition.Composition.AllOf)
+        {
+            if (model.TypesById.TryGetValue(baseRef.Id, out TypeDefinition? baseType) && baseType is ObjectTypeDefinition baseObject)
+            {
+                PropertyDefinition? inherited = FindProperty(model, baseObject, id);
+                if (inherited is not null) return inherited;
+            }
+        }
+        return null;
+    }
+
     private static void Assign(object instance, string name, object? value)
     {
         if (instance.GetType().GetProperty(name, BindingFlags.Public | BindingFlags.Instance) is { CanWrite: true } property) { property.SetValue(instance, value); return; }
@@ -216,7 +247,7 @@ internal static class SemanticTestDataMaterializer
         Type element = targetType.IsArray ? targetType.GetElementType()! : targetType.GetGenericArguments().FirstOrDefault() ?? typeof(object);
         var values = items.Select(item => Materialize(model, item, element)).ToArray();
         if (targetType.IsArray) { var array = Array.CreateInstance(element, values.Length); for (var i = 0; i < values.Length; i++) array.SetValue(values[i], i); return array; }
-        Type concrete = targetType.IsInterface || targetType.IsAbstract ? (targetType.GetGenericTypeDefinition() == typeof(ISet<>) ? typeof(HashSet<>) : typeof(List<>)).MakeGenericType(element) : targetType;
+        Type concrete = targetType.IsInterface || targetType.IsAbstract ? (targetType.IsGenericType && (targetType.GetGenericTypeDefinition() == typeof(ISet<>) || targetType.GetGenericTypeDefinition() == typeof(IReadOnlySet<>)) ? typeof(HashSet<>) : typeof(List<>)).MakeGenericType(element) : targetType;
         var instance = Activator.CreateInstance(concrete) ?? throw new InvalidOperationException($"Collection '{targetType}' is unsupported.");
         if (instance is IList list)
         {
@@ -248,9 +279,12 @@ internal static class SemanticTestDataMaterializer
         if (actual == typeof(JsonElement)) return value is JsonElement element ? element : JsonSerializer.SerializeToElement(value);
         if (actual == typeof(JsonDocument)) return JsonDocument.Parse(JsonSerializer.Serialize(value));
         if (actual == typeof(JsonNode)) return JsonNode.Parse(JsonSerializer.Serialize(value))!;
-        if (actual == typeof(DateOnly) && value is DateOnly date) return date;
-        if (actual == typeof(TimeOnly) && value is TimeOnly time) return time;
-        if (actual == typeof(Guid) && value is Guid guid) return guid;
+        if (actual == typeof(DateOnly)) return value is DateOnly date ? date : DateOnly.Parse(Convert.ToString(value, CultureInfo.InvariantCulture)!, CultureInfo.InvariantCulture);
+        if (actual == typeof(TimeOnly)) return value is TimeOnly time ? time : TimeOnly.Parse(Convert.ToString(value, CultureInfo.InvariantCulture)!, CultureInfo.InvariantCulture);
+        if (actual == typeof(DateTime)) return value is DateTime dateTime ? dateTime : DateTime.Parse(Convert.ToString(value, CultureInfo.InvariantCulture)!, CultureInfo.InvariantCulture);
+        if (actual == typeof(DateTimeOffset)) return value is DateTimeOffset offset ? offset : DateTimeOffset.Parse(Convert.ToString(value, CultureInfo.InvariantCulture)!, CultureInfo.InvariantCulture);
+        if (actual == typeof(TimeSpan)) return value is TimeSpan duration ? duration : TimeSpan.Parse(Convert.ToString(value, CultureInfo.InvariantCulture)!, CultureInfo.InvariantCulture);
+        if (actual == typeof(Guid)) return value is Guid guid ? guid : Guid.Parse(Convert.ToString(value, CultureInfo.InvariantCulture)!);
         if (actual.IsEnum) return ConvertEnum(value, actual);
         return Convert.ChangeType(value, actual, CultureInfo.InvariantCulture)!;
     }

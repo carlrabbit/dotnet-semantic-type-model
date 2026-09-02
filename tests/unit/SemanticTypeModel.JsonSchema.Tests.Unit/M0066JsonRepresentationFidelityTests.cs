@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Json.Schema;
 using SemanticTypeModel.Abstractions.Model;
@@ -6,6 +7,7 @@ using SemanticTypeModel.Core.Semantics;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.SystemTextJson;
+using SemanticTypeModel.TestData;
 using DraftSchema = Json.Schema.JsonSchema;
 
 [assembly: SemanticTypeModelGeneratorOptions("SemanticTypeModel.JsonSchema.Tests.Unit.Generated", "M0066SemanticTypeModel")]
@@ -19,6 +21,26 @@ namespace SemanticTypeModel.JsonSchema.Tests.Unit;
 
 public sealed class M0066JsonRepresentationFidelityTests
 {
+    [Test]
+    public async Task Generated_test_data_materializes_serializes_and_validates_against_the_derived_schema()
+    {
+        TypeSchemaModel model = Generated.M0066SemanticTypeModel.Create();
+        M0079AcceptanceRoot customer = model.TestData().WithSeed(7).Generate<M0079AcceptanceRoot>();
+        JsonSerializerOptions options = new()
+        {
+            TypeInfoResolver = M0066JsonContext.Default.WithSemanticTypeModelJson(model),
+        };
+        options.Converters.Add(new JsonStringEnumConverter());
+        using var instance = JsonDocument.Parse(JsonSerializer.Serialize(customer, options));
+        JsonElement exported = JsonSchemaExporter.Export(model, new JsonSchemaExportOptions { IncludeSemanticAnnotations = false }).Document.RootElement;
+        var rootName = exported.GetProperty("$defs").EnumerateObject().Single(property => property.Name.EndsWith("M0079AcceptanceRoot", StringComparison.Ordinal)).Name;
+        JsonObject document = JsonNode.Parse(exported.GetRawText())!.AsObject();
+        JsonObject validationDocument = new() { ["$ref"] = $"#/$defs/{rootName}", ["$defs"] = document["$defs"]!.DeepClone() };
+        var schema = DraftSchema.FromText(validationDocument.ToJsonString());
+        EvaluationResults validation = schema.Evaluate(instance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
+
+        _ = await Assert.That(validation.IsValid).IsTrue();
+    }
     [Test]
     public async Task Generated_annotated_model_output_should_validate_against_derived_schema()
     {
@@ -44,7 +66,7 @@ public sealed class M0066JsonRepresentationFidelityTests
         EvaluationResults validation = schema.Evaluate(instance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
 
         _ = await Assert.That(validation.IsValid).IsTrue();
-        JsonElement enumSchema = JsonSchemaExporter.Export(model).Document.RootElement.GetProperty("$defs").EnumerateObject().Single(static item => item.Value.TryGetProperty("enum", out _)).Value;
+        JsonElement enumSchema = JsonSchemaExporter.Export(model).Document.RootElement.GetProperty("$defs").EnumerateObject().Single(static item => item.Value.TryGetProperty("x-stm", out JsonElement annotations) && annotations.TryGetProperty("enumValues", out JsonElement values) && values.EnumerateArray().Any(value => value.TryGetProperty("displayName", out JsonElement displayName) && displayName.GetString() == "Active value")).Value;
         _ = await Assert.That(enumSchema.GetProperty("x-stm").GetProperty("enumValues")[0].GetProperty("displayName").GetString()).IsEqualTo("Active value");
         JsonElement customerSchema = JsonSchemaExporter.Export(model).Document.RootElement;
         _ = await Assert.That(customerSchema.GetProperty("properties").GetProperty("Address").GetProperty("x-stm").GetProperty("ownership").GetString()).IsEqualTo("object");
@@ -199,8 +221,20 @@ public sealed class M0066Address
     public string Street { get; set; } = string.Empty;
 }
 
+[SemanticType]
+public sealed class M0079AcceptanceRoot
+{
+    public string Name { get; set; } = string.Empty;
+    public List<string> Tags { get; set; } = [];
+    public M0079AcceptanceStatus Status { get; set; }
+    public int Count { get; set; }
+}
+
+public enum M0079AcceptanceStatus { Ready, Complete }
+
 [JsonSerializable(typeof(M0066Customer))]
 [JsonSerializable(typeof(M0066Address))]
+[JsonSerializable(typeof(M0079AcceptanceRoot))]
 internal sealed partial class M0066JsonContext : JsonSerializerContext
 {
 }
