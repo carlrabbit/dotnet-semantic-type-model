@@ -1,5 +1,6 @@
 using System.Globalization;
-#pragma warning disable CS1591
+using System.Text.Json;
+#pragma warning disable CS1591, IDE0046, IDE0060
 using SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.TestData;
@@ -35,8 +36,19 @@ public static class SemanticTestDataGenerator
 {
     public static TestDataGenerationResult Generate(TypeSchemaModel model, TypeId rootType, TestDataSizeProfile profile = TestDataSizeProfile.Simple, int seed = 0)
     {
+        return Generate(model, rootType, profile, seed, null);
+    }
+
+    public static TestDataGenerationResult Generate(TypeSchemaModel model, TypeId rootType, TestDataSizeProfile profile, int seed, SemanticTerminologyProfile? terminology)
+    {
+        return Generate(model, rootType, profile, seed, terminology, null);
+    }
+
+    internal static TestDataGenerationResult Generate(TypeSchemaModel model, TypeId rootType, TestDataSizeProfile profile, int seed, SemanticTerminologyProfile? terminology, SemanticTestDataOptions? options)
+    {
         ArgumentNullException.ThrowIfNull(model);
-        var context = new Context(model, profile, seed);
+        options?.Budgets.Validate();
+        var context = new Context(model, profile, seed, terminology, options);
         SemanticTestValue? value = context.Generate(rootType, new ConstraintSet(), ModelPath.ForType(rootType), false, false, 0, []);
         return new TestDataGenerationResult { Value = value, Diagnostics = context.Diagnostics };
     }
@@ -47,30 +59,37 @@ public static class SemanticTestDataGenerator
         return Generate(model, rootType.Id, profile, seed);
     }
 
+    public static TestDataGenerationResult Generate(TypeSchemaModel model, TypeId rootType, SemanticTerminologyProfile terminology, TestDataSizeProfile profile = TestDataSizeProfile.Simple, int seed = 0)
+    {
+        ArgumentNullException.ThrowIfNull(terminology);
+        return Generate(model, rootType, profile, seed, terminology);
+    }
+
     public static TestDataGenerationResult Generate(TypeSchemaModel model, string rootTypeId, TestDataSizeProfile profile = TestDataSizeProfile.Simple, int seed = 0)
     {
         return Generate(model, new TypeId(rootTypeId), profile, seed);
     }
 
-    private sealed class Context(TypeSchemaModel model, TestDataSizeProfile profile, int seed)
+    private sealed class Context(TypeSchemaModel model, TestDataSizeProfile profile, int seed, SemanticTerminologyProfile? terminology, SemanticTestDataOptions? options)
     {
         private readonly Random _random = new(seed);
+        private readonly TestDataBudgets _budgets = options?.Budgets ?? new();
         private int _nodes;
         internal List<SchemaDiagnostic> Diagnostics { get; } = [];
 
-        internal SemanticTestValue? Generate(TypeId id, ConstraintSet useConstraints, string path, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors)
+        internal SemanticTestValue? Generate(TypeId id, ConstraintSet useConstraints, string path, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors, IReadOnlyList<JsonElement>? candidates = null)
         {
             if (!model.TypesById.TryGetValue(id, out TypeDefinition? type))
             {
                 return Error("TESTDATA_UNRESOLVED_REFERENCE", $"Type '{id.Value}' could not be resolved.", path);
             }
 
-            if (++_nodes > 100000)
+            if (++_nodes > _budgets.MaxNodes)
             {
                 return Error("TESTDATA_NODE_BUDGET_EXHAUSTED", "Generation exceeded the total value-node budget.", path);
             }
 
-            if (depth > 32)
+            if (depth > _budgets.MaxDepth)
             {
                 return Error("TESTDATA_DEPTH_BUDGET_EXHAUSTED", "Generation exceeded the nested-generation depth budget.", path);
             }
@@ -85,7 +104,7 @@ public static class SemanticTestDataGenerator
             var next = new HashSet<TypeId>(ancestors) { id };
             return type switch
             {
-                ScalarTypeDefinition scalar => GenerateScalar(scalar, useConstraints, path),
+                ScalarTypeDefinition scalar => GenerateScalar(scalar, useConstraints, path, candidates),
                 EnumTypeDefinition @enum => GenerateEnum(@enum, path),
                 ObjectTypeDefinition obj => GenerateObject(obj, useConstraints, path, next, depth),
                 ArrayTypeDefinition array => GenerateArray(array, useConstraints, path, next, depth),
@@ -157,7 +176,14 @@ public static class SemanticTestDataGenerator
                         }
                     };
                 }
-                SemanticTestValue? value = Generate(property.Type.Id, propertyConstraints, propertyPath, property.Cardinality.AllowsNull, !property.Cardinality.IsRequired, depth + 1, ancestors);
+                var logicalType = property.Annotations.Items.FirstOrDefault(a => a.Key.Value == "schema.logicalType")?.Value as string;
+                TestDataGeneratorContext callbackContext = new(model, propertyType, property, logicalType, profile, _random.Next(), options?.RootOrdinal ?? 0);
+                var customValue = options?.PropertyGenerator?.Invoke(owner, property, callbackContext);
+                customValue ??= logicalType is null ? null : options?.LogicalTypeGenerator?.Invoke(logicalType, callbackContext);
+                IReadOnlyList<JsonElement>? candidates = customValue is null
+                    ? terminology?.FindCandidates(owner, property)
+                    : [JsonSerializer.SerializeToElement(customValue)];
+                SemanticTestValue? value = Generate(property.Type.Id, propertyConstraints, propertyPath, property.Cardinality.AllowsNull, !property.Cardinality.IsRequired, depth + 1, ancestors, candidates);
                 if (value is null)
                 {
                     if (property.Cardinality.IsRequired)
@@ -195,7 +221,7 @@ public static class SemanticTestDataGenerator
             }
 
             var count = Target(effective.MinItems, effective.MaxItems, ProfileTarget());
-            if (count > 10000 || effective.MinItems > 10000)
+            if (count > _budgets.MaxCollectionItems || effective.MinItems > _budgets.MaxCollectionItems)
             {
                 return Error("TESTDATA_SIZE_BUDGET_EXHAUSTED", "Array generation exceeds the fixed item safety budget.", path);
             }
@@ -236,7 +262,7 @@ public static class SemanticTestDataGenerator
             }
 
             var count = Target(constraints?.MinItems, constraints?.MaxItems, ProfileTarget());
-            if (count > 10000)
+            if (count > _budgets.MaxDictionaryEntries)
             {
                 return Error("TESTDATA_SIZE_BUDGET_EXHAUSTED", "Dictionary generation exceeds the fixed entry safety budget.", path);
             }
@@ -262,7 +288,7 @@ public static class SemanticTestDataGenerator
             return new DictionaryTestValue(dictionary.Id, entries);
         }
 
-        private SemanticTestValue? GenerateScalar(ScalarTypeDefinition scalar, ConstraintSet constraints, string path)
+        private SemanticTestValue? GenerateScalar(ScalarTypeDefinition scalar, ConstraintSet constraints, string path, IReadOnlyList<JsonElement>? candidates = null)
         {
             if (constraints.Custom.Count > 0)
             {
@@ -271,6 +297,10 @@ public static class SemanticTestDataGenerator
 
             if (constraints.String?.Pattern is { Length: > 0 })
             {
+                if (TryCandidate(scalar, constraints, candidates, out SemanticTestValue? candidate))
+                {
+                    return candidate;
+                }
                 return Error("TESTDATA_PATTERN_UNSUPPORTED", "Pattern-constrained strings require an external or custom value source.", path);
             }
 
@@ -295,7 +325,12 @@ public static class SemanticTestDataGenerator
                 return Error("TESTDATA_UNSATISFIABLE_CONSTRAINTS", "String length bounds are contradictory.", path);
             }
 
-            var length = Clamp(ProfileTarget(), constraints.String?.MinLength ?? 0, constraints.String?.MaxLength, 65536);
+            if (TryCandidate(scalar, constraints, candidates, out SemanticTestValue? supplied))
+            {
+                return supplied;
+            }
+
+            var length = Clamp(ProfileTarget(), constraints.String?.MinLength ?? 0, constraints.String?.MaxLength, _budgets.MaxStringLength);
             object value = scalar.ScalarKind switch
             {
                 ScalarKind.Boolean => _random.Next(2) == 0,
@@ -308,7 +343,7 @@ public static class SemanticTestDataGenerator
                 ScalarKind.DateTimeOffset => new DateTimeOffset(2020, 1, 1, 12, 0, 0, TimeSpan.Zero),
                 ScalarKind.Duration => TimeSpan.FromMinutes(1),
                 ScalarKind.Guid => Guid.Parse("00000000-0000-4000-8000-000000000001"),
-                ScalarKind.Binary => Enumerable.Repeat((byte)0x42, Clamp(ProfileTarget(), 0, null, 65536)).ToArray(),
+                ScalarKind.Binary => Enumerable.Repeat((byte)0x42, Clamp(ProfileTarget(), 0, null, _budgets.MaxBinaryLength)).ToArray(),
                 ScalarKind.Json => "{}",
                 ScalarKind.Unknown => throw new InvalidOperationException(),
                 _ => throw new InvalidOperationException()
@@ -322,6 +357,42 @@ public static class SemanticTestDataGenerator
             }
 
             return new ScalarTestValue(scalar.Id, scalar.ScalarKind, value);
+        }
+
+        private bool TryCandidate(ScalarTypeDefinition scalar, ConstraintSet constraints, IReadOnlyList<JsonElement>? candidates, out SemanticTestValue? result)
+        {
+            result = null;
+            if (candidates is null || candidates.Count == 0)
+            {
+                return false;
+            }
+            var eligible = new List<(JsonElement Json, object Value)>();
+            foreach (JsonElement candidate in candidates)
+            {
+                if (TerminologyCandidate.TryRead(candidate, scalar, constraints, out var value, out _))
+                {
+                    eligible.Add((candidate, value!));
+                }
+            }
+            if (eligible.Count == 0)
+            {
+                return false;
+            }
+            (JsonElement Json, object Value) selected = eligible[_random.Next(eligible.Count)];
+            if (scalar.ScalarKind is ScalarKind.String or ScalarKind.Binary)
+            {
+                var target = ProfileTarget();
+                var nearest = eligible.Min(candidate => Math.Abs(CandidateLength(candidate.Json, scalar.ScalarKind) - target));
+                eligible = [.. eligible.Where(candidate => Math.Abs(CandidateLength(candidate.Json, scalar.ScalarKind) - target) == nearest)];
+                selected = eligible[_random.Next(eligible.Count)];
+            }
+            result = new ScalarTestValue(scalar.Id, scalar.ScalarKind, selected.Value);
+            return true;
+        }
+
+        private static int CandidateLength(JsonElement candidate, ScalarKind kind)
+        {
+            return kind == ScalarKind.Binary ? candidate.GetBytesFromBase64().Length : candidate.GetString()!.Length;
         }
 
         private decimal NumericValue(ScalarTypeDefinition scalar, NumericConstraints? constraints, bool fractional)
@@ -450,4 +521,4 @@ public static class SemanticTestDataGenerator
     }
 }
 
-#pragma warning restore CS1591
+#pragma warning restore CS1591, IDE0046, IDE0060

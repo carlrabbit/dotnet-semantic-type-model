@@ -42,5 +42,5 @@ public sealed class TestDataScenario
 {
     public List<string> Items { get; set; } = [];
     public State Status { get; set; }
-    public Guid Id { get; set; }
+    [SemanticLogicalType("ScenarioId")] public Guid Id { get; set; }
 }

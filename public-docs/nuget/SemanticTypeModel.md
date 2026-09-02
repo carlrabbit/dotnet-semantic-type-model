@@ -158,12 +158,14 @@ If generation or projection fails:
 | `SemanticTypeModel.SystemTextJson` | Resolver metadata derivation/customization |
 | `SemanticTypeModel.PowerBI` | Deterministic local analytical metadata projection |
 | `SemanticTypeModel.DependencyInjection` | Runtime provider/projection service registration |
+| `SemanticTypeModel.TestData` | Deterministic constraint-aware semantic test-data generation and terminology profiles |
 
-The 5.0.x release suite contains exactly these ten packages. All ten must be kept at the same exact version:
+The aligned release suite contains exactly these eleven packages. All eleven must be kept at the same exact version:
 `SemanticTypeModel.Abstractions`, `SemanticTypeModel.Core`, `SemanticTypeModel.JsonSchema`,
 `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, `SemanticTypeModel.DependencyInjection`,
 `SemanticTypeModel.PowerBI`, `SemanticTypeModel.EFCore`, `SemanticTypeModel.EFCore.Generators`, and
-`SemanticTypeModel.SystemTextJson`. `SemanticTypeModel.Configuration` is not part of the suite.
+`SemanticTypeModel.SystemTextJson`, and `SemanticTypeModel.TestData`. `SemanticTypeModel.Configuration` is not part
+of the suite.
 
 ## Important boundaries
 

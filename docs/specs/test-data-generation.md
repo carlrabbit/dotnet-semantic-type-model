@@ -339,17 +339,17 @@ The built-in generator uses canonical STM contracts and BCL/runtime functionalit
 
 ## Non-Goals
 
-This specification does not add:
+The baseline specification does not add:
 
 - invalid/faulty-data generation;
 - deliberate single-constraint violation generation;
 - regex synthesis;
-- terminology JSON export/import;
+- terminology JSON export/import (added by M0078);
 - AI integration or an AI SDK dependency;
-- custom generator registration;
-- CLR object materialization;
-- a fluent/builder-focused final developer experience;
-- bulk dataset/key-uniqueness semantics across multiple generated roots;
+- custom generator registration (added by M0079);
+- CLR object materialization (added by M0079);
+- the final typed developer-experience surface;
+- cross-root dataset/key-uniqueness policy;
 - probabilistic optional/null generation;
 - weighted enum/business distributions;
 - database seeding or EF Core integration;
@@ -373,3 +373,41 @@ annotated CLR model
 That evidence must include representative constraints, a collection, an enum, and ordinary scalar values. Hand-built canonical models remain appropriate for focused invalid/pathological generation tests.
 
 The packed-package consumer smoke path must consume `SemanticTypeModel.TestData` from the current locally packed aligned suite rather than through a project reference.
+
+## M0078 Semantic Terminology Profiles
+
+An optional `SemanticTerminologyProfile` is a version-1 JSON sidecar owned by `SemanticTypeModel.TestData`.
+Export it with `SemanticTerminologyProfileJson.Export(model)`, enrich only the candidate `values` fields, and
+normalize it against the current model with `SemanticTerminologyProfileJson.Import(model, json)`. The profile
+is bound to the exact `SchemaModelId`; instructions and exported context are informational and never replace
+the live canonical model.
+
+Import rejects unsupported format/version, model mismatches, duplicate identities, invalid scalar
+representations, unsupported constraints, and scalar conflicts. Missing Logical Types or properties are stale
+warnings and are ignored. Candidate lists are normalized by removing duplicates and sorting their JSON lexical
+representation. Logical Type candidates are reusable across matching scalar properties, while property-specific
+values take precedence and are filtered by the current use-site constraints.
+
+Pass an imported profile to the overload of `SemanticTestDataGenerator.Generate` to enable Profile-guided mode.
+Without a profile, Random mode remains unchanged. Profile-guided generation uses eligible property values, then
+Logical Type values, then the built-in generator; a supplied patterned string is accepted only when STM can
+validate it, and terminology never adds regex synthesis or bypasses unknown/custom constraints. Candidate values
+are never mutated to meet size targets, and selection remains deterministic for the same seed and normalized
+profile.
+
+## M0079 Typed Test-Data Experience
+
+The supported convenience surface is `model.TestData()`. It retains the low-level semantic-value API while
+adding `WithSizeProfile`, `WithSeed`, `WithTerminology`, `WithBudgets`, `Generate<T>()`, and
+`GenerateMany<T>(count)`. Bulk generation uses the root seed plus ordinal and returns an empty sequence for
+zero; negative counts and invalid budgets are argument errors.
+
+`Generate<T>()` materializes a successful semantic value graph into a public CLR object. It supports public
+constructors and writable public properties/fields, arrays, declared collection interfaces and concrete types,
+dictionaries, nullable values, enums, and documented BCL scalar forms. It never invokes private constructors,
+bypasses constructors, mutates private members, or infers single-value wrappers.
+
+`Materialize<T>(value)` materializes an existing successful graph without regenerating it. Materialization
+failures are reported through `TestDataGenerationException` with `TESTDATA_MATERIALIZATION_FAILED` diagnostics.
+Property and Logical Type generators take precedence in that order over terminology candidates, followed by
+built-in generation. Budgets are explicit and default to the baseline safety ceilings.

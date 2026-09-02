@@ -6,12 +6,16 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-M0077 is complete. The next milestone number is reserved for M0078.
+M0078 and M0079 are complete on this implementation baseline:
+
+1. `M0079` — Test Data DX, Materialization & Integration.
+
+M0079 entered `implementing` only after M0078 completion and durable authority synchronization.
 
 ## Next Number
 
 ```text
-M0078
+M0080
 ```
 
 Never restart or reuse milestone numbers.

@@ -432,7 +432,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             source.AppendLine($"{indent}            UserDescription = {Literal(GetAnnotationValue(property.Annotations, "schema.userDescription"))},");
             source.AppendLine($"{indent}            TechnicalDescription = {Literal(GetAnnotationValue(property.Annotations, "schema.technicalDescription"))},");
             AppendConstraints(source, property, indentationLevel + 3);
-            AppendAnnotationBag(source, property.Annotations, indentationLevel + 3, "Annotations");
+            AppendAnnotationBag(source, property.Annotations, indentationLevel + 3, "Annotations", "Member");
             source.AppendLine($"{indent}        }},");
         }
         source.AppendLine($"{indent}    ],");
@@ -621,7 +621,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         source.AppendLine($"{indent}TechnicalDescription = {Literal(GetAnnotationValue(annotations, "schema.technicalDescription"))},");
         source.AppendLine($"{indent}Kind = global::SemanticTypeModel.Abstractions.Model.TypeKind.{kind},");
         source.AppendLine($"{indent}Nullability = global::SemanticTypeModel.Abstractions.Model.Nullability.{(allowsNull ? "Nullable" : "NonNullable")},");
-        AppendAnnotationBag(source, annotations, indentationLevel, "Annotations");
+        AppendAnnotationBag(source, annotations, indentationLevel, "Annotations", "Type");
     }
 
     private static string? GetAnnotationValue(IReadOnlyDictionary<string, string> annotations, string key)
@@ -634,7 +634,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         return value is null ? "null" : $"\"{EscapeString(value)}\"";
     }
 
-    private static void AppendAnnotationBag(StringBuilder source, IReadOnlyDictionary<string, string> annotations, int indentationLevel, string memberName)
+    private static void AppendAnnotationBag(StringBuilder source, IReadOnlyDictionary<string, string> annotations, int indentationLevel, string memberName, string scope)
     {
         string indent = new(' ', indentationLevel * 4);
         if (annotations.Count == 0)
@@ -649,7 +649,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         source.AppendLine($"{indent}    [");
         foreach ((string key, string value) in annotations.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
         {
-            source.AppendLine($"{indent}        new global::SemanticTypeModel.Abstractions.Model.Annotation {{ Key = new global::SemanticTypeModel.Abstractions.Model.AnnotationKey(\"{EscapeString(key)}\"), Value = \"{EscapeString(value)}\", Scope = global::SemanticTypeModel.Abstractions.Model.AnnotationScope.Type, Source = global::SemanticTypeModel.Abstractions.Model.AnnotationSource.Generated }},");
+            source.AppendLine($"{indent}        new global::SemanticTypeModel.Abstractions.Model.Annotation {{ Key = new global::SemanticTypeModel.Abstractions.Model.AnnotationKey(\"{EscapeString(key)}\"), Value = \"{EscapeString(value)}\", Scope = global::SemanticTypeModel.Abstractions.Model.AnnotationScope.{scope}, Source = global::SemanticTypeModel.Abstractions.Model.AnnotationSource.Generated }},");
         }
         source.AppendLine($"{indent}    ],");
         source.AppendLine($"{indent}}},");

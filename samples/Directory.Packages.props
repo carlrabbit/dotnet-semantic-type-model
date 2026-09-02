@@ -16,5 +16,6 @@
     <PackageVersion Include="SemanticTypeModel.EFCore" Version="$(SemanticTypeModelSamplePackageVersion)" />
     <PackageVersion Include="SemanticTypeModel.EFCore.Generators" Version="$(SemanticTypeModelSamplePackageVersion)" />
     <PackageVersion Include="SemanticTypeModel.SystemTextJson" Version="$(SemanticTypeModelSamplePackageVersion)" />
+    <PackageVersion Include="SemanticTypeModel.TestData" Version="$(SemanticTypeModelSamplePackageVersion)" />
   </ItemGroup>
 </Project>

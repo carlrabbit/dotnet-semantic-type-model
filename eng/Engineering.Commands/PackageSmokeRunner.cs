@@ -159,7 +159,7 @@ internal static class PackageSmokeRunner
         [SemanticType(SemanticTypeRole.Entity)]
         public sealed class SmokeOrder
         {
-            [SemanticKey, SemanticDisplayIdentity, SemanticAccessPath("ById")] public int Id { get; set; }
+            [SemanticKey, SemanticDisplayIdentity, SemanticAccessPath("ById"), SemanticLogicalType("OrderId")] public int Id { get; set; }
             public string Status { get; set; } = string.Empty;
             [SemanticOwned] public SmokeOrderDetails? Details { get; set; }
         }
@@ -168,6 +168,7 @@ internal static class PackageSmokeRunner
         """;
 
     private const string ConsumerSource = """
+        using System.Text.Json;
         using Microsoft.EntityFrameworkCore;
         using SemanticTypeModel.EFCore;
         using SemanticTypeModel.Generated.EFCore;
@@ -183,12 +184,22 @@ internal static class PackageSmokeRunner
                 if (builder.Model.FindEntityType(typeof(SmokeOrder)) is null)
                     throw new InvalidOperationException("Packed EF generator did not execute.");
                 var model = SemanticTypeModel.Generated.AppSemanticTypeModel.Create();
-                var generated = SemanticTestDataGenerator.Generate(model, new SemanticTypeModel.Abstractions.Model.TypeId("global::PackageSmoke.Model.SmokeOrder"));
+                var exported = SemanticTerminologyProfileJson.Create(model);
+                var enriched = exported with { LogicalTypes = [exported.LogicalTypes.Single(entry => entry.Name == "OrderId") with { Values = [JsonDocument.Parse("123").RootElement.Clone()] }] };
+                var imported = SemanticTerminologyProfileJson.Import(model, JsonSerializer.Serialize(enriched));
+                if (!imported.Succeeded)
+                    throw new InvalidOperationException("Packed TestData terminology profile did not import.");
+                var typed = model.TestData().WithTerminology(imported.Profile).WithSeed(0).Generate<SmokeOrder>();
+                if (typed.Id != 123)
+                    throw new InvalidOperationException("Packed typed TestData facade did not materialize the profile value.");
+                var generated = SemanticTestDataGenerator.Generate(model, new SemanticTypeModel.Abstractions.Model.TypeId("global::PackageSmoke.Model.SmokeOrder"), SemanticTypeModel.TestData.TestDataSizeProfile.Simple, 0, imported.Profile);
                 if (generated.HasErrors || generated.Value is null)
                     throw new InvalidOperationException("Packed TestData package did not generate a valid semantic value graph.");
                 var order = model.Types.OfType<SemanticTypeModel.Abstractions.Model.ObjectTypeDefinition>()
                     .Single(type => type.Name == "SmokeOrder");
                 var id = order.Properties.Single(property => property.Name == "Id");
+                if (((SemanticTypeModel.TestData.ScalarTestValue)((SemanticTypeModel.TestData.ObjectTestValue)generated.Value).Properties[id.Id]).Value is not decimal value || value != 123m)
+                    throw new InvalidOperationException("Packed TestData terminology profile was not applied.");
                 if (!id.Annotations.Items.Any(annotation => annotation.Key.Value == "schema.displayIdentity" && annotation.Value == "0")
                     || !id.Annotations.Items.Any(annotation => annotation.Key.Value == "schema.accessPath.ById" && annotation.Value == "0"))
                     throw new InvalidOperationException("Packed generator did not preserve M0065 annotations.");
