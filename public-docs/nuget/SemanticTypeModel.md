@@ -39,8 +39,9 @@ using SemanticTypeModel.DotNet;
 public sealed class Customer
 {
     [SemanticKey]
+    [SemanticLogicalType("CustomerId")]
     [SemanticImmutable]
-    public required string Id { get; init; }
+    public required Guid Id { get; init; }
 
     public required string Name { get; init; }
 }
@@ -55,6 +56,7 @@ TypeSchemaModel model = AppSemanticTypeModel.Create();
 ```
 
 Lifecycle mutability is optional. No mutability attribute means STM makes no lifecycle-mutability claim.
+Logical Type is optional property metadata over an ordinary scalar and is never inferred from CLR wrapper shape.
 
 ## Configure
 
@@ -83,22 +85,26 @@ Use `[SemanticDisplayIdentity(Order = 0)]` and `[SemanticAccessPath("ByCustomerN
 projection-neutral recognition and locate/filter semantics. These annotations do not generate indexes, API
 queries, UI behavior, Power BI behavior, or relationships.
 
-CLR single-value wrappers are not automatically inferred as scalars by the projections. The STM-configured JSON Schema contract is
-bounded and one-way: supported output validates against the schema, without a promise of bidirectional
-serializer/schema equivalence.
+CLR single-value wrappers are not automatically inferred as scalars by STM or its projections. Strong Scalar
+canonical semantics and `SemanticLiteralKind.StrongIdentifier` are removed in the 6.0 boundary. Applications
+that use strongly typed CLR IDs own their target-specific conversions/integration.
 
-Native scalar fidelity is preserved across the projection suite: Binary uses Base64 JSON with schema
-`contentEncoding: base64`, `System.Uri` uses `uri-reference` by default, and raw Json is not restricted to
-object values.
+The STM-configured JSON Schema contract is bounded and one-way: supported output validates against the schema,
+without a promise of bidirectional serializer/schema equivalence. Native scalar fidelity is preserved across the
+projection suite: Binary uses Base64 JSON with schema `contentEncoding: base64`, `System.Uri` uses
+`uri-reference` by default, and raw Json is not restricted to object values.
 
 An ordinary scalar property may opt into a projection-neutral Logical Type name with
 `[SemanticLogicalType("CustomerId")]`. The name is metadata only: it does not change CLR, JSON, EF, LINQ,
-TestData, or Power BI representation. Names must be valid and same-name properties in one model must use the same scalar type.
+TestData, or Power BI representation. Names must be valid and same-name properties in one model must use the same
+scalar type.
 
-`SemanticTypeModel.TestData` provides semantic graph generation and the typed
-`model.TestData().Generate<T>()` / `GenerateMany<T>()` facade. Profiles are consumed only after model-bound
-validation; public CLR materialization uses supported constructors and members and never infers scalar meaning
-from wrapper shapes. Invalid custom candidates and materialization failures are reported with TestData diagnostics.
+`SemanticTypeModel.TestData` provides deterministic constraint-aware semantic graph generation and the typed
+`model.TestData().Generate<T>()` / `GenerateMany<T>()` facade. Random mode needs no terminology profile.
+Optional model-bound Semantic Terminology Profiles provide synthetic property/Logical-Type candidates, while
+programmatic generators can supply application-specific scalar values. Public CLR materialization uses supported
+constructors and members and never infers scalar meaning from wrapper shapes. Invalid explicit custom candidates
+and materialization failures are reported with TestData diagnostics; built-in regex synthesis remains unsupported.
 
 ## JSON Schema semantic annotations
 
@@ -137,9 +143,9 @@ If generation or projection fails:
 
 - [Troubleshooting](../troubleshooting.md) — symptom-oriented fixes;
 - [Diagnostics](../diagnostics.md) — diagnostic IDs and fixes;
-- target guides below — target-specific limitations and policies.
+- target/capability guides below — target-specific limitations and policies.
 
-## Target guides
+## Target and capability guides
 
 - [Using SemanticTypeModel](../usage.md)
 - [Core semantics](../guides/core-semantics.md)
@@ -148,6 +154,7 @@ If generation or projection fails:
 - [System.Text.Json](../guides/system-text-json.md)
 - [Power BI](../guides/power-bi.md)
 - [Projection capabilities](../guides/projection-capabilities.md)
+- [Constraint-aware test data](../guides/test-data.md)
 
 ## Package roles
 
@@ -165,12 +172,12 @@ If generation or projection fails:
 | `SemanticTypeModel.DependencyInjection` | Runtime provider/projection service registration |
 | `SemanticTypeModel.TestData` | Deterministic constraint-aware semantic test-data generation and terminology profiles |
 
-The aligned release suite contains exactly these eleven packages. All eleven must be kept at the same exact version:
-`SemanticTypeModel.Abstractions`, `SemanticTypeModel.Core`, `SemanticTypeModel.JsonSchema`,
+The aligned release suite contains exactly these eleven packages. All eleven must be kept at the same exact
+version: `SemanticTypeModel.Abstractions`, `SemanticTypeModel.Core`, `SemanticTypeModel.JsonSchema`,
 `SemanticTypeModel.DotNet`, `SemanticTypeModel.Generators`, `SemanticTypeModel.DependencyInjection`,
-`SemanticTypeModel.PowerBI`, `SemanticTypeModel.EFCore`, `SemanticTypeModel.EFCore.Generators`, and
-`SemanticTypeModel.SystemTextJson`, and `SemanticTypeModel.TestData`. `SemanticTypeModel.Configuration` is not part
-of the suite.
+`SemanticTypeModel.PowerBI`, `SemanticTypeModel.EFCore`, `SemanticTypeModel.EFCore.Generators`,
+`SemanticTypeModel.SystemTextJson`, and `SemanticTypeModel.TestData`. `SemanticTypeModel.Configuration` is not
+part of the suite.
 
 ## Important boundaries
 
