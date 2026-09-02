@@ -371,18 +371,33 @@ public sealed class TypeSchemaModelValidator
 
     private static void CheckLogicalTypes(TypeSchemaModel model, List<SchemaDiagnostic> diagnostics)
     {
+        CheckLogicalTypeBag(model.Annotations, "/", diagnostics);
+        foreach (TypeDefinition type in model.Types)
+        {
+            CheckLogicalTypeBag(type.Annotations, ModelPath.ForType(type.Id), diagnostics);
+        }
+
+        var names = new Dictionary<string, TypeId>(StringComparer.Ordinal);
         foreach (ObjectTypeDefinition owner in model.Types.OfType<ObjectTypeDefinition>())
         {
-            var names = new Dictionary<string, TypeId>(StringComparer.Ordinal);
             foreach (PropertyDefinition property in owner.Properties)
             {
-                Annotation? annotation = property.Annotations.Items.FirstOrDefault(a => string.Equals(a.Key.Value, CoreSemanticAnnotationKeys.LogicalType, StringComparison.Ordinal));
-                if (annotation is null)
+                List<Annotation> annotations = [.. property.Annotations.Items.Where(a => string.Equals(a.Key.Value, CoreSemanticAnnotationKeys.LogicalType, StringComparison.Ordinal))];
+                if (annotations.Count == 0)
                 {
                     continue;
                 }
-                var name = annotation.Value as string;
                 var path = ModelPath.ForProperty(owner.Id, property.Name);
+                if (annotations.Count > 1)
+                {
+                    diagnostics.Add(Error(StmDiagnosticIds.LogicalTypeInvalid, $"Property '{property.Name}' has multiple Logical Type annotations.", path));
+                }
+                Annotation annotation = annotations[0];
+                if (annotation.Scope != AnnotationScope.Member)
+                {
+                    diagnostics.Add(Error(StmDiagnosticIds.LogicalTypeInvalid, "Logical Type metadata must be member-scoped.", path));
+                }
+                var name = annotation.Value as string;
                 if (!IsValidLogicalName(name))
                 {
                     diagnostics.Add(Error(StmDiagnosticIds.LogicalTypeInvalid, $"Logical Type name '{name}' is invalid.", path));
@@ -401,6 +416,14 @@ public sealed class TypeSchemaModelValidator
                     names[name] = property.Type.Id;
                 }
             }
+        }
+    }
+
+    private static void CheckLogicalTypeBag(AnnotationBag bag, string path, List<SchemaDiagnostic> diagnostics)
+    {
+        foreach (Annotation annotation in bag.Items.Where(a => string.Equals(a.Key.Value, CoreSemanticAnnotationKeys.LogicalType, StringComparison.Ordinal)))
+        {
+            diagnostics.Add(Error(StmDiagnosticIds.LogicalTypeInvalid, "Logical Type metadata is only valid on a property.", ModelPath.ForAnnotation(path, annotation.Key)));
         }
     }
 

@@ -784,4 +784,4 @@ These semantics preserve model meaning independently of JSON Schema, EF Core, Po
 
 ## M0077 Logical Type
 
-`schema.logicalType` is optional property metadata for an explicit logical name on an ordinary scalar property. It does not create a canonical type node, alter the scalar `TypeRef`, or affect JSON, EF Core, LINQ, TestData, or Power BI scalar representation. Names use `[A-Za-z][A-Za-z0-9_.-]*`; within one object, a name must resolve to one scalar `TypeRef`.
+`schema.logicalType` is optional property metadata for an explicit logical name on an ordinary scalar property. It does not create a canonical type node, alter the scalar `TypeRef`, or affect JSON, EF Core, LINQ, TestData, or Power BI scalar representation. Names use `[A-Za-z][A-Za-z0-9_.-]*`; within one model, a name must resolve to one scalar `TypeRef`.

@@ -30,6 +30,41 @@ public sealed class M0077LogicalTypeTests
         _ = await Assert.That(result.Diagnostics.Any(d => d.Code == DotNetExtractionDiagnosticIds.LogicalTypeDefinitionInvalid)).IsTrue();
     }
 
+    [Test]
+    public async Task Same_logical_type_reuses_one_scalar_across_objects_and_nullable_members()
+    {
+        DotNetExtractionResult result = Extract("""
+            using System;
+            using SemanticTypeModel.DotNet;
+            [SemanticType] public sealed class A { [SemanticLogicalType("CustomerId")] public Guid Id { get; init; } }
+            [SemanticType] public sealed class B { [SemanticLogicalType("CustomerId")] public Guid? Id { get; init; } }
+            """);
+        _ = await Assert.That(result.Diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task Same_logical_type_with_different_scalars_reports_STM5052()
+    {
+        DotNetExtractionResult result = Extract("""
+            using System;
+            using SemanticTypeModel.DotNet;
+            [SemanticType] public sealed class A { [SemanticLogicalType("CustomerId")] public Guid Id { get; init; } }
+            [SemanticType] public sealed class B { [SemanticLogicalType("CustomerId")] public string Id { get; init; } }
+            """);
+        _ = await Assert.That(result.Diagnostics.Any(d => d.Code == DotNetExtractionDiagnosticIds.LogicalTypeDefinitionInvalid)).IsTrue();
+    }
+
+    [Test]
+    public async Task Non_scalar_logical_type_authoring_reports_STM5052()
+    {
+        DotNetExtractionResult result = Extract("""
+            using SemanticTypeModel.DotNet;
+            [SemanticType] public sealed class Customer { [SemanticLogicalType("CustomerId")] public Address Address { get; init; } }
+            public sealed class Address { public string Text { get; init; } }
+            """);
+        _ = await Assert.That(result.Diagnostics.Any(d => d.Code == DotNetExtractionDiagnosticIds.LogicalTypeDefinitionInvalid)).IsTrue();
+    }
+
     private static DotNetExtractionResult Extract(string source)
     {
         var trustedAssemblies = (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? throw new InvalidOperationException();
