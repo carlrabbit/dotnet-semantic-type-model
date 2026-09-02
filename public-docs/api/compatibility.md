@@ -203,12 +203,12 @@ relevant. Use the aligned ten-package 5.0.0 suite; do not mix 4.0.x and 5.0.0 pa
 
 ## 5.0.1 release history
 
-5.0.1 is a patch-line release candidate for the aligned eleven-package suite. It carries the corrective
+5.0.1 is a patch-line release candidate for the aligned ten-package suite. It carries the corrective
 System.Text.Json runtime behavior described in the release notes: ordinary `JsonSerializerOptions` is the
 primary path, semantic Entity inheritance can receive automatic `$type` polymorphism when no explicit
 application contract is supplied, explicit application contracts win, and multiple semantic models compose
 through runtime options. Automatic polymorphism remains outside the JSON
-Schema/System.Text.Json fidelity baseline. Publication truth must be verified from the package channel;
+Schema/System.TextJson fidelity baseline. Publication truth must be verified from the package channel;
 repository source does not establish publication.
 
 ## 4.0 release boundary
