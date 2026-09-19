@@ -62,7 +62,8 @@ SchemaAnnotation
 - `SemanticTypeModel.Abstractions.Model` must not appear in shipped public source or public API compatibility documentation after migration.
 - Old shape-graph contracts must not remain as active public compatibility contracts.
 - Internal test fixtures may construct model instances directly, but public samples must use the code-first generator path.
-- Public documentation must describe annotated .NET code plus generated provider output as the supported authoring path.
+- Public documentation must describe annotated .NET code plus Core programmatic construction as the two supported
+  authoring paths, both converging on the canonical model.
 
 ## Source Generator Contract
 

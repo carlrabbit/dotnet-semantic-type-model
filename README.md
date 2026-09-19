@@ -4,8 +4,9 @@ SemanticTypeModel is a .NET 10 package suite for defining semantic meaning on .N
 that model across targets such as JSON Schema, EF Core, Power BI, System.Text.Json, and deterministic test-data
 generation.
 
-Annotated .NET code is the supported authoring source. The source generator builds a canonical
-`TypeSchemaModel`; target/runtime packages derive or consume target-specific behavior from it.
+Annotated .NET code and Core programmatic declarations are the two supported canonical authoring paths.
+Both produce the same `TypeSchemaModel`; target/runtime packages derive or consume target-specific behavior
+from that canonical model.
 
 ## Install
 

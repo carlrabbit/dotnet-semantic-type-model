@@ -6,12 +6,14 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-M0078 and M0079 are complete on this implementation baseline. There is no active milestone in the working tree.
+No active milestone. M0080 — Programmatic Canonical Model Authoring is complete on the 6.1.0 development line.
+
+6.0.0 is the released stable baseline for this milestone. M0078 and M0079 remain completed history.
 
 ## Next Number
 
 ```text
-M0080
+M0081
 ```
 
 Never restart or reuse milestone numbers.

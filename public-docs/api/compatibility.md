@@ -15,8 +15,12 @@ not a persisted interchange format. There is no cross-version negotiation.
 
 ## Canonical model authoring
 
-Annotated .NET code is the supported public authoring source for canonical semantic models. Generated providers
-return the current `SemanticTypeModel.Abstractions.Model.TypeSchemaModel` surface.
+Annotated .NET code remains the primary CLR-oriented authoring path, and Core also supports programmatic
+construction from existing canonical `TypeDefinition` records. Both paths return the current
+`SemanticTypeModel.Abstractions.Model.TypeSchemaModel` surface; programmatic models do not acquire CLR lineage.
+Use `model.TestData().Generate(TypeId)` / `GenerateMany(TypeId, count)` and canonical-only projections for
+runtime-defined models. CLR-dependent System.Text.Json resolver and generated EF application behavior still
+requires the existing CLR/code-first path.
 
 The old `Canonical` namespace/legacy shape graph is not a supported current model surface. JSON Schema import
 has been removed and is not a supported canonical authoring path.

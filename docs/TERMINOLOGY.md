@@ -47,7 +47,13 @@ A canonical, immutable representation of type shapes, properties, constraints, a
 The current projection-neutral semantic type model used by runtime services, transformations, query APIs, inspection APIs, and domain projections.
 
 ### Runtime Canonical Semantic Model
-The canonical semantic model instance used by runtime APIs after extraction, generation, loading, or transformation.
+The canonical semantic model instance used by runtime APIs after extraction, generation, programmatic finalization, loading, or transformation.
+
+### Programmatic Model Authoring
+Explicit runtime construction and validation of the existing canonical semantic model through a Core-owned authoring/finalization API without generating CLR types or introducing an external schema language.
+
+### Dynamic Model
+An informal consumer term for a canonical semantic model produced through Programmatic Model Authoring; it is not a separate model type or a mutable finalized model.
 
 ### Model Surface
 The public .NET contract namespace and type family used to represent canonical semantic models.
@@ -89,16 +95,16 @@ Consumer-facing documentation describing diagnostics, severity, cause, and corre
 A documented comparison point used to detect breaking changes in consumer-visible API contracts.
 
 ### Code Source
-Annotated .NET code used as the supported authoring source for a canonical semantic type model.
+Annotated .NET code used as the primary CLR-oriented authoring source for a canonical semantic type model.
 
 ### Model Snapshot
-A persisted representation of a code-generated semantic type model that can be loaded without access to the original codebase.
+A persisted representation of a finalized semantic type model that can be loaded without access to its original authoring source and is not itself a separate authoring language.
 
 ### Semantic Primitive
 A canonical semantic concept such as entity, value object, key, requiredness, nullability, format, constraint, conditional constraint, envelope, ownership, lifecycle state, extension data, or annotation.
 
 ### Core Semantic Vocabulary
-The authoritative set of projection-neutral semantic primitives and usage rules available to code-first authors.
+The authoritative set of projection-neutral semantic primitives and usage rules available to supported canonical-model authors.
 
 ### Conditional Constraint
 A projection-neutral constraint whose applicability depends on another modeled value or a simple modeled condition.

@@ -10,6 +10,7 @@ This specification is authoritative for:
 
 - canonical type-model layers;
 - model contracts and required concepts;
+- supported canonical authoring/finalization boundaries;
 - runtime lookup/reference behavior;
 - transformation/projection contract intent;
 - diagnostics model requirements for model and projection stages.
@@ -37,14 +38,37 @@ The canonical semantic model surface includes:
 - semantics model: `EntitySemantics`, `KeyDefinition`, computed members;
 - diagnostics model: `SchemaDiagnostic` with severity, code, message, stage, model path, source, projection target, and related model paths.
 
+## Canonical Authoring Paths
+
+The supported authoring paths are:
+
+```text
+annotated .NET
+  -> runtime extraction / source generation
+  -> TypeSchemaModel
+
+programmatic declarations
+  -> SemanticTypeModel.Core authoring/finalization
+  -> TypeSchemaModel
+```
+
+Both paths produce the same canonical model surface. Canonical consumers do not receive an authoring-provenance discriminator.
+
+Programmatic authoring is defined by `docs/specs/programmatic-model-authoring.md`.
+
+External schema import is not implied by this contract.
+
 ## Invariants
 
-- Finalized models are immutable to consumers.
+- Finalized models are immutable snapshots to consumers.
+- Programmatic construction state must not remain coupled to an already finalized model snapshot.
 - Type lookup is id-based and stable across runtime usage.
+- `Types` and `TypesById` describe the same finalized type set.
 - Requiredness, nullability, and collection cardinality are distinct.
 - Annotation storage is separate from core semantic meaning.
 - Transformations and projections are reusable and independent from concrete projection targets.
 - Unsupported/lossy projection cases are diagnosable.
+- Canonical validity is independent from whether the model originated from .NET extraction/generation or supported programmatic authoring.
 
 ## Transformation and Projection Contracts
 
@@ -52,6 +76,8 @@ Canonical contracts support runtime and compile-time usage through:
 
 - `ISchemaTransformation.TransformAsync(TypeSchemaModelBuilder, SchemaTransformContext, CancellationToken)`
 - `ISchemaProjection<T>.Project(TypeSchemaModel, SchemaProjectionContext)`
+
+The existing `TypeSchemaModelBuilder` used by transformations is a transformation working-state abstraction. It is not the 6.1 public programmatic-authoring API and must not become responsible for Core validation policy.
 
 These contracts must preserve projection independence and diagnostic emission capability.
 
@@ -99,6 +125,8 @@ Structured diagnostics must be machine-queryable by code, severity, stage, and p
 - `Export`
 - `Projection`
 
+Programmatic authoring uses the canonical validation stage and existing model-validation diagnostics whenever the invalid state is already covered by `TypeSchemaModelValidator`. A new diagnostic ID is justified only for an authoring-specific failure that cannot be represented by existing canonical diagnostics.
+
 ## Model Path Format
 
 Model paths use stable slash-separated segments rooted at `/types`.
@@ -118,7 +146,8 @@ The required examples are represented at contract level in short-running tests:
 - form/editor object;
 - EF-style entity model;
 - Power BI semantic model candidate;
-- JSON Schema composition (`$defs`, `$ref`, `oneOf`, `allOf`, annotation-preserved keywords).
+- JSON Schema composition (`$defs`, `$ref`, `oneOf`, `allOf`, annotation-preserved keywords);
+- programmatically authored runtime model containing stable IDs, references, constraints, and annotations.
 
 ## Envelope Core Semantics
 

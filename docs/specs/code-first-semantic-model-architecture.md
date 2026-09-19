@@ -283,7 +283,8 @@ broad website-style docs
 
 ## Invariants
 
-- Code is the only supported authoring source for canonical semantic models.
+- Annotated .NET code and explicit programmatic construction of existing canonical definitions are the supported
+  authoring paths; both converge on one canonical `TypeSchemaModel`.
 - Persisted snapshots are loaded representations of code-generated models.
 - Canonical models are immutable to consumers.
 - Custom attributes declare intent; transformations derive meaning.

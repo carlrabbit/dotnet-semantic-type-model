@@ -36,6 +36,25 @@ the `TESTDATA_*` prefix and a canonical model path when available.
 
 ## Typed generation and materialization
 
+Programmatically authored models use the semantic-value facade without CLR materialization:
+
+```csharp
+SemanticTestValue value = model.TestData().Generate(new TypeId("Order"));
+IReadOnlyList<SemanticTestValue> values = model.TestData().WithSeed(42).GenerateMany(new TypeId("Order"), 10);
+```
+
+Canonical-ID property generators work without a CLR type and are checked against the same constraints:
+
+```csharp
+model.TestData()
+    .WithPropertyGenerator(new TypeId("Order"), new PropertyId("Number"), _ => "ORD-001")
+    .Generate(new TypeId("Order"));
+```
+
+`GenerateMany` returns an empty sequence for zero and rejects negative counts. These operations return
+`SemanticTestValue` graphs; they do not synthesize CLR types. Invalid generation throws
+`TestDataGenerationException` with `TESTDATA_*` diagnostics.
+
 The convenience facade preserves canonical semantics while providing typed generation:
 
 ```csharp

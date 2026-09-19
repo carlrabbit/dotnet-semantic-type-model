@@ -27,7 +27,23 @@ See the [shared package README](nuget/SemanticTypeModel.md) for package roles.
 
 ## Define a model
 
-Annotated .NET code is the supported authoring source.
+Annotated .NET code is the primary CLR-oriented authoring path. Runtime-defined domains can instead assemble
+existing canonical `TypeDefinition` records through the Core authoring boundary:
+
+```csharp
+using SemanticTypeModel.Abstractions.Model;
+using SemanticTypeModel.Core.Authoring;
+
+var authoring = new TypeSchemaModelAuthoringBuilder(new SchemaModelId("orders"))
+    .AddType(orderType)
+    .AddType(stringType);
+TypeSchemaModelAuthoringResult result = authoring.Build();
+TypeSchemaModel model = result.Model ?? throw new InvalidOperationException("Invalid canonical model.");
+```
+
+The builder owns `TypesById`, supports forward and recursive references, and returns a validated snapshot.
+Programmatic authoring does not generate CLR types; use semantic TestData and canonical-only projections with
+the resulting model. JSON Schema/OpenAPI/database schema import remains unsupported as an STM authoring path.
 
 ```csharp
 using SemanticTypeModel.DotNet;

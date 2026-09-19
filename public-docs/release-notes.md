@@ -1,3 +1,15 @@
+# 6.1.0 (development line)
+
+The 6.1.0 development line adds M0080 Programmatic Model Authoring. Applications can assemble existing
+canonical `TypeDefinition` records through `SemanticTypeModel.Core.Authoring` and finalize the same validated
+`TypeSchemaModel` used by annotated .NET code. Semantic TestData supports canonical-ID semantic generation;
+JSON Schema and Power BI continue through their existing canonical entry points. This is additive relative to
+6.0.0 and is not a publication, tag, or GitHub Release.
+
+Programmatic models do not generate CLR types. CLR-dependent System.Text.Json resolver behavior and generated
+EF application configuration remain on the existing CLR/code-first path, and external schema import remains
+unsupported.
+
 # 6.0.0
 
 6.0.0 is the intended next stable release and current release-candidate line. It is a breaking semantic release:

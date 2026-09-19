@@ -25,7 +25,10 @@ public sealed class Customer
 }
 ```
 
-Generate the canonical model and pass it to whichever target projection you need.
+Generate the canonical model from annotated .NET code, or assemble existing canonical definitions with
+`SemanticTypeModel.Core.Authoring.TypeSchemaModelAuthoringBuilder` when the domain is runtime-defined. Both
+paths produce the same canonical model and can be passed to whichever target projection supports the model's
+semantics. Programmatic authoring does not generate CLR types or restore external schema import.
 
 ## Configure
 
