@@ -48,6 +48,10 @@ public sealed class SemanticTestDataFacade
     private readonly SemanticTerminologyProfile? _terminology;
     private readonly TestDataBudgets _budgets;
     private readonly Dictionary<(Type Clr, string Member), Func<TestDataGeneratorContext, object?>> _propertyGenerators = [];
+    private readonly Dictionary<(TypeId Owner, PropertyId Property), Func<TestDataGeneratorContext, object?>> _canonicalPropertyGenerators = [];
+    private readonly Dictionary<(Type Clr, string Member), long> _propertyGeneratorOrders = [];
+    private readonly Dictionary<(TypeId Owner, PropertyId Property), long> _canonicalPropertyGeneratorOrders = [];
+    private long _registrationOrder;
     private readonly Dictionary<string, Func<TestDataGeneratorContext, object?>> _logicalGenerators = new(StringComparer.Ordinal);
 
     internal SemanticTestDataFacade(TypeSchemaModel model) : this(model, TestDataSizeProfile.Simple, 0, null, new()) { }
@@ -84,7 +88,50 @@ public sealed class SemanticTestDataFacade
     {
         ArgumentNullException.ThrowIfNull(property); ArgumentNullException.ThrowIfNull(generator);
         MemberExpression member = FindMember(property.Body) ?? throw new ArgumentException("The property expression must select one member.", nameof(property));
-        SemanticTestDataFacade copy = Copy(this); copy._propertyGenerators[(typeof(T), member.Member.Name)] = generator; return copy;
+        SemanticTestDataFacade copy = Copy(this);
+        copy._propertyGenerators[(typeof(T), member.Member.Name)] = generator;
+        copy._propertyGeneratorOrders[(typeof(T), member.Member.Name)] = ++copy._registrationOrder;
+        TypeId ownerId = new("global::" + (typeof(T).FullName ?? typeof(T).Name));
+        if (copy._model.TypesById.TryGetValue(ownerId, out TypeDefinition? owner) && owner is ObjectTypeDefinition objectType)
+        {
+            PropertyDefinition? canonicalProperty = objectType.Properties.FirstOrDefault(candidate => string.Equals(MemberName(candidate), member.Member.Name, StringComparison.Ordinal));
+            if (canonicalProperty is not null)
+            {
+                copy._canonicalPropertyGenerators[(ownerId, canonicalProperty.Id)] = generator;
+                copy._canonicalPropertyGeneratorOrders[(ownerId, canonicalProperty.Id)] = copy._registrationOrder;
+            }
+        }
+        return copy;
+    }
+
+    public SemanticTestDataFacade WithPropertyGenerator(TypeId ownerTypeId, PropertyId propertyId, Func<TestDataGeneratorContext, object?> generator)
+    {
+        ArgumentNullException.ThrowIfNull(generator);
+        if (!_model.TypesById.TryGetValue(ownerTypeId, out TypeDefinition? owner) || owner is not ObjectTypeDefinition objectType)
+            throw new ArgumentException($"Object type '{ownerTypeId.Value}' was not found in the canonical model.", nameof(ownerTypeId));
+        if (FindCanonicalProperty(_model, objectType, propertyId) is not null)
+        {
+            SemanticTestDataFacade copy = Copy(this);
+            copy._canonicalPropertyGenerators[(ownerTypeId, propertyId)] = generator;
+            copy._canonicalPropertyGeneratorOrders[(ownerTypeId, propertyId)] = ++copy._registrationOrder;
+            return copy;
+        }
+        throw new ArgumentException($"Property '{propertyId.Value}' was not found on object type '{ownerTypeId.Value}'.", nameof(propertyId));
+    }
+
+    public SemanticTestValue Generate(TypeId rootTypeId)
+    {
+        TestDataGenerationResult result = GenerateSemantic(rootTypeId, 0);
+        if (!result.Succeeded) throw new TestDataGenerationException("TestData generation failed.", result.Diagnostics);
+        return result.Value!;
+    }
+
+    public IReadOnlyList<SemanticTestValue> GenerateMany(TypeId rootTypeId, int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
+        var values = new List<SemanticTestValue>(count);
+        for (var i = 0; i < count; i++) values.Add(Generate(rootTypeId, i));
+        return values;
     }
 
     public T Generate<T>()
@@ -131,7 +178,24 @@ public sealed class SemanticTestDataFacade
 
     private TestDataGenerationResult GenerateSemantic(TypeId root, int ordinal)
     {
-        return SemanticTestDataGenerator.Generate(_model, root, _profile, _seed + ordinal, _terminology, new SemanticTestDataOptions { Budgets = _budgets, RootOrdinal = ordinal, PropertyGenerator = (owner, property, context) => _propertyGenerators.TryGetValue((ResolveClrType(owner.Id) ?? typeof(object), MemberName(property)), out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null, LogicalTypeGenerator = (name, context) => _logicalGenerators.TryGetValue(name, out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null });
+        return SemanticTestDataGenerator.Generate(_model, root, _profile, _seed + ordinal, _terminology, new SemanticTestDataOptions { Budgets = _budgets, RootOrdinal = ordinal, PropertyGenerator = ResolvePropertyGenerator, LogicalTypeGenerator = (name, context) => _logicalGenerators.TryGetValue(name, out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null });
+    }
+
+    private SemanticTestValue Generate(TypeId root, int ordinal)
+    {
+        TestDataGenerationResult result = SemanticTestDataGenerator.Generate(_model, root, _profile, _seed + ordinal, _terminology, new SemanticTestDataOptions { Budgets = _budgets, RootOrdinal = ordinal, PropertyGenerator = ResolvePropertyGenerator, LogicalTypeGenerator = (name, context) => _logicalGenerators.TryGetValue(name, out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null });
+        if (!result.Succeeded) throw new TestDataGenerationException("TestData generation failed.", result.Diagnostics);
+        return result.Value!;
+    }
+
+    private object? ResolvePropertyGenerator(ObjectTypeDefinition owner, PropertyDefinition property, TestDataGeneratorContext context)
+    {
+        (TypeId, PropertyId) canonicalKey = (owner.Id, property.Id);
+        (Type, string) clrKey = (ResolveClrType(owner.Id) ?? typeof(object), MemberName(property));
+        var hasCanonical = _canonicalPropertyGenerators.TryGetValue(canonicalKey, out Func<TestDataGeneratorContext, object?>? canonical);
+        var hasClr = _propertyGenerators.TryGetValue(clrKey, out Func<TestDataGeneratorContext, object?>? clr);
+        if (hasCanonical && (!hasClr || _canonicalPropertyGeneratorOrders[canonicalKey] >= _propertyGeneratorOrders[clrKey])) return canonical!(context);
+        return hasClr ? clr!(context) : null;
     }
 
     private TypeId ResolveRoot(Type type)
@@ -139,6 +203,19 @@ public sealed class SemanticTestDataFacade
         var id = "global::" + (type.FullName ?? type.Name);
         if (!_model.TypesById.ContainsKey(new TypeId(id))) throw new InvalidOperationException($"CLR type '{type.FullName}' was not found in the canonical model.");
         return new TypeId(id);
+    }
+
+    private static PropertyDefinition? FindCanonicalProperty(TypeSchemaModel model, ObjectTypeDefinition owner, PropertyId propertyId)
+    {
+        PropertyDefinition? direct = owner.Properties.FirstOrDefault(property => property.Id == propertyId);
+        if (direct is not null) return direct;
+        foreach (TypeRef baseRef in owner.Composition.AllOf)
+        {
+            if (model.TypesById.TryGetValue(baseRef.Id, out TypeDefinition? baseType) && baseType is ObjectTypeDefinition baseObject
+                && FindCanonicalProperty(model, baseObject, propertyId) is PropertyDefinition inherited)
+                return inherited;
+        }
+        return null;
     }
 
     private static string MemberName(PropertyDefinition property)
@@ -154,6 +231,10 @@ public sealed class SemanticTestDataFacade
     private SemanticTestDataFacade Copy(SemanticTestDataFacade source)
     {
         foreach (KeyValuePair<(Type Clr, string Member), Func<TestDataGeneratorContext, object?>> item in source._propertyGenerators) _propertyGenerators[item.Key] = item.Value;
+        foreach (KeyValuePair<(TypeId Owner, PropertyId Property), Func<TestDataGeneratorContext, object?>> item in source._canonicalPropertyGenerators) _canonicalPropertyGenerators[item.Key] = item.Value;
+        foreach (KeyValuePair<(Type Clr, string Member), long> item in source._propertyGeneratorOrders) _propertyGeneratorOrders[item.Key] = item.Value;
+        foreach (KeyValuePair<(TypeId Owner, PropertyId Property), long> item in source._canonicalPropertyGeneratorOrders) _canonicalPropertyGeneratorOrders[item.Key] = item.Value;
+        _registrationOrder = source._registrationOrder;
         foreach (KeyValuePair<string, Func<TestDataGeneratorContext, object?>> item in source._logicalGenerators) _logicalGenerators[item.Key] = item.Value;
         return this;
     }

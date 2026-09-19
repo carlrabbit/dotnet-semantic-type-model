@@ -4,13 +4,15 @@ using Json.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Model = SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Abstractions.Runtime;
+using SemanticTypeModel.Core.Authoring;
 using SemanticTypeModel.DotNet;
 using SemanticTypeModel.EFCore;
 using SemanticTypeModel.JsonSchema;
-using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.JsonSchema.Derivation;
+using SemanticTypeModel.JsonSchema.Export;
 using SemanticTypeModel.PowerBI;
 using SemanticTypeModel.SystemTextJson;
+using SemanticTypeModel.TestData;
 
 [assembly: SemanticTypeModelGeneratorOptions("SemanticTypeModel.PackageSmoke.Tests.Generated", "PackageSmokeSemanticTypeModel", IncludeInternalTypes = true)]
 
@@ -44,6 +46,8 @@ internal sealed class PackageSmokeTests
     public async Task PackageSmokeShouldCoverPublicPackageApis()
     {
         Model.TypeSchemaModel canonicalModel = BuildCanonicalModel();
+        SemanticTestValue dynamicValue = canonicalModel.TestData().Generate(new Model.TypeId("SmokeRoot"));
+        _ = await Assert.That(dynamicValue).IsTypeOf<ObjectTestValue>();
         JsonSchemaExportResult exported = JsonSchemaExporter.Export(canonicalModel.DeriveJsonSchemaModel().Model);
         _ = await Assert.That(exported.Document.RootElement.GetRawText()).Contains("string");
 
@@ -76,7 +80,7 @@ internal sealed class PackageSmokeTests
         _ = jsonOptions.AddSemanticTypeModelJson(
             generatedSmokeModel,
             projectionOptions => projectionOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName);
-        string smokeJson = JsonSerializer.Serialize(
+        var smokeJson = JsonSerializer.Serialize(
             new SmokeCustomer { Id = "C-001", ScalarId = Guid.Parse("00000000-0000-0000-0000-000000000001") },
             jsonOptions);
         SmokeCustomer? smokeCustomer = JsonSerializer.Deserialize<SmokeCustomer>("""
@@ -84,7 +88,7 @@ internal sealed class PackageSmokeTests
             """, jsonOptions);
 
         Json.Schema.JsonSchema smokeSchema = Json.Schema.JsonSchema.FromText(JsonSchemaExporter.Export(generatedSmokeModel).Document.RootElement.GetRawText());
-        using JsonDocument smokeDocument = JsonDocument.Parse(smokeJson);
+        using var smokeDocument = JsonDocument.Parse(smokeJson);
         EvaluationResults smokeValidation = smokeSchema.Evaluate(smokeDocument.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
         _ = smokeValidation;
 
@@ -93,7 +97,7 @@ internal sealed class PackageSmokeTests
         _ = await Assert.That(smokeCustomer?.Id).IsEqualTo("C-002");
         _ = await Assert.That(nameof(SmokeCustomer)).IsEqualTo("SmokeCustomer");
         SmokeSpecialEntity entity = new() { Id = Guid.Empty, SpecialId = Guid.Parse("22222222-2222-2222-2222-222222222222") };
-        string entityJson = JsonSerializer.Serialize<SmokeEntity>(entity, jsonOptions);
+        var entityJson = JsonSerializer.Serialize<SmokeEntity>(entity, jsonOptions);
         SmokeEntity? entityRoundTrip = JsonSerializer.Deserialize<SmokeEntity>(entityJson, jsonOptions);
         _ = await Assert.That(entityJson).Contains("\"$type\":\"SmokeSpecialEntity\"");
         _ = await Assert.That(entityJson).Contains("22222222-2222-2222-2222-222222222222");
@@ -112,18 +116,29 @@ internal sealed class PackageSmokeTests
             ScalarKind = Model.ScalarKind.String,
         };
 
-        System.Collections.Generic.Dictionary<Model.TypeId, Model.TypeDefinition> typesById = new()
+        Model.ObjectTypeDefinition root = new()
         {
-            [scalar.Id] = scalar,
+            Id = new Model.TypeId("SmokeRoot"),
+            Name = "SmokeRoot",
+            Kind = Model.TypeKind.Object,
+            Nullability = Model.Nullability.NonNullable,
+            Annotations = new Model.AnnotationBag(),
+            Keys = [],
+            Properties = [new Model.PropertyDefinition
+            {
+                Id = new Model.PropertyId("Value"),
+                Name = "Value",
+                Type = new Model.TypeRef(scalar.Id),
+                Cardinality = new Model.Cardinality { IsRequired = true },
+                Constraints = new Model.ConstraintSet(),
+                Annotations = new Model.AnnotationBag(),
+            }],
         };
 
-        return new Model.TypeSchemaModel
-        {
-            Id = new Model.SchemaModelId("String"),
-            Types = [scalar],
-            TypesById = typesById,
-            Annotations = new Model.AnnotationBag(),
-        };
+        return new TypeSchemaModelAuthoringBuilder(new Model.SchemaModelId("String"))
+            .AddType(root)
+            .AddType(scalar)
+            .Build().Model!;
     }
 }
 

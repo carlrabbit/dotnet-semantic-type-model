@@ -76,6 +76,12 @@ See the complete [configuration reference](../configuration.md).
 
 ## Current 6.0 boundaries and capabilities
 
+The 6.1.0 development line adds Core-owned Programmatic Model Authoring as an additive path alongside
+annotated .NET code. `TypeSchemaModelAuthoringBuilder` finalizes existing canonical type definitions into the
+same validated `TypeSchemaModel`; it does not create a dynamic hierarchy or CLR types. Semantic TestData can
+consume such models by canonical `TypeId`, and JSON Schema/Power BI use their existing canonical entry points.
+External schema import and CLR-dependent resolver/EF generated application behavior remain outside this path.
+
 The 6.0 suite retains `SemanticTypeRole.Configuration` as projection-neutral meaning and retains
 `SemanticRequiredWhen`; it does not include STM-owned Configuration/Options binding or registration. The
 removed `SemanticTypeModel.Configuration` package and `AddSemanticOptions<TOptions>` API have no tombstone or

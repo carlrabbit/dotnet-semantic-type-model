@@ -2,7 +2,9 @@
 
 ## Use
 
-Derive deterministic local analytical metadata from the generated semantic model:
+Derive deterministic local analytical metadata from a canonical semantic model. The model may be generated
+from annotated .NET code or finalized programmatically; Power BI uses canonical semantics rather than
+authoring provenance:
 
 ```csharp
 var result = AppSemanticTypeModel.Create().DerivePowerBiModel(options =>
