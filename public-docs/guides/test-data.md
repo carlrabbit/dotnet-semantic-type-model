@@ -89,3 +89,23 @@ selects valid property-specific candidates first, then reusable Logical Type can
 deterministic random generator. Random mode remains available without a profile. Candidates are validated
 against scalar formats and constraints, including patterns; STM does not synthesize regex values, bypass custom
 constraints, or infer terminology from names or CLR wrapper shapes.
+
+## Inspecting semantic values
+
+Programmatic models and other consumers that do not have CLR types can inspect a generated semantic graph directly:
+
+```csharp
+using SemanticTypeModel.TestData.Inspection;
+
+SemanticTestValue value = model.TestData().WithSeed(42).Generate(new TypeId("Order"));
+string text = value.ToSemanticText(model);
+```
+
+Inspection is deterministic, invariant-culture, newline-normalized human-readable development/test output. It
+resolves object property names from the canonical model and preserves object, array, dictionary, enum, scalar, and
+null structure without materializing CLR objects. It is not JSON serialization, a wire format, a parser contract,
+or a persisted fixture format.
+
+The executable [programmatic model catalog](../samples.md) labels Random and Example-guided output separately.
+Example-guided means candidates supplied through a validated Semantic Terminology Profile. Programmatic property or
+Logical Type callbacks are a separate customization capability and are not terminology examples.

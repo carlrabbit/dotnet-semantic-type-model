@@ -33,6 +33,7 @@ Read only the subsystem contracts relevant to the task.
 ### Runtime capabilities derived from the canonical model
 
 - [Constraint-aware test-data generation](specs/test-data-generation.md)
+- [TestData inspection](specs/test-data-inspection.md)
 
 ### Projection and integration contracts
 

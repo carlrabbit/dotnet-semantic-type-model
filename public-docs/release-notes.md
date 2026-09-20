@@ -10,6 +10,11 @@ Programmatic models do not generate CLR types. CLR-dependent System.Text.Json re
 EF application configuration remain on the existing CLR/code-first path, and external schema import remains
 unsupported.
 
+M0081 adds the executable programmatic-model catalog and a deterministic `SemanticTestValue` inspection extension.
+The catalog shows canonical declarations, fixed-seed Random TestData, and Example-guided TestData from Semantic
+Terminology Profiles, while keeping unsupported generation cases as diagnostics. Inspection is development/test
+text only and is not a serialization or persistence format.
+
 # 6.0.0
 
 6.0.0 is the intended next stable release and current release-candidate line. It is a breaking semantic release:
