@@ -187,6 +187,10 @@ part of the suite.
 
 ## Important boundaries
 
+`SemanticTypeModel.TestData` graphs can be inspected without CLR materialization with
+`value.ToSemanticText(model)` from `SemanticTypeModel.TestData.Inspection`. This is deterministic,
+human-readable development/test output, not serialization or persistence.
+
 SemanticTypeModel defines semantic meaning and target projection defaults; applications own global target
 infrastructure composition.
 

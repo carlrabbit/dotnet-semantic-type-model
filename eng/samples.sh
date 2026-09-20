@@ -41,6 +41,7 @@ samples/code-first-ef-core/code-first-ef-core.csproj
 samples/code-first-powerbi/code-first-powerbi.csproj
 samples/system-text-json-resolver/system-text-json-resolver.csproj
 samples/runtime-di/runtime-di.csproj
+samples/programmatic-model-catalog/programmatic-model-catalog.csproj
 "
 
 for project in $projects; do
