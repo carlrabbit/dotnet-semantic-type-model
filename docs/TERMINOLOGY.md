@@ -130,11 +130,20 @@ An explicit property-level name attached to an ordinary scalar for semantic labe
 ### Semantic Terminology Profile
 A versioned external TestData sidecar containing synthetic scalar candidate values bound to model-local Logical Types or canonical properties without authoring or mutating the canonical semantic model.
 
+### TestData Profile
+An immutable model-bound runtime TestData configuration that defines how legal canonical values are sampled for a named test-data scenario without adding canonical semantics.
+
+### Sampling Policy
+A TestData-only rule controlling selection among values already legal under the canonical model, including presence, null frequency, weighted candidates, boundary strategy, and collection sizing.
+
+### Effective Sampling Policy
+The deterministic Sampling Policy resolved for one generation occurrence from property, Logical Type, containing-object, profile-default, and built-in defaults.
+
 ### Random Test-Data Generation
-Deterministic constraint-aware TestData generation that derives values from the canonical semantic model, size profile, and seed without terminology guidance.
+Deterministic constraint-aware TestData generation that derives occurrence-diverse values from the canonical semantic model, size profile, seed, and generation coordinate without terminology guidance.
 
 ### Profile-Guided Test-Data Generation
-TestData generation that prefers applicable Semantic Terminology Profile candidates and otherwise falls back to Random Test-Data Generation.
+TestData generation in which an optional TestData Profile controls legal sampling and optional Semantic Terminology Profile candidates still provide semantic vocabulary before Random fallback.
 
 ### CLR Test-Data Materialization
 Conversion of a successful semantic TestData value graph into a supported CLR object graph without changing the semantic generation result or treating CLR wrapper shape as semantic meaning.

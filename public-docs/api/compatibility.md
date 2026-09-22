@@ -173,7 +173,11 @@ cross-version compatibility contract; applications may rely on same-version coor
 Random snapshots across suite versions. High-cardinality values vary by semantic occurrence and root ordinal,
 while small domains may repeat; this is not semantic uniqueness. Optional Semantic Terminology Profiles are model-bound
 versioned sidecars whose synthetic candidates are validated against current supported semantics before use.
-Profile-guided precedence is property terminology, then Logical Type terminology, then built-in Random fallback.
+TestData Profiles are additive, immutable, model-bound runtime sampling policies. Their effective rule precedence is
+exact property, Logical Type, containing object, profile defaults, then built-in defaults. For a present scalar or
+enum, source precedence is programmatic property generator, programmatic Logical Type generator, profile weighted
+values, property terminology, Logical Type terminology, then built-in generation. Profiles are not canonical
+annotations or persisted compatibility artifacts. No-profile generation retains the M0082 behavior.
 Programmatic property and Logical-Type scalar generators take precedence over terminology and fail closed when an
 explicit supplied value is invalid. Built-in regex synthesis and arbitrary custom-constraint interpretation are
 not compatibility promises.

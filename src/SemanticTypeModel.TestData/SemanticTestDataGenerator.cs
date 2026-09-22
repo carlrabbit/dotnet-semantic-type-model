@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-#pragma warning disable CS1591, IDE0007, IDE0022, IDE0046, IDE0060
+#pragma warning disable CS1591, IDE0007, IDE0011, IDE0022, IDE0046, IDE0048, IDE0060
 using SemanticTypeModel.Abstractions.Model;
 
 namespace SemanticTypeModel.TestData;
@@ -108,6 +108,8 @@ public static class SemanticTestDataGenerator
     {
         ArgumentNullException.ThrowIfNull(model);
         options?.Budgets.Validate();
+        if (options?.Profile is not null && options.Profile.ModelId != model.Id)
+            return new TestDataGenerationResult { Diagnostics = [new SchemaDiagnostic { Severity = SchemaDiagnosticSeverity.Error, Code = "TESTDATA_POLICY_MODEL_MISMATCH", Message = "The TestData Profile is bound to a different canonical model.", Stage = SchemaDiagnosticStage.Validation, ModelPath = ModelPath.ForType(rootType), PipelineStage = "TestData" }] };
         var context = new Context(model, profile, seed, terminology, options);
         SemanticTestValue? value = context.Generate(rootType, new ConstraintSet(), ModelPath.ForType(rootType), "root", false, false, 0, []);
         return new TestDataGenerationResult { Value = value, Diagnostics = context.Diagnostics };
@@ -135,10 +137,11 @@ public static class SemanticTestDataGenerator
         private readonly int _seed = seed;
         private readonly int _rootOrdinal = options?.RootOrdinal ?? 0;
         private readonly TestDataBudgets _budgets = options?.Budgets ?? new();
+        private readonly TestDataProfile? _testDataProfile = options?.Profile;
         private int _nodes;
         internal List<SchemaDiagnostic> Diagnostics { get; } = [];
 
-        internal SemanticTestValue? Generate(TypeId id, ConstraintSet useConstraints, string path, string coordinate, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false, IReadOnlyList<JsonElement>? fallbackCandidates = null)
+        internal SemanticTestValue? Generate(TypeId id, ConstraintSet useConstraints, string path, string coordinate, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false, IReadOnlyList<JsonElement>? fallbackCandidates = null, TestDataPolicy? policy = null)
         {
             if (!model.TypesById.TryGetValue(id, out TypeDefinition? type))
             {
@@ -165,12 +168,12 @@ public static class SemanticTestDataGenerator
             var next = new HashSet<TypeId>(ancestors) { id };
             return type switch
             {
-                ScalarTypeDefinition scalar => GenerateScalar(scalar, useConstraints, path, coordinate, candidates, customCandidate, fallbackCandidates),
+                ScalarTypeDefinition scalar => GenerateScalar(scalar, useConstraints, path, coordinate, candidates, customCandidate, fallbackCandidates, policy),
                 EnumTypeDefinition @enum => GenerateEnum(@enum, path, coordinate),
                 ObjectTypeDefinition obj => GenerateObject(obj, useConstraints, path, coordinate, next, depth),
-                ArrayTypeDefinition array => GenerateArray(array, useConstraints, path, coordinate, next, depth),
-                DictionaryTypeDefinition dictionary => GenerateDictionary(dictionary, useConstraints, path, coordinate, next, depth),
-                ReferenceTypeDefinition reference => GenerateReference(reference, useConstraints, path, coordinate, allowsNull, optional, depth, next, candidates, customCandidate, fallbackCandidates),
+                ArrayTypeDefinition array => GenerateArray(array, useConstraints, path, coordinate, next, depth, policy),
+                DictionaryTypeDefinition dictionary => GenerateDictionary(dictionary, useConstraints, path, coordinate, next, depth, policy),
+                ReferenceTypeDefinition reference => GenerateReference(reference, useConstraints, path, coordinate, allowsNull, optional, depth, next, candidates, customCandidate, fallbackCandidates, policy),
                 UnionTypeDefinition => Error("TESTDATA_UNSUPPORTED_TYPE", "Union generation is unsupported.", path),
                 IntersectionTypeDefinition => Error("TESTDATA_UNSUPPORTED_TYPE", "Intersection generation is unsupported.", path),
                 _ when type.Kind == TypeKind.Any => new ScalarTestValue(id, ScalarKind.Json, JsonValue(coordinate)),
@@ -179,9 +182,9 @@ public static class SemanticTestDataGenerator
             };
         }
 
-        private SemanticTestValue? GenerateReference(ReferenceTypeDefinition reference, ConstraintSet constraints, string path, string coordinate, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors, IReadOnlyList<JsonElement>? candidates, bool customCandidate, IReadOnlyList<JsonElement>? fallbackCandidates)
+        private SemanticTestValue? GenerateReference(ReferenceTypeDefinition reference, ConstraintSet constraints, string path, string coordinate, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors, IReadOnlyList<JsonElement>? candidates, bool customCandidate, IReadOnlyList<JsonElement>? fallbackCandidates, TestDataPolicy? policy)
         {
-            return Generate(reference.Target.Id, constraints, path, coordinate + "/reference", allowsNull, optional, depth + 1, ancestors, candidates, customCandidate, fallbackCandidates);
+            return Generate(reference.Target.Id, constraints, path, coordinate + "/reference", allowsNull, optional, depth + 1, ancestors, candidates, customCandidate, fallbackCandidates, policy);
         }
 
         private SemanticTestValue? GenerateEnum(EnumTypeDefinition @enum, string path, string coordinate)
@@ -239,14 +242,24 @@ public static class SemanticTestDataGenerator
                 }
                 var logicalType = property.Annotations.Items.FirstOrDefault(a => a.Key.Value == "schema.logicalType")?.Value as string;
                 var propertyCoordinate = coordinate + "/property:" + owner.Id.Value + ":" + property.Id.Value;
+                TestDataPolicy effectivePolicy = _testDataProfile?.Resolve(obj.Id, owner.Id, property) ?? TestDataPolicy.Empty;
+                if (!property.Cardinality.IsRequired && effectivePolicy.OptionalPresence is double presence && Entropy.Fraction(_seed, _rootOrdinal, propertyCoordinate + "/presence") > (decimal)presence)
+                    continue;
+                if (property.Cardinality.AllowsNull && effectivePolicy.NullProbability is double nullProbability && Entropy.Fraction(_seed, _rootOrdinal, propertyCoordinate + "/null") <= (decimal)nullProbability)
+                {
+                    result[property.Id] = new NullTestValue(property.Type.Id);
+                    continue;
+                }
                 TestDataGeneratorContext callbackContext = new(model, propertyType, property, logicalType, profile, unchecked((int)Entropy.UInt64(_seed, _rootOrdinal, propertyCoordinate)), _rootOrdinal);
                 var customValue = options?.PropertyGenerator?.Invoke(owner, property, callbackContext);
                 customValue ??= logicalType is null ? null : options?.LogicalTypeGenerator?.Invoke(logicalType, callbackContext);
                 var customCandidate = customValue is not null;
                 (IReadOnlyList<JsonElement>? propertyCandidates, IReadOnlyList<JsonElement>? logicalCandidates) = terminology?.FindCandidateSources(owner, property) ?? ([], []);
-                IReadOnlyList<JsonElement>? candidates = customValue is null ? propertyCandidates : [JsonSerializer.SerializeToElement(customValue)];
-                IReadOnlyList<JsonElement>? fallbackCandidates = customValue is null ? logicalCandidates : null;
-                SemanticTestValue? value = Generate(property.Type.Id, propertyConstraints, propertyPath, propertyCoordinate, property.Cardinality.AllowsNull, !property.Cardinality.IsRequired, depth + 1, ancestors, candidates, customCandidate, fallbackCandidates);
+                IReadOnlyList<JsonElement>? profilePropertyCandidates = ExpandWeighted(effectivePolicy.WeightedValues);
+                IReadOnlyList<JsonElement>? profileLogicalCandidates = logicalType is null ? null : ExpandWeighted(_testDataProfile?.ResolveLogical(logicalType)?.WeightedValues);
+                IReadOnlyList<JsonElement>? candidates = customValue is null ? profilePropertyCandidates ?? profileLogicalCandidates ?? propertyCandidates : [JsonSerializer.SerializeToElement(customValue)];
+                IReadOnlyList<JsonElement>? fallbackCandidates = customValue is null && profilePropertyCandidates is null && profileLogicalCandidates is null ? logicalCandidates : null;
+                SemanticTestValue? value = Generate(property.Type.Id, propertyConstraints, propertyPath, propertyCoordinate, property.Cardinality.AllowsNull, !property.Cardinality.IsRequired, depth + 1, ancestors, candidates, customCandidate, fallbackCandidates, effectivePolicy);
                 if (value is null)
                 {
                     if (property.Cardinality.IsRequired)
@@ -275,7 +288,7 @@ public static class SemanticTestDataGenerator
             return [.. result.GroupBy(static pair => pair.Item2.Id).Select(static group => group.Last())];
         }
 
-        private SemanticTestValue? GenerateArray(ArrayTypeDefinition array, ConstraintSet useConstraints, string path, string coordinate, HashSet<TypeId> ancestors, int depth)
+        private SemanticTestValue? GenerateArray(ArrayTypeDefinition array, ConstraintSet useConstraints, string path, string coordinate, HashSet<TypeId> ancestors, int depth, TestDataPolicy? policy)
         {
             ArrayConstraints effective = MergeArray(array.MinItems, array.MaxItems, array.UniqueItems, useConstraints.Array, useConstraints);
             if (!RangeValid(effective.MinItems, effective.MaxItems))
@@ -283,7 +296,9 @@ public static class SemanticTestDataGenerator
                 return Error("TESTDATA_UNSATISFIABLE_CONSTRAINTS", "Array item bounds are contradictory.", path);
             }
 
-            var count = Target(effective.MinItems, effective.MaxItems, CollectionProfileTarget());
+            var count = policy?.CollectionSize is { } size ? Count(size, effective.MinItems, effective.MaxItems, coordinate) : Target(effective.MinItems, effective.MaxItems, CollectionProfileTarget());
+            if (policy?.ValueStrategy is TestDataValueStrategy.Boundary or TestDataValueStrategy.BoundaryMixed && policy.CollectionSize is null)
+                count = BoundaryCount(effective.MinItems, effective.MaxItems, count, coordinate, policy.ValueStrategy == TestDataValueStrategy.BoundaryMixed);
             if (count > _budgets.MaxCollectionItems || effective.MinItems > _budgets.MaxCollectionItems)
             {
                 return Error("TESTDATA_SIZE_BUDGET_EXHAUSTED", "Array generation exceeds the fixed item safety budget.", path);
@@ -317,7 +332,7 @@ public static class SemanticTestDataGenerator
             return new ArrayTestValue(array.Id, items);
         }
 
-        private SemanticTestValue? GenerateDictionary(DictionaryTypeDefinition dictionary, ConstraintSet useConstraints, string path, string coordinate, HashSet<TypeId> ancestors, int depth)
+        private SemanticTestValue? GenerateDictionary(DictionaryTypeDefinition dictionary, ConstraintSet useConstraints, string path, string coordinate, HashSet<TypeId> ancestors, int depth, TestDataPolicy? policy)
         {
             ArrayConstraints? constraints = useConstraints.Array;
             if (!RangeValid(constraints?.MinItems, constraints?.MaxItems))
@@ -325,7 +340,9 @@ public static class SemanticTestDataGenerator
                 return Error("TESTDATA_UNSATISFIABLE_CONSTRAINTS", "Dictionary entry bounds are contradictory.", path);
             }
 
-            var count = Target(constraints?.MinItems, constraints?.MaxItems, CollectionProfileTarget());
+            var count = policy?.CollectionSize is { } size ? Count(size, constraints?.MinItems, constraints?.MaxItems, coordinate) : Target(constraints?.MinItems, constraints?.MaxItems, CollectionProfileTarget());
+            if (policy?.ValueStrategy is TestDataValueStrategy.Boundary or TestDataValueStrategy.BoundaryMixed && policy.CollectionSize is null)
+                count = BoundaryCount(constraints?.MinItems, constraints?.MaxItems, count, coordinate, policy.ValueStrategy == TestDataValueStrategy.BoundaryMixed);
             if (count > _budgets.MaxDictionaryEntries)
             {
                 return Error("TESTDATA_SIZE_BUDGET_EXHAUSTED", "Dictionary generation exceeds the fixed entry safety budget.", path);
@@ -352,7 +369,7 @@ public static class SemanticTestDataGenerator
             return new DictionaryTestValue(dictionary.Id, entries);
         }
 
-        private SemanticTestValue? GenerateScalar(ScalarTypeDefinition scalar, ConstraintSet constraints, string path, string coordinate, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false, IReadOnlyList<JsonElement>? fallbackCandidates = null)
+        private SemanticTestValue? GenerateScalar(ScalarTypeDefinition scalar, ConstraintSet constraints, string path, string coordinate, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false, IReadOnlyList<JsonElement>? fallbackCandidates = null, TestDataPolicy? policy = null)
         {
             if (constraints.Custom.Count > 0)
             {
@@ -424,19 +441,20 @@ public static class SemanticTestDataGenerator
                     return Error("TESTDATA_SIZE_BUDGET_EXHAUSTED", "The predefined format exceeds the fixed string safety budget.", path);
                 }
             }
+            bool boundary = policy?.ValueStrategy == TestDataValueStrategy.Boundary || policy?.ValueStrategy == TestDataValueStrategy.BoundaryMixed && Entropy.Fraction(_seed, _rootOrdinal, coordinate + "/boundary") < 0.2m;
             object value = scalar.ScalarKind switch
             {
                 ScalarKind.Boolean => Entropy.UInt64(_seed, _rootOrdinal, coordinate) % 2 == 0,
-                ScalarKind.String => formattedValue ?? StringValue(null, coordinate, length),
-                ScalarKind.Integer => NumericValue(scalar, constraints.Numeric, false, coordinate),
-                ScalarKind.Number or ScalarKind.Decimal => NumericValue(scalar, constraints.Numeric, true, coordinate),
+                ScalarKind.String => formattedValue ?? StringValue(null, coordinate, boundary ? BoundaryLength(constraints.String, length) : length),
+                ScalarKind.Integer => NumericValue(scalar, constraints.Numeric, false, coordinate, boundary),
+                ScalarKind.Number or ScalarKind.Decimal => NumericValue(scalar, constraints.Numeric, true, coordinate, boundary),
                 ScalarKind.Date => DateValue(coordinate),
                 ScalarKind.Time => TimeValue(coordinate),
                 ScalarKind.DateTime => new DateTime(DateValue(coordinate), TimeValue(coordinate), DateTimeKind.Unspecified),
                 ScalarKind.DateTimeOffset => new DateTimeOffset(DateValue(coordinate), TimeValue(coordinate), TimeSpan.Zero),
                 ScalarKind.Duration => DurationValue(coordinate),
                 ScalarKind.Guid => Entropy.Guid(_seed, _rootOrdinal, coordinate),
-                ScalarKind.Binary => Entropy.Bytes(_seed, _rootOrdinal, coordinate, Clamp(StringProfileTarget(), constraints.String?.MinLength ?? 0, constraints.String?.MaxLength, _budgets.MaxBinaryLength)),
+                ScalarKind.Binary => Entropy.Bytes(_seed, _rootOrdinal, coordinate, Clamp(boundary ? BoundaryLength(constraints.String, length) : length, constraints.String?.MinLength ?? 0, constraints.String?.MaxLength, _budgets.MaxBinaryLength)),
                 ScalarKind.Json => JsonValue(coordinate),
                 ScalarKind.Unknown => throw new InvalidOperationException(),
                 _ => throw new InvalidOperationException()
@@ -483,18 +501,36 @@ public static class SemanticTestDataGenerator
             return true;
         }
 
+        private static List<JsonElement>? ExpandWeighted(IReadOnlyList<TestDataWeightedCandidate>? candidates)
+        {
+            if (candidates is null) return null;
+            var expanded = new List<JsonElement>();
+            foreach (TestDataWeightedCandidate candidate in candidates)
+            {
+                for (var i = 0; i < candidate.Weight && expanded.Count < 10_000; i++) expanded.Add(candidate.Value);
+            }
+            return expanded;
+        }
+
         private static int CandidateLength(JsonElement candidate, ScalarKind kind)
         {
             return kind == ScalarKind.Binary ? candidate.GetBytesFromBase64().Length : candidate.GetString()!.Length;
         }
 
-        private decimal NumericValue(ScalarTypeDefinition scalar, NumericConstraints? constraints, bool fractional, string coordinate)
+        private decimal NumericValue(ScalarTypeDefinition scalar, NumericConstraints? constraints, bool fractional, string coordinate, bool boundary = false)
         {
             var lower = constraints?.Minimum ?? -10_000m;
             var upper = constraints?.Maximum ?? 10_000m;
             lower = Math.Max(lower, -10_000m);
             upper = Math.Min(upper, 10_000m);
             var value = lower + (Entropy.Fraction(_seed, _rootOrdinal, coordinate) * (upper - lower));
+            if (boundary && constraints is { } boundaryConstraints && (boundaryConstraints.Minimum is not null || boundaryConstraints.Maximum is not null))
+            {
+                bool chooseUpper = boundaryConstraints.Maximum is not null && (boundaryConstraints.Minimum is null || Entropy.Index(_seed, _rootOrdinal, coordinate + "/boundary-value", 2) == 1);
+                value = chooseUpper ? boundaryConstraints.Maximum!.Value : boundaryConstraints.Minimum!.Value;
+                if (chooseUpper && boundaryConstraints.ExclusiveMaximum) value -= fractional ? 0.01m : 1m;
+                if (!chooseUpper && boundaryConstraints.ExclusiveMinimum) value += fractional ? 0.01m : 1m;
+            }
             if (constraints?.Minimum is null && constraints?.Maximum is null && fractional)
             {
                 value = Math.Round(value, 2, MidpointRounding.ToEven);
@@ -603,6 +639,27 @@ public static class SemanticTestDataGenerator
         private string JsonValue(string coordinate)
         {
             return "{\"value\":\"" + Entropy.Token(_seed, _rootOrdinal, coordinate, 12) + "\"}";
+        }
+
+        private int Count(TestDataCollectionSizePolicy policy, int? min, int? max, string coordinate)
+        {
+            int lower = Math.Max(policy.Minimum, min ?? 0);
+            int upper = Math.Min(policy.Maximum, max ?? _budgets.MaxCollectionItems);
+            if (lower > upper) throw new TestDataGenerationException("Collection-size policy is outside the legal canonical range.", [new SchemaDiagnostic { Severity = SchemaDiagnosticSeverity.Error, Code = "TESTDATA_POLICY_COLLECTION_SIZE_INVALID", Message = "Collection-size policy has no legal intersection with the canonical bounds.", Stage = SchemaDiagnosticStage.Validation, ModelPath = coordinate, PipelineStage = "TestData" }]);
+            return policy.IsFixed ? lower : lower + Entropy.Index(_seed, _rootOrdinal, coordinate + "/count", upper - lower + 1);
+        }
+
+        private int BoundaryCount(int? min, int? max, int random, string coordinate, bool mixed)
+        {
+            if (mixed && Entropy.Fraction(_seed, _rootOrdinal, coordinate + "/boundary") >= 0.2m) return random;
+            return Entropy.Index(_seed, _rootOrdinal, coordinate + "/boundary-value", 2) == 0 ? min ?? random : max ?? random;
+        }
+
+        private static int BoundaryLength(StringConstraints? constraints, int fallback)
+        {
+            if (constraints?.MinLength is int minimum) return minimum;
+            if (constraints?.MaxLength is int maximum) return maximum;
+            return fallback;
         }
 
         private static int Target(int? min, int? max, int target)

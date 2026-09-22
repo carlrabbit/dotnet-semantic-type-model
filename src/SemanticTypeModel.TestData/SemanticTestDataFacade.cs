@@ -37,6 +37,7 @@ public sealed class SemanticTestDataOptions
     internal Func<ObjectTypeDefinition, PropertyDefinition, TestDataGeneratorContext, object?>? PropertyGenerator { get; init; }
     internal Func<string, TestDataGeneratorContext, object?>? LogicalTypeGenerator { get; init; }
     internal int RootOrdinal { get; init; }
+    internal TestDataProfile? Profile { get; init; }
     public TestDataBudgets Budgets { get; init; } = new();
 }
 
@@ -46,6 +47,7 @@ public sealed class SemanticTestDataFacade
     private readonly TestDataSizeProfile _profile;
     private readonly int _seed;
     private readonly SemanticTerminologyProfile? _terminology;
+    private readonly TestDataProfile? _testDataProfile;
     private readonly TestDataBudgets _budgets;
     private readonly Dictionary<(Type Clr, string Member), Func<TestDataGeneratorContext, object?>> _propertyGenerators = [];
     private readonly Dictionary<(TypeId Owner, PropertyId Property), Func<TestDataGeneratorContext, object?>> _canonicalPropertyGenerators = [];
@@ -54,29 +56,35 @@ public sealed class SemanticTestDataFacade
     private long _registrationOrder;
     private readonly Dictionary<string, Func<TestDataGeneratorContext, object?>> _logicalGenerators = new(StringComparer.Ordinal);
 
-    internal SemanticTestDataFacade(TypeSchemaModel model) : this(model, TestDataSizeProfile.Simple, 0, null, new()) { }
-    private SemanticTestDataFacade(TypeSchemaModel model, TestDataSizeProfile profile, int seed, SemanticTerminologyProfile? terminology, TestDataBudgets budgets)
+    internal SemanticTestDataFacade(TypeSchemaModel model) : this(model, TestDataSizeProfile.Simple, 0, null, null, new()) { }
+    private SemanticTestDataFacade(TypeSchemaModel model, TestDataSizeProfile profile, int seed, SemanticTerminologyProfile? terminology, TestDataProfile? testDataProfile, TestDataBudgets budgets)
     {
-        _model = model; _profile = profile; _seed = seed; _terminology = terminology; _budgets = budgets;
+        _model = model; _profile = profile; _seed = seed; _terminology = terminology; _testDataProfile = testDataProfile; _budgets = budgets;
     }
 
     public SemanticTestDataFacade WithSizeProfile(TestDataSizeProfile profile)
     {
-        return new SemanticTestDataFacade(_model, profile, _seed, _terminology, _budgets).Copy(this);
+        return new SemanticTestDataFacade(_model, profile, _seed, _terminology, _testDataProfile, _budgets).Copy(this);
     }
 
     public SemanticTestDataFacade WithSeed(int seed)
     {
-        return new SemanticTestDataFacade(_model, _profile, seed, _terminology, _budgets).Copy(this);
+        return new SemanticTestDataFacade(_model, _profile, seed, _terminology, _testDataProfile, _budgets).Copy(this);
     }
 
     public SemanticTestDataFacade WithTerminology(SemanticTerminologyProfile profile)
     {
         ArgumentNullException.ThrowIfNull(profile);
         SemanticTerminologyProfile validated = SemanticTerminologyProfileJson.ValidateForConsumption(_model, profile);
-        return new SemanticTestDataFacade(_model, _profile, _seed, validated, _budgets).Copy(this);
+        return new SemanticTestDataFacade(_model, _profile, _seed, validated, _testDataProfile, _budgets).Copy(this);
     }
-    public SemanticTestDataFacade WithBudgets(TestDataBudgets budgets) { ArgumentNullException.ThrowIfNull(budgets); budgets.Validate(); return new SemanticTestDataFacade(_model, _profile, _seed, _terminology, budgets).Copy(this); }
+    public SemanticTestDataFacade WithProfile(TestDataProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        if (profile.ModelId != _model.Id) throw new ArgumentException("The TestData Profile is bound to a different canonical model.", nameof(profile));
+        return new SemanticTestDataFacade(_model, _profile, _seed, _terminology, profile, _budgets).Copy(this);
+    }
+    public SemanticTestDataFacade WithBudgets(TestDataBudgets budgets) { ArgumentNullException.ThrowIfNull(budgets); budgets.Validate(); return new SemanticTestDataFacade(_model, _profile, _seed, _terminology, _testDataProfile, budgets).Copy(this); }
 
     public SemanticTestDataFacade WithLogicalTypeGenerator(string logicalType, Func<TestDataGeneratorContext, object?> generator)
     {
@@ -178,12 +186,12 @@ public sealed class SemanticTestDataFacade
 
     private TestDataGenerationResult GenerateSemantic(TypeId root, int ordinal)
     {
-        return SemanticTestDataGenerator.Generate(_model, root, _profile, _seed, _terminology, new SemanticTestDataOptions { Budgets = _budgets, RootOrdinal = ordinal, PropertyGenerator = ResolvePropertyGenerator, LogicalTypeGenerator = (name, context) => _logicalGenerators.TryGetValue(name, out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null });
+        return SemanticTestDataGenerator.Generate(_model, root, _profile, _seed, _terminology, new SemanticTestDataOptions { Budgets = _budgets, RootOrdinal = ordinal, Profile = _testDataProfile, PropertyGenerator = ResolvePropertyGenerator, LogicalTypeGenerator = (name, context) => _logicalGenerators.TryGetValue(name, out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null });
     }
 
     private SemanticTestValue Generate(TypeId root, int ordinal)
     {
-        TestDataGenerationResult result = SemanticTestDataGenerator.Generate(_model, root, _profile, _seed, _terminology, new SemanticTestDataOptions { Budgets = _budgets, RootOrdinal = ordinal, PropertyGenerator = ResolvePropertyGenerator, LogicalTypeGenerator = (name, context) => _logicalGenerators.TryGetValue(name, out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null });
+        TestDataGenerationResult result = SemanticTestDataGenerator.Generate(_model, root, _profile, _seed, _terminology, new SemanticTestDataOptions { Budgets = _budgets, RootOrdinal = ordinal, Profile = _testDataProfile, PropertyGenerator = ResolvePropertyGenerator, LogicalTypeGenerator = (name, context) => _logicalGenerators.TryGetValue(name, out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null });
         if (!result.Succeeded) throw new TestDataGenerationException("TestData generation failed.", result.Diagnostics);
         return result.Value!;
     }

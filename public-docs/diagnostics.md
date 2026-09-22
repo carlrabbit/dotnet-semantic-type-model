@@ -20,11 +20,16 @@ silently guessing.
 | `STM5xxx` | .NET extraction and source generators, including generated EF application | [STM5xxx](diagnostics/stm5xxx.md) |
 | `TESTDATA_*` | Deterministic semantic test-data generation | [TestData](guides/test-data.md) |
 
-TestData diagnostics include profile binding/format/candidate errors (`TESTDATA_PROFILE_*`), invalid
+TestData diagnostics include terminology profile binding/format/candidate errors (`TESTDATA_PROFILE_*`), TestData
+sampling-policy validation errors (`TESTDATA_POLICY_*`), invalid
 programmatic scalar candidates (`TESTDATA_CUSTOM_CANDIDATE_INVALID`), generation-budget/constraint failures,
 and typed CLR materialization failures (`TESTDATA_MATERIALIZATION_FAILED`).
 
 Diagnostic message text is not an API contract. Prefer IDs/categories and documented behavior.
+
+Common policy failures include `TESTDATA_POLICY_MODEL_MISMATCH` for applying a profile to another model and
+`TESTDATA_POLICY_COLLECTION_SIZE_INVALID` for a count policy outside the canonical bounds. Rebuild the profile against
+the intended model or choose a fixed/range count inside the legal intersection.
 
 ## Common generator diagnostics
 

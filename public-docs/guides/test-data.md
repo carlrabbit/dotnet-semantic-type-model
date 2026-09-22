@@ -26,8 +26,9 @@ collection/dictionary sizes of 1/8/100, clamped by modeled constraints and fixed
 are occurrence-derived and diverse for high-cardinality kinds while remaining deterministic for the same seed,
 model, profile, root ordinal, and semantic occurrence. Exact Random values may change between aligned suite
 versions; domain realism requires terminology candidates or programmatic generators. Distinct-by-default is not
-semantic uniqueness: Boolean, enum, small legal domains, and candidate sets may repeat. Profiles do not change
-numeric magnitude, optional-property probability, enum frequency, or business realism.
+semantic uniqueness: Boolean, enum, small legal domains, and candidate sets may repeat. TestData Profiles may change
+optional-property presence, nullable null frequency, candidate weighting, boundary emphasis, and collection counts;
+they do not change canonical validity or business realism.
 
 Supported generation includes canonical scalars, predefined formats, enums, objects and
 composition, arrays, dictionaries, references, `Any`, nullability, and supported constraints. Generated
@@ -85,6 +86,31 @@ constraints. `WithBudgets` sets explicit generation ceilings; exhausted budgets 
 failures.
 
 ## Profile-guided terminology
+
+### Runtime sampling profiles
+
+`TestDataProfile` is a named, immutable runtime sampling policy bound to one canonical model. It controls how
+legal values are sampled; it is not a canonical annotation, persisted sidecar, or interchange format. The canonical
+model remains the validity boundary, while `SemanticTerminologyProfile` remains the persisted/versioned candidate
+vocabulary concept.
+
+```csharp
+TestDataProfile profile = TestDataProfile.Create(model, "Typical")
+    .Defaults(rule => rule.OptionalPresence(0.9).NullProbability(0.05).ValueStrategy(TestDataValueStrategy.Random))
+    .For(customerType)
+        .Property(status).Weighted(("Active", 70), ("Pending", 20), ("Closed", 10)).Done()
+        .Property(tags).FixedCount(2).Done()
+        .Done()
+    .Build();
+
+SemanticTestValue value = model.TestData().WithProfile(profile).WithSeed(42).Generate(customerType.Id);
+```
+
+Rules resolve per field as exact property, Logical Type, containing object, profile defaults, then built-in defaults.
+Profiles compose explicitly with `TestDataProfile.Compose`; later layers override explicitly configured fields and do
+not create inheritance. `Random`, `Boundary`, and `BoundaryMixed` remain subordinate to canonical validity. Fixed and
+inclusive-range collection counts are also available. Profiles and terminology candidates can be used together;
+programmatic generators remain the highest-precedence value source.
 
 `SemanticTerminologyProfileJson.Export(model)` creates a deterministic version-1 JSON sidecar containing
 AI-facing instructions and read-only canonical context. Enrich only the `values` arrays, then import with

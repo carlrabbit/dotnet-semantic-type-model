@@ -33,6 +33,10 @@ Git history retains the detailed superseded record.
 - [Replace the general description with audience-specific descriptions](decisions/replace-general-description-with-audience-specific-descriptions.md)
 - [Unify the public model surface under the Model namespace](decisions/unify-public-model-surface-under-model-namespace.md)
 
+### TestData
+
+- [TestData profiles are runtime sampling policy, not canonical semantics](decisions/testdata-profiles-are-runtime-sampling-policy.md)
+
 ### EF Core
 
 - [EF Core application is generated configuration code](decisions/efcore-application-is-generated-configuration-code.md)

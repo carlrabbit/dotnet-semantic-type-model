@@ -3,6 +3,11 @@
 The 6.1.0 development line adds M0080 Programmatic Model Authoring. Applications can assemble existing
 canonical `TypeDefinition` records through `SemanticTypeModel.Core.Authoring` and finalize the same validated
 `TypeSchemaModel` used by annotated .NET code. Semantic TestData supports canonical-ID semantic generation;
+
+M0083 adds immutable model-bound `TestDataProfile` runtime sampling policies. Profiles support scoped defaults,
+presence/null probabilities, weighted legal candidates, Random/Boundary/BoundaryMixed strategies, collection-size
+policies, and explicit deterministic composition through `WithProfile`, while preserving the canonical model as the
+validity boundary and keeping Semantic Terminology Profiles distinct.
 JSON Schema and Power BI continue through their existing canonical entry points. This is additive relative to
 6.0.0 and is not a publication, tag, or GitHub Release.
 
