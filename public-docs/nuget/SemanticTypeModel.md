@@ -115,6 +115,10 @@ named sampling scenarios. Profiles control legal optional presence, nullable nul
 boundary strategies, and collection counts through `model.TestData().WithProfile(profile)`. They are distinct from
 canonical semantics and from persisted `SemanticTerminologyProfile` candidate vocabularies; profiles are not
 annotations or persisted interchange.
+The 6.1.0 development line also supports exact scalar/enum coordinated rules: derived values from declared
+same-object siblings, Root/Batch sequences, shared values, and scoped uniqueness. Each `Generate`/`GenerateMany`
+call owns a fresh Generation Session; this TestData policy does not create canonical keys, relationships, or
+persistent dataset semantics. The package-based `coordinated-generation` catalog scenario demonstrates the API.
 Optional model-bound Semantic Terminology Profiles provide synthetic property/Logical-Type candidates, while
 programmatic generators can supply application-specific scalar values. Public CLR materialization uses supported
 constructors and members and never infers scalar meaning from wrapper shapes. Invalid explicit custom candidates

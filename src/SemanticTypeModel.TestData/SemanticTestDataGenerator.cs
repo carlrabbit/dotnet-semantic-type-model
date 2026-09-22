@@ -110,7 +110,9 @@ public static class SemanticTestDataGenerator
         options?.Budgets.Validate();
         if (options?.Profile is not null && options.Profile.ModelId != model.Id)
             return new TestDataGenerationResult { Diagnostics = [new SchemaDiagnostic { Severity = SchemaDiagnosticSeverity.Error, Code = "TESTDATA_POLICY_MODEL_MISMATCH", Message = "The TestData Profile is bound to a different canonical model.", Stage = SchemaDiagnosticStage.Validation, ModelPath = ModelPath.ForType(rootType), PipelineStage = "TestData" }] };
-        var context = new Context(model, profile, seed, terminology, options);
+        GenerationSession session = options?.Session ?? new GenerationSession();
+        session.BeginRoot();
+        var context = new Context(model, profile, seed, terminology, options, session);
         SemanticTestValue? value = context.Generate(rootType, new ConstraintSet(), ModelPath.ForType(rootType), "root", false, false, 0, []);
         return new TestDataGenerationResult { Value = value, Diagnostics = context.Diagnostics };
     }
@@ -132,12 +134,13 @@ public static class SemanticTestDataGenerator
         return Generate(model, new TypeId(rootTypeId), profile, seed);
     }
 
-    private sealed class Context(TypeSchemaModel model, TestDataSizeProfile profile, int seed, SemanticTerminologyProfile? terminology, SemanticTestDataOptions? options)
+    private sealed class Context(TypeSchemaModel model, TestDataSizeProfile profile, int seed, SemanticTerminologyProfile? terminology, SemanticTestDataOptions? options, GenerationSession session)
     {
         private readonly int _seed = seed;
         private readonly int _rootOrdinal = options?.RootOrdinal ?? 0;
         private readonly TestDataBudgets _budgets = options?.Budgets ?? new();
         private readonly TestDataProfile? _testDataProfile = options?.Profile;
+        private readonly GenerationSession _session = session;
         private int _nodes;
         internal List<SchemaDiagnostic> Diagnostics { get; } = [];
 
@@ -224,7 +227,7 @@ public static class SemanticTestDataGenerator
             }
 
             var result = new Dictionary<PropertyId, SemanticTestValue>();
-            foreach ((ObjectTypeDefinition owner, PropertyDefinition property) in properties)
+            foreach ((ObjectTypeDefinition owner, PropertyDefinition property) in OrderedProperties(obj, properties))
             {
                 var propertyPath = ModelPath.ForProperty(owner.Id, property.Name);
                 ConstraintSet propertyConstraints = property.Constraints;
@@ -250,9 +253,18 @@ public static class SemanticTestDataGenerator
                     result[property.Id] = new NullTestValue(property.Type.Id);
                     continue;
                 }
+                if (effectivePolicy.Coordination is { Shared: true, Scope: { } existingScope }
+                    && _session.TryGetShared((owner.Id, property.Id), existingScope, out SemanticTestValue existingShared))
+                {
+                    result[property.Id] = existingShared;
+                    continue;
+                }
                 TestDataGeneratorContext callbackContext = new(model, propertyType, property, logicalType, profile, unchecked((int)Entropy.UInt64(_seed, _rootOrdinal, propertyCoordinate)), _rootOrdinal);
                 var customValue = options?.PropertyGenerator?.Invoke(owner, property, callbackContext);
                 customValue ??= logicalType is null ? null : options?.LogicalTypeGenerator?.Invoke(logicalType, callbackContext);
+                TestDataPolicy coordinatedPolicy = effectivePolicy;
+                object? coordinatedValue = customValue is null ? ResolveCoordinatedValue(owner, property, coordinatedPolicy, result) : null;
+                customValue ??= coordinatedValue;
                 var customCandidate = customValue is not null;
                 (IReadOnlyList<JsonElement>? propertyCandidates, IReadOnlyList<JsonElement>? logicalCandidates) = terminology?.FindCandidateSources(owner, property) ?? ([], []);
                 IReadOnlyList<JsonElement>? profilePropertyCandidates = ExpandWeighted(effectivePolicy.WeightedValues);
@@ -269,10 +281,70 @@ public static class SemanticTestDataGenerator
 
                     continue;
                 }
+                if (coordinatedPolicy.Coordination is { Unique: true, Scope: { } retryScope } && value is not NullTestValue)
+                {
+                    var attempt = 0;
+                    bool uniqueAccepted = _session.AddUnique((owner.Id, property.Id), retryScope, Fingerprint(value));
+                    while (!uniqueAccepted && attempt++ < 100)
+                    {
+                        if (customCandidate)
+                            return Error("TESTDATA_COORDINATION_UNIQUENESS_EXHAUSTED", "An explicit coordinated or programmatic value duplicated within its scope.", propertyPath);
+                        value = Generate(property.Type.Id, propertyConstraints, propertyPath, propertyCoordinate + "/unique-attempt:" + attempt.ToString(CultureInfo.InvariantCulture), property.Cardinality.AllowsNull, !property.Cardinality.IsRequired, depth + 1, ancestors, candidates, false, fallbackCandidates, effectivePolicy);
+                        if (value is null) break;
+                        uniqueAccepted = _session.AddUnique((owner.Id, property.Id), retryScope, Fingerprint(value));
+                    }
+                    if (value is null || value is NullTestValue || !uniqueAccepted)
+                        return Error("TESTDATA_COORDINATION_UNIQUENESS_EXHAUSTED", "Scoped TestData uniqueness was exhausted by a duplicate value.", propertyPath);
+                }
+                if (coordinatedPolicy.Coordination is { Shared: true, Scope: { } sharedScope } shared && _session.TryGetShared((owner.Id, property.Id), sharedScope, out SemanticTestValue sharedValue))
+                    value = sharedValue;
+                else if (coordinatedPolicy.Coordination is { Shared: true, Scope: { } storeScope } && value is not NullTestValue)
+                    _session.SetShared((owner.Id, property.Id), storeScope, value);
                 result[property.Id] = value;
             }
             return new ObjectTestValue(obj.Id, result);
         }
+
+        private List<(ObjectTypeDefinition Owner, PropertyDefinition Property)> OrderedProperties(ObjectTypeDefinition obj, IReadOnlyList<(ObjectTypeDefinition Owner, PropertyDefinition Property)> properties)
+        {
+            var byId = properties.ToDictionary(static p => p.Property.Id);
+            var ordered = new List<(ObjectTypeDefinition, PropertyDefinition)>();
+            var visiting = new HashSet<PropertyId>();
+            var visited = new HashSet<PropertyId>();
+            void Visit((ObjectTypeDefinition Owner, PropertyDefinition Property) item)
+            {
+                if (visited.Contains(item.Property.Id)) return;
+                if (!visiting.Add(item.Property.Id)) throw new InvalidOperationException("Coordinated TestData dependency cycle detected.");
+                TestDataPolicy policy = _testDataProfile?.Resolve(obj.Id, item.Owner.Id, item.Property) ?? TestDataPolicy.Empty;
+                foreach (PropertyId dependency in policy.Coordination?.Dependencies ?? [])
+                    if (byId.TryGetValue(dependency, out (ObjectTypeDefinition Owner, PropertyDefinition Property) dependencyItem)) Visit(dependencyItem);
+                _ = visiting.Remove(item.Property.Id); _ = visited.Add(item.Property.Id); ordered.Add(item);
+            }
+            foreach ((ObjectTypeDefinition Owner, PropertyDefinition Property) item in properties) Visit(item);
+            return ordered;
+        }
+
+        private object? ResolveCoordinatedValue(ObjectTypeDefinition owner, PropertyDefinition property, TestDataPolicy policy, IReadOnlyDictionary<PropertyId, SemanticTestValue> values)
+        {
+            TestDataCoordination? coordination = policy.Coordination;
+            if (coordination is null) return null;
+            (TypeId Owner, PropertyId Property) key = (owner.Id, property.Id);
+            if (coordination.Sequence is not null && coordination.Scope is { } sequenceScope)
+            {
+                int index = _session.NextSequence(key, sequenceScope);
+                try { return coordination.Sequence(index) ?? new CoordinationFailure("A sequence callback must return a non-null candidate."); }
+                catch (Exception exception) { return new CoordinationFailure(exception.Message); }
+            }
+            if (coordination.Derived is not null)
+            {
+                var declared = (coordination.Dependencies ?? []).ToHashSet();
+                try { return coordination.Derived(new TestDataDependencyContext(declared, values, _rootOrdinal)) ?? new CoordinationFailure("A derived callback must return a non-null candidate."); }
+                catch (Exception exception) { return new CoordinationFailure(exception.Message); }
+            }
+            return null;
+        }
+
+        private sealed record CoordinationFailure(string Message);
 
         private IReadOnlyList<(ObjectTypeDefinition Owner, PropertyDefinition Property)> EffectiveProperties(ObjectTypeDefinition obj, HashSet<TypeId> ancestors)
         {

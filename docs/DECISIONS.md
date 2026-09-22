@@ -36,6 +36,7 @@ Git history retains the detailed superseded record.
 ### TestData
 
 - [TestData profiles are runtime sampling policy, not canonical semantics](decisions/testdata-profiles-are-runtime-sampling-policy.md)
+- [TestData coordination state is invocation-scoped](decisions/testdata-coordination-state-is-invocation-scoped.md)
 
 ### EF Core
 

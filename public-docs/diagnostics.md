@@ -25,6 +25,11 @@ sampling-policy validation errors (`TESTDATA_POLICY_*`), invalid
 programmatic scalar candidates (`TESTDATA_CUSTOM_CANDIDATE_INVALID`), generation-budget/constraint failures,
 and typed CLR materialization failures (`TESTDATA_MATERIALIZATION_FAILED`).
 
+Coordinated-generation failures use `TESTDATA_COORDINATION_*`, including callback failures, unavailable or
+undeclared dependencies, invalid coordinated candidates, and `TESTDATA_COORDINATION_UNIQUENESS_EXHAUSTED` when a
+Root/Batch uniqueness domain is exhausted. Coordinated rules remain TestData policy and do not alter canonical keys
+or relationships.
+
 Diagnostic message text is not an API contract. Prefer IDs/categories and documented behavior.
 
 Common policy failures include `TESTDATA_POLICY_MODEL_MISMATCH` for applying a profile to another model and

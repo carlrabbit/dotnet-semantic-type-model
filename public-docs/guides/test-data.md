@@ -124,6 +124,32 @@ deterministic random generator. Random mode remains available without a profile.
 against scalar formats and constraints, including patterns; STM does not synthesize regex values, bypass custom
 constraints, or infer terminology from names or CLR wrapper shapes.
 
+### Coordinated generation
+
+An immutable `TestDataProfile` is reusable configuration. Each `Generate` or `GenerateMany` call creates one
+ephemeral Generation Session: Root scope is one top-level root graph, and Batch scope spans all roots in that
+invocation. State is discarded after the call, so reusing a facade or profile never reuses sequence, shared, or
+uniqueness state.
+
+Exact scalar/enum properties can declare same-object dependencies and coordinated producers:
+
+```csharp
+TestDataProfile profile = TestDataProfile.Create(model, "Customers")
+    .For(customer)
+        .Property(fullName).From(new[] { firstName.Id, lastName.Id },
+            context => $"{context.Get<string>(firstName.Id)} {context.Get<string>(lastName.Id)}").Done()
+        .Property(number).Sequence(TestDataValueScope.Batch, i => $"CUST-{i:000}").Done()
+        .Property(tenantId).Shared(TestDataValueScope.Batch).Done()
+        .Property(externalId).Unique(TestDataValueScope.Batch).Done()
+        .Done().Build();
+```
+
+Derived callbacks may read only declared scalar/enum siblings. `Root` and `Batch` are the only scopes. Presence and
+null sampling remain occurrence-local, and coordinated values still pass canonical validation. Scoped TestData
+uniqueness and derived dependencies are test-scenario policy; they do not create canonical keys, relationships, or
+persistent dataset semantics. See the executable `coordinated-generation` catalog scenario for a package-consumer
+example with a fixed seed and semantic-value inspection.
+
 ## Inspecting semantic values
 
 Programmatic models and other consumers that do not have CLR types can inspect a generated semantic graph directly:
