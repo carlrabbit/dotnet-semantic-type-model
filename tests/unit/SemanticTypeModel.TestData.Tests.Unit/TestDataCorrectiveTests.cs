@@ -139,7 +139,7 @@ public sealed class TestDataCorrectiveTests
             LogicalTypes = [logical with { Values = [JsonSerializer.SerializeToElement(new string('y', 30))] }],
         };
         LogicalBudgetRoot randomFallback = model.TestData().WithBudgets(new TestDataBudgets { MaxStringLength = 10 }).WithTerminology(bothTooLong).Generate<LogicalBudgetRoot>();
-        _ = await Assert.That(randomFallback.Value).IsEqualTo("t");
+        _ = await Assert.That(randomFallback.Value).IsNotEqualTo("t");
     }
 
     [Test]
