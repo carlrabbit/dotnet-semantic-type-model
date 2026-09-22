@@ -168,7 +168,10 @@ alternative inheritance modes, or automatic single-value-wrapper conversion into
 `SemanticTypeModel.TestData` is the eleventh aligned suite package. It consumes the canonical model as a runtime
 capability and does not mutate canonical semantics or introduce a target projection dependency.
 
-Random generation is deterministic and constraint-aware. Optional Semantic Terminology Profiles are model-bound
+Random generation is deterministic, occurrence-diverse, and constraint-aware. Exact generated values are not a
+cross-version compatibility contract; applications may rely on same-version coordinate determinism, not literal
+Random snapshots across suite versions. High-cardinality values vary by semantic occurrence and root ordinal,
+while small domains may repeat; this is not semantic uniqueness. Optional Semantic Terminology Profiles are model-bound
 versioned sidecars whose synthetic candidates are validated against current supported semantics before use.
 Profile-guided precedence is property terminology, then Logical Type terminology, then built-in Random fallback.
 Programmatic property and Logical-Type scalar generators take precedence over terminology and fail closed when an

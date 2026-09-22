@@ -2,68 +2,88 @@
 
 ## Status
 
-Authoritative behavioral specification for the SemanticTypeModel test-data synthesis and typed materialization capability.
+Authoritative behavioral specification for SemanticTypeModel test-data synthesis, terminology enrichment, and CLR materialization.
+
+M0082 refines the built-in Random generation contract on the 6.1.0 development line. It replaces constant placeholder generation and traversal-order-sensitive pseudo-random selection with deterministic occurrence-derived diversity.
 
 ## Purpose
 
-Define how SemanticTypeModel derives deterministic, valid synthetic values from a canonical `TypeSchemaModel` without introducing a second authoring source, domain-specific faker semantics, or invalid-data generation. Typed CLR materialization and terminology enrichment are documented below as current extensions to the baseline generator.
+Define how SemanticTypeModel derives deterministic, valid, useful synthetic values from a canonical `TypeSchemaModel` without introducing a second authoring source, domain faker library, invalid-data generation, or cross-root dataset semantics.
 
-The initial capability answers one question:
+The capability answers:
 
 ```text
-Given a valid canonical semantic model, can STM synthesize a finite value graph that satisfies the supported semantic constraints?
+Given a valid canonical semantic model,
+can STM synthesize a finite value graph that:
+- satisfies supported semantic constraints;
+- is deterministic for the same generation inputs;
+- varies meaningfully across different semantic occurrences;
+- remains useful even without a terminology profile?
 ```
+
+Terminology and programmatic generators add semantic meaning when available. The built-in Random fallback is nevertheless required to produce test-friendly structural diversity rather than repeated placeholder constants.
 
 ## Package Boundary
 
-The capability is owned by a new aligned suite package:
+The capability is owned by:
 
 ```text
 SemanticTypeModel.TestData
 ```
 
-The package consumes the current canonical semantic model and depends inward on canonical/core contracts. It must not require EF Core, JSON Schema, Power BI, System.Text.Json integration, the .NET source generator, or another target package at runtime.
+The package consumes the canonical semantic model and depends inward on canonical/core contracts. It must not require EF Core, JSON Schema, Power BI, System.Text.Json integration, the .NET source generator, another target package, or a third-party faker/random-data package.
 
 Canonical packages must not depend on `SemanticTypeModel.TestData`.
 
-`SemanticTypeModel.TestData` is a runtime capability, not a canonical model authoring source and not a target projection. Generated values never mutate or enrich `TypeSchemaModel`.
+Generated values never mutate or enrich `TypeSchemaModel`.
 
-The package joins the aligned `SemanticTypeModel.*` suite and therefore uses the same exact package version as the rest of the suite whenever packed or consumed together.
+The package remains part of the exact-version-aligned `SemanticTypeModel.*` suite.
 
 ## Development-Line Compatibility
 
-This capability is part of the `6.0.0` development line after the completed `5.0.1` maintenance work.
-
-Current TestData development line: `6.0.0`.
-
-Current prerelease validation version:
+Stable baseline:
 
 ```text
-6.0.0-m0079
+6.0.0
 ```
 
-This prerelease validation version does not authorize publication or claim a stable 6.0.0 API freeze. The semantic contract in this specification is authoritative.
+Current TestData development line:
+
+```text
+6.1.0
+```
+
+M0082 validation package version:
+
+```text
+6.1.0-m0082
+```
+
+M0082 deliberately changes built-in Random values relative to 6.0/M0081. Exact generated scalar values are not a cross-version compatibility contract.
+
+For the same aligned suite version and same generation inputs, determinism remains required.
+
+Stable 6.1.0 publication, tagging, and GitHub Release creation are outside M0082 unless separately authorized.
 
 ## Generation Result Boundary
 
-The package owns a semantic test-data value representation sufficient to preserve:
+The package-owned semantic value representation preserves:
 
-- the canonical type identity of each generated value;
+- canonical type identity;
 - object property identity;
 - scalar value/kind;
-- array/collection element values;
+- enum identity/value;
+- collection item values;
 - dictionary key/value entries;
-- explicit null where null is used as a legal recursion terminator.
+- explicit null when semantically legal.
 
-The generated representation is a finite, acyclic value graph. Current typed materialization is defined in the M0079 section below.
+A generated value graph is finite and acyclic.
 
-The package exposes both the low-level runtime entry point and the typed convenience facade described below.
-
-A generation result with any error diagnostic is not successful generated test data. The implementation must not silently return a partially invalid value as success.
+A result containing an error diagnostic is not successful generated test data. The implementation must not return a known-invalid partial graph as success.
 
 ## Core Validity Invariant
 
-For every feature declared supported by this specification:
+For every supported feature:
 
 ```text
 generated value
@@ -71,34 +91,110 @@ MUST satisfy
 all applicable canonical semantic constraints
 ```
 
-The generator must return an error when it cannot establish that invariant. Guessing, approximate validity, silent constraint dropping, or fallback to arbitrary stringification is forbidden.
+Diversity is subordinate to validity.
 
-The generator operates on the canonical model as supplied. It does not reinterpret CLR attributes or target-specific annotations to recover missing semantics.
+If a diverse value cannot be produced while satisfying the supported semantic contract, the generator must either produce another valid value or report the existing appropriate TestData diagnostic. It must not weaken constraints, truncate into invalid formats, or silently ignore semantics.
 
-## Determinism and Seeds
+## Random Generation Quality Invariant
 
-Generation is deterministic by default.
+Random generation means deterministic pseudo-random synthetic generation, not business realism.
 
-The default seed is `0`.
-
-For the same SemanticTypeModel suite version and the same:
+The baseline built-in Random generator must provide:
 
 ```text
-canonical model content
-root type
-size profile
-seed
+same generation coordinate
+    -> same value
+
+different ordinary semantic occurrence
+    -> occurrence-specific value
+
+high-cardinality legal domain
+    -> values vary by default
+
+small finite domain
+    -> repetition is natural and allowed
+
+terminology/custom value source
+    -> still takes precedence over Random
 ```
 
-the generated semantic value graph must be structurally equivalent across repeated runs and supported operating systems.
+The built-in generator must not use one shared constant such as `"test"`, a padded `"testxxxx"` template, one fixed Guid, one fixed date/time, repeated fixed binary bytes, or one fixed formatted-string example for every occurrence.
 
-A different seed may select different valid scalar/enum/choice values, but different seeds are not required to produce distinct output.
+Random generation is intentionally opinionated but synthetic. It does not attempt names, postal addresses, company names, countries, product descriptions, or other domain-specific faker semantics without terminology/custom values.
 
-Seed variation must never change whether a constraint is enforced or whether an unsupported semantic is diagnosed.
+## Generation Coordinate
+
+Built-in pseudo-random selection is derived from a stable semantic occurrence coordinate rather than accidental consumption order from one mutable global `Random` stream.
+
+The coordinate includes, as applicable:
+
+- configured base seed;
+- root ordinal for bulk generation;
+- canonical root/type/property identity for the current use site;
+- structural ordinals such as array item index or dictionary entry/key/value position;
+- retry/attempt ordinal when uniqueness or constraint satisfaction requires another candidate;
+- a stable value-role discriminator when two values at the same structural index serve different roles.
+
+The implementation may choose the internal deterministic hash/PRNG algorithm, but it must be stable across supported Windows/Linux runtimes for one aligned suite version and must not use randomized runtime hash codes, process/machine state, clock time, or environment-specific entropy.
+
+### Stability under unrelated model edits
+
+When an existing property's canonical identity, constraints, seed, root ordinal, and structural position are unchanged, adding or reordering an unrelated sibling property must not change that property's built-in Random value merely because traversal order changed.
+
+This is a required semantic benefit of occurrence-derived entropy.
+
+Changing the relevant property identity, constraints, seed, structural index, or aligned suite version may change the generated value.
+
+### Different seeds
+
+For a representative model containing high-cardinality built-in values, changing the base seed must change at least one such generated value.
+
+A different seed is not required to change Boolean/enum values or every individual scalar occurrence.
+
+## Distinct-by-Default versus Semantic Uniqueness
+
+M0082 distinguishes useful diversity from correctness-level uniqueness.
+
+### Distinct-by-default
+
+For ordinary unconstrained or broadly constrained high-cardinality built-in domains, different generation coordinates should map to different values until the practical domain forces reuse.
+
+This applies to the built-in generation of:
+
+- String;
+- Integer/Number/Decimal when the effective supported range is sufficiently broad;
+- Date/Time/DateTime/DateTimeOffset;
+- Duration;
+- Guid/uuid;
+- Binary;
+- Json;
+- variable predefined-format strings.
+
+Representative `GenerateMany` acceptance populations must not collapse these kinds to repeated constants.
+
+### Natural repetition
+
+Repetition is valid and expected for low-cardinality domains such as:
+
+- Boolean;
+- Enum;
+- a very small constrained integer/range domain;
+- very short strings whose legal domain is smaller than the requested occurrence population;
+- a terminology candidate set smaller than the number of generated occurrences.
+
+Distinct-by-default is not a hidden semantic uniqueness constraint.
+
+### Hard uniqueness
+
+Only explicit semantic requirements such as `UniqueItems` or dictionary-key uniqueness are correctness guarantees in M0082.
+
+Cross-root key uniqueness and dataset referential integrity remain outside this specification.
+
+If hard uniqueness is required and the finite supported domain is exhausted, generation fails with the existing uniqueness diagnostic rather than silently duplicating values.
 
 ## Size Profiles
 
-The initial named profiles are exactly:
+The named profiles remain exactly:
 
 ```text
 Simple
@@ -106,9 +202,9 @@ Moderate
 Extreme
 ```
 
-They are **size profiles**, not validity profiles, realism profiles, boundary-testing profiles, or numeric-magnitude profiles.
+They are size profiles, not realism, validity, boundary, or numeric-magnitude profiles.
 
-They control only target sizes for variable-length generated values:
+The authoritative targets are:
 
 | Value category | Simple | Moderate | Extreme |
 |---|---:|---:|---:|
@@ -117,34 +213,32 @@ They control only target sizes for variable-length generated values:
 | Array/collection item count | 1 | 8 | 100 |
 | Dictionary entry count | 1 | 8 | 100 |
 
-For each generated value, the profile target is clamped into the effective legal interval formed by all applicable canonical minimum/maximum constraints.
+The implementation must use category-appropriate targets. A single shared `1/8/100` target is not valid for string/binary generation.
+
+For each generated value, the target is clamped into the effective legal minimum/maximum interval.
 
 Examples:
 
 ```text
-MinLength=1, MaxLength=20, Extreme -> 20
-MinLength=50, MaxLength=100, Moderate -> 50
-MinItems=0, MaxItems=0, Simple -> 0
-MinItems=3, no MaxItems, Simple -> 3
+String MinLength=1, MaxLength=20, Extreme -> 20 characters
+String MinLength=50, MaxLength=100, Moderate -> 50 characters
+Array MinItems=0, MaxItems=0, Simple -> 0 items
+Array MinItems=3, no MaxItems, Simple -> 3 items
 ```
 
-Where no semantic minimum/maximum exists, the profile target is used directly.
-
-The three profiles do not control:
+The profiles do not control:
 
 - numeric magnitude;
-- date/time distance from an epoch;
+- temporal distance from an epoch;
 - optional-property presence probability;
 - null probability;
 - enum frequency;
-- business realism;
-- invalid or adversarial data.
+- semantic realism;
+- invalid/adversarial data.
 
 ## Built-In Safety Budgets
 
-Built-in generation is intentionally bounded even when the semantic model has no upper bound or declares a very large upper bound.
-
-Baseline built-in-generation defaults are:
+Default ceilings remain:
 
 | Budget | Ceiling |
 |---|---:|
@@ -153,44 +247,41 @@ Baseline built-in-generation defaults are:
 | One generated array/collection | 10,000 items |
 | One generated dictionary | 10,000 entries |
 | Nested generation depth | 32 |
-| Total generated value nodes for one root generation | 100,000 |
+| Total generated value nodes for one root | 100,000 |
 
-Profile targets remain below these ceilings. A declared maximum above a ceiling does not force the generator to approach that maximum.
+If a semantic minimum exceeds the relevant ceiling, generation fails. The generator must not truncate below the semantic minimum.
 
-If a semantic minimum itself exceeds the relevant ceiling, or a finite valid graph cannot be produced inside the depth/node budgets, generation fails with an explicit diagnostic. The generator must not truncate below a semantic minimum.
-
-Configurable budget overrides are defined by the current typed TestData facade below.
+Configured budget overrides remain part of the facade.
 
 ## Property Presence and Nullability
 
-The baseline generator produces a complete representative object rather than probabilistically sparse data:
+Random generation remains complete-object oriented:
 
-- every modeled object property is generated when a non-null finite value can be produced;
+- modeled properties are generated when a finite legal value can be produced;
 - optional properties are normally included;
-- nullable properties are normally generated as non-null;
-- additional/unmodeled object properties are not invented.
+- nullable properties are normally non-null;
+- unmodeled properties are never invented.
 
-This policy makes optionality/nullability independent from the size profiles.
+Optionality/nullability are not probability knobs.
 
-The only baseline exception is recursion termination. When recursive re-entry would otherwise make the value graph infinite, the generator may, in this order, use a semantically legal finite terminator such as:
+The recursion terminator policy remains:
 
-1. null at a nullable use site;
-2. omission of an optional property;
-3. a zero-length collection/dictionary when zero is legal.
-
-If no legal finite terminator exists, generation fails rather than producing an invalid graph.
+1. null when nullable;
+2. omit when optional;
+3. empty collection/dictionary when zero is legal;
+4. otherwise fail.
 
 ## Constraint Composition
 
-Type-level and property/use-site constraints are conjunctive. When more than one applicable constraint supplies a bound, the effective legal range is the intersection of those constraints.
+Type-level and property/use-site constraints compose conjunctively.
 
-If the effective constraint set is unsatisfiable, generation fails with an error identifying the affected model path.
+Effective numeric/string/collection ranges are the intersection of applicable constraints.
 
-The generator does not weaken one canonical constraint to satisfy another.
+Unsatisfiable constraints produce an error at the affected model path. Random generation must not relax one constraint to satisfy another.
 
-## Supported Scalar Kinds
+## Built-In Scalar Generation
 
-Built-in generation supports these canonical scalar kinds:
+Built-in Random generation supports:
 
 ```text
 Boolean
@@ -208,17 +299,115 @@ Binary
 Json
 ```
 
-`Unknown` is unsupported and produces an error.
+`Unknown` remains unsupported.
 
-`Json` generation produces a deterministic valid non-null JSON value; the generator does not infer application-specific JSON structure.
+All built-in scalar generators use occurrence-derived deterministic entropy where the legal domain admits variation.
 
-Scalar generation must respect applicable numeric bounds, exclusive bounds, `multipleOf`, and precision/scale semantics where represented by the canonical model.
+### Boolean
 
-Size profiles do not deliberately choose small/moderate/extreme numeric values.
+Generate `true` or `false` deterministically from the generation coordinate.
 
-## String Formats
+Repetition is expected.
 
-Built-in generation recognizes the current predefined semantic format family and the current URI-reference representation used by the canonical code-first surface:
+### String
+
+For an ordinary string without a predefined format or external candidate:
+
+- generate exactly the category/profile target length after semantic clamping;
+- use a small test-friendly invariant alphabet of lowercase ASCII letters and decimal digits;
+- do not prepend `"test"` or another shared semantic-looking label;
+- derive content from the generation coordinate;
+- vary different ordinary occurrences by default.
+
+String generation must remain safe for logs, snapshots, identifiers, and ordinary text handling. M0082 does not deliberately inject control characters, whitespace edge cases, Unicode stress cases, or adversarial payloads.
+
+Those may belong to a future boundary/adversarial-data capability.
+
+### Integer / Number / Decimal
+
+Size profile does not control numeric magnitude.
+
+For unbounded or very broadly bounded numeric values, Random generation uses a stable preferred synthetic interval centered on zero:
+
+```text
+-10_000 .. 10_000
+```
+
+This interval is a generation preference, not a semantic constraint.
+
+Rules:
+
+- semantic minimum/maximum/exclusive bounds remain authoritative;
+- when the preferred interval intersects the legal interval, choose a coordinate-derived value from that intersection;
+- when it does not intersect, choose a coordinate-derived legal value from the representable region implied by the semantic bound(s);
+- `multipleOf` remains authoritative;
+- Integer results remain integral;
+- Number/Decimal should produce fractional values where legal rather than collapsing every unconstrained occurrence to an integer/zero;
+- represented precision/scale semantics remain authoritative.
+
+For a small legal finite numeric domain, repetition is allowed.
+
+### Date
+
+For unconstrained built-in Date generation, use a deterministic coordinate-derived date within the fixed synthetic window:
+
+```text
+2000-01-01 .. 2039-12-31
+```
+
+Do not use the current date or system clock.
+
+### Time
+
+For unconstrained built-in Time generation, use a deterministic valid time over the full 24-hour day at second-level resolution.
+
+### DateTime
+
+Use a deterministic date from the fixed Date window plus a deterministic time-of-day. Preserve the package's documented CLR/semantic DateTime kind contract; M0082 does not introduce timezone inference.
+
+### DateTimeOffset
+
+Use a deterministic instant within the same fixed date window with an explicit deterministic offset representation compatible with current materialization. UTC is an acceptable baseline; the generator must not depend on local-machine timezone.
+
+### Duration
+
+Use a deterministic non-negative duration from:
+
+```text
+0 seconds .. 30 days
+```
+
+unless semantic constraints narrow the legal domain.
+
+### Guid
+
+Generate a deterministic occurrence-derived Guid rather than a shared constant.
+
+Generated Guid values must have stable canonical text/materialized identity and should use standard RFC-compatible version/variant bits rather than arbitrary malformed bit patterns.
+
+### Binary
+
+Generate deterministic occurrence-derived bytes rather than repeating one byte value.
+
+Length uses the authoritative String/Binary size targets:
+
+```text
+8 / 32 / 1024
+```
+
+after semantic clamping and budget enforcement.
+
+### Json
+
+Generate a deterministic valid non-null JSON value containing occurrence-derived content rather than the same `"{}"` value for every coordinate.
+
+M0082 does not infer application-specific JSON structure.
+
+The representation must remain valid for current TestData materialization/inspection contracts.
+
+## Predefined String Formats
+
+Built-in generation continues to recognize:
 
 ```text
 email
@@ -234,182 +423,320 @@ duration
 uuid
 ```
 
-When such a format is applicable, generated values must satisfy both the format and all other applicable supported constraints.
+Formatted Random values must vary by generation coordinate while remaining valid for the declared format and applicable supported string constraints.
 
-A custom/unknown format is not guessed. Built-in generation returns an error unless a future explicit external value source supplies a candidate that can be validated against the declared contract.
+Opinionated synthetic domains:
+
+- `email`: local part varies; reserved `example.test` domain;
+- `uri`: absolute HTTPS URI under `https://example.test/` with a varying safe path/token;
+- `uri-reference`: deterministic varying URI reference; it need not be absolute;
+- `hostname`: varying label under `example.test`;
+- `ipv4`: values from RFC documentation address ranges (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`);
+- `ipv6`: values under the documentation prefix `2001:db8::/32`;
+- `date`: same fixed synthetic Date window;
+- `time`: same deterministic Time policy;
+- `date-time`: same deterministic DateTime/DateTimeOffset-compatible policy;
+- `duration`: same deterministic Duration policy;
+- `uuid`: same deterministic Guid policy.
+
+The generator must not use live DNS/network state or generate values that intentionally target real external hosts.
+
+A supported formatted value must satisfy string length constraints. The implementation may adapt the variable token length where the format permits it. It must never truncate/pad a formatted value into invalid syntax.
+
+If the supported format cannot satisfy the effective semantic length/constraint combination, generation fails with the existing appropriate unsatisfiable/budget diagnostic.
+
+Unknown/custom formats remain fail-closed unless an explicit external/custom candidate can be independently validated.
 
 ## Regular-Expression Pattern Policy
 
-Built-in regular-expression synthesis is explicitly out of scope.
+Built-in regex synthesis remains explicitly unsupported.
 
-If an applicable string constraint contains a non-empty `Pattern`, M0075 built-in generation returns an error for that value instead of attempting regex generation.
+A non-empty applicable `Pattern` requires an eligible terminology/custom candidate.
 
-The durable rule is:
+Random mode returns:
 
 ```text
-Pattern does not authorize built-in regex synthesis.
+TESTDATA_PATTERN_UNSUPPORTED
 ```
 
-A later terminology/value-source or custom-generation capability may supply a candidate value. When such a source exists, STM may validate the supplied candidate against the pattern and other constraints; that does not make regex synthesis part of the built-in generator.
+rather than guessing a regex value.
 
-M0075 itself does not add terminology documents or custom generator registration, so pattern-constrained values are an explicit built-in-generation failure in this milestone.
+A supplied candidate may succeed only when STM validates it against the regex and all other applicable constraints.
 
 ## Enums
 
-Enum generation selects one declared enum value and preserves the enum type identity and declared value.
+Enum generation selects one declared value using the occurrence-derived deterministic stream.
 
-An enum with no usable declared value is a generation error.
+Different occurrences/seeds may select different enum values, but repetition is natural and permitted.
+
+An enum with no usable declared value is an error.
 
 Size profiles do not affect enum selection.
 
 ## Objects and Composition
 
-Object generation produces the effective modeled property set, including supported inherited/composed object properties represented by the canonical model.
+Object generation produces the effective modeled property set, including supported inherited/composed properties.
 
-The generator must preserve canonical property identity and must not infer relationships, ownership storage, UI semantics, or target-specific behavior from object metadata.
+Generation preserves canonical property identity and does not infer relationships, target behavior, faker semantics, or hidden uniqueness from metadata.
 
-Current `RequiredWhen` semantics are satisfied by the baseline complete-object policy because the target property is generated whenever possible. TestData does not manufacture separate scenario families in which a condition is deliberately triggered or not triggered.
+Current `RequiredWhen` semantics remain satisfied by the complete-object policy rather than scenario-family synthesis.
 
-Object property-count constraints are supported only when a valid object can be formed from modeled properties under the no-additional-properties generation policy. If satisfying `MinProperties` would require inventing unmodeled properties, or `MaxProperties` conflicts with required/effectively emitted properties, generation fails.
+Object property-count constraints remain supported only when a valid object can be formed from modeled properties without inventing additional properties.
 
 ## Arrays and Collections
 
-Array/collection generation uses the size-profile target clamped to the effective `MinItems`/`MaxItems` range and safety budget.
+Collection count uses the collection-specific `1/8/100` size targets clamped by semantic bounds and safety budgets.
 
-`UniqueItems` must be honored. If the requested legal count cannot be produced uniquely from the finite item domain, generation fails instead of duplicating values.
+Each item receives a distinct structural coordinate containing its item index.
+
+Therefore high-cardinality scalar item kinds naturally vary across array positions.
+
+`UniqueItems` remains a hard semantic guarantee. Retry attempts use a distinct attempt coordinate. Domain exhaustion produces the existing uniqueness error.
 
 ## Dictionaries
 
-Dictionary generation uses the size-profile target clamped to applicable bounds and safety budget.
+Dictionary count uses the dictionary-specific `1/8/100` size targets.
 
-Generated dictionary keys must be unique. If the supported key domain cannot supply enough unique keys for the required count, generation fails.
+Each entry, key, and value receives an occurrence coordinate that distinguishes:
 
-The package-owned semantic value representation is not required to force dictionary keys through JSON string-key rules.
+- entry ordinal;
+- key versus value role;
+- retry attempt.
+
+Dictionary keys remain hard-unique. Domain exhaustion is an error.
+
+The semantic representation does not force keys through JSON string-key rules.
 
 ## References
 
-A `ReferenceTypeDefinition` resolves its canonical target and generates the target semantics while preserving the reference use-site context needed for constraints and recursion handling.
+A `ReferenceTypeDefinition` resolves its canonical target while preserving the reference use-site coordinate.
 
-An unresolved reference is a generation error.
+An unresolved reference remains an error.
 
 ## Any, Never, Union, and Intersection
 
-`Any` is supported through one deterministic built-in valid value choice.
+`Any` remains supported through one deterministic built-in valid JSON-like value choice. Under M0082 the selected built-in content should be occurrence-derived rather than a shared constant where practical.
 
-`Never` cannot have a valid instance and therefore always produces a generation error.
+`Never` has no valid instance and always errors.
 
-`Union` and `Intersection` synthesis remain out of scope. They produce explicit unsupported-generation errors rather than choosing an option/merge strategy whose validity could be ambiguous, especially for `oneOf` semantics.
-
-A later milestone may add them only with a separate accepted semantic contract.
+`Union` and `Intersection` synthesis remain unsupported.
 
 ## Custom Constraints and Unknown Semantic Rules
 
-A non-empty `CustomConstraint` set is not ignored. Because its validity semantics are not generically known, built-in generation returns an error unless a future explicit custom/value-source capability owns that constraint.
+Unknown/custom canonical validity rules are never ignored.
 
-Unknown annotations that do not define canonical validation semantics do not become generation rules merely because they exist.
+A non-empty custom constraint remains fail-closed unless an explicit custom/value-source capability owns and validates it.
 
-## Error and Diagnostic Policy
+Unknown annotations do not become Random-generation rules.
 
-`SemanticTypeModel.TestData` owns package-specific runtime diagnostics using the descriptive prefix:
+## Value-Source Precedence
+
+M0082 does not change TestData value-source precedence:
+
+```text
+programmatic property generator
+-> programmatic Logical Type generator
+-> property terminology
+-> Logical Type terminology
+-> built-in Random
+```
+
+An explicit invalid custom candidate still fails closed.
+
+Terminology values are never mutated to fit Random size targets.
+
+When multiple eligible terminology candidates remain after the existing length-nearest filtering rules, deterministic candidate selection uses the occurrence-derived stream rather than sibling traversal position.
+
+If a property terminology tier contains no eligible candidate, the generator still tries the Logical Type tier before Random.
+
+## Custom Generator Context
+
+`TestDataGeneratorContext.RootOrdinal` remains the zero-based bulk root ordinal.
+
+`TestDataGeneratorContext.Seed` is an occurrence-local deterministic seed suitable for application callback generation.
+
+Under M0082 it is derived from the base seed and the current semantic generation coordinate. It is not a promise that the implementation consumed or advanced one shared `System.Random` instance.
+
+For the same aligned suite version and same generation coordinate, the callback context seed must be stable across supported platforms.
+
+Adding/reordering an unrelated sibling property must not change the context seed of an unchanged property.
+
+## Bulk Generation
+
+`GenerateMany<T>(count)` and `GenerateMany(TypeId, count)` retain:
+
+- zero -> empty sequence;
+- negative count -> argument error;
+- root ordinal `0..count-1`.
+
+The configured seed is the base seed. Root ordinal is a separate component of the generation coordinate.
+
+Implementations must not rely on arithmetic `seed + ordinal` as the semantic source of bulk diversity.
+
+For broadly valued built-in scalar properties, bulk roots should normally contain distinct values because the root ordinal differs.
+
+This is still not a cross-root semantic uniqueness guarantee.
+
+## Diagnostics
+
+Package runtime diagnostics retain the descriptive prefix:
 
 ```text
 TESTDATA_*
 ```
 
-TestData does not allocate a new stable `STMxxxx` numeric range.
+M0082 should reuse existing diagnostics for constraint, budget, format, unsupported, pattern, uniqueness, recursion, and unresolved-reference failures.
 
-Diagnostics must be deterministic, identify the canonical model path when available, and distinguish at least:
+A new diagnostic is justified only if the new Random-generation contract exposes a failure state that cannot be represented accurately by an existing diagnostic.
 
-- unsupported type kind;
-- unsupported scalar kind;
-- unsupported custom format;
-- pattern requires external/custom value source;
-- custom constraint requires custom handling;
-- unsatisfiable effective constraints;
-- uniqueness domain exhausted;
-- unresolved reference;
-- recursion/depth budget exhausted;
-- total generation budget exhausted.
-
-Expected unsupported/unsatisfiable model conditions are reported through generation diagnostics rather than generic exceptions. Ordinary argument/null programmer errors may still use standard .NET exceptions.
+Exact diagnostic message text is not a compatibility contract.
 
 ## Dependency Policy
 
-TestData must not add a third-party faker library or regex-generation library.
+TestData must not add:
 
-The built-in generator uses canonical STM contracts and BCL/runtime functionality. Domain realism is deliberately reserved for external terminology enrichment rather than embedded faker datasets.
+- third-party faker libraries;
+- regex-generation libraries;
+- random-data services;
+- AI SDK/runtime dependencies.
+
+The built-in generator uses STM canonical contracts and BCL/runtime primitives.
+
+Semantic realism remains the responsibility of terminology profiles or application-supplied generators.
+
+## Compatibility Boundary for Random Output
+
+The following are stable behavioral contracts:
+
+- validity against supported canonical constraints;
+- deterministic repeatability within one aligned suite version;
+- occurrence-derived diversity policy;
+- value-source precedence;
+- size-profile targets;
+- documented synthetic numeric/temporal/format domains;
+- diagnostics/failure categories.
+
+The exact built-in Random scalar values for a given seed are **not** a cross-version compatibility contract.
+
+A suite upgrade may change the pseudo-random mapping while preserving the documented policy.
+
+Consumers that require specific semantic values must use terminology/custom generators or assert semantic properties rather than hard-code old Random outputs.
 
 ## Non-Goals
 
-The baseline specification does not add:
+M0082 does not add:
 
-- invalid/faulty-data generation;
-- deliberate single-constraint violation generation;
-- regex synthesis;
-- terminology JSON export/import (added by M0078);
-- AI integration or an AI SDK dependency;
-- custom generator registration (added by M0079);
-- CLR object materialization (added by M0079);
-- the final typed developer-experience surface;
-- cross-root dataset/key-uniqueness policy;
+- business/domain faker datasets;
+- person/company/address/country/product inference;
+- invalid/faulty/adversarial data generation;
+- Unicode/control-character stress generation;
 - probabilistic optional/null generation;
 - weighted enum/business distributions;
-- database seeding or EF Core integration;
-- target-specific JSON Schema/System.Text.Json generation;
-- union/intersection synthesis;
+- regex synthesis;
+- cross-root dataset generation;
+- canonical key uniqueness across `GenerateMany`;
+- referential integrity;
+- foreign-key/relationship inference;
+- database seeding;
+- new union/intersection synthesis;
 - arbitrary custom-constraint interpretation;
-- publication or stable 6.0 release readiness.
+- target-specific Power BI/EF/JSON generation;
+- new canonical semantics;
+- stable 6.1.0 publication.
 
 ## Required Cross-Boundary Evidence
 
-At least one positive integration test must exercise the real code-first path:
+Existing real code-first and programmatic-authoring TestData integration evidence remains required.
+
+M0082 additionally requires representative evidence that:
 
 ```text
-annotated CLR model
--> SemanticTypeModel.Generators
--> generated canonical TypeSchemaModel
--> SemanticTypeModel.TestData
--> generated semantic value graph
+programmatic model
+-> GenerateMany
+-> high-cardinality built-in properties differ across roots
+-> terminology still overrides Random
+-> TestData inspection renders the diverse values
 ```
 
-That evidence must include representative constraints, a collection, an enum, and ordinary scalar values. Hand-built canonical models remain appropriate for focused invalid/pathological generation tests.
+The package-based programmatic-model catalog must expose at least one concise `random-diversity` scenario demonstrating this behavior without CLR materialization.
 
-The packed-package consumer smoke path must consume `SemanticTypeModel.TestData` from the current locally packed aligned suite rather than through a project reference.
+Packed-package consumer validation must use current locally packed aligned packages rather than source project references.
 
-## M0078 Semantic Terminology Profiles
+## Semantic Terminology Profiles
 
-An optional `SemanticTerminologyProfile` is a version-1 JSON sidecar owned by `SemanticTypeModel.TestData`.
-Export it with `SemanticTerminologyProfileJson.Export(model)`, enrich only the candidate `values` fields, and
-normalize it against the current model with `SemanticTerminologyProfileJson.Import(model, json)`. The profile
-is bound to the exact `SchemaModelId`; instructions and exported context are informational and never replace
-the live canonical model.
+`SemanticTerminologyProfile` remains a version-1 JSON sidecar owned by `SemanticTypeModel.TestData`.
 
-Import rejects unsupported format/version, model mismatches, duplicate identities, invalid scalar
-representations, unsupported constraints, and scalar conflicts. Missing Logical Types or properties are stale
-warnings and are ignored. Candidate lists are normalized by removing duplicates and sorting their JSON lexical
-representation. Logical Type candidates are reusable across matching scalar properties, while property-specific
-values take precedence and are filtered by the current use-site constraints.
+Profile import/export, model binding, stale-entry warnings, normalization, candidate validation, property-over-Logical-Type precedence, use-site filtering, pattern validation, and fail-closed custom/unknown-constraint behavior remain unchanged.
 
-Pass an imported profile to the overload of `SemanticTestDataGenerator.Generate` to enable Profile-guided mode.
-Without a profile, Random mode remains unchanged. Profile-guided generation uses eligible property values, then
-Logical Type values, then the built-in generator; a supplied patterned string is accepted only when STM can
-validate it, and terminology never adds regex synthesis or bypasses unknown/custom constraints. Candidate values
-are never mutated to meet size targets, and selection remains deterministic for the same seed and normalized
-profile.
+Profile-guided generation uses eligible property candidates, then Logical Type candidates, then built-in Random.
 
-## M0079 Typed Test-Data Experience
+Candidate lists remain normalized independent of input ordering.
 
-The supported convenience surface is `model.TestData()`. It retains the low-level semantic-value API while
-adding `WithSizeProfile`, `WithSeed`, `WithTerminology`, `WithBudgets`, `Generate<T>()`, and
-`GenerateMany<T>(count)`. Bulk generation uses the root seed plus ordinal and returns an empty sequence for
-zero; negative counts and invalid budgets are argument errors.
+Candidate selection is deterministic for the same aligned suite version, seed, root ordinal, semantic occurrence, and normalized profile.
 
-`Generate<T>()` materializes a successful semantic value graph into a public CLR object. It supports public
-constructors and writable public properties/fields, arrays, declared collection interfaces and concrete types,
-dictionaries, nullable values, enums, and documented BCL scalar forms. It never invokes private constructors,
-bypasses constructors, mutates private members, or infers single-value wrappers.
+## Typed and Dynamic TestData Facades
 
-`Materialize<T>(value)` materializes an existing successful graph without regenerating it. Materialization
-failures are reported through `TestDataGenerationException` with `TESTDATA_MATERIALIZATION_FAILED` diagnostics.
-Property and Logical Type generators take precedence in that order over terminology candidates, followed by
-built-in generation. Budgets are explicit and default to the baseline safety ceilings.
+The supported facade remains:
+
+```text
+model.TestData()
+```
+
+with current configuration methods such as:
+
+```text
+WithSizeProfile
+WithSeed
+WithTerminology
+WithBudgets
+WithPropertyGenerator
+WithLogicalTypeGenerator
+```
+
+and current semantic/typed generation:
+
+```text
+Generate(TypeId)
+GenerateMany(TypeId, count)
+Generate<T>()
+GenerateMany<T>(count)
+Materialize<T>(value)
+```
+
+M0082 changes built-in Random quality, not the facade shape.
+
+CLR materialization remains a conversion of an already generated semantic graph. It does not regenerate or randomize values.
+
+Programmatic/callback scalar candidates remain validated against the canonical scalar/use-site contract before success.
+
+## TestData Inspection
+
+`SemanticTestValue.ToSemanticText(model)` remains deterministic human-readable inspection owned by `SemanticTypeModel.TestData`.
+
+Inspection does not generate or randomize values and does not become a persistence/wire contract.
+
+M0082 sample and acceptance evidence should use inspection to make Random diversity visible.
+
+## Validation Expectations
+
+Short-running tests must cover at least:
+
+- repeatability for identical inputs;
+- different-seed diversity for a representative high-cardinality model;
+- sibling insertion/reordering stability for unchanged properties;
+- occurrence-local callback `Seed` stability;
+- exact string/binary profile target lengths `8/32/1024`;
+- exact collection/dictionary profile counts `1/8/100`;
+- unconstrained ordinary strings differ across sibling properties and representative bulk roots;
+- Guid, Binary, Date, Time, DateTime, DateTimeOffset, Duration, Json, and broadly ranged numeric values vary across representative occurrences;
+- Boolean/Enum/small-domain repetition remains legal;
+- formatted values vary and validate for every supported predefined format;
+- formatted values use reserved synthetic network/domain ranges where specified;
+- terminology/custom precedence is unchanged;
+- ineligible terminology fallback remains property -> Logical Type -> Random;
+- array item/dictionary key diversity;
+- `UniqueItems` and dictionary-key hard uniqueness remain enforced;
+- existing pattern/custom/unsupported diagnostics remain unchanged in meaning;
+- no use of current clock/local timezone affects deterministic output.
+
+The programmatic-model catalog must provide package-consumer evidence for the visible Random improvement.

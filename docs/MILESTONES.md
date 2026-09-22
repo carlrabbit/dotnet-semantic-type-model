@@ -6,20 +6,20 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-M0081 — Dynamic Model Sample Catalog & TestData Inspection is ready on the 6.1.0 development line.
+M0082 — Deterministic Diverse TestData Generation is ready on the 6.1.0 development line.
 
-M0080 — Programmatic Canonical Model Authoring is complete. 6.0.0 remains the released stable baseline for the 6.1 development work.
+M0080 — Programmatic Canonical Model Authoring and M0081 — Dynamic Model Sample Catalog & TestData Inspection are completed history. 6.0.0 remains the released stable baseline for the 6.1 development work.
 
 Primary milestone:
 
 ```text
-docs/milestones/m0081-dynamic-model-sample-catalog-and-testdata-inspection.md
+docs/milestones/m0082-deterministic-diverse-testdata-generation.md
 ```
 
 ## Next Number
 
 ```text
-M0082
+M0083
 ```
 
 Never restart or reuse milestone numbers.

@@ -22,8 +22,12 @@ SemanticTestValue value = result.Value!;
 ```
 
 The default seed is `0`. `Simple`, `Moderate`, and `Extreme` target string/binary lengths of 8/32/1024 and
-collection/dictionary sizes of 1/8/100, clamped by modeled constraints and fixed safety ceilings. Profiles do
-not change numeric magnitude, optional-property probability, enum frequency, or business realism.
+collection/dictionary sizes of 1/8/100, clamped by modeled constraints and fixed safety ceilings. Random values
+are occurrence-derived and diverse for high-cardinality kinds while remaining deterministic for the same seed,
+model, profile, root ordinal, and semantic occurrence. Exact Random values may change between aligned suite
+versions; domain realism requires terminology candidates or programmatic generators. Distinct-by-default is not
+semantic uniqueness: Boolean, enum, small legal domains, and candidate sets may repeat. Profiles do not change
+numeric magnitude, optional-property probability, enum frequency, or business realism.
 
 Supported generation includes canonical scalars, predefined formats, enums, objects and
 composition, arrays, dictionaries, references, `Any`, nullability, and supported constraints. Generated
@@ -54,6 +58,10 @@ model.TestData()
 `GenerateMany` returns an empty sequence for zero and rejects negative counts. These operations return
 `SemanticTestValue` graphs; they do not synthesize CLR types. Invalid generation throws
 `TestDataGenerationException` with `TESTDATA_*` diagnostics.
+
+`GenerateMany` keeps one configured base seed and derives each root's values from its root ordinal. Adding or
+reordering an unrelated sibling property does not perturb unchanged built-in Random occurrences. Explicit
+`UniqueItems` and dictionary-key uniqueness remain hard guarantees and diagnose finite-domain exhaustion.
 
 The convenience facade preserves canonical semantics while providing typed generation:
 
@@ -109,3 +117,5 @@ or a persisted fixture format.
 The executable [programmatic model catalog](../samples.md) labels Random and Example-guided output separately.
 Example-guided means candidates supplied through a validated Semantic Terminology Profile. Programmatic property or
 Logical Type callbacks are a separate customization capability and are not terminology examples.
+The catalog's `random-diversity` scenario shows occurrence-specific strings, bulk roots, Guid/temporal/numeric/
+binary variation, deterministic reruns, and terminology overriding Random.

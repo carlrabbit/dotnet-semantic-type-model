@@ -45,6 +45,7 @@ internal static class Program
         new("terminology-precedence", "Property candidate wins over Logical Type candidate", TerminologyPrecedenceScenario),
         new("terminology-fallback", "Ineligible property candidate falls through to Logical Type", TerminologyFallbackScenario),
         new("terminology-random-fallback", "No eligible terminology candidate falls through to Random", TerminologyRandomFallbackScenario),
+        new("random-diversity", "Occurrence-derived diverse Random values and terminology override", RandomDiversityScenario),
     ];
 
     private static int Main(string[] args)
@@ -294,6 +295,47 @@ internal static class Program
         Console.WriteLine(random.Value!.ToSemanticText(model));
         Console.WriteLine("Example-guided");
         Console.WriteLine(example.Value!.ToSemanticText(model));
+    }
+
+    private static void RandomDiversityScenario()
+    {
+        ScalarTypeDefinition text = Scalar("Text", ScalarKind.String);
+        ScalarTypeDefinition guid = Scalar("Guid", ScalarKind.Guid);
+        ScalarTypeDefinition date = Scalar("Date", ScalarKind.Date);
+        ScalarTypeDefinition number = Scalar("Number", ScalarKind.Number);
+        ScalarTypeDefinition binary = Scalar("Binary", ScalarKind.Binary);
+        ObjectTypeDefinition root = Object("RandomDiversityRoot", [
+            Property("First", text.Id),
+            Property("Second", text.Id),
+            Property("Third", text.Id),
+            Property("Id", guid.Id),
+            Property("When", date.Id),
+            Property("Amount", number.Id),
+            Property("Payload", binary.Id),
+        ]);
+        TypeSchemaModel model = Build(root, text, guid, date, number, binary);
+        SemanticTerminologyProfile profile = Profile(model, root, root.Properties[0], JsonSerializer.SerializeToElement("terminology-wins"));
+        IReadOnlyList<SemanticTestValue> firstRun = model.TestData().WithSeed(2026).WithTerminology(profile).GenerateMany(root.Id, 3);
+        IReadOnlyList<SemanticTestValue> repeatRun = model.TestData().WithSeed(2026).WithTerminology(profile).GenerateMany(root.Id, 3);
+        string firstText = string.Join("\n", firstRun.Select(value => value.ToSemanticText(model)));
+        string repeatText = string.Join("\n", repeatRun.Select(value => value.ToSemanticText(model)));
+        Require(firstText == repeatText, "The fixed-seed Random diversity scenario must be repeatable.");
+        Require(firstText.Contains("terminology-wins", StringComparison.Ordinal), "Terminology must override Random for the supplied property.");
+        string[] randomStrings = firstRun.SelectMany(value => new[] { ScalarText(value, "Second"), ScalarText(value, "Third") }).ToArray();
+        Require(randomStrings.Distinct(StringComparer.Ordinal).Count() == randomStrings.Length, "Ordinary Random strings must differ across properties and bulk roots.");
+        string[] identifiers = firstRun.Select(value => ScalarText(value, "Id")).ToArray();
+        Require(identifiers.Distinct(StringComparer.Ordinal).Count() == identifiers.Length, "Guid values must differ across bulk roots.");
+        string[] dates = firstRun.Select(value => ScalarText(value, "When")).ToArray();
+        Require(dates.Distinct(StringComparer.Ordinal).Count() > 1, "Another scalar family must vary across bulk roots.");
+        Console.WriteLine("Fixed seed: 2026");
+        Console.WriteLine(firstText);
+    }
+
+    private static string ScalarText(SemanticTestValue value, string property)
+    {
+        ObjectTestValue root = (ObjectTestValue)value;
+        ScalarTestValue scalar = (ScalarTestValue)root.Properties[new PropertyId(property)];
+        return Convert.ToString(scalar.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
     }
 
     private static void Emit(TypeSchemaModel model, TypeId root, SemanticTerminologyProfile profile)

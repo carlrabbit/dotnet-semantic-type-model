@@ -105,12 +105,16 @@ An ordinary scalar property may opt into a projection-neutral Logical Type name 
 TestData, or Power BI representation. Names must be valid and same-name properties in one model must use the same
 scalar type.
 
-`SemanticTypeModel.TestData` provides deterministic constraint-aware semantic graph generation and the typed
-`model.TestData().Generate<T>()` / `GenerateMany<T>()` facade. Random mode needs no terminology profile.
+`SemanticTypeModel.TestData` provides deterministic, occurrence-diverse, constraint-aware semantic graph generation
+and the typed `model.TestData().Generate<T>()` / `GenerateMany<T>()` facade. High-cardinality values vary across
+semantic occurrences and bulk root ordinals; small domains may repeat. Exact values are not stable across suite
+versions, and distinct-by-default is not semantic uniqueness. Random mode needs no terminology profile.
 Optional model-bound Semantic Terminology Profiles provide synthetic property/Logical-Type candidates, while
 programmatic generators can supply application-specific scalar values. Public CLR materialization uses supported
 constructors and members and never infers scalar meaning from wrapper shapes. Invalid explicit custom candidates
 and materialization failures are reported with TestData diagnostics; built-in regex synthesis remains unsupported.
+Size profiles target 8/32/1024 for strings and binary values, and 1/8/100 for collections and dictionaries.
+Domain realism belongs in terminology profiles or programmatic generators.
 
 ## JSON Schema semantic annotations
 

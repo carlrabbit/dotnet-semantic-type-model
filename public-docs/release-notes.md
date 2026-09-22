@@ -15,6 +15,13 @@ The catalog shows canonical declarations, fixed-seed Random TestData, and Exampl
 Terminology Profiles, while keeping unsupported generation cases as diagnostics. Inspection is development/test
 text only and is not a serialization or persistence format.
 
+M0082 makes built-in Random TestData occurrence-derived and diverse for high-cardinality values while preserving
+same-version determinism, canonical validity, source precedence, and hard uniqueness diagnostics. `GenerateMany`
+uses root ordinals with one configured base seed; strings/binary target 8/32/1024 and collections/dictionaries
+target 1/8/100. Exact generated values are not stable across aligned suite versions, and domain realism remains
+the responsibility of terminology profiles or programmatic generators. The programmatic catalog adds a stable
+`random-diversity` scenario.
+
 # 6.0.0
 
 6.0.0 is the intended next stable release and current release-candidate line. It is a breaking semantic release:
