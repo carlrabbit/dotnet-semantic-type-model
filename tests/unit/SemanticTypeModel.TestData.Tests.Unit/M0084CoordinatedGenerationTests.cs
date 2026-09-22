@@ -145,7 +145,7 @@ public class M0084CoordinatedGenerationTests
         _ = await Assert.That(undeclaredError.Diagnostics.Any(d => d.Code == "TESTDATA_COORDINATION_DEPENDENCY_UNDECLARED")).IsTrue();
 
         TestDataProfile incompatible = TestDataProfile.Create(model, "incompatible")
-            .For(root).Property(full).From([first.Id], c => c.TryGet<int>(first.Id, out int value) ? value : "fallback").Done().Build();
+            .For(root).Property(full).From([first.Id], c => c.TryGet(first.Id, out int value) ? value : "fallback").Done().Build();
         TestDataGenerationException incompatibleError = Assert.Throws<TestDataGenerationException>(() => model.TestData().WithProfile(incompatible).Generate(root.Id));
         _ = await Assert.That(incompatibleError.Diagnostics.Any(d => d.Code == "TESTDATA_COORDINATION_CALLBACK_FAILED")).IsTrue();
 
