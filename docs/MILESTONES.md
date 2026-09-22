@@ -6,17 +6,9 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-M0084 — Coordinated TestData Generation is re-opened in `ready` state for pre-merge hardening and reconciliation on pull request 127.
+M0080 — Programmatic Canonical Model Authoring, M0081 — Dynamic Model Sample Catalog & TestData Inspection, M0082 — Deterministic Diverse TestData Generation, M0083 — TestData Profiles & Sampling Policies, and M0084 — Coordinated TestData Generation are completed history. 6.0.0 remains the released stable baseline for the 6.1 development work.
 
-M0080 — Programmatic Canonical Model Authoring, M0081 — Dynamic Model Sample Catalog & TestData Inspection, M0082 — Deterministic Diverse TestData Generation, and M0083 — TestData Profiles & Sampling Policies are completed history. 6.0.0 remains the released stable baseline for the 6.1 development work.
-
-Primary milestone:
-
-```text
-docs/milestones/m0084-coordinated-testdata-generation.md
-```
-
-M0084 must not return to completed history until the hardening acceptance matrix, existing milestone obligations, final reconciliation, validation, and completion audit all succeed on the PR's hardened merge-candidate head.
+The next milestone is M0085.
 
 ## Next Number
 
@@ -46,4 +38,4 @@ read milestone + authority
 -> continue or terminate
 ```
 
-After true completion, synchronize durable authority and delete the completed milestone file and operational ledger.
+After completion, synchronize durable authority and delete the completed milestone file and operational ledger.
