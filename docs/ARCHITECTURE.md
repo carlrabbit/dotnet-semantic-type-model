@@ -10,7 +10,8 @@ Architecture does not duplicate detailed behavioral specifications or decision r
 
 | Document | Authority |
 |---|---|
-| [Code-First Domain Projection Pipeline](architecture/code-first-domain-projection-pipeline.md) | Authoritative system architecture for code-first model acquisition, canonical semantics, domain projections, compile-time generation, and application composition. |
+| [Code-First Domain Projection Pipeline](architecture/code-first-domain-projection-pipeline.md) | Authoritative system architecture for code-first/programmatic model acquisition, canonical semantics, domain projections, compile-time generation, and application composition. |
+| [TestData Generation Pipeline](architecture/test-data-generation-pipeline.md) | Authoritative TestData subsystem architecture for configuration, policy resolution, deterministic entropy, structural generation, value sources, materialization, and inspection. |
 
 ## Reading Rule
 

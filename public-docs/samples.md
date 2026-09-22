@@ -10,7 +10,7 @@ this page is only an index.
 | Code-first Power BI | `samples/code-first-powerbi/` | Generated model -> local analytical metadata |
 | System.Text.Json resolver | `samples/system-text-json-resolver/` | Application-owned resolver/context customized with semantic metadata |
 | Runtime DI | `samples/runtime-di/` | Runtime provider/projection composition |
-| Programmatic model catalog | `samples/programmatic-model-catalog/` | Dynamic canonical authoring -> occurrence-diverse Random and Semantic Terminology Profile-guided semantic TestData -> deterministic inspection, including `random-diversity` and unsupported diagnostics |
+| Programmatic model catalog | `samples/programmatic-model-catalog/` | Dynamic canonical authoring -> occurrence-diverse Random, TestData sampling profiles, and Semantic Terminology Profile-guided semantic TestData -> deterministic inspection, including `random-diversity`, `sampling-profile`, and unsupported diagnostics |
 | Shared model | `samples/OrderFulfillment.Domain/` | Shared annotated domain consumed by multiple target samples |
 
 ## Run
@@ -31,6 +31,7 @@ example, or `all` for the complete executable catalog:
 dotnet run --project samples/programmatic-model-catalog -- list
 dotnet run --project samples/programmatic-model-catalog -- scalar-string
 dotnet run --project samples/programmatic-model-catalog -- random-diversity
+dotnet run --project samples/programmatic-model-catalog -- sampling-profile
 dotnet run --project samples/programmatic-model-catalog -- all
 ```
 

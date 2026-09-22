@@ -109,6 +109,12 @@ scalar type.
 and the typed `model.TestData().Generate<T>()` / `GenerateMany<T>()` facade. High-cardinality values vary across
 semantic occurrences and bulk root ordinals; small domains may repeat. Exact values are not stable across suite
 versions, and distinct-by-default is not semantic uniqueness. Random mode needs no terminology profile.
+
+The additive 6.1.0 development API also provides immutable, model-bound `TestDataProfile` runtime configuration for
+named sampling scenarios. Profiles control legal optional presence, nullable null frequency, weighted legal values,
+boundary strategies, and collection counts through `model.TestData().WithProfile(profile)`. They are distinct from
+canonical semantics and from persisted `SemanticTerminologyProfile` candidate vocabularies; profiles are not
+annotations or persisted interchange.
 Optional model-bound Semantic Terminology Profiles provide synthetic property/Logical-Type candidates, while
 programmatic generators can supply application-specific scalar values. Public CLR materialization uses supported
 constructors and members and never infers scalar meaning from wrapper shapes. Invalid explicit custom candidates

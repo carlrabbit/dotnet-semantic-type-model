@@ -33,6 +33,7 @@ Read only the subsystem contracts relevant to the task.
 ### Runtime capabilities derived from the canonical model
 
 - [Constraint-aware test-data generation](specs/test-data-generation.md)
+- [TestData profiles and sampling policies](specs/test-data-profiles.md)
 - [TestData inspection](specs/test-data-inspection.md)
 
 ### Projection and integration contracts
@@ -50,6 +51,8 @@ Read only the subsystem contracts relevant to the task.
 Some non-EF specification families predate the living-subsystem-contract policy and still contain overlapping documents. They remain in the working tree until their detailed requirements are audited and safely consolidated.
 
 Do not treat the existence of a second overlapping file as permission to create a third. Prefer the primary reading-map contract above and reconcile supporting material when changing that subsystem.
+
+The TestData generation specification owns base generation semantics. The TestData profiles specification owns model-bound runtime sampling policy and its interaction with the base generator.
 
 The documentation reset intentionally consolidates EF Core first because the supersession boundary is explicit and the old runtime application architecture is known to be retired.
 

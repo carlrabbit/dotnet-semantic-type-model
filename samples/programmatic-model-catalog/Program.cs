@@ -46,6 +46,7 @@ internal static class Program
         new("terminology-fallback", "Ineligible property candidate falls through to Logical Type", TerminologyFallbackScenario),
         new("terminology-random-fallback", "No eligible terminology candidate falls through to Random", TerminologyRandomFallbackScenario),
         new("random-diversity", "Occurrence-derived diverse Random values and terminology override", RandomDiversityScenario),
+        new("sampling-profile", "Named TestData sampling profile with scoped policies and deterministic composition", SamplingProfileScenario),
     ];
 
     private static int Main(string[] args)
@@ -329,6 +330,54 @@ internal static class Program
         Require(dates.Distinct(StringComparer.Ordinal).Count() > 1, "Another scalar family must vary across bulk roots.");
         Console.WriteLine("Fixed seed: 2026");
         Console.WriteLine(firstText);
+    }
+
+    private static void SamplingProfileScenario()
+    {
+        ScalarTypeDefinition code = Scalar("Code", ScalarKind.String);
+        ScalarTypeDefinition amount = Scalar("Amount", ScalarKind.Integer);
+        ArrayTypeDefinition tags = new() { Id = new("Tags"), Name = "Tags", Kind = TypeKind.Array, Nullability = Nullability.NonNullable, Annotations = new(), ItemType = new TypeRef(code.Id), MinItems = 1, MaxItems = 3 };
+        ObjectTypeDefinition root = Object("SamplingRoot", [
+            Property("Code", code.Id, logicalType: "Scenario.Code"),
+            Property("Optional", code.Id, required: false, nullable: true),
+            Property("Amount", amount.Id, constraints: new ConstraintSet { Numeric = new NumericConstraints { Minimum = 10, Maximum = 20 } }),
+            Property("Tags", tags.Id),
+        ]);
+        TypeSchemaModel model = Build(root, code, amount, tags);
+        PropertyDefinition codeProperty = root.Properties.Single(property => property.Id == new PropertyId("Code"));
+        PropertyDefinition optionalProperty = root.Properties.Single(property => property.Id == new PropertyId("Optional"));
+        PropertyDefinition amountProperty = root.Properties.Single(property => property.Id == new PropertyId("Amount"));
+        PropertyDefinition tagsProperty = root.Properties.Single(property => property.Id == new PropertyId("Tags"));
+
+        TestDataProfileBuilder builder = TestDataProfile.Create(model, "TypicalCustomer");
+        builder.Defaults(defaults => defaults.OptionalPresence(0.5).NullProbability(0.25).ValueStrategy(TestDataValueStrategy.Random));
+        builder.For(root).Property(codeProperty).Weighted(("Active", 7), ("Pending", 3)).Done()
+            .Property(optionalProperty).Presence(1).NullProbability(1).Done()
+            .Property(amountProperty).ValueStrategy(TestDataValueStrategy.BoundaryMixed).Done()
+            .Property(tagsProperty).FixedCount(2).Done().Done();
+        builder.ForLogicalType("Scenario.Code").ValueStrategy(TestDataValueStrategy.Random).Done();
+        TestDataProfile typical = builder.Build();
+
+        TestDataProfile overlay = TestDataProfile.Create(model, "BoundaryOverlay")
+            .Defaults(defaults => defaults.ValueStrategy(TestDataValueStrategy.BoundaryMixed))
+            .Build();
+        TestDataProfile combined = TestDataProfile.Compose("TypicalBoundary", typical, overlay);
+        SemanticTerminologyProfile terminology = Profile(model, root, codeProperty, JsonSerializer.SerializeToElement("TerminologyFallback"));
+        ObjectTestValue value = (ObjectTestValue)model.TestData().WithProfile(combined).WithTerminology(terminology).WithSeed(42).Generate(root.Id);
+        string inspected = value.ToSemanticText(model);
+        Require(((ScalarTestValue)value.Properties[codeProperty.Id]).Value is "Active" or "Pending", "Profile weighted values must override terminology candidates.");
+        Require(value.Properties[optionalProperty.Id] is NullTestValue, "The exact nullable policy must produce NullTestValue.");
+        Require(((ArrayTestValue)value.Properties[tagsProperty.Id]).Items.Count == 2, "The exact collection-size policy must be honored.");
+        decimal boundary = (decimal)((ScalarTestValue)value.Properties[amountProperty.Id]).Value!;
+        Require(boundary is >= 10 and <= 20, "BoundaryMixed must remain within canonical numeric bounds.");
+        Require(inspected.Contains("SamplingRoot", StringComparison.Ordinal), "Semantic-value inspection must be deterministic and visible.");
+
+        TestDataProfile omitted = TestDataProfile.Create(model, "Minimal")
+            .For(root).Property(optionalProperty).Presence(0).Done().Done().Build();
+        ObjectTestValue omittedValue = (ObjectTestValue)model.TestData().WithProfile(omitted).WithSeed(42).Generate(root.Id);
+        Require(!omittedValue.Properties.ContainsKey(optionalProperty.Id), "Presence zero must omit an optional property.");
+        Console.WriteLine("Profile: " + combined.Name + "; seed: 42");
+        Console.WriteLine(inspected);
     }
 
     private static string ScalarText(SemanticTestValue value, string property)
