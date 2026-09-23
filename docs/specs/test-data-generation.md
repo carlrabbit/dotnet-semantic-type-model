@@ -4,7 +4,7 @@
 
 Authoritative behavioral specification for SemanticTypeModel test-data synthesis, terminology enrichment, TestData Profile integration, and CLR materialization.
 
-M0082 established deterministic occurrence-derived Random generation. M0083 adds model-bound runtime sampling policy through the separate `TestDataProfile` contract in `test-data-profiles.md`.
+M0082 established deterministic occurrence-derived Random generation. M0083 added model-bound runtime sampling policy through `test-data-profiles.md`. M0084 adds invocation-scoped coordinated generation through `test-data-coordination.md`.
 
 ## Purpose
 
@@ -44,10 +44,10 @@ Current development line:
 6.1.0
 ```
 
-M0083 validation package version:
+M0084 validation package version:
 
 ```text
-6.1.0-m0083
+6.1.0-m0084
 ```
 
 Exact built-in Random scalar values are not a cross-version compatibility contract.
@@ -370,11 +370,15 @@ Unknown annotations do not become generation rules.
 
 ## Value-Source Precedence
 
+Presence/null decisions occur before non-null source resolution.
+
 For a present non-null scalar/enum property:
 
 ```text
 programmatic property generator
 -> programmatic Logical Type generator
+-> exact-property coordinated producer
+     (Derived or Sequence)
 -> exact-property TestData Profile weighted values
 -> Logical-Type TestData Profile weighted values
 -> property Semantic Terminology Profile candidates
@@ -382,9 +386,11 @@ programmatic property generator
 -> built-in generation using the Effective Sampling Policy
 ```
 
-An explicit invalid programmatic candidate fails closed.
+`Shared` and `Unique` are invocation-scoped coordination modifiers around the successful resolved value as defined in `test-data-coordination.md`.
 
-TestData Profile and terminology candidates are validated through one coherent canonical candidate-validation path.
+An explicit invalid programmatic or coordinated candidate fails closed.
+
+TestData Profile, terminology, and coordinated candidates use one coherent canonical candidate-validation path.
 
 An ineligible Logical-Type profile/terminology tier falls through without weakening constraints.
 
@@ -410,7 +416,8 @@ It may control:
 - legal null sampling;
 - weighted legal property/Logical-Type values;
 - Random/Boundary/BoundaryMixed built-in strategy;
-- collection/dictionary count policy.
+- collection/dictionary count policy;
+- M0084 exact-property coordinated generation.
 
 It is not a canonical annotation or persisted schema.
 
@@ -422,19 +429,24 @@ It is not a canonical annotation or persisted schema.
 
 Same-version/same-coordinate callback seeds remain stable across supported platforms and unrelated sibling insertion/reordering.
 
-## Bulk Generation
+## Bulk Generation and Generation Session
 
 `GenerateMany<T>(count)` and `GenerateMany(TypeId,count)` retain:
 
 - zero -> empty sequence;
 - negative count -> argument error;
-- root ordinals `0..count-1`.
+- root ordinals `0..count-1`;
+- ordered result roots matching root ordinal order.
+
+Each public `Generate`/`GenerateMany` invocation creates one fresh Generation Session.
+
+`GenerateMany` roots share Batch coordination state while each root receives fresh Root coordination state.
 
 The configured seed remains a base seed; root ordinal is a separate coordinate component.
 
 Profile presence/null/weight/boundary/count policy is evaluated per occurrence/root coordinate.
 
-This does not create cross-root semantic uniqueness.
+Batch coordination is TestData runtime state only. It does not create canonical cross-root key/relationship semantics or persist across generation calls.
 
 ## Typed and Dynamic Facade
 
@@ -532,10 +544,10 @@ The current TestData capability does not add:
 - invalid/adversarial generation;
 - Unicode/control-character stress profiles;
 - regex synthesis;
-- dependent/cross-property value generation;
-- sequences/counters;
-- shared/frozen generated values;
-- TestData-scoped uniqueness beyond existing canonical collection/dictionary rules;
+- cross-object/cross-root dependency traversal;
+- application-global/persistent sequence state;
+- shared object/collection graphs;
+- structural object/collection uniqueness;
 - cross-root datasets/key uniqueness;
 - referential integrity;
 - database seeding;
@@ -553,7 +565,7 @@ Package-based sample validation must exercise the current packed `SemanticTypeMo
 Release-candidate validation uses:
 
 ```text
-6.1.0-m0083
+6.1.0-m0084
 ```
 
 without publication.

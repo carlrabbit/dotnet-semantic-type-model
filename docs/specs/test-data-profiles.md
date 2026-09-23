@@ -2,7 +2,7 @@
 
 ## Status
 
-Authoritative behavioral specification for M0083 TestData Profile configuration and sampling policy.
+Authoritative behavioral specification for TestData Profile configuration, sampling policy, and M0084 coordinated exact-property rules.
 
 This specification composes with `test-data-generation.md`. The canonical model remains the validity boundary.
 
@@ -404,6 +404,31 @@ Likewise, adding a weighted rule for one unrelated property must not perturb ano
 
 M0082 sibling insertion/reordering stability remains required.
 
+## Coordinated exact-property rules
+
+M0084 extends TestData Profiles with coordinated exact-property rules defined in:
+
+```text
+docs/specs/test-data-coordination.md
+```
+
+The profile remains immutable, model-bound runtime configuration.
+
+Coordinated rules are valid only on exact scalar/enum property rules and do not participate in the M0083 default/object/Logical-Type policy-precedence chain.
+
+Supported coordinated rule families are:
+
+```text
+Derived/From
+Sequence
+Shared
+Unique
+```
+
+Profile composition overlays coordinated fields at exact-property scope using the same left-to-right composition model. The final composed profile must be revalidated for contradictory combinations and dependency cycles.
+
+M0084 coordinated rules are still TestData policy. They do not create canonical semantics, annotations, relationships, or persisted profile state.
+
 ## Facade Composition
 
 `WithProfile`, `WithTerminology`, `WithSeed`, `WithSizeProfile`, and `WithBudgets` are immutable facade configuration operations.
@@ -438,10 +463,10 @@ M0083 does not add:
 - automatic rule inference from CLR/property names;
 - business/domain faker datasets;
 - provider/plugin packages;
-- dependent/cross-property generated values;
-- sequences or counters;
-- shared/frozen values;
-- TestData-scoped uniqueness;
+- cross-object/cross-root dependency paths;
+- application-global or persistent sequences;
+- shared object/collection graphs;
+- structural uniqueness for objects/collections;
 - cross-root coherent datasets;
 - referential integrity;
 - invalid/adversarial generation;
@@ -449,7 +474,7 @@ M0083 does not add:
 - regex synthesis;
 - new canonical semantic primitives.
 
-These coordinated/stateful concerns are candidates for later milestones.
+Invocation-scoped exact-property coordination is defined by `test-data-coordination.md`; the remaining dataset/relationship/persistence concerns stay outside TestData Profiles.
 
 ## Required Consumer Evidence
 

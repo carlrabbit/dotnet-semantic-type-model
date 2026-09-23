@@ -181,6 +181,9 @@ annotations or persisted compatibility artifacts. No-profile generation retains 
 Programmatic property and Logical-Type scalar generators take precedence over terminology and fail closed when an
 explicit supplied value is invalid. Built-in regex synthesis and arbitrary custom-constraint interpretation are
 not compatibility promises.
+M0084 adds exact scalar/enum coordinated profile rules (`From`, `Sequence`, `Shared`, `Unique`) with only Root and
+Batch invocation scopes. Generation Session state is ephemeral and is not a persisted compatibility artifact;
+derived dependencies and scoped uniqueness do not create canonical keys, relationships, or datasets.
 
 Typed materialization supports the documented public CLR scalar/object/collection/dictionary shapes without
 private-member mutation, uninitialized-object construction, or wrapper inference. Expected generation and

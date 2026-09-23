@@ -11,6 +11,43 @@ public enum TestDataValueStrategy
     BoundaryMixed,
 }
 
+public enum TestDataValueScope { Root, Batch }
+
+public sealed class TestDataDependencyContext
+{
+    private readonly IReadOnlySet<PropertyId> _declared;
+    private readonly IReadOnlyDictionary<PropertyId, SemanticTestValue> _values;
+    internal TestDataDependencyContext(IReadOnlySet<PropertyId> declared, IReadOnlyDictionary<PropertyId, SemanticTestValue> values, int rootOrdinal)
+    { _declared = declared; _values = values; RootOrdinal = rootOrdinal; }
+    public int RootOrdinal { get; }
+    public bool IsPresent(PropertyId property) { EnsureDeclared(property); return _values.ContainsKey(property); }
+    public bool IsNull(PropertyId property) { EnsureDeclared(property); return _values.TryGetValue(property, out SemanticTestValue? value) && value is NullTestValue; }
+    public T Get<T>(PropertyId property)
+    {
+        EnsureDeclared(property);
+        if (!_values.TryGetValue(property, out SemanticTestValue? value) || value is NullTestValue)
+            throw new TestDataCoordinationException("TESTDATA_COORDINATION_DEPENDENCY_UNAVAILABLE", $"Dependency '{property.Value}' is unavailable.");
+        if (value is ScalarTestValue scalar && scalar.Value is T typed) return typed;
+        if (value is EnumTestValue @enum && @enum.Value is T enumValue) return enumValue;
+        throw new InvalidOperationException($"Dependency '{property.Value}' is not compatible with '{typeof(T).Name}'.");
+    }
+    public bool TryGet<T>(PropertyId property, out T? value)
+    {
+        EnsureDeclared(property); value = default;
+        if (!_values.TryGetValue(property, out SemanticTestValue? candidate) || candidate is NullTestValue) return false;
+        if (candidate is ScalarTestValue scalar && scalar.Value is T typed) { value = typed; return true; }
+        if (candidate is EnumTestValue @enum && @enum.Value is T enumValue) { value = enumValue; return true; }
+        throw new InvalidOperationException($"Dependency '{property.Value}' is not compatible with '{typeof(T).Name}'.");
+    }
+    private void EnsureDeclared(PropertyId property)
+    { if (!_declared.Contains(property)) throw new TestDataCoordinationException("TESTDATA_COORDINATION_DEPENDENCY_UNDECLARED", $"Dependency '{property.Value}' was not declared by the coordinated rule."); }
+}
+
+internal sealed class TestDataCoordinationException(string code, string message) : InvalidOperationException(message)
+{
+    internal string Code { get; } = code;
+}
+
 public sealed record TestDataCollectionSizePolicy
 {
     private TestDataCollectionSizePolicy(int minimum, int maximum, bool isFixed)
@@ -47,6 +84,7 @@ internal sealed record TestDataPolicy
     internal TestDataValueStrategy? ValueStrategy { get; init; }
     internal TestDataCollectionSizePolicy? CollectionSize { get; init; }
     internal IReadOnlyList<TestDataWeightedCandidate>? WeightedValues { get; init; }
+    internal TestDataCoordination? Coordination { get; init; }
 
     internal TestDataPolicy Overlay(TestDataPolicy other) => new()
     {
@@ -55,7 +93,33 @@ internal sealed record TestDataPolicy
         ValueStrategy = other.ValueStrategy ?? ValueStrategy,
         CollectionSize = other.CollectionSize ?? CollectionSize,
         WeightedValues = other.WeightedValues ?? WeightedValues,
+        Coordination = TestDataCoordination.Overlay(Coordination, other.Coordination),
     };
+}
+
+internal sealed record TestDataCoordination
+{
+    internal TestDataValueScope? Scope { get; init; }
+    internal IReadOnlyList<PropertyId>? Dependencies { get; init; }
+    internal Func<TestDataDependencyContext, object?>? Derived { get; init; }
+    internal Func<int, object?>? Sequence { get; init; }
+    internal bool? Shared { get; init; }
+    internal bool? Unique { get; init; }
+
+    internal static TestDataCoordination? Overlay(TestDataCoordination? current, TestDataCoordination? overlay)
+    {
+        if (current is null) return overlay;
+        if (overlay is null) return current;
+        return new TestDataCoordination
+        {
+            Scope = overlay.Scope ?? current.Scope,
+            Dependencies = overlay.Dependencies ?? current.Dependencies,
+            Derived = overlay.Derived ?? current.Derived,
+            Sequence = overlay.Sequence ?? current.Sequence,
+            Shared = overlay.Shared ?? current.Shared,
+            Unique = overlay.Unique ?? current.Unique,
+        };
+    }
 }
 
 internal sealed record TestDataWeightedCandidate(JsonElement Value, int Weight);
@@ -111,7 +175,7 @@ public sealed class TestDataProfile
             OverlayInto(logical, profile._logicalRules);
             OverlayInto(properties, profile._propertyRules);
         }
-        return new(first._model, name, defaults, objects, logical, properties);
+        return new TestDataProfileBuilder(first._model, name, defaults, objects, logical, properties).Build();
     }
 
     internal TestDataPolicy Resolve(TypeId containingOwner, TypeId propertyOwner, PropertyDefinition property)
@@ -143,6 +207,13 @@ public sealed class TestDataProfileBuilder
     private readonly Dictionary<(TypeId, PropertyId), TestDataPolicy> _propertyRules = [];
 
     internal TestDataProfileBuilder(TypeSchemaModel model, string name) { _model = model; _name = name; }
+    internal TestDataProfileBuilder(TypeSchemaModel model, string name, TestDataPolicy defaults, IReadOnlyDictionary<TypeId, TestDataPolicy> objects, IReadOnlyDictionary<string, TestDataPolicy> logical, IReadOnlyDictionary<(TypeId, PropertyId), TestDataPolicy> properties)
+    {
+        _model = model; _name = name; _defaults = defaults;
+        foreach ((TypeId key, TestDataPolicy value) in objects) _objectRules[key] = value;
+        foreach ((string key, TestDataPolicy value) in logical) _logicalRules[key] = value;
+        foreach (((TypeId, PropertyId) key, TestDataPolicy value) in properties) _propertyRules[key] = value;
+    }
 
     public TestDataProfileBuilder Defaults(Action<TestDataProfileRuleBuilder> configure)
     {
@@ -197,7 +268,31 @@ public sealed class TestDataProfileBuilder
             if (definition is null) throw new ArgumentException($"Property '{key.property.Value}' was not found on object type '{key.owner.Value}'.");
             ValidatePolicy(policy, key.owner, definition);
         }
+        ValidateDependencyCycles();
         return new TestDataProfile(_model, _name, _defaults, new Dictionary<TypeId, TestDataPolicy>(_objectRules), new Dictionary<string, TestDataPolicy>(_logicalRules), new Dictionary<(TypeId, PropertyId), TestDataPolicy>(_propertyRules));
+    }
+
+    private void ValidateDependencyCycles()
+    {
+        var visiting = new HashSet<(TypeId Owner, PropertyId Property)>();
+        var visited = new HashSet<(TypeId Owner, PropertyId Property)>();
+        void Visit((TypeId Owner, PropertyId Property) key)
+        {
+            if (visited.Contains(key)) return;
+            if (!visiting.Add(key)) throw new ArgumentException("Coordinated dependency cycles are invalid.");
+            if (_propertyRules.TryGetValue(key, out TestDataPolicy? policy))
+            {
+                if (!_model.TypesById.TryGetValue(key.Owner, out TypeDefinition? ownerType) || ownerType is not ObjectTypeDefinition owner)
+                    throw new ArgumentException("Coordinated dependency owner must be an object type.");
+                foreach (PropertyId dependency in policy.Coordination?.Dependencies ?? [])
+                {
+                    (ObjectTypeDefinition Owner, PropertyDefinition Definition)? resolved = FindPropertyOwner(_model, owner, dependency);
+                    if (resolved is { } dependencyProperty && _propertyRules.ContainsKey((dependencyProperty.Owner.Id, dependency))) Visit((dependencyProperty.Owner.Id, dependency));
+                }
+            }
+            _ = visiting.Remove(key); _ = visited.Add(key);
+        }
+        foreach ((TypeId owner, PropertyId property) key in _propertyRules.Keys) Visit(key);
     }
 
     private void EnsureObject(TypeId id)
@@ -251,6 +346,30 @@ public sealed class TestDataProfileBuilder
             if (upper > 10_000) upper = 10_000;
             if (lower > upper) throw new ArgumentException("Collection-size policy has no legal intersection with the canonical bounds.");
         }
+        if (policy.Coordination is { } coordination)
+        {
+            if (ownerId is null || property is null) throw new ArgumentException("Coordinated rules require an exact scalar or enum property.");
+            if (coordination.Scope is not null and not TestDataValueScope.Root and not TestDataValueScope.Batch) throw new ArgumentException("Only Root and Batch coordination scopes are supported.");
+            if (coordination.Derived is null && coordination.Scope is null) throw new ArgumentException("A stateful coordinated rule requires Root or Batch scope.");
+            if (!_model.TypesById.TryGetValue(property.Type.Id, out TypeDefinition? coordinatedType) || coordinatedType is not (ScalarTypeDefinition or EnumTypeDefinition))
+                throw new ArgumentException("Coordinated rules require a scalar or enum property.");
+            if (coordination.Derived is not null && coordination.Sequence is not null) throw new ArgumentException("A property cannot combine Derived and Sequence rules.");
+            if (coordination.Shared == true && coordination.Unique == true) throw new ArgumentException("A property cannot combine Shared and Unique rules.");
+            if ((coordination.Derived is not null || coordination.Sequence is not null) && coordination.Shared == true) throw new ArgumentException("Derived/Sequence cannot combine with Shared.");
+            if (coordination.Derived is not null)
+            {
+                var effective = EffectiveProperties(_model, (ObjectTypeDefinition)_model.TypesById[ownerId.Value]);
+                var ids = effective.Select(p => p.Id).ToHashSet();
+                foreach (PropertyId dependency in coordination.Dependencies ?? [])
+                {
+                    if (dependency == property.Id) throw new ArgumentException("A coordinated property cannot depend on itself.");
+                    if (!ids.Contains(dependency)) throw new ArgumentException($"Dependency '{dependency.Value}' is not an effective sibling property.");
+                    PropertyDefinition? dependencyDefinition = effective.First(p => p.Id == dependency);
+                    if (!_model.TypesById.TryGetValue(dependencyDefinition.Type.Id, out TypeDefinition? dependencyType) || dependencyType is not (ScalarTypeDefinition or EnumTypeDefinition))
+                        throw new ArgumentException("Derived dependencies must be scalar or enum properties.");
+                }
+            }
+        }
         if (policy.WeightedValues is null) return;
         foreach (TestDataWeightedCandidate candidate in policy.WeightedValues)
         {
@@ -259,14 +378,27 @@ public sealed class TestDataProfileBuilder
         }
     }
 
+    private static IReadOnlyList<PropertyDefinition> EffectiveProperties(TypeSchemaModel model, ObjectTypeDefinition owner)
+    {
+        var result = new List<PropertyDefinition>();
+        foreach (TypeRef baseRef in owner.Composition.AllOf)
+            if (model.TypesById.TryGetValue(baseRef.Id, out TypeDefinition? baseType) && baseType is ObjectTypeDefinition baseObject)
+                result.AddRange(EffectiveProperties(model, baseObject));
+        result.AddRange(owner.Properties);
+        return [.. result.GroupBy(static p => p.Id).Select(static g => g.Last())];
+    }
+
     private static void ValidateCandidate(TypeDefinition type, ConstraintSet constraints, JsonElement value)
     {
         if (type is ScalarTypeDefinition scalar)
         {
             if (!TerminologyCandidate.TryRead(value, scalar, constraints, out _, out string? error)) throw new ArgumentException($"Weighted candidate is invalid: {error}");
         }
-        else if (type is EnumTypeDefinition @enum && !@enum.Values.Any(v => JsonSerializer.Serialize(v.Value) == value.GetRawText() || string.Equals(v.Name, value.GetString(), StringComparison.Ordinal)))
-            throw new ArgumentException("Weighted enum candidate is not a declared enum value.");
+        else if (type is EnumTypeDefinition @enum)
+        {
+            if (!@enum.Values.Any(v => JsonSerializer.Serialize(v.Value) == value.GetRawText() || string.Equals(v.Name, value.GetString(), StringComparison.Ordinal) || string.Equals(Convert.ToString(v.Value, System.Globalization.CultureInfo.InvariantCulture), value.GetString(), StringComparison.Ordinal)))
+                throw new ArgumentException("Weighted enum candidate is not a declared enum value.");
+        }
         else throw new ArgumentException("Weighted values require a scalar or enum property.");
     }
 }
@@ -302,6 +434,21 @@ public sealed class TestDataProfileRuleBuilder
         _policy = _policy with { WeightedValues = values.Select(v => new TestDataWeightedCandidate(JsonSerializer.SerializeToElement(v.Value), v.Weight)).ToArray() };
         return this;
     }
+    public TestDataProfileRuleBuilder From(IEnumerable<PropertyId> dependencies, Func<TestDataDependencyContext, object?> callback)
+    {
+        ArgumentNullException.ThrowIfNull(dependencies); ArgumentNullException.ThrowIfNull(callback);
+        _policy = _policy with { Coordination = (_policy.Coordination ?? new()) with { Dependencies = dependencies.ToArray(), Derived = callback } }; return this;
+    }
+    public TestDataProfileRuleBuilder From(Func<TestDataDependencyContext, object?> callback, params PropertyId[] dependencies) => From(dependencies, callback);
+    public TestDataProfileRuleBuilder Sequence(TestDataValueScope scope, Func<int, object?> callback)
+    {
+        ArgumentNullException.ThrowIfNull(callback);
+        _policy = _policy with { Coordination = (_policy.Coordination ?? new()) with { Scope = scope, Sequence = callback } }; return this;
+    }
+    public TestDataProfileRuleBuilder Shared(TestDataValueScope scope)
+    { _policy = _policy with { Coordination = (_policy.Coordination ?? new()) with { Scope = scope, Shared = true } }; return this; }
+    public TestDataProfileRuleBuilder Unique(TestDataValueScope scope)
+    { _policy = _policy with { Coordination = (_policy.Coordination ?? new()) with { Scope = scope, Unique = true } }; return this; }
     public TestDataProfileRuleBuilder Property(PropertyDefinition property)
     {
         ArgumentNullException.ThrowIfNull(property);

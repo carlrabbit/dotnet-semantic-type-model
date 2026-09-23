@@ -139,6 +139,27 @@ A TestData-only rule controlling selection among values already legal under the 
 ### Effective Sampling Policy
 The deterministic Sampling Policy resolved for one generation occurrence from property, Logical Type, containing-object, profile-default, and built-in defaults.
 
+### Coordinated TestData Generation
+TestData generation in which exact-property rules coordinate otherwise legal values through same-object dependencies or invocation-scoped sequence, sharing, and uniqueness state.
+
+### Generation Session
+The ephemeral state container created for one `Generate` or `GenerateMany` invocation and discarded when that invocation completes.
+
+### Root Scope
+A TestData coordination scope whose state is shared across the full value graph of one top-level generated root and resets for the next root.
+
+### Batch Scope
+A TestData coordination scope whose state is shared across all top-level roots produced by one `Generate` or `GenerateMany` invocation.
+
+### Derived TestData Value
+A scalar or enum TestData value produced from explicitly declared scalar/enum sibling dependencies in the same effective object instance.
+
+### Coordinated Producer
+An exact-property TestData Profile rule, such as a derived-value or sequence rule, that supplies a value before weighted, terminology, or built-in generation sources.
+
+### Scoped TestData Uniqueness
+A TestData-only requirement that present non-null values for one exact property do not repeat within a declared Root or Batch generation scope.
+
 ### Random Test-Data Generation
 Deterministic constraint-aware TestData generation that derives occurrence-diverse values from the canonical semantic model, size profile, seed, and generation coordinate without terminology guidance.
 

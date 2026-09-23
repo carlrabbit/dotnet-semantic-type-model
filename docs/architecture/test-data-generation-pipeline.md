@@ -8,7 +8,7 @@ Authoritative TestData subsystem architecture.
 
 Define stable responsibility boundaries inside `SemanticTypeModel.TestData` as TestData evolves from a single deterministic generator into a separate runtime configuration and generation domain.
 
-Detailed sampling behavior belongs in `docs/specs/test-data-profiles.md`; base value-generation semantics belong in `docs/specs/test-data-generation.md`.
+Detailed sampling behavior belongs in `docs/specs/test-data-profiles.md`; coordinated invocation state belongs in `docs/specs/test-data-coordination.md`; base value-generation semantics belong in `docs/specs/test-data-generation.md`.
 
 ## System Boundary
 
@@ -28,6 +28,11 @@ TestDataProfile            generation settings
                     v
              Generation Request
                     |
+                    v
+             Generation Session
+          /            |            \
+ Batch state      Root state      object plans
+          \            |            /
                     v
              Policy Resolution
                     |
@@ -62,6 +67,20 @@ Generation settings may include:
 - programmatic property/Logical-Type generators.
 
 Exact internal record/type layout is implementation-owned.
+
+## Generation Session Boundary
+
+Stateful M0084 coordination belongs to an ephemeral Generation Session created by each public `Generate` or `GenerateMany` invocation.
+
+The session owns Batch sequence counters, Batch shared-value caches, Batch uniqueness sets, current Root coordination state, and stable object dependency plans/cache where useful.
+
+Each root owns independent Root-scoped counters/caches/uniqueness sets.
+
+No mutable coordination state is retained by the model, profile, terminology profile, facade configuration, or static/global storage.
+
+A configured facade/profile can therefore be reused concurrently; invocations do not influence one another.
+
+`GenerateMany` must execute its roots through one session rather than implementing Batch behavior as repeated independent public `Generate` calls.
 
 ## TestData Profile Domain
 
@@ -117,11 +136,13 @@ Presence/null sampling may decide whether a structurally legal property occurren
 
 Scalar/enum value selection is conceptually a pipeline.
 
-With M0083 the precedence is:
+With M0084 the precedence is:
 
 ```text
 programmatic property generator
 -> programmatic Logical Type generator
+-> exact-property coordinated producer
+     (Derived or Sequence)
 -> property-scoped TestData Profile weighted values
 -> Logical-Type TestData Profile weighted values
 -> property Semantic Terminology Profile candidates
@@ -129,7 +150,11 @@ programmatic property generator
 -> built-in generation using the Effective Sampling Policy
 ```
 
-The implementation need not expose public pipeline interfaces, but this precedence and separation must exist as one coherent internal responsibility rather than duplicated branch chains.
+Presence/null decisions occur before the pipeline.
+
+`Shared` and `Unique` are session-backed modifiers around the resolved value, not independent canonical value sources.
+
+The implementation need not expose public pipeline interfaces, but source resolution, coordination modification, and candidate validation must remain coherent responsibilities rather than duplicated branch chains.
 
 ## Candidate Validation
 
@@ -156,6 +181,16 @@ Entropy must be available as independent deterministic substreams/discriminators
 Adding one policy decision must not perturb another merely because an implementation consumed entropy in a different order.
 
 Exact entropy helper types and algorithms remain implementation-owned, subject to same-version/platform determinism and existing M0082 compatibility rules.
+
+## Object Coordination Planning
+
+Derived values require dependency-aware property execution.
+
+For an effective object type, generation constructs or resolves a stable object plan that includes the effective inherited/composed property set, adds explicit same-object dependency edges from TestData Profile rules, rejects cycles during profile validation, evaluates dependencies before dependents, and preserves existing effective property order among unrelated nodes.
+
+Dependency planning is structural execution policy. It does not create canonical relationships.
+
+Callbacks may read only dependencies explicitly declared by their rule. Arbitrary sibling lookup is not permitted because it would make dependency ordering implicit and unverifiable.
 
 ## Semantic Values, Materialization, and Inspection
 
@@ -188,16 +223,8 @@ Do not introduce a general public middleware/plugin framework merely to express 
 
 ## Forward Boundary
 
-M0083 does not add stateful cross-value coordination.
+M0084 adds only invocation-scoped exact-property coordination.
 
-A future coordinated-generation milestone may add:
+It does not add multi-root-type dataset orchestration, relationship or foreign-key semantics, arbitrary parent/child property paths, automatic Logical-Type relationship matching, or persistent/global generation state.
 
-- cross-property dependencies;
-- sequences;
-- shared/frozen values;
-- scoped uniqueness;
-- dependency-cycle detection.
-
-The M0083 architecture must leave room for those concerns without implementing them early.
-
-Cross-root coherent datasets and referential integrity remain a later, separate boundary.
+A later coherent-dataset capability may orchestrate multiple populations explicitly on top of the Generation Session boundary without moving coordination state into canonical semantics.

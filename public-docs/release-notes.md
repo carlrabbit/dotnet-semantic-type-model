@@ -8,6 +8,10 @@ M0083 adds immutable model-bound `TestDataProfile` runtime sampling policies. Pr
 presence/null probabilities, weighted legal candidates, Random/Boundary/BoundaryMixed strategies, collection-size
 policies, and explicit deterministic composition through `WithProfile`, while preserving the canonical model as the
 validity boundary and keeping Semantic Terminology Profiles distinct.
+M0084 adds invocation-scoped coordinated TestData for exact scalar/enum properties: declared same-object derived
+values, Root/Batch sequences, shared values, and scoped uniqueness. Every generation invocation gets a fresh
+Generation Session; these rules remain TestData policy and do not create canonical keys, relationships, or persisted
+dataset semantics. The package-based catalog adds `coordinated-generation`.
 JSON Schema and Power BI continue through their existing canonical entry points. This is additive relative to
 6.0.0 and is not a publication, tag, or GitHub Release.
 

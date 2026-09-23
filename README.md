@@ -124,7 +124,9 @@ registration are not part of the current suite.
 
 For test data, Random generation is deterministic and constraint-aware without any terminology profile. Optional
 Semantic Terminology Profiles and programmatic scalar generators can enrich values while preserving canonical
-validation and safety budgets. Built-in regex synthesis remains intentionally unsupported.
+validation and safety budgets. The 6.1.0 development line also supports invocation-scoped coordinated TestData
+profiles for exact scalar/enum dependencies, sequences, shared values, and uniqueness. Built-in regex synthesis
+remains intentionally unsupported.
 
 Runnable examples live directly under [`samples/`](samples/). The compact sample index is
 [public-docs/samples.md](public-docs/samples.md).

@@ -38,6 +38,7 @@ public sealed class SemanticTestDataOptions
     internal Func<string, TestDataGeneratorContext, object?>? LogicalTypeGenerator { get; init; }
     internal int RootOrdinal { get; init; }
     internal TestDataProfile? Profile { get; init; }
+    internal GenerationSession? Session { get; init; }
     public TestDataBudgets Budgets { get; init; } = new();
 }
 
@@ -138,7 +139,8 @@ public sealed class SemanticTestDataFacade
     {
         ArgumentOutOfRangeException.ThrowIfNegative(count);
         var values = new List<SemanticTestValue>(count);
-        for (var i = 0; i < count; i++) values.Add(Generate(rootTypeId, i));
+        var session = new GenerationSession();
+        for (var i = 0; i < count; i++) values.Add(Generate(rootTypeId, i, session));
         return values;
     }
 
@@ -156,9 +158,10 @@ public sealed class SemanticTestDataFacade
     {
         ArgumentOutOfRangeException.ThrowIfNegative(count);
         var values = new List<T>(count);
+        var session = new GenerationSession();
         for (var i = 0; i < count; i++)
         {
-            TestDataGenerationResult result = GenerateSemantic(ResolveRoot(typeof(T)), i);
+            TestDataGenerationResult result = GenerateSemantic(ResolveRoot(typeof(T)), i, session);
             if (!result.Succeeded) throw new TestDataGenerationException("TestData generation failed.", result.Diagnostics);
             try
             {
@@ -184,14 +187,14 @@ public sealed class SemanticTestDataFacade
         catch (Exception exception) { throw new TestDataGenerationException(exception.Message, [MaterializationDiagnostic(exception.Message, ModelPath.ForType(value.TypeId))]); }
     }
 
-    private TestDataGenerationResult GenerateSemantic(TypeId root, int ordinal)
+    private TestDataGenerationResult GenerateSemantic(TypeId root, int ordinal, GenerationSession? session = null)
     {
-        return SemanticTestDataGenerator.Generate(_model, root, _profile, _seed, _terminology, new SemanticTestDataOptions { Budgets = _budgets, RootOrdinal = ordinal, Profile = _testDataProfile, PropertyGenerator = ResolvePropertyGenerator, LogicalTypeGenerator = (name, context) => _logicalGenerators.TryGetValue(name, out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null });
+        return SemanticTestDataGenerator.Generate(_model, root, _profile, _seed, _terminology, new SemanticTestDataOptions { Budgets = _budgets, RootOrdinal = ordinal, Session = session, Profile = _testDataProfile, PropertyGenerator = ResolvePropertyGenerator, LogicalTypeGenerator = (name, context) => _logicalGenerators.TryGetValue(name, out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null });
     }
 
-    private SemanticTestValue Generate(TypeId root, int ordinal)
+    private SemanticTestValue Generate(TypeId root, int ordinal, GenerationSession? session = null)
     {
-        TestDataGenerationResult result = SemanticTestDataGenerator.Generate(_model, root, _profile, _seed, _terminology, new SemanticTestDataOptions { Budgets = _budgets, RootOrdinal = ordinal, Profile = _testDataProfile, PropertyGenerator = ResolvePropertyGenerator, LogicalTypeGenerator = (name, context) => _logicalGenerators.TryGetValue(name, out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null });
+        TestDataGenerationResult result = SemanticTestDataGenerator.Generate(_model, root, _profile, _seed, _terminology, new SemanticTestDataOptions { Budgets = _budgets, RootOrdinal = ordinal, Session = session, Profile = _testDataProfile, PropertyGenerator = ResolvePropertyGenerator, LogicalTypeGenerator = (name, context) => _logicalGenerators.TryGetValue(name, out Func<TestDataGeneratorContext, object?>? generator) ? generator(context) : null });
         if (!result.Succeeded) throw new TestDataGenerationException("TestData generation failed.", result.Diagnostics);
         return result.Value!;
     }

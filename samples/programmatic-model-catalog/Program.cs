@@ -47,6 +47,7 @@ internal static class Program
         new("terminology-random-fallback", "No eligible terminology candidate falls through to Random", TerminologyRandomFallbackScenario),
         new("random-diversity", "Occurrence-derived diverse Random values and terminology override", RandomDiversityScenario),
         new("sampling-profile", "Named TestData sampling profile with scoped policies and deterministic composition", SamplingProfileScenario),
+        new("coordinated-generation", "Invocation-scoped derived, sequence, shared and unique TestData", CoordinatedGenerationScenario),
     ];
 
     private static int Main(string[] args)
@@ -378,6 +379,35 @@ internal static class Program
         Require(!omittedValue.Properties.ContainsKey(optionalProperty.Id), "Presence zero must omit an optional property.");
         Console.WriteLine("Profile: " + combined.Name + "; seed: 42");
         Console.WriteLine(inspected);
+    }
+
+    private static void CoordinatedGenerationScenario()
+    {
+        ScalarTypeDefinition text = Scalar("Text", ScalarKind.String);
+        ObjectTypeDefinition root = Object("CoordinatedRoot", [
+            Property("First", text.Id), Property("Last", text.Id), Property("Full", text.Id),
+            Property("Number", text.Id), Property("Tenant", text.Id), Property("External", text.Id)]);
+        TypeSchemaModel model = Build(root, text);
+        PropertyDefinition first = root.Properties.Single(p => p.Id == new PropertyId("First"));
+        PropertyDefinition last = root.Properties.Single(p => p.Id == new PropertyId("Last"));
+        PropertyDefinition full = root.Properties.Single(p => p.Id == new PropertyId("Full"));
+        PropertyDefinition number = root.Properties.Single(p => p.Id == new PropertyId("Number"));
+        PropertyDefinition tenant = root.Properties.Single(p => p.Id == new PropertyId("Tenant"));
+        PropertyDefinition external = root.Properties.Single(p => p.Id == new PropertyId("External"));
+        TestDataProfile profile = TestDataProfile.Create(model, "Coordinated")
+            .For(root).Property(full).From([first.Id, last.Id], context => $"{context.Get<string>(first.Id)} {context.Get<string>(last.Id)}").Done()
+            .Property(number).Sequence(TestDataValueScope.Batch, index => $"CUST-{index:000}").Done()
+            .Property(tenant).Shared(TestDataValueScope.Batch).Done()
+            .Property(external).Unique(TestDataValueScope.Batch).Done().Build();
+        IReadOnlyList<SemanticTestValue> values = model.TestData().WithProfile(profile).WithSeed(2026).GenerateMany(root.Id, 3);
+        var roots = values.Cast<ObjectTestValue>().ToArray();
+        Require(roots.Length == 3, "Expected three coordinated roots.");
+        Require(ScalarText(roots[0], "Number") == "CUST-000" && ScalarText(roots[2], "Number") == "CUST-002", "Batch sequence did not advance by root ordinal.");
+        Require(ScalarText(roots[0], "Tenant") == ScalarText(roots[2], "Tenant"), "Batch shared value was not reused.");
+        Require(ScalarText(roots[0], "Full") == ScalarText(roots[0], "First") + " " + ScalarText(roots[0], "Last"), "Derived dependency value was incorrect.");
+        Require(roots.Select(r => ScalarText(r, "External")).Distinct(StringComparer.Ordinal).Count() == 3, "Batch uniqueness was not enforced.");
+        Console.WriteLine("Profile: Coordinated; fixed seed: 2026; roots: 3");
+        foreach (ObjectTestValue value in roots) Console.WriteLine(value.ToSemanticText(model));
     }
 
     private static string ScalarText(SemanticTestValue value, string property)

@@ -110,7 +110,9 @@ public static class SemanticTestDataGenerator
         options?.Budgets.Validate();
         if (options?.Profile is not null && options.Profile.ModelId != model.Id)
             return new TestDataGenerationResult { Diagnostics = [new SchemaDiagnostic { Severity = SchemaDiagnosticSeverity.Error, Code = "TESTDATA_POLICY_MODEL_MISMATCH", Message = "The TestData Profile is bound to a different canonical model.", Stage = SchemaDiagnosticStage.Validation, ModelPath = ModelPath.ForType(rootType), PipelineStage = "TestData" }] };
-        var context = new Context(model, profile, seed, terminology, options);
+        GenerationSession session = options?.Session ?? new GenerationSession();
+        session.BeginRoot();
+        var context = new Context(model, profile, seed, terminology, options, session);
         SemanticTestValue? value = context.Generate(rootType, new ConstraintSet(), ModelPath.ForType(rootType), "root", false, false, 0, []);
         return new TestDataGenerationResult { Value = value, Diagnostics = context.Diagnostics };
     }
@@ -132,16 +134,17 @@ public static class SemanticTestDataGenerator
         return Generate(model, new TypeId(rootTypeId), profile, seed);
     }
 
-    private sealed class Context(TypeSchemaModel model, TestDataSizeProfile profile, int seed, SemanticTerminologyProfile? terminology, SemanticTestDataOptions? options)
+    private sealed class Context(TypeSchemaModel model, TestDataSizeProfile profile, int seed, SemanticTerminologyProfile? terminology, SemanticTestDataOptions? options, GenerationSession session)
     {
         private readonly int _seed = seed;
         private readonly int _rootOrdinal = options?.RootOrdinal ?? 0;
         private readonly TestDataBudgets _budgets = options?.Budgets ?? new();
         private readonly TestDataProfile? _testDataProfile = options?.Profile;
+        private readonly GenerationSession _session = session;
         private int _nodes;
         internal List<SchemaDiagnostic> Diagnostics { get; } = [];
 
-        internal SemanticTestValue? Generate(TypeId id, ConstraintSet useConstraints, string path, string coordinate, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false, IReadOnlyList<JsonElement>? fallbackCandidates = null, TestDataPolicy? policy = null)
+        internal SemanticTestValue? Generate(TypeId id, ConstraintSet useConstraints, string path, string coordinate, bool allowsNull, bool optional, int depth, HashSet<TypeId> ancestors, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false, IReadOnlyList<JsonElement>? fallbackCandidates = null, TestDataPolicy? policy = null, bool coordinatedCandidate = false)
         {
             if (!model.TypesById.TryGetValue(id, out TypeDefinition? type))
             {
@@ -168,8 +171,8 @@ public static class SemanticTestDataGenerator
             var next = new HashSet<TypeId>(ancestors) { id };
             return type switch
             {
-                ScalarTypeDefinition scalar => GenerateScalar(scalar, useConstraints, path, coordinate, candidates, customCandidate, fallbackCandidates, policy),
-                EnumTypeDefinition @enum => GenerateEnum(@enum, path, coordinate),
+                ScalarTypeDefinition scalar => GenerateScalar(scalar, useConstraints, path, coordinate, candidates, customCandidate, fallbackCandidates, policy, coordinatedCandidate),
+                EnumTypeDefinition @enum => GenerateEnum(@enum, path, coordinate, candidates, fallbackCandidates, customCandidate, coordinatedCandidate),
                 ObjectTypeDefinition obj => GenerateObject(obj, useConstraints, path, coordinate, next, depth),
                 ArrayTypeDefinition array => GenerateArray(array, useConstraints, path, coordinate, next, depth, policy),
                 DictionaryTypeDefinition dictionary => GenerateDictionary(dictionary, useConstraints, path, coordinate, next, depth, policy),
@@ -187,15 +190,44 @@ public static class SemanticTestDataGenerator
             return Generate(reference.Target.Id, constraints, path, coordinate + "/reference", allowsNull, optional, depth + 1, ancestors, candidates, customCandidate, fallbackCandidates, policy);
         }
 
-        private SemanticTestValue? GenerateEnum(EnumTypeDefinition @enum, string path, string coordinate)
+        private SemanticTestValue? GenerateEnum(EnumTypeDefinition @enum, string path, string coordinate, IReadOnlyList<JsonElement>? candidates, IReadOnlyList<JsonElement>? fallbackCandidates, bool customCandidate, bool coordinatedCandidate)
         {
             if (@enum.Values.Count == 0)
             {
                 return Error("TESTDATA_UNSATISFIABLE_CONSTRAINTS", "Enum has no usable declared value.", path);
             }
 
+            if (TryEnumCandidates(@enum, candidates, coordinate, out EnumTestValue? supplied)
+                || TryEnumCandidates(@enum, fallbackCandidates, coordinate + "/fallback", out supplied))
+            {
+                return supplied;
+            }
+            if (candidates is { Count: > 0 } && (customCandidate || coordinatedCandidate))
+            {
+                return Error(coordinatedCandidate ? "TESTDATA_COORDINATION_CANDIDATE_INVALID" : "TESTDATA_CUSTOM_CANDIDATE_INVALID", "The supplied enum candidate is not a declared enum value.", path);
+            }
+
             EnumValueDefinition value = @enum.Values[Entropy.Index(_seed, _rootOrdinal, coordinate, @enum.Values.Count)];
             return new EnumTestValue(@enum.Id, value.Value);
+        }
+
+        private bool TryEnumCandidates(EnumTypeDefinition @enum, IReadOnlyList<JsonElement>? candidates, string coordinate, out EnumTestValue? result)
+        {
+            result = null;
+            if (candidates is not { Count: > 0 }) return false;
+            JsonElement[] legal = [.. candidates.Where(candidate => @enum.Values.Any(value => EnumCandidateMatches(candidate, value)))];
+            if (legal.Length == 0) return false;
+            EnumValueDefinition selected = @enum.Values.First(value => EnumCandidateMatches(legal[Entropy.Index(_seed, _rootOrdinal, coordinate + "/enum-candidate", legal.Length)], value));
+            result = new EnumTestValue(@enum.Id, selected.Value);
+            return true;
+        }
+
+        private static bool EnumCandidateMatches(JsonElement candidate, EnumValueDefinition value)
+        {
+            string? text = candidate.ValueKind == JsonValueKind.String ? candidate.GetString() : null;
+            return candidate.GetRawText() == JsonSerializer.Serialize(value.Value)
+                || string.Equals(text, value.Name, StringComparison.Ordinal)
+                || string.Equals(text, Convert.ToString(value.Value, CultureInfo.InvariantCulture), StringComparison.Ordinal);
         }
 
         private SemanticTestValue? GenerateObject(ObjectTypeDefinition obj, ConstraintSet constraints, string path, string coordinate, HashSet<TypeId> ancestors, int depth)
@@ -224,7 +256,7 @@ public static class SemanticTestDataGenerator
             }
 
             var result = new Dictionary<PropertyId, SemanticTestValue>();
-            foreach ((ObjectTypeDefinition owner, PropertyDefinition property) in properties)
+            foreach ((ObjectTypeDefinition owner, PropertyDefinition property) in OrderedProperties(obj, properties))
             {
                 var propertyPath = ModelPath.ForProperty(owner.Id, property.Name);
                 ConstraintSet propertyConstraints = property.Constraints;
@@ -250,16 +282,30 @@ public static class SemanticTestDataGenerator
                     result[property.Id] = new NullTestValue(property.Type.Id);
                     continue;
                 }
+                if (effectivePolicy.Coordination is { Shared: true, Scope: { } existingScope }
+                    && _session.TryGetShared((owner.Id, property.Id), existingScope, out SemanticTestValue existingShared))
+                {
+                    result[property.Id] = existingShared;
+                    continue;
+                }
                 TestDataGeneratorContext callbackContext = new(model, propertyType, property, logicalType, profile, unchecked((int)Entropy.UInt64(_seed, _rootOrdinal, propertyCoordinate)), _rootOrdinal);
                 var customValue = options?.PropertyGenerator?.Invoke(owner, property, callbackContext);
                 customValue ??= logicalType is null ? null : options?.LogicalTypeGenerator?.Invoke(logicalType, callbackContext);
+                TestDataPolicy coordinatedPolicy = effectivePolicy;
+                object? coordinatedValue = customValue is null ? ResolveCoordinatedValue(owner, property, coordinatedPolicy, result) : null;
+                if (coordinatedValue is CoordinationFailure coordinationFailure)
+                {
+                    return Error(coordinationFailure.Code, coordinationFailure.Message, propertyPath);
+                }
+                customValue ??= coordinatedValue;
                 var customCandidate = customValue is not null;
+                var coordinatedCandidate = coordinatedValue is not null;
                 (IReadOnlyList<JsonElement>? propertyCandidates, IReadOnlyList<JsonElement>? logicalCandidates) = terminology?.FindCandidateSources(owner, property) ?? ([], []);
                 IReadOnlyList<JsonElement>? profilePropertyCandidates = ExpandWeighted(effectivePolicy.WeightedValues);
                 IReadOnlyList<JsonElement>? profileLogicalCandidates = logicalType is null ? null : ExpandWeighted(_testDataProfile?.ResolveLogical(logicalType)?.WeightedValues);
                 IReadOnlyList<JsonElement>? candidates = customValue is null ? profilePropertyCandidates ?? profileLogicalCandidates ?? propertyCandidates : [JsonSerializer.SerializeToElement(customValue)];
                 IReadOnlyList<JsonElement>? fallbackCandidates = customValue is null && profilePropertyCandidates is null && profileLogicalCandidates is null ? logicalCandidates : null;
-                SemanticTestValue? value = Generate(property.Type.Id, propertyConstraints, propertyPath, propertyCoordinate, property.Cardinality.AllowsNull, !property.Cardinality.IsRequired, depth + 1, ancestors, candidates, customCandidate, fallbackCandidates, effectivePolicy);
+                SemanticTestValue? value = Generate(property.Type.Id, propertyConstraints, propertyPath, propertyCoordinate, property.Cardinality.AllowsNull, !property.Cardinality.IsRequired, depth + 1, ancestors, candidates, customCandidate, fallbackCandidates, effectivePolicy, coordinatedCandidate);
                 if (value is null)
                 {
                     if (property.Cardinality.IsRequired)
@@ -269,10 +315,72 @@ public static class SemanticTestDataGenerator
 
                     continue;
                 }
+                if (coordinatedPolicy.Coordination is { Unique: true, Scope: { } retryScope } && value is not NullTestValue)
+                {
+                    var attempt = 0;
+                    bool uniqueAccepted = _session.AddUnique((owner.Id, property.Id), retryScope, Fingerprint(value));
+                    while (!uniqueAccepted && attempt++ < 100)
+                    {
+                        if (customCandidate)
+                            return Error("TESTDATA_COORDINATION_UNIQUENESS_EXHAUSTED", "An explicit coordinated or programmatic value duplicated within its scope.", propertyPath);
+                        value = Generate(property.Type.Id, propertyConstraints, propertyPath, propertyCoordinate + "/unique-attempt:" + attempt.ToString(CultureInfo.InvariantCulture), property.Cardinality.AllowsNull, !property.Cardinality.IsRequired, depth + 1, ancestors, candidates, false, fallbackCandidates, effectivePolicy);
+                        if (value is null) break;
+                        uniqueAccepted = _session.AddUnique((owner.Id, property.Id), retryScope, Fingerprint(value));
+                    }
+                    if (value is null || value is NullTestValue || !uniqueAccepted)
+                        return Error("TESTDATA_COORDINATION_UNIQUENESS_EXHAUSTED", "Scoped TestData uniqueness was exhausted by a duplicate value.", propertyPath);
+                }
+                if (coordinatedPolicy.Coordination is { Shared: true, Scope: { } sharedScope } shared && _session.TryGetShared((owner.Id, property.Id), sharedScope, out SemanticTestValue sharedValue))
+                    value = sharedValue;
+                else if (coordinatedPolicy.Coordination is { Shared: true, Scope: { } storeScope } && value is not NullTestValue)
+                    _session.SetShared((owner.Id, property.Id), storeScope, value);
                 result[property.Id] = value;
             }
             return new ObjectTestValue(obj.Id, result);
         }
+
+        private List<(ObjectTypeDefinition Owner, PropertyDefinition Property)> OrderedProperties(ObjectTypeDefinition obj, IReadOnlyList<(ObjectTypeDefinition Owner, PropertyDefinition Property)> properties)
+        {
+            var byId = properties.ToDictionary(static p => p.Property.Id);
+            var ordered = new List<(ObjectTypeDefinition, PropertyDefinition)>();
+            var visiting = new HashSet<PropertyId>();
+            var visited = new HashSet<PropertyId>();
+            void Visit((ObjectTypeDefinition Owner, PropertyDefinition Property) item)
+            {
+                if (visited.Contains(item.Property.Id)) return;
+                if (!visiting.Add(item.Property.Id)) throw new InvalidOperationException("Coordinated TestData dependency cycle detected.");
+                TestDataPolicy policy = _testDataProfile?.Resolve(obj.Id, item.Owner.Id, item.Property) ?? TestDataPolicy.Empty;
+                foreach (PropertyId dependency in policy.Coordination?.Dependencies ?? [])
+                    if (byId.TryGetValue(dependency, out (ObjectTypeDefinition Owner, PropertyDefinition Property) dependencyItem)) Visit(dependencyItem);
+                _ = visiting.Remove(item.Property.Id); _ = visited.Add(item.Property.Id); ordered.Add(item);
+            }
+            foreach ((ObjectTypeDefinition Owner, PropertyDefinition Property) item in properties) Visit(item);
+            return ordered;
+        }
+
+        private object? ResolveCoordinatedValue(ObjectTypeDefinition owner, PropertyDefinition property, TestDataPolicy policy, IReadOnlyDictionary<PropertyId, SemanticTestValue> values)
+        {
+            TestDataCoordination? coordination = policy.Coordination;
+            if (coordination is null) return null;
+            (TypeId Owner, PropertyId Property) key = (owner.Id, property.Id);
+            if (coordination.Sequence is not null && coordination.Scope is { } sequenceScope)
+            {
+                int index = _session.NextSequence(key, sequenceScope);
+                try { return coordination.Sequence(index) ?? new CoordinationFailure("TESTDATA_COORDINATION_CANDIDATE_INVALID", "A sequence callback must return a non-null candidate."); }
+                catch (TestDataCoordinationException exception) { return new CoordinationFailure(exception.Code, exception.Message); }
+                catch (Exception exception) { return new CoordinationFailure("TESTDATA_COORDINATION_CALLBACK_FAILED", exception.Message); }
+            }
+            if (coordination.Derived is not null)
+            {
+                var declared = (coordination.Dependencies ?? []).ToHashSet();
+                try { return coordination.Derived(new TestDataDependencyContext(declared, values, _rootOrdinal)) ?? new CoordinationFailure("TESTDATA_COORDINATION_CANDIDATE_INVALID", "A derived callback must return a non-null candidate."); }
+                catch (TestDataCoordinationException exception) { return new CoordinationFailure(exception.Code, exception.Message); }
+                catch (Exception exception) { return new CoordinationFailure("TESTDATA_COORDINATION_CALLBACK_FAILED", exception.Message); }
+            }
+            return null;
+        }
+
+        private sealed record CoordinationFailure(string Code, string Message);
 
         private IReadOnlyList<(ObjectTypeDefinition Owner, PropertyDefinition Property)> EffectiveProperties(ObjectTypeDefinition obj, HashSet<TypeId> ancestors)
         {
@@ -369,7 +477,7 @@ public static class SemanticTestDataGenerator
             return new DictionaryTestValue(dictionary.Id, entries);
         }
 
-        private SemanticTestValue? GenerateScalar(ScalarTypeDefinition scalar, ConstraintSet constraints, string path, string coordinate, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false, IReadOnlyList<JsonElement>? fallbackCandidates = null, TestDataPolicy? policy = null)
+        private SemanticTestValue? GenerateScalar(ScalarTypeDefinition scalar, ConstraintSet constraints, string path, string coordinate, IReadOnlyList<JsonElement>? candidates = null, bool customCandidate = false, IReadOnlyList<JsonElement>? fallbackCandidates = null, TestDataPolicy? policy = null, bool coordinatedCandidate = false)
         {
             if (constraints.Custom.Count > 0)
             {
@@ -385,7 +493,7 @@ public static class SemanticTestDataGenerator
                 }
                 if (customCandidate)
                 {
-                    return Error("TESTDATA_CUSTOM_CANDIDATE_INVALID", "A custom generator supplied a candidate that violates the canonical pattern or scalar contract.", path);
+                    return Error(coordinatedCandidate ? "TESTDATA_COORDINATION_CANDIDATE_INVALID" : "TESTDATA_CUSTOM_CANDIDATE_INVALID", coordinatedCandidate ? "A coordinated candidate violates the canonical scalar contract." : "A custom generator supplied a candidate that violates the canonical pattern or scalar contract.", path);
                 }
                 return Error("TESTDATA_PATTERN_UNSUPPORTED", "Pattern-constrained strings require an external or custom value source.", path);
             }
@@ -418,7 +526,7 @@ public static class SemanticTestDataGenerator
             }
             if (customCandidate)
             {
-                return Error("TESTDATA_CUSTOM_CANDIDATE_INVALID", "A custom generator supplied a candidate that violates the canonical scalar or constraint contract.", path);
+                return Error(coordinatedCandidate ? "TESTDATA_COORDINATION_CANDIDATE_INVALID" : "TESTDATA_CUSTOM_CANDIDATE_INVALID", coordinatedCandidate ? "A coordinated candidate violates the canonical scalar or constraint contract." : "A custom generator supplied a candidate that violates the canonical scalar or constraint contract.", path);
             }
 
             if (scalar.ScalarKind is ScalarKind.String or ScalarKind.Binary
@@ -706,7 +814,14 @@ public static class SemanticTestDataGenerator
 
         private static string Fingerprint(SemanticTestValue value)
         {
-            return value switch { ScalarTestValue s => $"{s.ScalarKind}:{s.Value}", EnumTestValue e => $"enum:{e.Value}", NullTestValue => "null", _ => value.ToString() ?? string.Empty };
+            return value switch
+            {
+                ScalarTestValue { Value: byte[] bytes } scalar => $"{scalar.ScalarKind}:b64:{Convert.ToBase64String(bytes)}",
+                ScalarTestValue scalar => $"{scalar.ScalarKind}:{Convert.ToString(scalar.Value, CultureInfo.InvariantCulture)}",
+                EnumTestValue @enum => $"enum:{Convert.ToString(@enum.Value, CultureInfo.InvariantCulture)}",
+                NullTestValue => "null",
+                _ => value.ToString() ?? string.Empty
+            };
         }
 
         private SemanticTestValue? Error(string code, string message, string path) { Diagnostics.Add(new() { Severity = SchemaDiagnosticSeverity.Error, Code = code, Message = message, Stage = SchemaDiagnosticStage.Validation, ModelPath = path, PipelineStage = "TestData" }); return null; }
