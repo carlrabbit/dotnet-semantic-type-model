@@ -6,9 +6,11 @@ Milestones are active implementation work orders. They are deleted after durable
 
 ## Current
 
-M0080 — Programmatic Canonical Model Authoring, M0081 — Dynamic Model Sample Catalog & TestData Inspection, M0082 — Deterministic Diverse TestData Generation, M0083 — TestData Profiles & Sampling Policies, and M0084 — Coordinated TestData Generation are completed history. 6.0.0 remains the released stable baseline for the 6.1 development work.
+M0080 — Programmatic Canonical Model Authoring, M0081 — Dynamic Model Sample Catalog & TestData Inspection, M0082 — Deterministic Diverse TestData Generation, M0083 — TestData Profiles & Sampling Policies, and M0084 — Coordinated TestData Generation are completed history.
 
-The next milestone is M0085.
+There is no active implementation milestone. 6.1.0 is the current release-candidate line; 6.0.0 is the released stable predecessor.
+
+The next implementation milestone is M0085.
 
 ## Next Number
 

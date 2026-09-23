@@ -74,9 +74,9 @@ General relationship inference is not a current generator capability.
 
 See the complete [configuration reference](../configuration.md).
 
-## Current 6.0 boundaries and capabilities
+## Current boundaries and capabilities
 
-The 6.1.0 development line adds Core-owned Programmatic Model Authoring as an additive path alongside
+Core-owned Programmatic Model Authoring is an additive path alongside
 annotated .NET code. `TypeSchemaModelAuthoringBuilder` finalizes existing canonical type definitions into the
 same validated `TypeSchemaModel`; it does not create a dynamic hierarchy or CLR types. Semantic TestData can
 consume such models by canonical `TypeId`, and JSON Schema/Power BI use their existing canonical entry points.
@@ -110,12 +110,12 @@ and the typed `model.TestData().Generate<T>()` / `GenerateMany<T>()` facade. Hig
 semantic occurrences and bulk root ordinals; small domains may repeat. Exact values are not stable across suite
 versions, and distinct-by-default is not semantic uniqueness. Random mode needs no terminology profile.
 
-The additive 6.1.0 development API also provides immutable, model-bound `TestDataProfile` runtime configuration for
+The TestData API also provides immutable, model-bound `TestDataProfile` runtime configuration for
 named sampling scenarios. Profiles control legal optional presence, nullable null frequency, weighted legal values,
 boundary strategies, and collection counts through `model.TestData().WithProfile(profile)`. They are distinct from
 canonical semantics and from persisted `SemanticTerminologyProfile` candidate vocabularies; profiles are not
 annotations or persisted interchange.
-The 6.1.0 development line also supports exact scalar/enum coordinated rules: derived values from declared
+TestData also supports exact scalar/enum coordinated rules: derived values from declared
 same-object siblings, Root/Batch sequences, shared values, and scoped uniqueness. Each `Generate`/`GenerateMany`
 call owns a fresh Generation Session; this TestData policy does not create canonical keys, relationships, or
 persistent dataset semantics. The package-based `coordinated-generation` catalog scenario demonstrates the API.
