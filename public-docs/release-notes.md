@@ -1,42 +1,54 @@
-# 6.1.0 (development line)
+# 6.1.0
 
-The 6.1.0 development line adds M0080 Programmatic Model Authoring. Applications can assemble existing
-canonical `TypeDefinition` records through `SemanticTypeModel.Core.Authoring` and finalize the same validated
-`TypeSchemaModel` used by annotated .NET code. Semantic TestData supports canonical-ID semantic generation;
+6.1.0 is the current stable release candidate after 6.0.0. It is additive relative to 6.0.0 and focuses on
+runtime programmatic authoring plus substantially richer TestData generation. Publication, tagging, and GitHub
+Release creation remain separate from release-readiness validation.
 
-M0083 adds immutable model-bound `TestDataProfile` runtime sampling policies. Profiles support scoped defaults,
-presence/null probabilities, weighted legal candidates, Random/Boundary/BoundaryMixed strategies, collection-size
-policies, and explicit deterministic composition through `WithProfile`, while preserving the canonical model as the
-validity boundary and keeping Semantic Terminology Profiles distinct.
-M0084 adds invocation-scoped coordinated TestData for exact scalar/enum properties: declared same-object derived
-values, Root/Batch sequences, shared values, and scoped uniqueness. Every generation invocation gets a fresh
-Generation Session; these rules remain TestData policy and do not create canonical keys, relationships, or persisted
-dataset semantics. The package-based catalog adds `coordinated-generation`.
-JSON Schema and Power BI continue through their existing canonical entry points. This is additive relative to
-6.0.0 and is not a publication, tag, or GitHub Release.
+## Highlights
+
+- M0080 adds Core-owned Programmatic Model Authoring. Applications can assemble existing canonical
+  `TypeDefinition` records through `SemanticTypeModel.Core.Authoring` and finalize the same validated
+  `TypeSchemaModel` used by annotated .NET code. Semantic TestData supports canonical-ID semantic generation;
+  JSON Schema and Power BI continue through their existing canonical entry points.
+- M0081 adds the executable programmatic-model catalog and deterministic `SemanticTestValue` inspection.
+  The catalog shows canonical declarations, fixed-seed Random TestData, and Example-guided TestData from
+  Semantic Terminology Profiles while keeping unsupported generation cases as diagnostics. Inspection remains
+  development/test text, not a serialization or persistence format.
+- M0082 makes built-in Random TestData occurrence-derived and diverse for high-cardinality values while preserving
+  same-version determinism, canonical validity, source precedence, and hard uniqueness diagnostics.
+  `GenerateMany` uses root ordinals with one configured base seed; strings/binary target 8/32/1024 and
+  collections/dictionaries target 1/8/100. Exact generated values are not stable across aligned suite versions,
+  and domain realism remains the responsibility of terminology profiles or programmatic generators.
+- M0083 adds immutable model-bound `TestDataProfile` runtime sampling policies. Profiles support scoped defaults,
+  presence/null probabilities, weighted legal candidates, Random/Boundary/BoundaryMixed strategies,
+  collection-size policies, and explicit deterministic composition through `WithProfile`, while preserving the
+  canonical model as the validity boundary and keeping Semantic Terminology Profiles distinct.
+- M0084 adds invocation-scoped coordinated TestData for exact scalar/enum properties: declared same-object derived
+  values, Root/Batch sequences, shared values, and scoped uniqueness. Every generation invocation gets a fresh
+  Generation Session; these rules remain TestData policy and do not create canonical keys, relationships, or
+  persisted dataset semantics.
 
 Programmatic models do not generate CLR types. CLR-dependent System.Text.Json resolver behavior and generated
 EF application configuration remain on the existing CLR/code-first path, and external schema import remains
 unsupported.
 
-M0081 adds the executable programmatic-model catalog and a deterministic `SemanticTestValue` inspection extension.
-The catalog shows canonical declarations, fixed-seed Random TestData, and Example-guided TestData from Semantic
-Terminology Profiles, while keeping unsupported generation cases as diagnostics. Inspection is development/test
-text only and is not a serialization or persistence format.
+## Upgrade guidance from 6.0.0
 
-M0082 makes built-in Random TestData occurrence-derived and diverse for high-cardinality values while preserving
-same-version determinism, canonical validity, source precedence, and hard uniqueness diagnostics. `GenerateMany`
-uses root ordinals with one configured base seed; strings/binary target 8/32/1024 and collections/dictionaries
-target 1/8/100. Exact generated values are not stable across aligned suite versions, and domain realism remains
-the responsibility of terminology profiles or programmatic generators. The programmatic catalog adds a stable
-`random-diversity` scenario.
+1. Upgrade every `SemanticTypeModel.*` package, generator, and analyzer used together to exactly `6.1.0`.
+2. Existing code-first authoring remains supported; programmatic authoring is an additional canonical path.
+3. Do not depend on exact built-in Random TestData values across suite versions. Use terminology/programmatic
+   generators when exact semantic values matter, or assert semantic properties rather than historical Random
+   snapshots.
+4. `TestDataProfile` and coordinated-generation rules are opt-in runtime policy. Existing consumers do not need
+   to adopt them to continue using ordinary TestData generation.
+5. Programmatic models remain CLR-neutral. Keep CLR-dependent serializer/EF behavior on the existing code-first
+   path.
 
 # 6.0.0
 
-6.0.0 is the intended next stable release and current release-candidate line. It is a breaking semantic release:
-CLR single-value wrapper shape no longer carries STM scalar meaning, and Logical Type is the explicit
-projection-neutral way to label semantically distinct scalar properties without changing representation.
-Publication, tagging, and GitHub Release creation remain separate from release-readiness validation.
+6.0.0 is the released stable predecessor to 6.1.0. It is a breaking semantic release: CLR single-value wrapper
+shape no longer carries STM scalar meaning, and Logical Type is the explicit projection-neutral way to label
+semantically distinct scalar properties without changing representation.
 
 ## Highlights
 
