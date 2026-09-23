@@ -1,6 +1,7 @@
 # 6.1.0
 
-6.1.0 is the current stable release candidate after 6.0.0. It is additive relative to 6.0.0 and focuses on
+6.1.0 is the current release candidate for the next stable release after 6.0.0. It is additive relative to
+6.0.0 and focuses on
 runtime programmatic authoring plus substantially richer TestData generation. Publication, tagging, and GitHub
 Release creation remain separate from release-readiness validation.
 
