@@ -190,10 +190,28 @@ private-member mutation, uninitialized-object construction, or wrapper inference
 materialization failures use TestData diagnostics/exception boundaries rather than leaking target-package
 behavior.
 
+## 6.1 release boundary
+
+`6.1.0` is the current release candidate for the next stable release after `6.0.0`. The 6.1 line is additive
+relative to 6.0.0: it adds Core-owned programmatic canonical model authoring, deterministic semantic-value
+inspection, occurrence-diverse Random TestData, model-bound TestData Profiles, and invocation-scoped coordinated
+TestData rules.
+
+The canonical model remains the validity and projection boundary. Programmatic authoring does not manufacture CLR
+lineage, TestData Profiles/coordinated rules are runtime policy rather than canonical annotations, and coordinated
+generation does not introduce canonical keys, relationships, or persisted dataset semantics.
+
+Consumers must continue to use one exact aligned `SemanticTypeModel.*` suite version. Exact built-in Random
+TestData values are not a cross-version compatibility contract; consumers that need exact semantic values should
+use terminology/programmatic generators or assert semantic properties instead of historical Random snapshots.
+
+Release-candidate repository state does not establish publication. The package channel remains publication truth
+for `6.1.0`.
+
 ## 6.0 release boundary
 
-`6.0.0` is the intended next stable version and current release candidate after the breaking semantic changes
-above. The aligned suite contains exactly eleven packages, including `SemanticTypeModel.TestData`.
+`6.0.0` is the released stable predecessor to `6.1.0`. It established the breaking semantic changes described
+above and contains exactly eleven aligned packages, including `SemanticTypeModel.TestData`.
 
 Consumers upgrading from 5.x must:
 
@@ -205,7 +223,6 @@ Consumers upgrading from 5.x must:
 5. keep strongly typed-ID conversions and other target-specific wrapper behavior in application/target-native
    configuration.
 
-The release is not publication truth until the package channel confirms `6.0.0` publication.
 
 ## 5.0 release boundary
 
