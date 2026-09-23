@@ -74,7 +74,7 @@ General relationship inference is not a current generator capability.
 
 See the complete [configuration reference](../configuration.md).
 
-## Current 6.0 boundaries and capabilities
+## Current boundaries and capabilities
 
 Core-owned Programmatic Model Authoring is an additive path alongside
 annotated .NET code. `TypeSchemaModelAuthoringBuilder` finalizes existing canonical type definitions into the
@@ -110,7 +110,7 @@ and the typed `model.TestData().Generate<T>()` / `GenerateMany<T>()` facade. Hig
 semantic occurrences and bulk root ordinals; small domains may repeat. Exact values are not stable across suite
 versions, and distinct-by-default is not semantic uniqueness. Random mode needs no terminology profile.
 
-The additive 6.1.0 development API also provides immutable, model-bound `TestDataProfile` runtime configuration for
+The TestData API also provides immutable, model-bound `TestDataProfile` runtime configuration for
 named sampling scenarios. Profiles control legal optional presence, nullable null frequency, weighted legal values,
 boundary strategies, and collection counts through `model.TestData().WithProfile(profile)`. They are distinct from
 canonical semantics and from persisted `SemanticTerminologyProfile` candidate vocabularies; profiles are not
