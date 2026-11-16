@@ -13,6 +13,18 @@ internal static class EfStoragePolicy
         return extensionData || (targetKind == "Object" && string.Equals(targetRole, "ValueObject", StringComparison.OrdinalIgnoreCase));
     }
 
+    internal static bool IsSupportedNestedStringDictionary(
+        string? keyKind,
+        string? keyScalarKind,
+        string? valueKind,
+        string? valueScalarKind)
+    {
+        return string.Equals(keyKind, "Scalar", StringComparison.Ordinal)
+            && string.Equals(keyScalarKind, "String", StringComparison.Ordinal)
+            && string.Equals(valueKind, "Scalar", StringComparison.Ordinal)
+            && string.Equals(valueScalarKind, "String", StringComparison.Ordinal);
+    }
+
     internal static bool IsUnsupportedUnownedShape(string? targetKind)
     {
         return targetKind is "Object" or "Array" or "Dictionary";

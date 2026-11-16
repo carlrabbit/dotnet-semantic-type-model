@@ -20,41 +20,100 @@ public sealed class M0058ConditionalConstraintTests
     [Test]
     public async Task Root_is_excluded_from_definitions_and_references_resolve_for_export_and_consumer_rerooting()
     {
+        ScalarTypeDefinition text = new()
+        {
+            Id = new TypeId("Text"),
+            Name = "Text",
+            Kind = TypeKind.Scalar,
+            ScalarKind = ScalarKind.String,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag(),
+        };
+        ObjectTypeDefinition child = ReferenceTestObject("Child", Property("Code", "Text", required: true, minLength: 3));
+        var alias = new ReferenceTypeDefinition
+        {
+            Id = new TypeId("RootAlias"),
+            Name = "RootAlias",
+            Kind = TypeKind.Reference,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag(),
+            Target = new TypeRef(new TypeId("Root")),
+        };
+        var array = new ArrayTypeDefinition
+        {
+            Id = new TypeId("RootArray"),
+            Name = "RootArray",
+            Kind = TypeKind.Array,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag(),
+            ItemType = new TypeRef(new TypeId("Root")),
+        };
+        var dictionary = new DictionaryTypeDefinition
+        {
+            Id = new TypeId("RootDictionary"),
+            Name = "RootDictionary",
+            Kind = TypeKind.Dictionary,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag(),
+            KeyType = new TypeRef(text.Id),
+            ValueType = new TypeRef(new TypeId("Root")),
+        };
+        var union = new UnionTypeDefinition
+        {
+            Id = new TypeId("RootChoice"),
+            Name = "RootChoice",
+            Kind = TypeKind.Union,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag(),
+            Options = [new TypeRef(new TypeId("Root")), new TypeRef(child.Id)],
+            Semantics = UnionSemantics.OneOf,
+        };
         var node = new ObjectTypeDefinition
         {
-            Id = new TypeId("Node"),
-            Name = "Node",
+            Id = new TypeId("Root"),
+            Name = "Root",
             Kind = TypeKind.Object,
             Nullability = Nullability.NonNullable,
             Annotations = new AnnotationBag(),
             Keys = [],
             Properties =
             [
-                new PropertyDefinition
-                {
-                    Id = new PropertyId("Node.Next"), Name = "Next", Type = new TypeRef(new TypeId("Node")),
-                    Cardinality = new Cardinality { IsRequired = false, AllowsNull = false },
-                    Constraints = new ConstraintSet(), Annotations = new AnnotationBag(),
-                },
+                Property("Name", "Text", required: true, minLength: 3),
+                Property("Next", "Root"),
+                Property("Alias", "RootAlias"),
+                Property("Items", "RootArray"),
+                Property("Mapped", "RootDictionary"),
+                Property("Choice", "RootChoice"),
+                Property("Other", "Child"),
             ],
         };
+        TypeDefinition[] types = [node, text, child, alias, array, dictionary, union];
         TypeSchemaModel model = new()
         {
-            Id = new SchemaModelId("Node"),
-            Types = [node],
-            TypesById = new Dictionary<TypeId, TypeDefinition> { [node.Id] = node },
+            Id = new SchemaModelId("Root"),
+            Types = types,
+            TypesById = types.ToDictionary(static type => type.Id),
             Annotations = new AnnotationBag(),
         };
 
         JsonElement exported = JsonSchemaExporter.Export(model).Document.RootElement;
-        _ = await Assert.That(exported.TryGetProperty("$defs", out JsonElement definitions) && definitions.EnumerateObject().Any()).IsFalse();
-        _ = await Assert.That(exported.GetProperty("properties").GetProperty("Next").GetProperty("$ref").GetString()).IsEqualTo("#");
+        _ = await Assert.That(exported.GetProperty("$defs").TryGetProperty("Root", out _)).IsFalse();
+        _ = await Assert.That(exported.GetProperty("$defs").TryGetProperty("RootAlias", out _)).IsTrue();
         var originalSchema = DraftSchema.FromText(exported.GetRawText());
-        await AssertValid(originalSchema, /*lang=json,strict*/ "{\"Next\":{\"Next\":{}}}");
+        await AssertInvalid(originalSchema, /*lang=json,strict*/ "{\"Name\":\"root\",\"Next\":{\"Name\":\"x\"}}");
+        await AssertInvalid(originalSchema, /*lang=json,strict*/ "{\"Name\":\"root\",\"Alias\":{\"Name\":\"x\"}}");
+        await AssertInvalid(originalSchema, /*lang=json,strict*/ "{\"Name\":\"root\",\"Items\":[{\"Name\":\"x\"}]}");
+        await AssertInvalid(originalSchema, /*lang=json,strict*/ "{\"Name\":\"root\",\"Mapped\":{\"entry\":{\"Name\":\"x\"}}}");
+        await AssertInvalid(originalSchema, /*lang=json,strict*/ "{\"Name\":\"root\",\"Choice\":{\"Name\":\"x\"}}");
+        await AssertInvalid(originalSchema, /*lang=json,strict*/ "{\"Name\":\"root\",\"Other\":{\"Code\":\"x\"}}");
+        await AssertValid(originalSchema, /*lang=json,strict*/ "{\"Name\":\"root\",\"Next\":{\"Name\":\"child\"},\"Alias\":{\"Name\":\"alias\"},\"Items\":[{\"Name\":\"item\"}],\"Mapped\":{\"entry\":{\"Name\":\"value\"}},\"Choice\":{\"Code\":\"other\"},\"Other\":{\"Code\":\"other\"}}");
 
-        JsonObject preservedRoot = JsonNode.Parse(exported.GetRawText())!.AsObject();
+        JsonObject originalDocument = JsonNode.Parse(exported.GetRawText())!.AsObject();
+        var preservedRoot = (JsonObject)originalDocument.DeepClone();
         _ = preservedRoot.Remove("$id");
-        preservedRoot["properties"]!["Next"]!["$ref"] = "#/$defs/Node";
+        _ = preservedRoot.Remove("$defs");
+        var consumerDefinitions = (JsonObject)originalDocument["$defs"]!.DeepClone();
+        consumerDefinitions["Node"] = preservedRoot;
         JsonObject consumerRoot = new()
         {
             ["type"] = "object",
@@ -64,9 +123,65 @@ public sealed class M0058ConditionalConstraintTests
         JsonObject rerooted = new()
         {
             ["$ref"] = "#/$defs/Wrapper",
-            ["$defs"] = new JsonObject { ["Node"] = preservedRoot, ["Wrapper"] = consumerRoot },
+            ["$defs"] = consumerDefinitions,
         };
-        await AssertValid(DraftSchema.FromText(rerooted.ToJsonString()), /*lang=json,strict*/ "{\"Payload\":{\"next\":{}}}");
+        consumerDefinitions["Wrapper"] = consumerRoot;
+        RebaseRootReferences(consumerDefinitions, "#/$defs/Node");
+        var rerootedSchema = DraftSchema.FromText(rerooted.ToJsonString());
+        await AssertValid(rerootedSchema, /*lang=json,strict*/ "{\"Payload\":{\"Name\":\"root\",\"Next\":{\"Name\":\"child\"}}}");
+        await AssertInvalid(rerootedSchema, /*lang=json,strict*/ "{\"Payload\":{\"Name\":\"root\",\"Next\":{\"Name\":\"x\"}}}");
+    }
+
+    private static ObjectTypeDefinition ReferenceTestObject(string id, params PropertyDefinition[] properties)
+    {
+        return new ObjectTypeDefinition
+        {
+            Id = new TypeId(id),
+            Name = id,
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag(),
+            Keys = [],
+            Properties = properties,
+        };
+    }
+
+    private static PropertyDefinition Property(string name, string type, bool required = false, int? minLength = null)
+    {
+        return new PropertyDefinition
+        {
+            Id = new PropertyId($"Root.{name}"),
+            Name = name,
+            Type = new TypeRef(new TypeId(type)),
+            Cardinality = new Cardinality { IsRequired = required, AllowsNull = false },
+            Constraints = new ConstraintSet { String = minLength is null ? null : new StringConstraints { MinLength = minLength } },
+            Annotations = new AnnotationBag(),
+        };
+    }
+
+    private static void RebaseRootReferences(JsonNode? node, string replacement)
+    {
+        if (node is JsonObject obj)
+        {
+            foreach ((var key, JsonNode? value) in obj.ToArray())
+            {
+                if (key == "$ref" && string.Equals(value?.GetValue<string>(), "#", StringComparison.Ordinal))
+                {
+                    obj[key] = replacement;
+                }
+                else
+                {
+                    RebaseRootReferences(value, replacement);
+                }
+            }
+        }
+        else if (node is JsonArray array)
+        {
+            foreach (JsonNode? item in array)
+            {
+                RebaseRootReferences(item, replacement);
+            }
+        }
     }
 
     [Test]

@@ -132,10 +132,27 @@ public sealed class GeneratedConfigurationTests
                 Id = id,
                 DisplayName = "dictionary",
                 Details = details,
+                ExtensionData = new Dictionary<string, JsonElement>
+                {
+                    ["extension-only"] = JsonDocument.Parse("\"outside-json-value\"").RootElement.Clone(),
+                },
                 OptionalDetails = new InventoryDetails { Warehouse = "empty", Labels = [] },
                 DetailHistory = [],
             });
             _ = await context.SaveChangesAsync();
+
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = "SELECT \"Details\", \"ExtensionData\" FROM \"InventoryItem\"";
+            using SqliteDataReader reader = await command.ExecuteReaderAsync();
+            _ = await reader.ReadAsync();
+            using var detailsDocument = JsonDocument.Parse(reader.GetString(0));
+            using var extensionDocument = JsonDocument.Parse(reader.GetString(1));
+            JsonElement detailsJson = detailsDocument.RootElement;
+            _ = await Assert.That(detailsJson.TryGetProperty("Labels", out JsonElement labelsJson)).IsTrue();
+            _ = await Assert.That(labelsJson.TryGetProperty("escaped", out _)).IsTrue();
+            _ = await Assert.That(detailsJson.TryGetProperty("escaped", out _)).IsFalse();
+            _ = await Assert.That(detailsJson.TryGetProperty("extension-only", out _)).IsFalse();
+            _ = await Assert.That(extensionDocument.RootElement.TryGetProperty("extension-only", out _)).IsTrue();
         }
 
         await using (var context = new GeneratedCompatibilityContext(options))

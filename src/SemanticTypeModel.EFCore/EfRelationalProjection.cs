@@ -183,9 +183,12 @@ public static class EfRelationalExtensions
                 PropertyInfo? member = clrType.GetProperty(MemberName(nested));
                 TypeDefinition? keyType = model.Types.FirstOrDefault(candidate => candidate.Id == dictionary.KeyType.Id);
                 TypeDefinition? valueType = model.Types.FirstOrDefault(candidate => candidate.Id == dictionary.ValueType.Id);
-                if (member is null || !IsSupportedStringDictionary(member.PropertyType)
-                    || keyType is not ScalarTypeDefinition { ScalarKind: ScalarKind.String }
-                    || valueType is not ScalarTypeDefinition { ScalarKind: ScalarKind.String })
+                var supportedCanonicalDictionary = EfStoragePolicy.IsSupportedNestedStringDictionary(
+                    keyType?.Kind.ToString(),
+                    (keyType as ScalarTypeDefinition)?.ScalarKind.ToString(),
+                    valueType?.Kind.ToString(),
+                    (valueType as ScalarTypeDefinition)?.ScalarKind.ToString());
+                if (member is null || !IsSupportedStringDictionary(member.PropertyType) || !supportedCanonicalDictionary)
                 {
                     Report(diagnostics, "EF_DICTIONARY_STORAGE_NOT_SUPPORTED", $"Nested dictionary '{valueKind.Name}.{nested.Name}' must use a supported string-key/string-value JSON dictionary shape.", nested.Id.Value);
                     valid = false;

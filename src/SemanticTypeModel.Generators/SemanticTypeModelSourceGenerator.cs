@@ -60,7 +60,7 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         // it from a referenced assembly's metadata without loading or executing that assembly.
         var manifest = new SemanticManifest
         {
-            Version = 3,
+            Version = 4,
             SemanticTypeModelVersion = SuiteVersion.Current,
             ModelName = SanitizeIdentifier(extraction.Options.ProviderName),
             Types = [.. extraction.TypesById.Values.OrderBy(static type => type.Id, StringComparer.Ordinal).Select(ToManifestType)],
@@ -88,6 +88,9 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
             },
             Role = Annotation(descriptor.Annotations, "schema.role"),
             ItemTypeId = (descriptor as DotNetArrayTypeDescriptor)?.ItemTypeId,
+            KeyTypeId = (descriptor as DotNetDictionaryTypeDescriptor)?.KeyTypeId,
+            ValueTypeId = (descriptor as DotNetDictionaryTypeDescriptor)?.ValueTypeId,
+            ScalarKind = (descriptor as DotNetScalarTypeDescriptor)?.ScalarKind.ToString(),
             Properties = descriptor is DotNetObjectTypeDescriptor objectType
                 ? [.. objectType.Properties.OrderBy(static property => property.Name, StringComparer.Ordinal).Select(static property => new ManifestProperty
                 {
@@ -140,6 +143,9 @@ public sealed class SemanticTypeModelSourceGenerator : IIncrementalGenerator
         public string Kind { get; set; } = string.Empty;
         public string? Role { get; set; }
         public string? ItemTypeId { get; set; }
+        public string? KeyTypeId { get; set; }
+        public string? ValueTypeId { get; set; }
+        public string? ScalarKind { get; set; }
         public IReadOnlyList<ManifestProperty> Properties { get; set; } = [];
     }
 

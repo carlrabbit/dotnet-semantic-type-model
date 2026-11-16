@@ -107,7 +107,7 @@ public static class JsonSchemaDerivationExtensions
                     Description = type.UserDescription,
                     Annotations = BuildTypeAnnotations(type),
                     Kind = JsonSchemaCompositionKind.OneOf,
-                    Alternatives = [JsonSchemaSchemaRef.FromReference(reference.Target.Id.Value)],
+                    Alternatives = [MapReference(reference.Target, $"/types/{type.Id.Value}/target")],
                 },
                 Model.IntersectionTypeDefinition intersection => UnsupportedNode(type, "JSONSCHEMA_DERIVE_UNSUPPORTED_ALLOF", $"Intersection '{intersection.Name}' cannot be represented by baseline JSON Schema projection."),
                 _ => UnsupportedNode(type, "JSONSCHEMA_DERIVE_UNSUPPORTED_TYPE", $"Type kind '{type.Kind}' is not supported by baseline JSON Schema projection."),

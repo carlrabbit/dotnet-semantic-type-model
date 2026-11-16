@@ -42,16 +42,21 @@ public sealed class RelationalDerivationTests
         _ = await Assert.That(entity.JsonColumns.Single(column => column.MemberName == nameof(ModelA.InventoryItem.Details)).JsonShape).IsEqualTo(EfJsonShape.Object);
         _ = await Assert.That(entity.JsonColumns.Single(column => column.MemberName == nameof(ModelA.InventoryItem.ExtensionData)).JsonShape).IsEqualTo(EfJsonShape.ExtensionData);
 
-        DictionaryTypeDefinition dictionary = source.Types.OfType<DictionaryTypeDefinition>().Single(type =>
-            source.Types.OfType<ObjectTypeDefinition>().Single(value => value.Name == nameof(ModelA.InventoryDetails)).Properties.Any(property => property.Type.Id == type.Id));
+        DictionaryTypeDefinition dictionary = NestedLabelsDictionary(source);
         TypeId integerId = source.Types.OfType<ScalarTypeDefinition>().First(static scalar => scalar.ScalarKind == ScalarKind.Integer).Id;
-        TypeDefinition[] unsupportedTypes = [.. source.Types.Select(type => type.Id == dictionary.Id ? dictionary with { KeyType = new TypeRef(integerId) } : type)];
-        TypeSchemaModel unsupported = new() { Id = source.Id, Types = unsupportedTypes, TypesById = unsupportedTypes.ToDictionary(static type => type.Id), Annotations = source.Annotations };
-        SemanticDerivationResult<EfRelationalModel> rejected = unsupported.DeriveEfRelationalModel();
+        TypeId stringId = dictionary.KeyType.Id;
 
-        SchemaDiagnostic[] dictionaryDiagnostics = [.. rejected.Diagnostics.Where(static diagnostic => diagnostic.Code == "EF_DICTIONARY_STORAGE_NOT_SUPPORTED")];
-        _ = await Assert.That(dictionaryDiagnostics).IsNotEmpty();
-        _ = await Assert.That(dictionaryDiagnostics.All(static diagnostic => diagnostic.ModelPath?.EndsWith("InventoryDetails.Labels", StringComparison.Ordinal) == true)).IsTrue();
+        TypeSchemaModel wrongKey = WithDictionary(source, dictionary with { KeyType = new TypeRef(integerId) });
+        SchemaDiagnostic keyDiagnostic = AssertDictionaryDiagnostic(wrongKey, "InventoryDetails.Labels");
+        _ = await Assert.That(keyDiagnostic.ModelPath!.EndsWith("InventoryDetails.Labels", StringComparison.Ordinal)).IsTrue();
+
+        TypeSchemaModel wrongValue = WithDictionary(source, dictionary with { ValueType = new TypeRef(integerId) });
+        SchemaDiagnostic valueDiagnostic = AssertDictionaryDiagnostic(wrongValue, "InventoryDetails.Labels");
+        _ = await Assert.That(valueDiagnostic.ModelPath!.EndsWith("InventoryDetails.Labels", StringComparison.Ordinal)).IsTrue();
+
+        TypeSchemaModel nonStringValueClr = BuildUnsupportedClrDictionaryModel(stringId, integerId);
+        SchemaDiagnostic clrDiagnostic = AssertDictionaryDiagnostic(nonStringValueClr, "UnsupportedDetails.Labels");
+        _ = await Assert.That(clrDiagnostic.ModelPath).IsEqualTo("UnsupportedDetails.Labels");
     }
 
     [Test]
@@ -69,7 +74,94 @@ public sealed class RelationalDerivationTests
 
         SemanticDerivationResult<EfRelationalModel> result = model.DeriveEfRelationalModel();
 
-        _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Code == "EF_DICTIONARY_STORAGE_NOT_SUPPORTED")).IsTrue();
+        SchemaDiagnostic diagnostic = result.Diagnostics.Single(static value => value.Code == "EF_DICTIONARY_STORAGE_NOT_SUPPORTED");
+        _ = await Assert.That(diagnostic.ModelPath!.EndsWith($"{nameof(ModelA.InventoryItem)}.{nameof(ModelA.InventoryItem.ExtensionData)}", StringComparison.Ordinal)).IsTrue();
+    }
+
+    private static DictionaryTypeDefinition NestedLabelsDictionary(TypeSchemaModel model)
+    {
+        ObjectTypeDefinition valueKind = model.Types.OfType<ObjectTypeDefinition>().Single(value => value.Name == nameof(ModelA.InventoryDetails));
+        PropertyDefinition labels = valueKind.Properties.Single(static property => property.Name == "Labels");
+        return model.Types.OfType<DictionaryTypeDefinition>().Single(type => type.Id == labels.Type.Id);
+    }
+
+    private static TypeSchemaModel WithDictionary(TypeSchemaModel source, DictionaryTypeDefinition replacement)
+    {
+        TypeDefinition[] types = [.. source.Types.Select(type => type.Id == replacement.Id ? replacement : type)];
+        return new TypeSchemaModel { Id = source.Id, Types = types, TypesById = types.ToDictionary(static type => type.Id), Annotations = source.Annotations };
+    }
+
+    private static SchemaDiagnostic AssertDictionaryDiagnostic(TypeSchemaModel model, string expectedPathSuffix)
+    {
+        SchemaDiagnostic[] diagnostics = [.. model.DeriveEfRelationalModel().Diagnostics.Where(value =>
+            value.Code == "EF_DICTIONARY_STORAGE_NOT_SUPPORTED" && value.ModelPath?.EndsWith(expectedPathSuffix, StringComparison.Ordinal) == true)];
+        return diagnostics.Length == 0
+            ? throw new InvalidOperationException($"Expected EF_DICTIONARY_STORAGE_NOT_SUPPORTED ending in '{expectedPathSuffix}'.")
+            : diagnostics[0];
+    }
+
+    private static TypeSchemaModel BuildUnsupportedClrDictionaryModel(TypeId stringId, TypeId integerId)
+    {
+        ScalarTypeDefinition text = new() { Id = stringId, Name = "String", Kind = TypeKind.Scalar, ScalarKind = ScalarKind.String, Nullability = Nullability.NonNullable, Annotations = new AnnotationBag() };
+        ScalarTypeDefinition integer = new() { Id = integerId, Name = "Integer", Kind = TypeKind.Scalar, ScalarKind = ScalarKind.Integer, Nullability = Nullability.NonNullable, Annotations = new AnnotationBag() };
+        var dictionary = new DictionaryTypeDefinition
+        {
+            Id = new TypeId("UnsupportedLabels"),
+            Name = "UnsupportedLabels",
+            Kind = TypeKind.Dictionary,
+            Nullability = Nullability.NonNullable,
+            Annotations = new AnnotationBag(),
+            KeyType = new TypeRef(stringId),
+            ValueType = new TypeRef(stringId),
+        };
+        var details = new ObjectTypeDefinition
+        {
+            Id = new TypeId("UnsupportedDetails"),
+            Name = "UnsupportedDetails",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = ClrTypeAnnotation(typeof(UnsupportedDictionaryDetails)),
+            Keys = [],
+            Semantics = new EntitySemantics { Role = EntityRole.ValueObject, IsValueObject = true },
+            Properties = [new PropertyDefinition
+            {
+                Id = new PropertyId("UnsupportedDetails.Labels"), Name = "Labels", Type = new TypeRef(dictionary.Id),
+                Cardinality = new Cardinality { IsRequired = true }, Constraints = new ConstraintSet(), Annotations = new AnnotationBag(),
+            }],
+        };
+        var entity = new ObjectTypeDefinition
+        {
+            Id = new TypeId("UnsupportedEntity"),
+            Name = "UnsupportedEntity",
+            Kind = TypeKind.Object,
+            Nullability = Nullability.NonNullable,
+            Annotations = ClrTypeAnnotation(typeof(UnsupportedDictionaryEntity)),
+            Keys = [new KeyDefinition { Name = "Primary", Kind = KeyKind.Primary, Properties = [new PropertyRef(new PropertyId("UnsupportedEntity.Id"))], Annotations = new AnnotationBag() }],
+            Semantics = new EntitySemantics { Role = EntityRole.Entity },
+            Properties =
+            [
+                new PropertyDefinition { Id = new PropertyId("UnsupportedEntity.Id"), Name = "Id", Type = new TypeRef(integerId), Cardinality = new Cardinality { IsRequired = true }, Constraints = new ConstraintSet(), Annotations = new AnnotationBag() },
+                new PropertyDefinition { Id = new PropertyId("UnsupportedEntity.Details"), Name = "Details", Type = new TypeRef(details.Id), Cardinality = new Cardinality { IsRequired = true }, Constraints = new ConstraintSet(), Annotations = new AnnotationBag { Items = [new Annotation { Key = new AnnotationKey("schema.ownedObject"), Value = true, Scope = AnnotationScope.Projection, Source = AnnotationSource.Declared }] } },
+            ],
+        };
+        TypeDefinition[] types = [text, integer, dictionary, details, entity];
+        return new TypeSchemaModel { Id = new SchemaModelId(entity.Id.Value), Types = types, TypesById = types.ToDictionary(static type => type.Id), Annotations = new AnnotationBag() };
+    }
+
+    private static AnnotationBag ClrTypeAnnotation(Type type)
+    {
+        return new AnnotationBag { Items = [new Annotation { Key = new AnnotationKey("dotnet.clrType"), Value = type.FullName, Scope = AnnotationScope.Projection, Source = AnnotationSource.Declared }] };
+    }
+
+    public sealed class UnsupportedDictionaryEntity
+    {
+        public int Id { get; set; }
+        public UnsupportedDictionaryDetails Details { get; set; } = new();
+    }
+
+    public sealed class UnsupportedDictionaryDetails
+    {
+        public Dictionary<int, string> Labels { get; set; } = [];
     }
 
     [Test]

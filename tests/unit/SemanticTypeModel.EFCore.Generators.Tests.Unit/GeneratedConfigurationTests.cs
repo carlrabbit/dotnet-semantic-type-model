@@ -12,31 +12,74 @@ namespace SemanticTypeModel.EFCore.Generators.Tests.Unit;
 public sealed class GeneratedConfigurationTests
 {
     [Test]
-    public async Task Nested_string_dictionary_is_accepted_but_unsupported_dictionary_shapes_are_diagnosed()
+    public async Task Nested_dictionary_policy_matches_canonical_and_CLR_shapes_and_keeps_extension_data_distinct()
     {
         const string supportedSource = "[assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Domain.Entity))] namespace Domain; public class Entity { public int Id {get;set;} public Details Details {get;set;} = new(); } public class Details { public System.Collections.Generic.Dictionary<string,string> Labels {get;set;} = new(); }";
         object supportedManifest = Manifest("NestedDictionary",
         [
-            Type("System.Int32", "Int32", "Scalar"), Type("System.String", "String", "Scalar"), Type("Domain.Entity", "Entity", "Object", "Entity", properties: [Property("Id", "System.Int32", key: true), Property("Details", "Domain.Details", ownership: "Object")]),
-            Type("Domain.Details", "Details", "Object", "ValueObject", properties: [Property("Labels", "Dictionary")]), Type("Dictionary", "Dictionary", "Dictionary"),
+            Type("System.Int32", "Int32", "Scalar", scalarKind: "Integer"), Type("System.String", "String", "Scalar", scalarKind: "String"), Type("Domain.Entity", "Entity", "Object", "Entity", properties: [Property("Id", "System.Int32", key: true), Property("Details", "Domain.Details", ownership: "Object")]),
+            Type("Domain.Details", "Details", "Object", "ValueObject", properties: [Property("Labels", "Dictionary")]),
+            Type("Dictionary", "Dictionary", "Dictionary", keyType: "System.String", valueType: "System.String"),
         ]);
         GeneratorDriverRunResult supported = Run(supportedSource, supportedManifest);
 
-        const string unsupportedNestedSource = "[assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Domain.Entity))] namespace Domain; public class Entity { public int Id {get;set;} public Details Details {get;set;} = new(); } public class Details { public System.Collections.Generic.Dictionary<int,string> Labels {get;set;} = new(); }";
-        GeneratorDriverRunResult unsupportedNested = Run(unsupportedNestedSource, supportedManifest);
+        object wrongKeyManifest = Manifest("NestedWrongKey", [
+            Type("System.Int32", "Int32", "Scalar", scalarKind: "Integer"), Type("System.String", "String", "Scalar", scalarKind: "String"),
+            Type("Domain.Entity", "Entity", "Object", "Entity", properties: [Property("Id", "System.Int32", key: true), Property("Details", "Domain.Details", ownership: "Object")]),
+            Type("Domain.Details", "Details", "Object", "ValueObject", properties: [Property("Labels", "Dictionary")]),
+            Type("Dictionary", "Dictionary", "Dictionary", keyType: "System.Int32", valueType: "System.String"),
+        ]);
+        GeneratorDriverRunResult inconsistentKey = Run(supportedSource, wrongKeyManifest);
+
+        object wrongValueManifest = Manifest("NestedWrongValue", [
+            Type("System.Int32", "Int32", "Scalar", scalarKind: "Integer"), Type("System.String", "String", "Scalar", scalarKind: "String"), Type("System.Boolean", "Boolean", "Scalar", scalarKind: "Boolean"),
+            Type("Domain.Entity", "Entity", "Object", "Entity", properties: [Property("Id", "System.Int32", key: true), Property("Details", "Domain.Details", ownership: "Object")]),
+            Type("Domain.Details", "Details", "Object", "ValueObject", properties: [Property("Labels", "Dictionary")]),
+            Type("Dictionary", "Dictionary", "Dictionary", keyType: "System.String", valueType: "System.Boolean"),
+        ]);
+        GeneratorDriverRunResult inconsistentValue = Run(supportedSource, wrongValueManifest);
+
+        const string unsupportedKeySource = "[assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Domain.Entity))] namespace Domain; public class Entity { public int Id {get;set;} public Details Details {get;set;} = new(); } public class Details { public System.Collections.Generic.Dictionary<int,string> Labels {get;set;} = new(); }";
+        GeneratorDriverRunResult unsupportedClrKey = Run(unsupportedKeySource, supportedManifest);
+        const string unsupportedValueSource = "[assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Domain.Entity))] namespace Domain; public class Entity { public int Id {get;set;} public Details Details {get;set;} = new(); } public class Details { public System.Collections.Generic.Dictionary<string,int> Labels {get;set;} = new(); }";
+        GeneratorDriverRunResult unsupportedClrValue = Run(unsupportedValueSource, supportedManifest);
 
         const string directSource = "[assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Domain.Entity))] namespace Domain; public class Entity { public int Id {get;set;} public System.Collections.Generic.Dictionary<string,string> Labels {get;set;} = new(); }";
         object directManifest = Manifest("DirectDictionary",
         [
-            Type("System.Int32", "Int32", "Scalar"), Type("Domain.Entity", "Entity", "Object", "Entity", properties: [Property("Id", "System.Int32", key: true), Property("Labels", "Dictionary")]),
-            Type("Dictionary", "Dictionary", "Dictionary"),
+            Type("System.Int32", "Int32", "Scalar", scalarKind: "Integer"), Type("System.String", "String", "Scalar", scalarKind: "String"),
+            Type("Domain.Entity", "Entity", "Object", "Entity", properties: [Property("Id", "System.Int32", key: true), Property("Labels", "Dictionary")]),
+            Type("Dictionary", "Dictionary", "Dictionary", keyType: "System.String", valueType: "System.String"),
         ]);
         GeneratorDriverRunResult direct = Run(directSource, directManifest);
 
+        const string extensionSource = "[assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Domain.Entity))] namespace Domain; public class Entity { public int Id {get;set;} public System.Collections.Generic.Dictionary<string,string> Extra {get;set;} = new(); }";
+        object extensionManifest = Manifest("ExtensionDictionary",
+        [
+            Type("System.Int32", "Int32", "Scalar", scalarKind: "Integer"), Type("System.String", "String", "Scalar", scalarKind: "String"),
+            Type("Domain.Entity", "Entity", "Object", "Entity", properties: [Property("Id", "System.Int32", key: true), Property("Extra", "Dictionary", extensionData: true)]),
+            Type("Dictionary", "Dictionary", "Dictionary", keyType: "System.String", valueType: "System.String"),
+        ]);
+        GeneratorDriverRunResult extensionData = Run(extensionSource, extensionManifest);
+
         _ = await Assert.That(supported.Diagnostics).IsEmpty();
         _ = await Assert.That(Text(supported).Any(text => text.Contains("SemanticEfValueConverters.Json<global::Domain.Details>()", StringComparison.Ordinal))).IsTrue();
-        _ = await Assert.That(unsupportedNested.Has(DotNetExtractionDiagnosticIds.EfProjectionError)).IsTrue();
-        _ = await Assert.That(direct.Has(DotNetExtractionDiagnosticIds.EfProjectionError)).IsTrue();
+        await AssertProjectionError(inconsistentKey, "Labels");
+        await AssertProjectionError(inconsistentValue, "Labels");
+        await AssertProjectionError(unsupportedClrKey, "Labels");
+        await AssertProjectionError(unsupportedClrValue, "Labels");
+        await AssertProjectionError(direct, "Labels");
+        _ = await Assert.That(extensionData.Diagnostics).IsEmpty();
+        _ = await Assert.That(Text(extensionData).Any(text => text.Contains("Json<global::System.Collections.Generic.Dictionary<string, string>>", StringComparison.Ordinal))).IsTrue();
+    }
+
+    private static async Task AssertProjectionError(GeneratorDriverRunResult result, string memberName)
+    {
+        Diagnostic diagnostic = result.Diagnostics.Single(value => value.Id == DotNetExtractionDiagnosticIds.EfProjectionError);
+        _ = await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Error);
+        _ = await Assert.That(diagnostic.Location.IsInSource).IsTrue();
+        _ = await Assert.That(diagnostic.Location.SourceTree).IsNotNull();
+        _ = await Assert.That(diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture)).Contains(memberName);
     }
 
     // PartialHook compilation and MultiModel ownership/name diagnostics are intentionally kept in this focused fixture.
@@ -225,7 +268,7 @@ public sealed class GeneratedConfigurationTests
         return [.. result.Results.SelectMany(run => run.GeneratedSources).OrderBy(source => source.HintName, StringComparer.Ordinal).Select(source => source.SourceText.ToString())];
     }
 
-    private static object Manifest(string name, object[] types, int version = 3, string? semanticTypeModelVersion = null)
+    private static object Manifest(string name, object[] types, int version = 4, string? semanticTypeModelVersion = null)
     {
         return new { Version = version, SemanticTypeModelVersion = semanticTypeModelVersion ?? SuiteVersion(), ModelName = name, Types = types };
     }
@@ -242,14 +285,14 @@ public sealed class GeneratedConfigurationTests
         return Type(name, name.Split('.').Last(), "Object", "Entity", properties: [Property("Id", "System.Int32", key: true)]);
     }
 
-    private static object Type(string id, string name, string kind, string? role = null, string? baseClr = null, object[]? properties = null, string? itemType = null)
+    private static object Type(string id, string name, string kind, string? role = null, string? baseClr = null, object[]? properties = null, string? itemType = null, string? keyType = null, string? valueType = null, string? scalarKind = null)
     {
-        return new { Id = id, Name = name, ClrName = id, BaseClrName = baseClr, Kind = kind, Role = role, ItemTypeId = itemType, Properties = properties ?? [] };
+        return new { Id = id, Name = name, ClrName = id, BaseClrName = baseClr, Kind = kind, Role = role, ItemTypeId = itemType, KeyTypeId = keyType, ValueTypeId = valueType, ScalarKind = scalarKind, Properties = properties ?? [] };
     }
 
-    private static object Property(string name, string type, bool key = false, string? declaring = null, string? ownership = null, bool nullable = false)
+    private static object Property(string name, string type, bool key = false, string? declaring = null, string? ownership = null, bool nullable = false, bool extensionData = false)
     {
-        return new { Name = name, MemberName = name, DeclaringClrName = declaring, TypeId = type, IsRequired = !nullable, IsNullable = nullable, IsPrimaryKey = key, KeyOrder = 0, Ownership = ownership, IsExtensionData = false };
+        return new { Name = name, MemberName = name, DeclaringClrName = declaring, TypeId = type, IsRequired = !nullable, IsNullable = nullable, IsPrimaryKey = key, KeyOrder = 0, Ownership = ownership, IsExtensionData = extensionData };
     }
 }
 

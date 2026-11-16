@@ -403,7 +403,19 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
             }
             else if (target.Kind == "Dictionary" && !nested.IsExtensionData)
             {
-                if (!TryResolveProperty(valueSymbol, nested.MemberName, out IPropertySymbol? property)
+                SemanticType? keyType = target.KeyTypeId is null
+                    ? null
+                    : manifest.Types.FirstOrDefault(type => string.Equals(type.Id, target.KeyTypeId, StringComparison.Ordinal));
+                SemanticType? dictionaryValueType = target.ValueTypeId is null
+                    ? null
+                    : manifest.Types.FirstOrDefault(type => string.Equals(type.Id, target.ValueTypeId, StringComparison.Ordinal));
+                bool supportedCanonicalDictionary = EfStoragePolicy.IsSupportedNestedStringDictionary(
+                    keyType?.Kind,
+                    keyType?.ScalarKind,
+                    dictionaryValueType?.Kind,
+                    dictionaryValueType?.ScalarKind);
+                if (!supportedCanonicalDictionary
+                    || !TryResolveProperty(valueSymbol, nested.MemberName, out IPropertySymbol? property)
                     || !IsSupportedStringDictionary(property!.Type))
                 {
                     error = $"nested dictionary '{valueKind.Name}.{nested.Name}' must use a supported string-key/string-value JSON dictionary shape";
@@ -609,7 +621,7 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
 
 internal sealed class SemanticManifest
 {
-    internal const int CurrentVersion = 3;
+    internal const int CurrentVersion = 4;
     public int Version { get; set; }
     public string SemanticTypeModelVersion { get; set; } = string.Empty;
     public string ModelName { get; set; } = string.Empty;
@@ -636,6 +648,9 @@ internal sealed class SemanticType
     public string Kind { get; set; } = string.Empty;
     public string? Role { get; set; }
     public string? ItemTypeId { get; set; }
+    public string? KeyTypeId { get; set; }
+    public string? ValueTypeId { get; set; }
+    public string? ScalarKind { get; set; }
     public IReadOnlyList<SemanticProperty> Properties { get; set; } = [];
 }
 
