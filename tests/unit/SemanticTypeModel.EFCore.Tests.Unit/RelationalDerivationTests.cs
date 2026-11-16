@@ -54,9 +54,13 @@ public sealed class RelationalDerivationTests
         SchemaDiagnostic valueDiagnostic = AssertDictionaryDiagnostic(wrongValue, "InventoryDetails.Labels");
         _ = await Assert.That(valueDiagnostic.ModelPath!.EndsWith("InventoryDetails.Labels", StringComparison.Ordinal)).IsTrue();
 
-        TypeSchemaModel nonStringValueClr = BuildUnsupportedClrDictionaryModel(stringId, integerId);
-        SchemaDiagnostic clrDiagnostic = AssertDictionaryDiagnostic(nonStringValueClr, "UnsupportedDetails.Labels");
-        _ = await Assert.That(clrDiagnostic.ModelPath).IsEqualTo("UnsupportedDetails.Labels");
+        TypeSchemaModel nonStringKeyClr = BuildUnsupportedClrDictionaryModel(stringId, integerId, unsupportedKey: true);
+        SchemaDiagnostic clrKeyDiagnostic = AssertDictionaryDiagnostic(nonStringKeyClr, "UnsupportedKeyDetails.Labels");
+        _ = await Assert.That(clrKeyDiagnostic.ModelPath).IsEqualTo("UnsupportedKeyDetails.Labels");
+
+        TypeSchemaModel nonStringValueClr = BuildUnsupportedClrDictionaryModel(stringId, integerId, unsupportedKey: false);
+        SchemaDiagnostic clrValueDiagnostic = AssertDictionaryDiagnostic(nonStringValueClr, "UnsupportedValueDetails.Labels");
+        _ = await Assert.That(clrValueDiagnostic.ModelPath).IsEqualTo("UnsupportedValueDetails.Labels");
     }
 
     [Test]
@@ -100,8 +104,13 @@ public sealed class RelationalDerivationTests
             : diagnostics[0];
     }
 
-    private static TypeSchemaModel BuildUnsupportedClrDictionaryModel(TypeId stringId, TypeId integerId)
+    private static TypeSchemaModel BuildUnsupportedClrDictionaryModel(TypeId stringId, TypeId integerId, bool unsupportedKey)
     {
+        var detailName = unsupportedKey ? "UnsupportedKeyDetails" : "UnsupportedValueDetails";
+        var entityName = unsupportedKey ? "UnsupportedKeyEntity" : "UnsupportedValueEntity";
+        Type detailsClrType = unsupportedKey ? typeof(UnsupportedDictionaryKeyDetails) : typeof(UnsupportedDictionaryValueDetails);
+        Type entityClrType = unsupportedKey ? typeof(UnsupportedDictionaryKeyEntity) : typeof(UnsupportedDictionaryValueEntity);
+        PropertyId detailsPropertyId = new($"{entityName}.Details");
         ScalarTypeDefinition text = new() { Id = stringId, Name = "String", Kind = TypeKind.Scalar, ScalarKind = ScalarKind.String, Nullability = Nullability.NonNullable, Annotations = new AnnotationBag() };
         ScalarTypeDefinition integer = new() { Id = integerId, Name = "Integer", Kind = TypeKind.Scalar, ScalarKind = ScalarKind.Integer, Nullability = Nullability.NonNullable, Annotations = new AnnotationBag() };
         var dictionary = new DictionaryTypeDefinition
@@ -116,32 +125,32 @@ public sealed class RelationalDerivationTests
         };
         var details = new ObjectTypeDefinition
         {
-            Id = new TypeId("UnsupportedDetails"),
-            Name = "UnsupportedDetails",
+            Id = new TypeId(detailName),
+            Name = detailName,
             Kind = TypeKind.Object,
             Nullability = Nullability.NonNullable,
-            Annotations = ClrTypeAnnotation(typeof(UnsupportedDictionaryDetails)),
+            Annotations = ClrTypeAnnotation(detailsClrType),
             Keys = [],
             Semantics = new EntitySemantics { Role = EntityRole.ValueObject, IsValueObject = true },
             Properties = [new PropertyDefinition
             {
-                Id = new PropertyId("UnsupportedDetails.Labels"), Name = "Labels", Type = new TypeRef(dictionary.Id),
+                Id = new PropertyId($"{detailName}.Labels"), Name = "Labels", Type = new TypeRef(dictionary.Id),
                 Cardinality = new Cardinality { IsRequired = true }, Constraints = new ConstraintSet(), Annotations = new AnnotationBag(),
             }],
         };
         var entity = new ObjectTypeDefinition
         {
-            Id = new TypeId("UnsupportedEntity"),
-            Name = "UnsupportedEntity",
+            Id = new TypeId(entityName),
+            Name = entityName,
             Kind = TypeKind.Object,
             Nullability = Nullability.NonNullable,
-            Annotations = ClrTypeAnnotation(typeof(UnsupportedDictionaryEntity)),
-            Keys = [new KeyDefinition { Name = "Primary", Kind = KeyKind.Primary, Properties = [new PropertyRef(new PropertyId("UnsupportedEntity.Id"))], Annotations = new AnnotationBag() }],
+            Annotations = ClrTypeAnnotation(entityClrType),
+            Keys = [new KeyDefinition { Name = "Primary", Kind = KeyKind.Primary, Properties = [new PropertyRef(new PropertyId($"{entityName}.Id"))], Annotations = new AnnotationBag() }],
             Semantics = new EntitySemantics { Role = EntityRole.Entity },
             Properties =
             [
-                new PropertyDefinition { Id = new PropertyId("UnsupportedEntity.Id"), Name = "Id", Type = new TypeRef(integerId), Cardinality = new Cardinality { IsRequired = true }, Constraints = new ConstraintSet(), Annotations = new AnnotationBag() },
-                new PropertyDefinition { Id = new PropertyId("UnsupportedEntity.Details"), Name = "Details", Type = new TypeRef(details.Id), Cardinality = new Cardinality { IsRequired = true }, Constraints = new ConstraintSet(), Annotations = new AnnotationBag { Items = [new Annotation { Key = new AnnotationKey("schema.ownedObject"), Value = true, Scope = AnnotationScope.Projection, Source = AnnotationSource.Declared }] } },
+                new PropertyDefinition { Id = new PropertyId($"{entityName}.Id"), Name = "Id", Type = new TypeRef(integerId), Cardinality = new Cardinality { IsRequired = true }, Constraints = new ConstraintSet(), Annotations = new AnnotationBag() },
+                new PropertyDefinition { Id = detailsPropertyId, Name = "Details", Type = new TypeRef(details.Id), Cardinality = new Cardinality { IsRequired = true }, Constraints = new ConstraintSet(), Annotations = new AnnotationBag { Items = [new Annotation { Key = new AnnotationKey("schema.ownedObject"), Value = true, Scope = AnnotationScope.Projection, Source = AnnotationSource.Declared }] } },
             ],
         };
         TypeDefinition[] types = [text, integer, dictionary, details, entity];
@@ -153,15 +162,26 @@ public sealed class RelationalDerivationTests
         return new AnnotationBag { Items = [new Annotation { Key = new AnnotationKey("dotnet.clrType"), Value = type.FullName, Scope = AnnotationScope.Projection, Source = AnnotationSource.Declared }] };
     }
 
-    public sealed class UnsupportedDictionaryEntity
+    public sealed class UnsupportedDictionaryKeyEntity
     {
         public int Id { get; set; }
-        public UnsupportedDictionaryDetails Details { get; set; } = new();
+        public UnsupportedDictionaryKeyDetails Details { get; set; } = new();
     }
 
-    public sealed class UnsupportedDictionaryDetails
+    public sealed class UnsupportedDictionaryValueEntity
+    {
+        public int Id { get; set; }
+        public UnsupportedDictionaryValueDetails Details { get; set; } = new();
+    }
+
+    public sealed class UnsupportedDictionaryKeyDetails
     {
         public Dictionary<int, string> Labels { get; set; } = [];
+    }
+
+    public sealed class UnsupportedDictionaryValueDetails
+    {
+        public Dictionary<string, int> Labels { get; set; } = [];
     }
 
     [Test]
