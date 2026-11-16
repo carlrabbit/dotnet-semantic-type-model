@@ -35,6 +35,7 @@ public sealed class M0066JsonRepresentationFidelityTests
         JsonElement exported = JsonSchemaExporter.Export(model, new JsonSchemaExportOptions { IncludeSemanticAnnotations = false }).Document.RootElement;
         var rootName = exported.GetProperty("$defs").EnumerateObject().Single(property => property.Name.EndsWith("M0079AcceptanceRoot", StringComparison.Ordinal)).Name;
         JsonObject document = JsonNode.Parse(exported.GetRawText())!.AsObject();
+        _ = document.Remove("$id");
         JsonObject validationDocument = new() { ["$ref"] = $"#/$defs/{rootName}", ["$defs"] = document["$defs"]!.DeepClone() };
         var schema = DraftSchema.FromText(validationDocument.ToJsonString());
         EvaluationResults validation = schema.Evaluate(instance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
@@ -61,7 +62,9 @@ public sealed class M0066JsonRepresentationFidelityTests
             Address = new M0066Address { Street = "Main Street" },
             ExtensionData = new Dictionary<string, JsonElement>(),
         }, options);
-        var schema = DraftSchema.FromText(JsonSchemaExporter.Export(model).Document.RootElement.GetRawText());
+        JsonObject validationSchema = JsonNode.Parse(JsonSchemaExporter.Export(model).Document.RootElement.GetRawText())!.AsObject();
+        _ = validationSchema.Remove("$id");
+        var schema = DraftSchema.FromText(validationSchema.ToJsonString());
         using var instance = JsonDocument.Parse(json);
         EvaluationResults validation = schema.Evaluate(instance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
 
@@ -71,6 +74,51 @@ public sealed class M0066JsonRepresentationFidelityTests
         JsonElement customerSchema = JsonSchemaExporter.Export(model).Document.RootElement;
         _ = await Assert.That(customerSchema.GetProperty("properties").GetProperty("Address").GetProperty("x-stm").GetProperty("ownership").GetString()).IsEqualTo("object");
         _ = await Assert.That(customerSchema.GetProperty("properties").GetProperty("Tags").GetProperty("minItems").GetInt32()).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task SystemTextJson_can_serialize_a_value_that_fails_semantic_conditional_validation()
+    {
+        TypeSchemaModel model = Generated.M0066SemanticTypeModel.Create();
+        JsonSerializerOptions options = new()
+        {
+            TypeInfoResolver = M0066JsonContext.Default.WithSemanticTypeModelJson(
+                model,
+                projectionOptions => projectionOptions.PropertyNameSource = SemanticJsonPropertyNameSource.SemanticPropertyName),
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        };
+        options.Converters.Add(new JsonStringEnumConverter());
+
+        var invalidValue = new M0066Customer
+        {
+            CustomerNumber = "C-001",
+            Status = M0066Status.Active,
+            Tags = ["vip"],
+            Address = new M0066Address { Street = "Main Street" },
+            Mode = M0066ConditionalMode.Csv,
+            CsvPath = null,
+        };
+        var invalidJson = JsonSerializer.Serialize(invalidValue, options);
+        using var invalidInstance = JsonDocument.Parse(invalidJson);
+        _ = await Assert.That(invalidInstance.RootElement.GetProperty("Mode").GetString()).IsEqualTo("Csv");
+        _ = await Assert.That(invalidInstance.RootElement.TryGetProperty("CsvPath", out _)).IsFalse();
+
+        JsonObject exported = JsonNode.Parse(JsonSchemaExporter.Export(model).Document.RootElement.GetRawText())!.AsObject();
+        _ = exported.Remove("$id");
+        ObjectTypeDefinition customer = model.Types.OfType<ObjectTypeDefinition>().Single(static type => type.Name == nameof(M0066Customer));
+        TypeDefinition selectedRoot = model.TryGetType(new TypeId(model.Id.Value))
+            ?? model.Types.OrderBy(static type => type.Id.Value, StringComparer.Ordinal).First();
+        JsonObject validationDocument = selectedRoot.Id == customer.Id
+            ? exported
+            : new JsonObject { ["$ref"] = $"#/$defs/{customer.Id.Value}", ["$defs"] = exported["$defs"]!.DeepClone() };
+        var schema = DraftSchema.FromText(validationDocument.ToJsonString());
+        EvaluationResults invalidValidation = schema.Evaluate(invalidInstance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
+        _ = await Assert.That(invalidValidation.IsValid).IsFalse();
+
+        invalidValue.CsvPath = "input.csv";
+        using var validInstance = JsonDocument.Parse(JsonSerializer.Serialize(invalidValue, options));
+        EvaluationResults validValidation = schema.Evaluate(validInstance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
+        _ = await Assert.That(validValidation.IsValid).IsTrue();
     }
 
     [Test]
@@ -205,7 +253,19 @@ public sealed class M0066Customer
 
     [SemanticOwned]
     public M0066Address Address { get; set; } = new();
+
+    public M0066ConditionalMode? Mode { get; set; }
+    [SemanticRequiredWhen(nameof(Mode), nameof(M0066ConditionalMode.Csv))]
+    public string? CsvPath { get; set; }
+    public bool? Enabled { get; set; }
+    [SemanticRequiredWhen(nameof(Enabled), "true")]
+    public string? EnabledValue { get; set; }
+    public int? Count { get; set; }
+    [SemanticRequiredWhen(nameof(Count), "42")]
+    public string? CountValue { get; set; }
 }
+
+public enum M0066ConditionalMode { Other, Csv }
 
 public enum M0066Status
 {

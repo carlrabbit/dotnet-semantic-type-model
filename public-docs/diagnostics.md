@@ -36,6 +36,12 @@ Common policy failures include `TESTDATA_POLICY_MODEL_MISMATCH` for applying a p
 `TESTDATA_POLICY_COLLECTION_SIZE_INVALID` for a count policy outside the canonical bounds. Rebuild the profile against
 the intended model or choose a fixed/range count inside the legal intersection.
 
+The provider-neutral EF relational derivation API returns target-specific codes including
+`EF_DICTIONARY_STORAGE_NOT_SUPPORTED` when a direct Entity dictionary is not extension data or a nested owned-JSON
+dictionary does not use a supported string-key/string-value shape. Keep ordinary dictionaries inside an owned
+JSON ValueKind; use extension-data semantics only for a flattened bag of additional members. See the [EF Core
+guide](guides/ef-core.md).
+
 ## Common generator diagnostics
 
 | Diagnostic | What happened | Typical fix |

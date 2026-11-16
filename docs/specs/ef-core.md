@@ -66,7 +66,9 @@ One persistence project may select multiple semantic-model assemblies.
 
 `SemanticTypeModel.Generators` emits deterministic semantic manifest metadata for generator-to-generator consumption.
 
-The current compile-time manifest schema version is 3. It contains only the canonical type and property contract needed by the EF generator; aligned generators consume it under the existing exact suite-version rule.
+The current compile-time manifest schema version is 4. It includes canonical dictionary key/value type IDs
+and scalar kinds for EF storage validation in addition to the type and property contract required by the EF
+generator; aligned generators consume it under the existing exact suite-version rule.
 
 The manifest contains enough canonical semantics and CLR lineage for EF generation, including the identities/shapes required to locate semantic types and members, determine entity/value roles, apply keys/requiredness, classify scalar/value storage, and preserve inheritance/member placement.
 
@@ -135,6 +137,15 @@ internal partial class ImportSpecificationConfiguration
 No `IEntityTypeConfiguration<T>` is generated for structural value shapes, enums, DTOs, interfaces, repositories, non-semantic base classes, or other non-entities.
 
 Those shapes may still contribute semantic/storage information to an owning Entity configuration.
+
+An ordinary dictionary nested within an already owned JSON ValueKind is JSON content of that value. A
+`Dictionary<string,string>` (and the supported string-key/string-value dictionary interfaces) is serialized by
+the outer JSON converter and does not require `SemanticExtensionData` or separate ownership. It remains an
+ordinary named member in the JSON object. This does not enable direct dictionary storage on an Entity; direct
+dictionary members still require the established extension-data shape or receive
+`EF_DICTIONARY_STORAGE_NOT_SUPPORTED`. Unsupported nested dictionary key/value or CLR shapes receive that same
+targeted diagnostic during relational derivation. Do not probe arbitrary uninitialized CLR objects to infer
+serializer support.
 
 ## Generated Registration
 

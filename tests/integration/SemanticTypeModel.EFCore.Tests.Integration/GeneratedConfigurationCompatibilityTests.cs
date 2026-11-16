@@ -114,6 +114,75 @@ public sealed class GeneratedConfigurationTests
     }
 
     [Test]
+    public async Task SQLite_owned_JSON_dictionary_round_trips_empty_and_escaped_values_and_tracks_mutation()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        DbContextOptions<GeneratedCompatibilityContext> options = new DbContextOptionsBuilder<GeneratedCompatibilityContext>().UseSqlite(connection).Options;
+        var id = Guid.NewGuid();
+        var details = new InventoryDetails { Warehouse = "A" };
+        details.Labels["escaped"] = "quote: \\\" and slash: \\\\";
+        details.Labels["empty"] = string.Empty;
+        details.Labels["null"] = null!;
+        await using (var context = new GeneratedCompatibilityContext(options))
+        {
+            _ = await context.Database.EnsureCreatedAsync();
+            context.Inventory.Add(new InventoryItem
+            {
+                Id = id,
+                DisplayName = "dictionary",
+                Details = details,
+                ExtensionData = new Dictionary<string, JsonElement>
+                {
+                    ["extension-only"] = JsonDocument.Parse("\"outside-json-value\"").RootElement.Clone(),
+                },
+                OptionalDetails = new InventoryDetails { Warehouse = "empty", Labels = [] },
+                DetailHistory = [],
+            });
+            _ = await context.SaveChangesAsync();
+
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = "SELECT \"Details\", \"ExtensionData\" FROM \"InventoryItem\"";
+            using SqliteDataReader reader = await command.ExecuteReaderAsync();
+            _ = await reader.ReadAsync();
+            using var detailsDocument = JsonDocument.Parse(reader.GetString(0));
+            using var extensionDocument = JsonDocument.Parse(reader.GetString(1));
+            JsonElement detailsJson = detailsDocument.RootElement;
+            _ = await Assert.That(detailsJson.TryGetProperty("Labels", out JsonElement labelsJson)).IsTrue();
+            _ = await Assert.That(labelsJson.TryGetProperty("escaped", out _)).IsTrue();
+            _ = await Assert.That(detailsJson.TryGetProperty("escaped", out _)).IsFalse();
+            _ = await Assert.That(detailsJson.TryGetProperty("extension-only", out _)).IsFalse();
+            _ = await Assert.That(extensionDocument.RootElement.TryGetProperty("extension-only", out _)).IsTrue();
+        }
+
+        await using (var context = new GeneratedCompatibilityContext(options))
+        {
+            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == id);
+            _ = await Assert.That(item.Details.Labels["escaped"]).IsEqualTo("quote: \\\" and slash: \\\\");
+            _ = await Assert.That(item.Details.Labels["empty"]).IsEqualTo(string.Empty);
+            _ = await Assert.That(item.Details.Labels["null"]).IsNull();
+            _ = await Assert.That(item.OptionalDetails!.Labels).IsEmpty();
+            item.Details.Labels["in-place"] = "first";
+            _ = await context.SaveChangesAsync();
+        }
+
+        await using (var context = new GeneratedCompatibilityContext(options))
+        {
+            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == id);
+            _ = await Assert.That(item.Details.Labels["in-place"]).IsEqualTo("first");
+            item.Details.Labels = new Dictionary<string, string> { ["replacement"] = string.Empty };
+            _ = await context.SaveChangesAsync();
+        }
+
+        await using (var context = new GeneratedCompatibilityContext(options))
+        {
+            InventoryItem item = await context.Inventory.SingleAsync(value => value.Id == id);
+            _ = await Assert.That(item.Details.Labels.Count).IsEqualTo(1);
+            _ = await Assert.That(item.Details.Labels["replacement"]).IsEqualTo(string.Empty);
+        }
+    }
+
+    [Test]
     public async Task Generated_nullable_owned_JSON_has_finalized_optional_converter_and_comparer_metadata()
     {
         DbContextOptions<GeneratedCompatibilityContext> options = new DbContextOptionsBuilder<GeneratedCompatibilityContext>().UseSqlite("Data Source=:memory:").Options;

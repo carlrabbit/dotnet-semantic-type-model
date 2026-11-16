@@ -136,6 +136,12 @@ unsupported conditional constraints emit diagnostics
 constraints are not silently dropped
 ```
 
+The JSON Schema equality conditional uses the normalized typed literal (enum member, Boolean, or numeric JSON
+value as appropriate), requires the source property inside `if`, and requires only target presence inside
+`then`. It does not imply target non-nullness or exclusivity among variant properties. JSON Schema performs this
+semantic validation; System.Text.Json serializes values but does not enforce `RequiredWhen`, and EF Core/Power BI
+do not implicitly enforce it either.
+
 Core validation:
 
 ```text

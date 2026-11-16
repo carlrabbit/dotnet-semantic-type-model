@@ -1,6 +1,5 @@
 #pragma warning disable IDE0011, IDE0058, IDE0305
 using System.Reflection;
-using System.Text.Json;
 using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.EFCore.Internal;
@@ -151,16 +150,6 @@ public static class EfRelationalExtensions
     {
         if (!visited.Add(valueKind.Id)) return true;
         Type clrType = JsonElementType(declaredClrType);
-        try
-        {
-            var value = clrType.IsValueType ? Activator.CreateInstance(clrType) : System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(clrType);
-            _ = JsonSerializer.Serialize(value, clrType, CreateJsonOptions());
-        }
-        catch (Exception exception) when (exception is NotSupportedException or InvalidOperationException)
-        {
-            Report(diagnostics, "EF_JSON_VALUE_TYPE_NOT_SERIALIZABLE", $"ValueKind '{valueKind.Name}' is not serializable as JSON: {exception.Message}", valueKind.Id.Value);
-            return false;
-        }
         var valid = true;
         foreach (PropertyDefinition nested in valueKind.Properties)
         {
@@ -189,10 +178,21 @@ public static class EfRelationalExtensions
                 Report(diagnostics, "EF_JSON_VALUE_TYPE_NOT_SERIALIZABLE", $"Nested member '{valueKind.Name}.{nested.Name}' targets unsupported JSON type '{unsupportedObject.Name}'.", nested.Id.Value);
                 valid = false;
             }
-            else if (target is DictionaryTypeDefinition && !IsTrue(nested, "schema.extensionData"))
+            else if (target is DictionaryTypeDefinition dictionary && !IsTrue(nested, "schema.extensionData"))
             {
-                Report(diagnostics, "EF_DICTIONARY_STORAGE_NOT_SUPPORTED", $"Nested dictionary '{valueKind.Name}.{nested.Name}' is not a supported JSON shape.", nested.Id.Value);
-                valid = false;
+                PropertyInfo? member = clrType.GetProperty(MemberName(nested));
+                TypeDefinition? keyType = model.Types.FirstOrDefault(candidate => candidate.Id == dictionary.KeyType.Id);
+                TypeDefinition? valueType = model.Types.FirstOrDefault(candidate => candidate.Id == dictionary.ValueType.Id);
+                var supportedCanonicalDictionary = EfStoragePolicy.IsSupportedNestedStringDictionary(
+                    keyType?.Kind.ToString(),
+                    (keyType as ScalarTypeDefinition)?.ScalarKind.ToString(),
+                    valueType?.Kind.ToString(),
+                    (valueType as ScalarTypeDefinition)?.ScalarKind.ToString());
+                if (member is null || !IsSupportedStringDictionary(member.PropertyType) || !supportedCanonicalDictionary)
+                {
+                    Report(diagnostics, "EF_DICTIONARY_STORAGE_NOT_SUPPORTED", $"Nested dictionary '{valueKind.Name}.{nested.Name}' must use a supported string-key/string-value JSON dictionary shape.", nested.Id.Value);
+                    valid = false;
+                }
             }
             else if (target is ArrayTypeDefinition entityArray && model.Types.FirstOrDefault(candidate => candidate.Id == entityArray.ItemType.Id) is ObjectTypeDefinition entityItem && RoleOf(entityItem) == EntityRole.Entity)
             {
@@ -216,10 +216,23 @@ public static class EfRelationalExtensions
         return valid;
     }
 
-    private static JsonSerializerOptions CreateJsonOptions()
+    private static bool IsSupportedStringDictionary(Type type)
     {
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.General);
-        return options;
+        if (!type.IsGenericType)
+        {
+            return false;
+        }
+
+        Type definition = type.GetGenericTypeDefinition();
+        if (definition != typeof(Dictionary<,>)
+            && definition != typeof(IDictionary<,>)
+            && definition != typeof(IReadOnlyDictionary<,>))
+        {
+            return false;
+        }
+
+        Type[] arguments = type.GetGenericArguments();
+        return arguments[0] == typeof(string) && arguments[1] == typeof(string);
     }
 
     private static bool SameTypeId(string left, string right)

@@ -1,8 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Json.Schema;
 using SemanticTypeModel.Abstractions.Model;
 using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.JsonSchema.Derivation;
 using SemanticTypeModel.JsonSchema.Domain;
+using SemanticTypeModel.JsonSchema.Export;
+using DraftSchema = Json.Schema.JsonSchema;
 
 namespace SemanticTypeModel.JsonSchema.Tests.Unit;
 
@@ -20,6 +25,16 @@ public sealed class M0033JsonSchemaEnvelopePolicyTests
 
         _ = await Assert.That(payload.Schema.Reference).IsEqualTo("WorkflowSpecification");
         _ = await Assert.That(result.Model.Definitions.ContainsKey("WorkflowSpecification")).IsTrue();
+
+        JsonObject? document = JsonNode.Parse(JsonSchemaExporter.Export(result.Model).Document.RootElement.GetRawText())!.AsObject();
+        _ = document.Remove("$id");
+        _ = await Assert.That(document["$defs"]!.AsObject().ContainsKey("ManagedSpecificationEnvelope")).IsFalse();
+        var schema = DraftSchema.FromText(document.ToJsonString());
+        await AssertValid(schema, /*lang=json,strict*/ "{\"Id\":\"1\",\"Revision\":1,\"ModifiedBy\":\"user\",\"Specification\":{\"Name\":\"valid\",\"Next\":{\"Name\":\"valid\"}}}");
+        await AssertValid(schema, /*lang=json,strict*/ "{\"Id\":\"1\",\"Revision\":1,\"ModifiedBy\":\"user\",\"Specification\":{\"Name\":\"valid\"},\"Related\":{\"Id\":\"2\",\"Revision\":2,\"ModifiedBy\":\"user\",\"Specification\":{\"Name\":\"valid\"}}}");
+        await AssertInvalid(schema, /*lang=json,strict*/ "{\"Id\":\"1\",\"Revision\":1,\"ModifiedBy\":\"user\",\"Specification\":{\"Name\":\"x\"}}");
+        await AssertInvalid(schema, /*lang=json,strict*/ "{\"Id\":\"1\",\"Revision\":1,\"ModifiedBy\":\"user\",\"Specification\":{\"Name\":\"valid\",\"Next\":{\"Name\":\"x\"}}}");
+        await AssertInvalid(schema, /*lang=json,strict*/ "{\"Id\":\"1\",\"Revision\":1,\"ModifiedBy\":\"user\",\"Specification\":{\"Name\":\"valid\"},\"Related\":{\"Id\":\"2\",\"Revision\":2,\"ModifiedBy\":\"user\",\"Specification\":{\"Name\":\"x\"}}}");
     }
 
     [Test]
@@ -31,6 +46,12 @@ public sealed class M0033JsonSchemaEnvelopePolicyTests
             _ = options.Envelopes.For<ManagedSpecificationEnvelope>().UsePayloadAsRoot(x => x.Specification);
         });
         _ = await Assert.That(payloadRoot.Model.Root.Name).IsEqualTo("WorkflowSpecification");
+        JsonObject? payloadDocument = JsonNode.Parse(JsonSchemaExporter.Export(payloadRoot.Model).Document.RootElement.GetRawText())!.AsObject();
+        _ = payloadDocument.Remove("$id");
+        _ = await Assert.That(payloadDocument["$defs"]!.AsObject().ContainsKey("WorkflowSpecification")).IsFalse();
+        var payloadSchema = DraftSchema.FromText(payloadDocument.ToJsonString());
+        await AssertValid(payloadSchema, /*lang=json,strict*/ "{\"Name\":\"valid\",\"Next\":{\"Name\":\"valid\"}}");
+        await AssertInvalid(payloadSchema, /*lang=json,strict*/ "{\"Name\":\"valid\",\"Next\":{\"Name\":\"x\"}}");
 
         SemanticDerivationResult<JsonSchemaSemanticModel> inline = BuildModel().DeriveJsonSchemaModel(options =>
         {
@@ -69,7 +90,10 @@ public sealed class M0033JsonSchemaEnvelopePolicyTests
         ScalarTypeDefinition guid = Scalar("Guid", ScalarKind.Guid);
         ScalarTypeDefinition text = Scalar("String", ScalarKind.String);
         ScalarTypeDefinition integer = Scalar("Int64", ScalarKind.Integer);
-        ObjectTypeDefinition payload = Object("WorkflowSpecification", [Property("Name", text.Id, true, false)]);
+        ObjectTypeDefinition payload = Object("WorkflowSpecification", [
+            Property("Name", text.Id, true, false, constraints: new ConstraintSet { String = new StringConstraints { MinLength = 3 } }),
+            Property("Next", new TypeId("WorkflowSpecification"), false, false),
+        ]);
         ObjectTypeDefinition envelope = Object(
             "ManagedSpecificationEnvelope",
             [
@@ -77,6 +101,7 @@ public sealed class M0033JsonSchemaEnvelopePolicyTests
                 Property("Revision", integer.Id, true, false, Annotation(("schema.envelope.metadata", true))),
                 Property("ModifiedBy", text.Id, true, false, Annotation(("schema.envelope.metadata", true))),
                 Property("Specification", payload.Id, true, false, Annotation(("schema.envelope.payload", true))),
+                Property("Related", new TypeId("ManagedSpecificationEnvelope"), false, false),
             ],
             Annotation(("schema.envelope", true)),
             new EntitySemantics { Role = EntityRole.Entity });
@@ -98,9 +123,23 @@ public sealed class M0033JsonSchemaEnvelopePolicyTests
         return new() { Id = new TypeId(name), Name = name, Kind = TypeKind.Object, Nullability = Nullability.NonNullable, Properties = properties, Keys = [], Annotations = annotations ?? EmptyAnnotations, Semantics = semantics ?? new EntitySemantics { Role = EntityRole.ValueObject, IsValueObject = true } };
     }
 
-    private static PropertyDefinition Property(string name, TypeId type, bool required, bool nullable, AnnotationBag? annotations = null)
+    private static PropertyDefinition Property(string name, TypeId type, bool required, bool nullable, AnnotationBag? annotations = null, ConstraintSet? constraints = null)
     {
-        return new() { Id = new PropertyId(name), Name = name, Type = new TypeRef(type), Cardinality = new Cardinality { IsRequired = required, AllowsNull = nullable }, Mutability = SemanticMutability.Mutable, Constraints = new ConstraintSet(), Annotations = annotations ?? EmptyAnnotations };
+        return new() { Id = new PropertyId(name), Name = name, Type = new TypeRef(type), Cardinality = new Cardinality { IsRequired = required, AllowsNull = nullable }, Mutability = SemanticMutability.Mutable, Constraints = constraints ?? new ConstraintSet(), Annotations = annotations ?? EmptyAnnotations };
+    }
+
+    private static async Task AssertValid(DraftSchema schema, string json)
+    {
+        using var instance = JsonDocument.Parse(json);
+        EvaluationResults result = schema.Evaluate(instance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
+        _ = await Assert.That(result.IsValid).IsTrue();
+    }
+
+    private static async Task AssertInvalid(DraftSchema schema, string json)
+    {
+        using var instance = JsonDocument.Parse(json);
+        EvaluationResults result = schema.Evaluate(instance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
+        _ = await Assert.That(result.IsValid).IsFalse();
     }
 
     private static AnnotationBag Annotation(params (string Key, object? Value)[] values)

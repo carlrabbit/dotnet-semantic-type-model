@@ -9,8 +9,9 @@ and tested as one tightly coupled suite.
 package versions is unsupported.**
 
 Generator/analyzer packages are part of that rule too. The compile-time semantic manifest requires exact
-producer/consumer suite-version alignment. The current ephemeral manifest schema is v3 and is not a persisted
-interchange format.
+producer/consumer suite-version alignment. The current ephemeral manifest schema is v4 and is not a persisted
+interchange format. This internal schema can change between aligned suite releases; do not consume manifests
+across different SemanticTypeModel package versions.
 
 ## Choose packages by scenario
 

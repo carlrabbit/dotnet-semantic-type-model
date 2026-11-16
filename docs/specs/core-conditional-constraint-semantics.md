@@ -25,6 +25,8 @@ RequiredWhen
 ```
 
 `RequiredWhen` states that a target property must be present when a source property equals a supported literal value.
+It requires presence only. It does not require a non-null value when the target schema permits null, prohibit
+other populated variants, or establish exactly-one/mutually-exclusive alternatives.
 
 The initial rule shape is intentionally limited:
 
@@ -93,6 +95,11 @@ public string? TargetFilePath { get; init; }
 | EF Core | Ignore or preserve metadata by default; do not generate check constraints unless an explicit EF policy is selected. |
 | Power BI | Ignore or preserve metadata by default; do not generate measures or filters. |
 | Query/Inspection | Show conditional constraint semantics deterministically. |
+
+For JSON Schema equality conditions, the `if` schema must require the discriminator source property as well as
+compare its value. Otherwise a missing source could satisfy the `if` vacuously. The `then` schema requires the
+target property. A present nullable target may remain valid as `null` when its property schema allows null;
+unrelated variant properties remain permitted.
 
 ## Invariants
 

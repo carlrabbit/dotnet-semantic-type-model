@@ -41,6 +41,33 @@ internal sealed class RepositoryPolicyTests
     }
 
     [Test]
+    public async Task ManifestVersionDocumentationMustMatchBothGenerators()
+    {
+        const string producer = "Version = 4,";
+        const string consumer = "internal const int CurrentVersion = 4;";
+        const string spec = "The current compile-time manifest schema version is 4.";
+        const string readme = "The current ephemeral manifest schema is v4.";
+
+        _ = await Assert.That(PublicDocumentationValidator.ValidateManifestVersionDeclarations(producer, consumer, spec, readme)).IsEmpty();
+
+        IReadOnlyList<string> staleReadme = PublicDocumentationValidator.ValidateManifestVersionDeclarations(
+            producer, consumer, spec, "The current ephemeral manifest schema is v3.");
+        _ = await Assert.That(staleReadme.Any(error => error.Contains("Shared NuGet README", StringComparison.Ordinal))).IsTrue();
+
+        IReadOnlyList<string> staleSpec = PublicDocumentationValidator.ValidateManifestVersionDeclarations(
+            producer, consumer, "The current compile-time manifest schema version is 3.", readme);
+        _ = await Assert.That(staleSpec.Any(error => error.Contains("EF Core specification", StringComparison.Ordinal))).IsTrue();
+
+        IReadOnlyList<string> mismatchedGenerators = PublicDocumentationValidator.ValidateManifestVersionDeclarations(
+            producer, "internal const int CurrentVersion = 3;", spec, readme);
+        _ = await Assert.That(mismatchedGenerators.Any(error => error.Contains("manifest consumer", StringComparison.Ordinal))).IsTrue();
+
+        IReadOnlyList<string> missingDeclaration = PublicDocumentationValidator.ValidateManifestVersionDeclarations(
+            producer, consumer, spec, "The manifest format is unspecified.");
+        _ = await Assert.That(missingDeclaration.Any(error => error.Contains("Cannot determine", StringComparison.Ordinal))).IsTrue();
+    }
+
+    [Test]
     public async Task PackageArtifactPolicyReportsMissingAndUnexpectedInventory()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"stm-policy-{Guid.NewGuid():N}");

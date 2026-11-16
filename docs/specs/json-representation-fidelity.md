@@ -107,6 +107,12 @@ System.Text.Json may still own serializer-native read/write contract behavior su
 
 A semantic property can therefore serialize successfully and still be semantically invalid; JSON Schema validation is the layer that detects such constraint failure.
 
+The one-way output-conformance guarantee applies to successfully serialized values that are valid under the
+canonical semantic contract and within the stated serializer baseline. It is not a claim that every serializable
+CLR state is semantically valid. In particular, System.Text.Json does not enforce `RequiredWhen`; a serialized
+value with a missing conditional target can be valid serializer output and still fail JSON Schema validation.
+EF Core and Power BI also do not implicitly enforce conditional semantic validity.
+
 `format` remains a JSON Schema Draft 2020-12 format annotation unless a validator explicitly enables format assertion. The baseline fidelity guarantee does not promise conformance to validator-specific format assertions beyond the JSON Schema document emitted by SemanticTypeModel.
 
 ## JSON Schema Semantic Classification

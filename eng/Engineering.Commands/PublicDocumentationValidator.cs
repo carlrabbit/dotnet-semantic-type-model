@@ -87,6 +87,11 @@ internal static partial class PublicDocumentationValidator
         }
 
         ValidatePackageProjects(root, sharedReadme, errors);
+        errors.AddRange(ValidateManifestVersionDeclarations(
+            Read(root, "src/SemanticTypeModel.Generators/SemanticTypeModelSourceGenerator.cs"),
+            Read(root, "src/SemanticTypeModel.EFCore.Generators/SemanticEfConfigurationGenerator.cs"),
+            Read(root, "docs/specs/ef-core.md"),
+            sharedReadme));
 
         string[] activeDocs = [.. Directory.EnumerateFiles(Resolve(root, "public-docs"), "*.md", SearchOption.AllDirectories)
             .Where(path => Relative(root, path) is not "public-docs/release-notes.md" and not "public-docs/api/compatibility.md")
@@ -116,6 +121,50 @@ internal static partial class PublicDocumentationValidator
             }
         }
         ValidateLinks(root, referenceDocs, errors);
+        return errors;
+    }
+
+    internal static IReadOnlyList<string> ValidateManifestVersionDeclarations(
+        string modelGeneratorSource,
+        string efGeneratorSource,
+        string efSpecification,
+        string sharedReadme)
+    {
+        var errors = new List<string>();
+        Match producer = ProducerManifestVersionRegex().Match(modelGeneratorSource);
+        Match consumer = ConsumerManifestVersionRegex().Match(efGeneratorSource);
+        Match specification = EfSpecificationManifestVersionRegex().Match(efSpecification);
+        Match readme = NuGetReadmeManifestVersionRegex().Match(sharedReadme);
+
+        (string Label, Match Declaration)[] declarations =
+        [
+            ("SemanticTypeModel.Generators manifest producer", producer),
+            ("SemanticTypeModel.EFCore.Generators manifest consumer", consumer),
+            ("EF Core specification", specification),
+            ("Shared NuGet README", readme),
+        ];
+        for (var index = 0; index < declarations.Length; index++)
+        {
+            if (!declarations[index].Declaration.Success)
+            {
+                errors.Add($"Cannot determine compile-time manifest schema version from {declarations[index].Label}.");
+            }
+        }
+
+        if (declarations.Any(static declaration => !declaration.Declaration.Success))
+        {
+            return errors;
+        }
+
+        var expected = producer.Groups[1].Value;
+        for (var index = 1; index < declarations.Length; index++)
+        {
+            if (!string.Equals(expected, declarations[index].Declaration.Groups[1].Value, StringComparison.Ordinal))
+            {
+                errors.Add($"Compile-time manifest schema version mismatch: {declarations[index].Label} declares v{declarations[index].Declaration.Groups[1].Value}; generator producer declares v{expected}.");
+            }
+        }
+
         return errors;
     }
 
@@ -219,6 +268,10 @@ internal static partial class PublicDocumentationValidator
         return Path.GetFullPath(path).StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar, StringComparison.Ordinal) || string.Equals(Path.GetFullPath(path), Path.GetFullPath(root), StringComparison.Ordinal);
     }
 
+    [GeneratedRegex(@"\bVersion\s*=\s*(\d+)\s*,", RegexOptions.CultureInvariant)] private static partial Regex ProducerManifestVersionRegex();
+    [GeneratedRegex(@"\binternal\s+const\s+int\s+CurrentVersion\s*=\s*(\d+)\s*;", RegexOptions.CultureInvariant)] private static partial Regex ConsumerManifestVersionRegex();
+    [GeneratedRegex(@"\bcompile-time manifest schema version is (\d+)\b", RegexOptions.CultureInvariant)] private static partial Regex EfSpecificationManifestVersionRegex();
+    [GeneratedRegex(@"\bmanifest schema is v(\d+)\b", RegexOptions.CultureInvariant)] private static partial Regex NuGetReadmeManifestVersionRegex();
     [GeneratedRegex(@"\bM\d{4}\b", RegexOptions.CultureInvariant)] private static partial Regex MilestoneRegex();
     [GeneratedRegex(@"\brelease[- ]preparation\b|\brelease candidate\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)] private static partial Regex ReleaseNarrationRegex();
     [GeneratedRegex(@"dotnet add package\s+(SemanticTypeModel\.[\w.]+)\s+--version\s+([^\s`]+)", RegexOptions.CultureInvariant)] private static partial Regex PackageVersionRegex();
