@@ -143,7 +143,7 @@ internal static partial class PublicDocumentationValidator
             ("EF Core specification", specification),
             ("Shared NuGet README", readme),
         ];
-        foreach ((string label, Match declaration) in declarations)
+        foreach (var (label, declaration) in declarations)
         {
             if (!declaration.Success)
             {
@@ -156,8 +156,8 @@ internal static partial class PublicDocumentationValidator
             return errors;
         }
 
-        string expected = producer.Groups[1].Value;
-        foreach ((string label, Match declaration) in declarations.Skip(1))
+        var expected = producer.Groups[1].Value;
+        foreach (var (label, declaration) in declarations.Skip(1))
         {
             if (!string.Equals(expected, declaration.Groups[1].Value, StringComparison.Ordinal))
             {
