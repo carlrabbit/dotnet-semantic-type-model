@@ -143,11 +143,11 @@ internal static partial class PublicDocumentationValidator
             ("EF Core specification", specification),
             ("Shared NuGet README", readme),
         ];
-        foreach (var entry in declarations)
+        for (var index = 0; index < declarations.Length; index++)
         {
-            if (!entry.Declaration.Success)
+            if (!declarations[index].Declaration.Success)
             {
-                errors.Add($"Cannot determine compile-time manifest schema version from {entry.Label}.");
+                errors.Add($"Cannot determine compile-time manifest schema version from {declarations[index].Label}.");
             }
         }
 
@@ -157,11 +157,11 @@ internal static partial class PublicDocumentationValidator
         }
 
         var expected = producer.Groups[1].Value;
-        foreach (var entry in declarations.Skip(1))
+        for (var index = 1; index < declarations.Length; index++)
         {
-            if (!string.Equals(expected, entry.Declaration.Groups[1].Value, StringComparison.Ordinal))
+            if (!string.Equals(expected, declarations[index].Declaration.Groups[1].Value, StringComparison.Ordinal))
             {
-                errors.Add($"Compile-time manifest schema version mismatch: {entry.Label} declares v{entry.Declaration.Groups[1].Value}; generator producer declares v{expected}.");
+                errors.Add($"Compile-time manifest schema version mismatch: {declarations[index].Label} declares v{declarations[index].Declaration.Groups[1].Value}; generator producer declares v{expected}.");
             }
         }
 
