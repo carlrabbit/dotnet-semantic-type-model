@@ -10,7 +10,10 @@ other projected types remaining available through definitions and references; `S
 source presence and then target presence for typed equality. It does not imply target non-nullness, variant
 exclusivity, or validation by System.Text.Json, EF Core, or Power BI.
 
-No public API, canonical semantic, or manifest-version changes are introduced.
+No public API or canonical semantic changes are introduced. The internal ephemeral compile-time manifest
+schema advances from v3 to v4 to carry dictionary key/value type IDs and scalar kinds for EF generator
+validation. Model and EF generators must use the exact same 6.1.1 suite version; cross-version manifest
+consumption remains unsupported.
 
 ## Upgrade guidance from 6.1.0
 
