@@ -192,10 +192,9 @@ behavior.
 
 ## 6.1 release boundary
 
-`6.1.0` is the current release candidate for the next stable release after `6.0.0`. The 6.1 line is additive
-relative to 6.0.0: it adds Core-owned programmatic canonical model authoring, deterministic semantic-value
-inspection, occurrence-diverse Random TestData, model-bound TestData Profiles, and invocation-scoped coordinated
-TestData rules.
+`6.1.0` is the released stable version after `6.0.0`. It is additive relative to 6.0.0: it adds Core-owned
+programmatic canonical model authoring, deterministic semantic-value inspection, occurrence-diverse Random
+TestData, model-bound TestData Profiles, and invocation-scoped coordinated TestData rules.
 
 The canonical model remains the validity and projection boundary. Programmatic authoring does not manufacture CLR
 lineage, TestData Profiles/coordinated rules are runtime policy rather than canonical annotations, and coordinated
@@ -205,8 +204,9 @@ Consumers must continue to use one exact aligned `SemanticTypeModel.*` suite ver
 TestData values are not a cross-version compatibility contract; consumers that need exact semantic values should
 use terminology/programmatic generators or assert semantic properties instead of historical Random snapshots.
 
-Release-candidate repository state does not establish publication. The package channel remains publication truth
-for `6.1.0`.
+The 6.1.1 patch candidate corrects EF handling of ordinary dictionaries nested in owned JSON ValueKinds and
+clarifies existing JSON Schema root/definitions and conditional-presence contracts. It adds no public API or
+canonical semantic change. Use the exact aligned 6.1.1 suite when upgrading to this patch.
 
 ## 6.0 release boundary
 

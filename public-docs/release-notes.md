@@ -1,6 +1,26 @@
+# 6.1.1
+
+6.1.1 is a patch release candidate aligned across the `SemanticTypeModel.*` package suite. It corrects the EF
+projection false rejection of ordinary string-key/string-value dictionaries nested inside an already owned JSON
+ValueKind. The outer ValueKind remains one JSON-converted property; dictionaries do not gain direct Entity
+storage support or extension-data flattening semantics.
+
+The patch also clarifies the existing JSON Schema contract: the selected root is excluded from `$defs`, with
+other projected types remaining available through definitions and references; `SemanticRequiredWhen` requires
+source presence and then target presence for typed equality. It does not imply target non-nullness, variant
+exclusivity, or validation by System.Text.Json, EF Core, or Power BI.
+
+No public API, canonical semantic, or manifest-version changes are introduced.
+
+## Upgrade guidance from 6.1.0
+
+Upgrade every `SemanticTypeModel.*` package, generator, and analyzer used together to exactly `6.1.1`.
+Consumers persisting owned JSON ValueKinds with ordinary string dictionaries can use the corrected EF mapping
+after regenerating the semantic manifest and EF configuration. No model annotation change is required.
+
 # 6.1.0
 
-6.1.0 is the current release candidate for the next stable release after 6.0.0. It is additive relative to
+6.1.0 is the released stable version after 6.0.0. It is additive relative to
 6.0.0 and focuses on
 runtime programmatic authoring plus substantially richer TestData generation. Publication, tagging, and GitHub
 Release creation remain separate from release-readiness validation.

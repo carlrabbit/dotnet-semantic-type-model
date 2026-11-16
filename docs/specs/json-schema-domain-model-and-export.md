@@ -82,6 +82,13 @@ simple oneOf/anyOf composition
 unsupported export diagnostics
 ```
 
+`JsonSchemaSemanticModel.Root` and `Definitions` together represent projected types. The chosen root is excluded
+from `Definitions`; other types remain definitions so references resolve. Root selection first matches the
+canonical model ID to a type ID, then falls back to the ordinal-first TypeId. Envelope root policy may select a
+payload root. Consumers that need another schema root should retain the exported original root and compose a
+new document with it under `$defs`, preserving the original definition names/references and rebasing references
+to the old document root (`#`) to that definition's `$ref`; no root-selection API is provided.
+
 The exporter operates on the JSON Schema domain model, not on scattered canonical annotations.
 
 ## Domain Derivation
@@ -228,6 +235,11 @@ Canonical `RequiredWhen` with the supported equality operator is exported as con
 if source property equals the typed canonical literal
 then target property is required
 ```
+
+The `if` object also lists the source property in `required`, so a missing discriminator does not trigger the
+condition. The `then` object requires target presence only: nullable targets may be present as null when their
+schema permits it, and other variant properties are not prohibited. This schema validation is distinct from
+System.Text.Json serialization and does not imply enforcement by System.Text.Json, EF Core, or Power BI.
 
 The comparison literal uses canonical typed-literal meaning.
 

@@ -1,4 +1,5 @@
 using SemanticTypeModel.Abstractions.Model;
+using SemanticTypeModel.Core.Transformation;
 using SemanticTypeModel.EFCore;
 using Intake = SemanticTypeModel.TestModels.ModelA.Intake;
 using ModelA = SemanticTypeModel.TestModels.ModelA;
@@ -26,6 +27,49 @@ public sealed class RelationalDerivationTests
         EfRelationalModel binary = ModelAGenerated.ModelASemanticTypeModel.Create().DeriveEfRelationalModel().Model;
         _ = await Assert.That(json.Entities.SelectMany(entity => entity.JsonColumns)).IsNotEmpty();
         _ = await Assert.That(binary.Entities.SelectMany(entity => entity.BinaryColumns)).IsNotEmpty();
+    }
+
+    [Test]
+    public async Task Relational_derivation_treats_nested_string_dictionary_as_JSON_content_and_keeps_extension_data_distinct()
+    {
+        TypeSchemaModel source = ModelAGenerated.ModelASemanticTypeModel.Create();
+        SemanticDerivationResult<EfRelationalModel> result = source.DeriveEfRelationalModel();
+        EfEntity entity = result.Model.Entities.Single(value => value.ClrType == typeof(ModelA.InventoryItem));
+
+        _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Code == "EF_DICTIONARY_STORAGE_NOT_SUPPORTED")).IsFalse();
+        _ = await Assert.That(entity.JsonColumns.Select(static column => column.MemberName)).Contains(nameof(ModelA.InventoryItem.Details));
+        _ = await Assert.That(entity.JsonColumns.Select(static column => column.MemberName)).Contains(nameof(ModelA.InventoryItem.ExtensionData));
+        _ = await Assert.That(entity.JsonColumns.Single(column => column.MemberName == nameof(ModelA.InventoryItem.Details)).JsonShape).IsEqualTo(EfJsonShape.Object);
+        _ = await Assert.That(entity.JsonColumns.Single(column => column.MemberName == nameof(ModelA.InventoryItem.ExtensionData)).JsonShape).IsEqualTo(EfJsonShape.ExtensionData);
+
+        DictionaryTypeDefinition dictionary = source.Types.OfType<DictionaryTypeDefinition>().Single(type =>
+            source.Types.OfType<ObjectTypeDefinition>().Single(value => value.Name == nameof(ModelA.InventoryDetails)).Properties.Any(property => property.Type.Id == type.Id));
+        TypeId integerId = source.Types.OfType<ScalarTypeDefinition>().First(static scalar => scalar.ScalarKind == ScalarKind.Integer).Id;
+        TypeDefinition[] unsupportedTypes = [.. source.Types.Select(type => type.Id == dictionary.Id ? dictionary with { KeyType = new TypeRef(integerId) } : type)];
+        TypeSchemaModel unsupported = new() { Id = source.Id, Types = unsupportedTypes, TypesById = unsupportedTypes.ToDictionary(static type => type.Id), Annotations = source.Annotations };
+        SemanticDerivationResult<EfRelationalModel> rejected = unsupported.DeriveEfRelationalModel();
+
+        SchemaDiagnostic[] dictionaryDiagnostics = [.. rejected.Diagnostics.Where(static diagnostic => diagnostic.Code == "EF_DICTIONARY_STORAGE_NOT_SUPPORTED")];
+        _ = await Assert.That(dictionaryDiagnostics).IsNotEmpty();
+        _ = await Assert.That(dictionaryDiagnostics.All(static diagnostic => diagnostic.ModelPath?.EndsWith("InventoryDetails.Labels", StringComparison.Ordinal) == true)).IsTrue();
+    }
+
+    [Test]
+    public async Task Relational_derivation_rejects_direct_ordinary_entity_dictionary_storage()
+    {
+        TypeSchemaModel source = ModelAGenerated.ModelASemanticTypeModel.Create();
+        ObjectTypeDefinition entity = source.Types.OfType<ObjectTypeDefinition>().Single(type => type.Name == nameof(ModelA.InventoryItem));
+        PropertyDefinition extensionData = entity.Properties.Single(property => property.Name == nameof(ModelA.InventoryItem.ExtensionData));
+        ObjectTypeDefinition changedEntity = entity with
+        {
+            Properties = [.. entity.Properties.Select(property => property.Id == extensionData.Id ? property with { Annotations = new AnnotationBag() } : property)],
+        };
+        TypeDefinition[] types = [.. source.Types.Select(type => type.Id == entity.Id ? changedEntity : type)];
+        TypeSchemaModel model = new() { Id = source.Id, Types = types, TypesById = types.ToDictionary(static type => type.Id), Annotations = source.Annotations };
+
+        SemanticDerivationResult<EfRelationalModel> result = model.DeriveEfRelationalModel();
+
+        _ = await Assert.That(result.Diagnostics.Any(static diagnostic => diagnostic.Code == "EF_DICTIONARY_STORAGE_NOT_SUPPORTED")).IsTrue();
     }
 
     [Test]

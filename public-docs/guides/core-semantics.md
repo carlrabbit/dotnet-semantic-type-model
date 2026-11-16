@@ -70,6 +70,11 @@ binding: STM does not provide Options registration or binding APIs.
 `SemanticTypeRole.Configuration` remains projection-neutral domain meaning, and `SemanticRequiredWhen`
 remains an independently supported conditional semantic constraint.
 
+`SemanticRequiredWhen` means that a target property must be present when a modeled source property equals its
+typed literal. It does not require a non-null target, prohibit other populated variants, or mean exactly one
+variant. JSON Schema validates this semantic rule; System.Text.Json does not, and EF Core/Power BI do not
+implicitly enforce it.
+
 An ordinary scalar property may declare `[SemanticLogicalType("CustomerId")]`. The name must match
 `[A-Za-z][A-Za-z0-9_.-]*`; the same name must use the same scalar type throughout one model. Logical Type
 metadata does not change JSON, EF Core, System.Text.Json, TestData, LINQ, or Power BI behavior.

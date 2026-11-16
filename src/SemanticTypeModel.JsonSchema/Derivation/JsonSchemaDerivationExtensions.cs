@@ -42,6 +42,7 @@ public static class JsonSchemaDerivationExtensions
     {
         private readonly List<Model.SchemaDiagnostic> _diagnostics = [.. initialDiagnostics];
         private Model.TypeSchemaModel? _model;
+        private Model.TypeId? _rootTypeId;
 
         public JsonSchemaSemanticModel Map(Model.TypeSchemaModel model)
         {
@@ -58,6 +59,7 @@ public static class JsonSchemaDerivationExtensions
                     rootType = payloadRoot;
                 }
             }
+            _rootTypeId = rootType.Id;
             JsonSchemaNode root = MapType(rootType);
             Dictionary<string, JsonSchemaNode> definitions = new(StringComparer.Ordinal);
 
@@ -360,7 +362,7 @@ public static class JsonSchemaDerivationExtensions
                 AddDiagnostic("JSONSCHEMA_DERIVE_UNRESOLVED_ALTERNATIVE", $"Referenced type '{typeRef.Id.Value}' was not found.", path);
             }
 
-            return JsonSchemaSchemaRef.FromReference(typeRef.Id.Value);
+            return JsonSchemaSchemaRef.FromReference(typeRef.Id == _rootTypeId ? "#" : typeRef.Id.Value);
         }
 
         private JsonSchemaScalarNode UnsupportedNode(Model.TypeDefinition type, string code, string message)

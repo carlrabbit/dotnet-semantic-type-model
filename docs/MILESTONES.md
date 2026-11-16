@@ -8,7 +8,7 @@ Milestones are active implementation work orders. They are deleted after durable
 
 M0080 — Programmatic Canonical Model Authoring, M0081 — Dynamic Model Sample Catalog & TestData Inspection, M0082 — Deterministic Diverse TestData Generation, M0083 — TestData Profiles & Sampling Policies, and M0084 — Coordinated TestData Generation are completed history.
 
-M0085 — EF Nested JSON Dictionaries and JSON Schema Contract Clarification (6.1.1 Patch Preparation) is **ready** at `docs/milestones/M0085-ef-nested-json-dictionaries-schema-contract-patch.md`. Its planning-seeded ledger is `.execution/M0085.md`.
+M0085 — EF Nested JSON Dictionaries and JSON Schema Contract Clarification (6.1.1 Patch Preparation) is **implementing** at `docs/milestones/M0085-ef-nested-json-dictionaries-schema-contract-patch.md`. Its implementation ledger is `.execution/M0085.md`.
 
 NuGet currently lists 6.1.0 as published (checked 2026-11-16); the planned patch target is 6.1.1, subject to release-channel preflight. Preparation does not authorize publication.
 

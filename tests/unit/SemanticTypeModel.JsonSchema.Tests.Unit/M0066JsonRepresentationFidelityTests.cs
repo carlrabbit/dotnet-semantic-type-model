@@ -35,6 +35,7 @@ public sealed class M0066JsonRepresentationFidelityTests
         JsonElement exported = JsonSchemaExporter.Export(model, new JsonSchemaExportOptions { IncludeSemanticAnnotations = false }).Document.RootElement;
         var rootName = exported.GetProperty("$defs").EnumerateObject().Single(property => property.Name.EndsWith("M0079AcceptanceRoot", StringComparison.Ordinal)).Name;
         JsonObject document = JsonNode.Parse(exported.GetRawText())!.AsObject();
+        _ = document.Remove("$id");
         JsonObject validationDocument = new() { ["$ref"] = $"#/$defs/{rootName}", ["$defs"] = document["$defs"]!.DeepClone() };
         var schema = DraftSchema.FromText(validationDocument.ToJsonString());
         EvaluationResults validation = schema.Evaluate(instance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
@@ -61,7 +62,9 @@ public sealed class M0066JsonRepresentationFidelityTests
             Address = new M0066Address { Street = "Main Street" },
             ExtensionData = new Dictionary<string, JsonElement>(),
         }, options);
-        var schema = DraftSchema.FromText(JsonSchemaExporter.Export(model).Document.RootElement.GetRawText());
+        JsonObject validationSchema = JsonNode.Parse(JsonSchemaExporter.Export(model).Document.RootElement.GetRawText())!.AsObject();
+        _ = validationSchema.Remove("$id");
+        var schema = DraftSchema.FromText(validationSchema.ToJsonString());
         using var instance = JsonDocument.Parse(json);
         EvaluationResults validation = schema.Evaluate(instance.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.Flag });
 
@@ -205,7 +208,19 @@ public sealed class M0066Customer
 
     [SemanticOwned]
     public M0066Address Address { get; set; } = new();
+
+    public M0066ConditionalMode? Mode { get; set; }
+    [SemanticRequiredWhen(nameof(Mode), nameof(M0066ConditionalMode.Csv))]
+    public string? CsvPath { get; set; }
+    public bool? Enabled { get; set; }
+    [SemanticRequiredWhen(nameof(Enabled), "true")]
+    public string? EnabledValue { get; set; }
+    public int? Count { get; set; }
+    [SemanticRequiredWhen(nameof(Count), "42")]
+    public string? CountValue { get; set; }
 }
+
+public enum M0066ConditionalMode { Other, Csv }
 
 public enum M0066Status
 {

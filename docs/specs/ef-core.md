@@ -136,6 +136,15 @@ No `IEntityTypeConfiguration<T>` is generated for structural value shapes, enums
 
 Those shapes may still contribute semantic/storage information to an owning Entity configuration.
 
+An ordinary dictionary nested within an already owned JSON ValueKind is JSON content of that value. A
+`Dictionary<string,string>` (and the supported string-key/string-value dictionary interfaces) is serialized by
+the outer JSON converter and does not require `SemanticExtensionData` or separate ownership. It remains an
+ordinary named member in the JSON object. This does not enable direct dictionary storage on an Entity; direct
+dictionary members still require the established extension-data shape or receive
+`EF_DICTIONARY_STORAGE_NOT_SUPPORTED`. Unsupported nested dictionary key/value or CLR shapes receive that same
+targeted diagnostic during relational derivation. Do not probe arbitrary uninitialized CLR objects to infer
+serializer support.
+
 ## Generated Registration
 
 Each selected semantic model receives one deterministic public registration extension, conceptually:

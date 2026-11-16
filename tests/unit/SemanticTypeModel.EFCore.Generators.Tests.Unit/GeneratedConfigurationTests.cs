@@ -11,6 +11,34 @@ namespace SemanticTypeModel.EFCore.Generators.Tests.Unit;
 
 public sealed class GeneratedConfigurationTests
 {
+    [Test]
+    public async Task Nested_string_dictionary_is_accepted_but_unsupported_dictionary_shapes_are_diagnosed()
+    {
+        const string supportedSource = "[assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Domain.Entity))] namespace Domain; public class Entity { public int Id {get;set;} public Details Details {get;set;} = new(); } public class Details { public System.Collections.Generic.Dictionary<string,string> Labels {get;set;} = new(); }";
+        object supportedManifest = Manifest("NestedDictionary",
+        [
+            Type("System.Int32", "Int32", "Scalar"), Type("System.String", "String", "Scalar"), Type("Domain.Entity", "Entity", "Object", "Entity", properties: [Property("Id", "System.Int32", key: true), Property("Details", "Domain.Details", ownership: "Object")]),
+            Type("Domain.Details", "Details", "Object", "ValueObject", properties: [Property("Labels", "Dictionary")]), Type("Dictionary", "Dictionary", "Dictionary"),
+        ]);
+        GeneratorDriverRunResult supported = Run(supportedSource, supportedManifest);
+
+        const string unsupportedNestedSource = "[assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Domain.Entity))] namespace Domain; public class Entity { public int Id {get;set;} public Details Details {get;set;} = new(); } public class Details { public System.Collections.Generic.Dictionary<int,string> Labels {get;set;} = new(); }";
+        GeneratorDriverRunResult unsupportedNested = Run(unsupportedNestedSource, supportedManifest);
+
+        const string directSource = "[assembly: SemanticTypeModel.EFCore.GenerateSemanticEfModel(typeof(Domain.Entity))] namespace Domain; public class Entity { public int Id {get;set;} public System.Collections.Generic.Dictionary<string,string> Labels {get;set;} = new(); }";
+        object directManifest = Manifest("DirectDictionary",
+        [
+            Type("System.Int32", "Int32", "Scalar"), Type("Domain.Entity", "Entity", "Object", "Entity", properties: [Property("Id", "System.Int32", key: true), Property("Labels", "Dictionary")]),
+            Type("Dictionary", "Dictionary", "Dictionary"),
+        ]);
+        GeneratorDriverRunResult direct = Run(directSource, directManifest);
+
+        _ = await Assert.That(supported.Diagnostics).IsEmpty();
+        _ = await Assert.That(Text(supported).Any(text => text.Contains("SemanticEfValueConverters.Json<global::Domain.Details>()", StringComparison.Ordinal))).IsTrue();
+        _ = await Assert.That(unsupportedNested.Has(DotNetExtractionDiagnosticIds.EfProjectionError)).IsTrue();
+        _ = await Assert.That(direct.Has(DotNetExtractionDiagnosticIds.EfProjectionError)).IsTrue();
+    }
+
     // PartialHook compilation and MultiModel ownership/name diagnostics are intentionally kept in this focused fixture.
     [Test]
     public async Task GeneratedConfiguration_mapping_hooks_inheritance_and_text_are_deterministic_and_compile()

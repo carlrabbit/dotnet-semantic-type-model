@@ -73,6 +73,12 @@ internal partial class AccountConfiguration
 | Extension data | JSON storage |
 | Nonentity | No standalone EF entity configuration |
 
+An ordinary `Dictionary<string,string>` property inside an already owned ValueKind is serialized as a named
+JSON object member by the outer converter. It does not need `[SemanticExtensionData]` or its own `[SemanticOwned]`
+attribute. The ValueKind itself still needs explicit ownership on the Entity property. Direct dictionary members
+on an Entity are not supported as ordinary columns; use the extension-data contract when the dictionary really
+represents unmodeled extra members.
+
 The integration deliberately does **not** infer arbitrary navigations, call `OwnsOne`/`OwnsMany`, create
 many-to-many mappings, offer TPH/TPC alternatives, generate a `DbContext`, choose a provider, create migrations,
 or own database lifecycle.
@@ -89,6 +95,7 @@ EF configuration when needed; a wrapper does not acquire scalar meaning from a p
 | `STM5041` | Two selected models own one CLR Entity | Select one owning semantic model. |
 | `STM5044`/`STM5045` | CLR type/member no longer matches manifest | Clean/rebuild model and persistence projects; fix renamed/removed members. |
 | `STM5046` | Member/entity shape violates supported EF contract | Use a supported scalar/identifier/binary/owned-JSON shape or handle mapping manually after generated configuration. |
+| `EF_DICTIONARY_STORAGE_NOT_SUPPORTED` | A direct Entity dictionary or unsupported nested JSON dictionary shape was found | Put ordinary string-key/string-value dictionaries inside an owned JSON ValueKind; use extension-data semantics only for a flattened additional-member bag. Unsupported dictionary CLR/key/value shapes need an explicitly supported representation. |
 | No generated config for a ValueKind/DTO | Only semantic Entities receive standalone configurations | Keep the type as a value shape or make its semantic role intentionally Entity. |
 | `sbyte`, `ushort`, `uint`, or `ulong` member is diagnosed | Provider-independent EF mappings do not silently widen these integer forms | Choose a provider-specific/manual mapping or use a supported CLR representation; wrapper shape does not bypass this boundary. |
 | Manual entity disappears/changes | Application composition is wrong, not expected generated behavior | Generated config must touch only selected semantic Entities; inspect generated source and manual `OnModelCreating`. |

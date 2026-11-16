@@ -203,7 +203,7 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
             }
 
             SemanticType? target = selected.Manifest.Types.FirstOrDefault(type => string.Equals(type.Id, property.TypeId, StringComparison.Ordinal));
-            if (!AppendProperty(body, selected.Manifest, entity, property, member!, target, out string? error))
+            if (!AppendProperty(body, selected.Manifest, selected.Assembly, entity, property, member!, target, out string? error))
             {
                 context.ReportDiagnostic(Diagnostic.Create(EfGeneratorDiagnosticDescriptors.ProjectionError, selected.Location, entity.Name, error));
                 valid = false;
@@ -253,6 +253,7 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
     private static bool AppendProperty(
         StringBuilder source,
         SemanticManifest manifest,
+        IAssemblySymbol modelAssembly,
         SemanticType entity,
         SemanticProperty property,
         IPropertySymbol member,
@@ -272,6 +273,12 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
             if (!EfStoragePolicy.IsValidOwnedValueKind(property.IsExtensionData, valueTarget?.Kind, valueTarget?.Role))
             {
                 error = $"owned member '{property.Name}' must target a semantic ValueKind";
+                return false;
+            }
+
+            if (!property.IsExtensionData && valueTarget is not null
+                && !ValidateJsonValueKind(manifest, modelAssembly, valueTarget, [], out error))
+            {
                 return false;
             }
 
@@ -338,6 +345,108 @@ public sealed class SemanticEfConfigurationGenerator : IIncrementalGenerator
             default:
                 throw new InvalidOperationException($"Unknown scalar storage kind '{scalarStorage}'.");
         }
+    }
+
+    private static bool ValidateJsonValueKind(
+        SemanticManifest manifest,
+        IAssemblySymbol modelAssembly,
+        SemanticType valueKind,
+        HashSet<string> visited,
+        out string? error)
+    {
+        if (!visited.Add(valueKind.Id))
+        {
+            error = null;
+            return true;
+        }
+
+        INamedTypeSymbol? valueSymbol = modelAssembly.GetTypeByMetadataName(MetadataName(valueKind.ClrName));
+        if (valueSymbol is null)
+        {
+            error = $"owned ValueKind '{valueKind.Name}' cannot be resolved for nested JSON validation";
+            return false;
+        }
+
+        foreach (SemanticProperty nested in valueKind.Properties)
+        {
+            SemanticType? target = manifest.Types.FirstOrDefault(type => string.Equals(type.Id, nested.TypeId, StringComparison.Ordinal));
+            if (target is null)
+            {
+                error = $"nested member '{valueKind.Name}.{nested.Name}' has an unresolved semantic type";
+                return false;
+            }
+
+            if (target.Kind == "Object" && EfStoragePolicy.IsEntityRole(target.Role))
+            {
+                error = $"JSON ValueKind '{valueKind.Name}' contains entity member '{nested.Name}'";
+                return false;
+            }
+
+            if (target.Kind == "Object" && string.Equals(target.Role, "ValueObject", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.Equals(nested.Ownership, "Object", StringComparison.Ordinal))
+                {
+                    error = $"nested ValueKind member '{valueKind.Name}.{nested.Name}' requires SemanticOwned";
+                    return false;
+                }
+
+                SemanticType? nestedValue = target;
+                if (!ValidateJsonValueKind(manifest, modelAssembly, nestedValue, visited, out error))
+                {
+                    return false;
+                }
+            }
+            else if (target.Kind == "Object")
+            {
+                error = $"nested member '{valueKind.Name}.{nested.Name}' targets unsupported JSON type '{target.Name}'";
+                return false;
+            }
+            else if (target.Kind == "Dictionary" && !nested.IsExtensionData)
+            {
+                if (!TryResolveProperty(valueSymbol, nested.MemberName, out IPropertySymbol? property)
+                    || !IsSupportedStringDictionary(property!.Type))
+                {
+                    error = $"nested dictionary '{valueKind.Name}.{nested.Name}' must use a supported string-key/string-value JSON dictionary shape";
+                    return false;
+                }
+            }
+            else if (target.Kind == "Array")
+            {
+                SemanticType? item = manifest.Types.FirstOrDefault(type => string.Equals(type.Id, target.ItemTypeId, StringComparison.Ordinal));
+                if (item?.Kind == "Object" && EfStoragePolicy.IsEntityRole(item.Role))
+                {
+                    error = $"nested entity collection '{valueKind.Name}.{nested.Name}' must use identifiers";
+                    return false;
+                }
+
+                if (item is { Kind: "Object", Role: not null } && string.Equals(item.Role, "ValueObject", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!string.Equals(nested.Ownership, "Collection", StringComparison.Ordinal))
+                    {
+                        error = $"nested ValueKind collection '{valueKind.Name}.{nested.Name}' requires collection ownership";
+                        return false;
+                    }
+
+                    if (!ValidateJsonValueKind(manifest, modelAssembly, item, visited, out error))
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        error = null;
+        return true;
+    }
+
+    private static bool IsSupportedStringDictionary(ITypeSymbol type)
+    {
+        return type is INamedTypeSymbol named
+            && named.MetadataName is "Dictionary`2" or "IDictionary`2" or "IReadOnlyDictionary`2"
+            && named.ContainingNamespace.ToDisplayString() == "System.Collections.Generic"
+            && named.TypeArguments.Length == 2
+            && named.TypeArguments[0].SpecialType == SpecialType.System_String
+            && named.TypeArguments[1].SpecialType == SpecialType.System_String;
     }
 
     private static string GenerateRegistration(string modelName, IReadOnlyList<(SemanticType Manifest, INamedTypeSymbol Symbol)> entities)

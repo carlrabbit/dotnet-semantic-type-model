@@ -30,6 +30,7 @@ public sealed class InventoryDetails
 {
     public string Warehouse { get; set; } = string.Empty;
     public int Quantity { get; set; }
+    public Dictionary<string, string> Labels { get; set; } = [];
 }
 
 [SemanticType(SemanticTypeRole.ValueObject)]
