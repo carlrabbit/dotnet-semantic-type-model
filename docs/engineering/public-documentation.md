@@ -16,6 +16,7 @@ The validator must verify:
 - the shared NuGet README mentions every package ID;
 - active SemanticTypeModel package versions do not drift;
 - the shared README states the same-exact-version rule;
+- the manifest schema version stated in the shared NuGet README and authoritative EF Core specification matches both the producing and consuming source generator declarations;
 - deleted superseded public pages do not regrow;
 - per-package NuGet README sources do not regrow;
 - per-sample Markdown pages do not regrow;
